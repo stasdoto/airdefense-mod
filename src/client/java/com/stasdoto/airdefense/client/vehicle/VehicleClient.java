@@ -26,11 +26,11 @@ import com.stasdoto.airdefense.vehicle.VehicleType;
 public final class VehicleClient {
 	private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(AirDefense.id("vehicles"));
 	public static final KeyMapping DEPLOY = KeyMappingHelper.registerKeyMapping(
-			new KeyMapping("key.airdefense.deploy", InputConstants.Type.KEYSYM, InputConstants.KEY_R, CATEGORY));
+			new KeyMapping("key.airdefense.deploy", InputConstants.KEY_R, CATEGORY));
 	public static final KeyMapping MODE = KeyMappingHelper.registerKeyMapping(
-			new KeyMapping("key.airdefense.mode", InputConstants.Type.KEYSYM, InputConstants.KEY_V, CATEGORY));
+			new KeyMapping("key.airdefense.mode", InputConstants.KEY_V, CATEGORY));
 	public static final KeyMapping SEAT = KeyMappingHelper.registerKeyMapping(
-			new KeyMapping("key.airdefense.seat", InputConstants.Type.KEYSYM, InputConstants.KEY_G, CATEGORY));
+			new KeyMapping("key.airdefense.seat", InputConstants.KEY_G, CATEGORY));
 
 	private VehicleClient() {
 	}
@@ -77,7 +77,7 @@ public final class VehicleClient {
 	private static void hud(GuiGraphicsExtractor g, DeltaTracker delta) {
 		Minecraft mc = Minecraft.getInstance();
 		LocalPlayer player = mc.player;
-		if (player == null || !(player.getVehicle() instanceof VehicleEntity v) || mc.options.hideGui) {
+		if (player == null || !(player.getVehicle() instanceof VehicleEntity v)) {
 			return;
 		}
 		Font font = mc.font;

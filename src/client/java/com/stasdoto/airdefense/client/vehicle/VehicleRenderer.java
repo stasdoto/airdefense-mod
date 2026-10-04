@@ -82,7 +82,7 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 	}
 
 	@Override
-	protected AABB getBoundingBoxForCulling(VehicleEntity v) {
+	protected AABB getBoundingBoxForCulling(VehicleEntity v, float partialTick) {
 		double r = type.geometry.length() / 2 + 1;
 		return v.getBoundingBox().inflate(r, 2, r);
 	}
