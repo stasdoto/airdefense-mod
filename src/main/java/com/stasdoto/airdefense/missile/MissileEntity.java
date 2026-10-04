@@ -14,6 +14,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -22,6 +23,7 @@ import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.storage.ValueInput;
@@ -216,13 +218,18 @@ public class MissileEntity extends Entity {
 	@Override
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
 		MissileType type = getMissileType();
-		if (!type.threat || isRemoved() || detonated) {
+		if (!type.threat || isRemoved() || detonated || source.is(DamageTypeTags.IS_EXPLOSION)) {
 			return false;
 		}
 		health -= amount;
 		if (health <= 0) {
 			shotDown();
 		}
+		return true;
+	}
+
+	@Override
+	public boolean ignoreExplosion(Explosion explosion) {
 		return true;
 	}
 
@@ -500,14 +507,16 @@ public class MissileEntity extends Entity {
 	}
 
 	private void keepChunksLoaded(ServerLevel level) {
-		if (life % 10 != 1) {
+		if (life % 2 != 1) {
 			return;
 		}
+		// Radius 3 makes the 3x3 chunks around the point fully "entity ticking", so the missile never freezes
+		// when it flies away from players. Also load ~1 s ahead along the flight path.
 		ChunkPos here = ChunkPos.containing(blockPosition());
-		level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, here, 2);
-		ChunkPos ahead = ChunkPos.containing(BlockPos.containing(position().add(currentDir().scale(48))));
+		level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, here, 3);
+		ChunkPos ahead = ChunkPos.containing(BlockPos.containing(position().add(lastVel.scale(20))));
 		if (!ahead.equals(here)) {
-			level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, ahead, 1);
+			level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, ahead, 3);
 		}
 	}
 
@@ -560,11 +569,10 @@ public class MissileEntity extends Entity {
 				if (motor) {
 					for (int i = 0; i < steps; i++) {
 						Vec3 p = nozzle.subtract(seg.scale((double) i / steps));
-						particle(level, ParticleTypes.FLAME, p, dir.scale(-0.25), 0.15);
-						particle(level, ParticleTypes.LARGE_SMOKE, p, dir.scale(-0.05), 0.25);
-						if (i % 2 == 0) {
-							particle(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, p, Vec3.ZERO, 0.3);
-						}
+						particle(level, ParticleTypes.FLAME, p, dir.scale(-0.25), 0.2);
+						particle(level, ParticleTypes.FLAME, p, dir.scale(-0.35), 0.2);
+						particle(level, ParticleTypes.LARGE_SMOKE, p, dir.scale(-0.05), 0.35);
+						particle(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, p, Vec3.ZERO, 0.4);
 					}
 				} else if (tickCount % 2 == 0) {
 					particle(level, ParticleTypes.SMOKE, nozzle, Vec3.ZERO, 0.1);
@@ -589,10 +597,8 @@ public class MissileEntity extends Entity {
 					particle(level, ParticleTypes.FLAME, nozzle, dir.scale(-0.3), 0.05);
 					for (int i = 0; i < steps; i++) {
 						Vec3 p = nozzle.subtract(seg.scale((double) i / steps));
-						particle(level, ParticleTypes.CLOUD, p, Vec3.ZERO, 0.08);
-						if (i % 2 == 0) {
-							particle(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, p, Vec3.ZERO, 0.1);
-						}
+						particle(level, ParticleTypes.CLOUD, p, Vec3.ZERO, 0.1);
+						particle(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, p, Vec3.ZERO, 0.15);
 					}
 				}
 			}

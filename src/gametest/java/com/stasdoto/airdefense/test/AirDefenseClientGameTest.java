@@ -154,7 +154,6 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runOnServer(s -> {
 			place(s.overworld(), launcher, ModBlocks.SHAHED_LAUNCHER, Direction.SOUTH);
 			place(s.overworld(), new BlockPos(x + 8, ground, 40), ModBlocks.GEPARD, Direction.NORTH);
-			place(s.overworld(), new BlockPos(x - 10, ground, 50), ModBlocks.IRIS_T, Direction.NORTH);
 		});
 		camera(server, x + 4, ground + 6, -165, 180, 10);
 		ctx.waitTicks(60);
@@ -164,7 +163,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(60);
 		camera(server, x + 18, ground + 4, 62, 160, -12);
 		for (int i = 0; i < 6; i++) {
-			ctx.waitTicks(55);
+			ctx.waitTicks(i < 2 ? 70 : 30);
 			ctx.takeScreenshot("3" + (i + 1) + "_shahed_defense");
 		}
 		ctx.waitTicks(200);

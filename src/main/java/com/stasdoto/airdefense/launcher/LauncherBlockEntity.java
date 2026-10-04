@@ -6,8 +6,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -37,6 +39,9 @@ public class LauncherBlockEntity extends BlockEntity {
 	}
 
 	public static void serverTick(Level level, BlockPos pos, BlockState state, LauncherBlockEntity be) {
+		if (be.salvoLeft > 0 && level instanceof ServerLevel serverLevel && level.getGameTime() % 10 == 0) {
+			be.keepLoaded(serverLevel);
+		}
 		if (be.cooldown > 0) {
 			be.cooldown--;
 		}
@@ -62,10 +67,7 @@ public class LauncherBlockEntity extends BlockEntity {
 			player.sendOverlayMessage(Component.translatable("message.airdefense.too_close", MIN_DISTANCE));
 			return;
 		}
-		target = newTarget;
-		salvoLeft = type.salvo;
-		salvoTimer = 1;
-		setChanged();
+		beginSalvo(newTarget);
 		player.sendOverlayMessage(Component.translatable("message.airdefense.launch", newTarget.getX(), newTarget.getY(), newTarget.getZ(), (int) dist));
 	}
 
@@ -74,20 +76,36 @@ public class LauncherBlockEntity extends BlockEntity {
 		if (salvoLeft > 0 || cooldown > 0) {
 			return false;
 		}
-		target = newTarget;
-		salvoLeft = type().salvo;
-		salvoTimer = 1;
-		setChanged();
+		beginSalvo(newTarget);
 		return true;
 	}
 
 	/** Redstone pulse: repeat the last strike. */
 	public void fireAtStoredTarget() {
 		if (target != null && salvoLeft == 0 && cooldown == 0) {
-			salvoLeft = type().salvo;
-			salvoTimer = 1;
-			setChanged();
+			beginSalvo(target);
 		}
+	}
+
+	/** While a salvo is in progress keep the launcher's chunk ticking, even if every player walks away. */
+	private void keepLoaded(ServerLevel level) {
+		level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, ChunkPos.containing(worldPosition), 3);
+	}
+
+	/** Starts a salvo: first missile right now, the rest from the ticker. */
+	private void beginSalvo(BlockPos newTarget) {
+		target = newTarget;
+		salvoLeft = type().salvo;
+		salvoTimer = type().interval;
+		if (level instanceof ServerLevel serverLevel) {
+			keepLoaded(serverLevel);
+			fireOne(serverLevel, getBlockState());
+			salvoLeft--;
+			if (salvoLeft == 0) {
+				cooldown = type().cooldown;
+			}
+		}
+		setChanged();
 	}
 
 	private void fireOne(ServerLevel level, BlockState state) {
