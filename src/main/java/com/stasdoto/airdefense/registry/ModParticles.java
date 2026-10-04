@@ -20,6 +20,13 @@ public final class ModParticles {
 	public static final SimpleParticleType SMOKE_WHITE = register("smoke_white");
 	public static final SimpleParticleType DUST = register("dust");
 	public static final SimpleParticleType DEBRIS_SMOKE = register("debris_smoke");
+	public static final SimpleParticleType GLOW = register("glow");
+	public static final SimpleParticleType EMBER = register("ember");
+	public static final SimpleParticleType TRACER_TAIL = register("tracer_tail");
+	public static final SimpleParticleType FLAME = register("flame");
+	public static final SimpleParticleType CHUNK = register("chunk");
+	public static final SimpleParticleType DIRT = register("dirt");
+	public static final SimpleParticleType SHOCK = register("shock");
 
 	private ModParticles() {
 	}

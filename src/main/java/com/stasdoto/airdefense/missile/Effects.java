@@ -5,14 +5,14 @@ import net.minecraft.core.Holder;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -60,25 +60,56 @@ public final class Effects {
 			spawned++;
 		}
 
-		explode(level, source, at, power, type.fire, Level.ExplosionInteraction.TNT,
-				power >= 6 ? ModSounds.EXPLOSION_HUGE : ModSounds.EXPLOSION_BIG);
+		explode(level, source, at, power, type.fire, Level.ExplosionInteraction.TNT);
+		scorch(level, at, power);
 		Fx.send(level, FxPayload.GROUND_IMPACT, at, power, new Vec3(0, 1, 0));
 		shockWave(level, source, at, power * 3.5, power * 1.1, 1.4);
-		level.playSound(null, at.x, at.y, at.z, ModSounds.EXPLOSION_FAR, SoundSource.BLOCKS, 6.0f, 0.85f + r.nextFloat() * 0.15f);
+	}
+
+	/** Burnt, churned-up ground around the crater. Only the surface layer, and only soil-like blocks. */
+	private static void scorch(ServerLevel level, Vec3 at, float power) {
+		RandomSource r = level.getRandom();
+		double radius = power * 1.15;
+		int tries = (int) (power * power * 2.2f);
+		for (int i = 0; i < tries; i++) {
+			double a = r.nextDouble() * Math.PI * 2;
+			double d = Math.sqrt(r.nextDouble()) * radius;
+			int x = (int) Math.floor(at.x + Math.cos(a) * d);
+			int z = (int) Math.floor(at.z + Math.sin(a) * d);
+			int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+			if (Math.abs(top - at.y) > power) {
+				continue;
+			}
+			BlockPos pos = new BlockPos(x, top, z);
+			BlockState state = level.getBlockState(pos);
+			// Closer to the centre the ground is burnt black-brown; further out only some of it is churned.
+			boolean inner = d < radius * 0.6;
+			if (!inner && r.nextFloat() < 0.45f) {
+				continue;
+			}
+			if (state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT) || state.is(Blocks.PODZOL) || state.is(Blocks.MYCELIUM)
+					|| state.is(Blocks.DIRT_PATH) || state.is(Blocks.FARMLAND) || state.is(Blocks.ROOTED_DIRT) || state.is(Blocks.MUD)) {
+				level.setBlock(pos, (inner && r.nextFloat() < 0.35f ? Blocks.ROOTED_DIRT : Blocks.COARSE_DIRT).defaultBlockState(), 3);
+			} else if (state.is(Blocks.SAND) || state.is(Blocks.RED_SAND)) {
+				if (inner && r.nextFloat() < 0.3f) {
+					level.setBlock(pos, Blocks.GRAVEL.defaultBlockState(), 3);
+				}
+			} else if (state.is(Blocks.SNOW_BLOCK) || state.is(Blocks.SNOW) || state.is(Blocks.POWDER_SNOW)) {
+				level.setBlock(pos, state.is(Blocks.SNOW) ? Blocks.AIR.defaultBlockState() : Blocks.COARSE_DIRT.defaultBlockState(), 3);
+			} else if (state.is(Blocks.SHORT_GRASS) || state.is(Blocks.TALL_GRASS) || state.is(Blocks.FERN)) {
+				level.removeBlock(pos, false);
+			}
+		}
 	}
 
 	/** Blown up in the air: an interceptor's warhead, or a shot-down threat. */
 	public static void airBurst(ServerLevel level, Entity source, Vec3 at, MissileType type) {
-		RandomSource r = level.getRandom();
 		// A shot-down attack missile still detonates its own warhead, so it is much bigger than an interceptor.
 		float size = type.threat ? Math.max(2.5f, type.power * 0.6f) : type.power;
 		// Fragmentation hurts what's close, but an air burst does not dig into the ground.
-		explode(level, source, at, Math.min(size, 3.0f), false, Level.ExplosionInteraction.NONE, ModSounds.EXPLOSION_AIR);
+		explode(level, source, at, Math.min(size, 3.0f), false, Level.ExplosionInteraction.NONE);
 		Fx.send(level, type.threat ? FxPayload.AIR_BURST_THREAT : FxPayload.AIR_BURST_INTERCEPTOR, at, size, Vec3.ZERO);
 		shockWave(level, source, at, size * 2.5, 0, 0.6);
-		if (type.threat) {
-			level.playSound(null, at.x, at.y, at.z, ModSounds.EXPLOSION_FAR, SoundSource.BLOCKS, 5.0f, 1.0f + r.nextFloat() * 0.1f);
-		}
 	}
 
 	/** Launch blast: a smoke cloud rolling out around the launcher. */
@@ -96,11 +127,14 @@ public final class Effects {
 		Fx.send(level, FxPayload.TRACER, from, 0, to);
 	}
 
-	/** A real explosion (damage, blocks, knockback) without Minecraft's own pixel puffs: our flash replaces them. */
+	/**
+	 * A real explosion (damage, blocks, knockback) without Minecraft's own pixel puffs and bang: our particles replace
+	 * the puffs, and each client plays the explosion sound itself, late by the distance it has to travel.
+	 */
 	private static void explode(ServerLevel level, Entity source, Vec3 at, float power, boolean fire,
-			Level.ExplosionInteraction interaction, SoundEvent sound) {
+			Level.ExplosionInteraction interaction) {
 		level.explode(source, null, null, at.x, at.y, at.z, power, fire, interaction,
-				ModParticles.FLASH, ModParticles.FLASH, WeightedList.of(), Holder.direct(sound));
+				ModParticles.GLOW, ModParticles.GLOW, WeightedList.of(), Holder.direct(ModSounds.SILENT));
 	}
 
 	private static void shockWave(ServerLevel level, Entity source, Vec3 at, double outer, double inner, double strength) {

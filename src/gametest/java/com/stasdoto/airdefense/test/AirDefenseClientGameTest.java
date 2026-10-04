@@ -43,6 +43,10 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 
 			lineup(ctx, server);
 			unopposedIskander(ctx, server);
+			effectsCloseup(ctx, server, false);
+			server.runCommand("time set 14500");
+			effectsCloseup(ctx, server, true);
+			server.runCommand("time set 1000");
 			patriotVsIskander(ctx, server);
 			droneSwarm(ctx, server);
 			server.runCommand("time set 13800");
@@ -117,6 +121,29 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(10);
 		ctx.takeScreenshot("15_iskander_crater");
 		AirDefense.LOGGER.info("[airdefense-test] after unopposed Iskander: {}", MissileStats.summary());
+	}
+
+	/** One Iskander impact filmed from 40 blocks away, frame by frame: flash, fireball, mushroom, column, fires. */
+	private void effectsCloseup(ClientGameTestContext ctx, TestServerContext server, boolean night) {
+		int x = night ? 10500 : 9000;
+		BlockPos launcher = new BlockPos(x, ground, 0);
+		BlockPos target = new BlockPos(x, ground - 1, 140);
+		server.runOnServer(s -> place(s.overworld(), launcher, ModBlocks.ISKANDER_LAUNCHER, Direction.SOUTH));
+		camera(server, x + 38, ground + 5, 150, 104.7f, -14);
+		ctx.waitTicks(60);
+		int impacts = MissileStats.GROUND_IMPACTS.get();
+		strike(server, launcher, target);
+		waitUntil(ctx, () -> MissileStats.GROUND_IMPACTS.get() > impacts, 400);
+		String p = night ? "17n_" : "16_";
+		int[] at = {1, 4, 10, 25, 60, 140};
+		int done = 0;
+		for (int i = 0; i < at.length; i++) {
+			ctx.waitTicks(at[i] - done);
+			done = at[i];
+			ctx.takeScreenshot(p + i + "_fx_" + at[i] + "t");
+		}
+		// Let the second missile of the salvo land too, so the scene is quiet before the next one.
+		ctx.waitTicks(120);
 	}
 
 	private void patriotVsIskander(ClientGameTestContext ctx, TestServerContext server) {

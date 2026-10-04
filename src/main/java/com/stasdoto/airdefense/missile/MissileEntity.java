@@ -608,7 +608,15 @@ public class MissileEntity extends Entity {
 						Vec3 p = nozzle.subtract(seg.scale((double) i / steps));
 						particle(level, smoke, p, dir.scale(-0.04), 0.12);
 					}
-					exhaust(level, nozzle, dir, type.trail == MissileType.Trail.HEAVY ? 3 : 2);
+					exhaust(level, nozzle, dir, type.trail == MissileType.Trail.HEAVY ? 4 : 2);
+					// The flame tongue: hot gas left along the path this tick, so the plume stays continuous at any speed.
+					int flame = Math.min(type.trail == MissileType.Trail.HEAVY ? 8 : 5, (int) (len / 0.8));
+					for (int i = 1; i <= flame; i++) {
+						particle(level, ModParticles.EXHAUST, nozzle.subtract(seg.scale((double) i / (flame + 1))), dir.scale(-0.08), 0.08);
+					}
+					if (tickCount % 2 == 0) {
+						particle(level, ModParticles.GLOW, nozzle.subtract(dir.scale(0.6)), Vec3.ZERO, 0);
+					}
 				}
 			}
 			case JET -> {
@@ -638,7 +646,7 @@ public class MissileEntity extends Entity {
 
 	private void exhaust(Level level, Vec3 nozzle, Vec3 dir, int count) {
 		for (int i = 0; i < count; i++) {
-			particle(level, ModParticles.EXHAUST, nozzle.subtract(dir.scale(i * 0.35)), dir.scale(-0.15), 0.05);
+			particle(level, ModParticles.EXHAUST, nozzle.subtract(dir.scale(i * 0.4)), dir.scale(-0.15 - i * 0.05), 0.05 + i * 0.03);
 		}
 	}
 

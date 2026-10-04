@@ -23,6 +23,8 @@ public final class ModSounds {
 	public static final SoundEvent RADAR_LOCK = register("radar_lock", 48);
 	public static final SoundEvent SIREN = register("siren", 220);
 	public static final SoundEvent DESIGNATE = register("designate", 16);
+	/** Handed to vanilla explosions: the client plays the real explosion sound itself, delayed by distance. */
+	public static final SoundEvent SILENT = register("silent", 16);
 
 	private ModSounds() {
 	}
