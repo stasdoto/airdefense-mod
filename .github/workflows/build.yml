@@ -47,6 +47,10 @@ jobs:
               p=${c#pkg:}; p=${p//./\/}
               echo "=== package $p" >> probe.txt
               for j in build/devkit/cp/*.jar; do unzip -Z1 "$j" 2>/dev/null | grep -E "^$p/[^/]+\.class$" | grep -v '\$' ; done | sort -u | sed 's/\.class$//;s/\//./g' >> probe.txt
+            elif [[ $c == code:* ]]; then
+              q=${c#code:}
+              echo "=== code $q" >> probe.txt
+              javap -c -p -cp "$CP" "$q" >> probe.txt 2>&1 || true
             elif [[ $c == find:* ]]; then
               q=${c#find:}
               echo "=== find $q" >> probe.txt
