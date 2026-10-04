@@ -65,6 +65,7 @@ public class MissileEntity extends Entity {
 	// Interceptors: what they are chasing; threats: how many interceptors chase them.
 	private MissileEntity targetMissile;
 	private int engagedBy;
+	private int noTargetTicks;
 	private boolean detonated;
 
 	private ItemStack displayStack;
@@ -436,8 +437,14 @@ public class MissileEntity extends Entity {
 			tgt = findNewTarget(level, dir);
 			targetMissile = tgt;
 			if (tgt == null) {
+				// Lost the target and nothing else around: self-destruct after a moment, like real SAMs do.
+				if (++noTargetTicks > 30) {
+					detonate(position(), true);
+					return null;
+				}
 				return dir.scale(speed);
 			}
+			noTargetTicks = 0;
 			tgt.engagedBy++;
 		}
 
