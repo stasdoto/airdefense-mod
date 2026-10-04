@@ -17,7 +17,7 @@ public record MapStatusPayload(List<Entry> vehicles) implements CustomPacketPayl
 	 * of the threat an air defence is engaging (or -1), target = launcher's current aim point (if {@code hasTarget}).
 	 */
 	public record Entry(int id, int type, float x, float y, float z, float yaw, int state, int mode, int loaded, int ammo,
-			int health, int busy, boolean firing, boolean hasTarget, int tx, int ty, int tz, int tracked) {
+			int health, int busy, boolean firing, boolean hasTarget, int tx, int ty, int tz, int tracked, int reserve) {
 	}
 
 	public static final Type<MapStatusPayload> TYPE = new Type<>(AirDefense.id("map_status"));
@@ -44,6 +44,7 @@ public record MapStatusPayload(List<Entry> vehicles) implements CustomPacketPayl
 			buf.writeInt(e.ty);
 			buf.writeInt(e.tz);
 			buf.writeInt(e.tracked);
+			buf.writeInt(e.reserve);
 		}
 	}
 
@@ -53,7 +54,7 @@ public record MapStatusPayload(List<Entry> vehicles) implements CustomPacketPayl
 		for (int i = 0; i < n; i++) {
 			list.add(new Entry(buf.readInt(), buf.readByte(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat(),
 					buf.readByte(), buf.readByte(), buf.readInt(), buf.readShort(), buf.readByte(), buf.readInt(), buf.readBoolean(),
-					buf.readBoolean(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt()));
+					buf.readBoolean(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt()));
 		}
 		return new MapStatusPayload(list);
 	}

@@ -39,9 +39,11 @@ public class VehicleItem extends Item {
 		if (!level.noCollision(box)) {
 			pos = pos.add(0, 1, 0);
 		}
-		VehicleEntity.spawn(level, type, pos, yaw);
+		VehicleEntity vehicle = VehicleEntity.spawn(level, type, pos, yaw);
 		if (player == null || !player.getAbilities().instabuild) {
 			context.getItemInHand().shrink(1);
+			// Survival: comes loaded, but further reloads need missiles (from a factory, or loaded by hand).
+			vehicle.setUnlimited(false);
 		}
 		return InteractionResult.SUCCESS;
 	}

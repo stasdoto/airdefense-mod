@@ -118,6 +118,7 @@ public final class VehicleClient {
 			};
 			l2 = Component.translatable(mode, v.getAmmo(), type.magazine());
 		}
+		l2 = Component.empty().append(l2).append(v.reserveText());
 		String keys = driver ? "hud.airdefense.vehicle.keys_driver"
 				: GunnerHud.isManualGunner(player, v) ? "hud.airdefense.vehicle.keys_manual" : "hud.airdefense.vehicle.keys_gunner";
 		Component l3 = Component.translatable(keys, DEPLOY.getTranslatedKeyMessage(), MODE.getTranslatedKeyMessage(), SEAT.getTranslatedKeyMessage());

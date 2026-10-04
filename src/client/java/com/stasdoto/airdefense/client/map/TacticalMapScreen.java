@@ -264,6 +264,9 @@ public class TacticalMapScreen extends Screen {
 		} else {
 			s = Component.translatable("screen.airdefense.map.st.duty", Math.max(0, e.ammo()), type.magazine());
 		}
+		if (e.reserve() >= 0) {
+			s = Component.empty().append(s).append(Component.translatable("screen.airdefense.map.st.reserve", e.reserve()));
+		}
 		if (e.health() < 100) {
 			s = Component.empty().append(s).append(Component.translatable("screen.airdefense.map.st.armour", e.health()));
 		}

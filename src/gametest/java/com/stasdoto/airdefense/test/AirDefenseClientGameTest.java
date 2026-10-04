@@ -47,6 +47,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			lineup(ctx, server);
 			drive(ctx, server);
 			tabletMap(ctx, server);
+			factory(ctx, server);
 			unopposedIskander(ctx, server);
 			effectsCloseup(ctx, server, false);
 			server.runCommand("time set 14500");
@@ -559,6 +560,95 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		float yaw = (float) Math.toDegrees(Math.atan2(-d.x, d.z));
 		float pitch = (float) -Math.toDegrees(Math.atan2(d.y, Math.sqrt(d.x * d.x + d.z * d.z)));
 		return new float[]{yaw, pitch};
+	}
+
+	/**
+	 * Stage 5: a factory puts itself up, takes a survival order (resources leave the inventory), makes it, shows its
+	 * menu, and restocks a survival HIMARS that has fired everything.
+	 */
+	private void factory(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 19500;
+		int g = ground;
+		camera(server, x + 24, g + 14, -16, 46, 24);
+		ctx.waitTicks(40);
+		BlockPos origin = new BlockPos(x, g - 1, 0);
+		BlockPos ctrl = com.stasdoto.airdefense.factory.FactoryBlueprint.controllerPos(origin, net.minecraft.core.Direction.SOUTH);
+		server.runOnServer(s -> {
+			ServerLevel level = s.overworld();
+			level.setBlock(ctrl, com.stasdoto.airdefense.registry.ModBlocks.FACTORY_CONTROLLER.defaultBlockState()
+					.setValue(com.stasdoto.airdefense.factory.FactoryControllerBlock.FACING, net.minecraft.core.Direction.NORTH), Block.UPDATE_ALL);
+			if (level.getBlockEntity(ctrl) instanceof com.stasdoto.airdefense.factory.FactoryBlockEntity f) {
+				f.startConstruction(origin, net.minecraft.core.Direction.SOUTH, false);
+			}
+		});
+		int t30 = waitUntil(ctx, () -> factoryPercent(server, ctrl) >= 30, 900);
+		ctx.takeScreenshot("80_factory_30");
+		waitUntil(ctx, () -> factoryPercent(server, ctrl) >= 70, 900);
+		ctx.takeScreenshot("81_factory_70");
+		int tDone = waitUntil(ctx, () -> factoryPercent(server, ctrl) >= 100, 1500);
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("82_factory_built");
+		AirDefense.LOGGER.info("[airdefense-test] factory: 30% after {} ticks, finished {} ticks later", t30, tDone);
+		camera(server, x + 7, g + 4, 13, 120, 12);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("83_factory_inside");
+		// A survival order: the resources must leave the inventory.
+		server.runCommand("gamemode survival @a");
+		server.runCommand("clear @a");
+		server.runCommand("give @a minecraft:copper_ingot 6");
+		server.runCommand("give @a minecraft:gunpowder 4");
+		camera(server, x + 4.5, g, 5.5, 180, 15);
+		ctx.waitTicks(10);
+		String answer = server.computeOnServer(s -> {
+			ServerPlayer p = s.getPlayerList().getPlayers().getFirst();
+			if (s.overworld().getBlockEntity(ctrl) instanceof com.stasdoto.airdefense.factory.FactoryBlockEntity f) {
+				return f.order(p, com.stasdoto.airdefense.factory.Product.GEPARD_AMMO, 1).getString()
+						+ " / copper left " + p.getInventory().countItem(net.minecraft.world.item.Items.COPPER_INGOT);
+			}
+			return "no factory";
+		});
+		AirDefense.LOGGER.info("[airdefense-test] factory order: {}", answer);
+		server.runOnServer(s -> {
+			ServerPlayer p = s.getPlayerList().getPlayers().getFirst();
+			if (s.overworld().getBlockEntity(ctrl) instanceof com.stasdoto.airdefense.factory.FactoryBlockEntity f) {
+				com.stasdoto.airdefense.factory.FactoryNet.send(p, f, true);
+			}
+		});
+		ctx.waitForScreen(com.stasdoto.airdefense.client.factory.FactoryScreen.class);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("84_factory_menu");
+		int made = waitUntil(ctx, () -> server.computeOnServer(s -> s.overworld().getBlockEntity(ctrl)
+				instanceof com.stasdoto.airdefense.factory.FactoryBlockEntity f ? f.stock()[com.stasdoto.airdefense.factory.Product.GEPARD_AMMO.ordinal()] : 0) > 0, 400);
+		ctx.takeScreenshot("85_factory_menu_done");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT factory_production: ammo box made after {} ticks", made);
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		ctx.waitTicks(5);
+		// A survival HIMARS fires everything, then restocks from the factory's stock.
+		server.runOnServer(s -> {
+			if (s.overworld().getBlockEntity(ctrl) instanceof com.stasdoto.airdefense.factory.FactoryBlockEntity f) {
+				f.stock()[com.stasdoto.airdefense.factory.Product.GMLRS.ordinal()] = 12;
+			}
+		});
+		int himars = server.computeOnServer(s -> {
+			VehicleEntity v = VehicleEntity.spawn(s.overworld(), VehicleType.HIMARS, new Vec3(x + 20.5, g, -30.5), 180);
+			v.setUnlimited(false);
+			return v.getId();
+		});
+		ctx.waitTicks(5);
+		strike(server, himars, new BlockPos(x + 20, g - 1, 320));
+		int restocked = waitUntil(ctx, () -> server.computeOnServer(s -> s.overworld().getEntity(himars) instanceof VehicleEntity v
+				&& Integer.bitCount(v.getLoadedMask()) == 6 && v.getReserve() == 6), 1100);
+		String state = server.computeOnServer(s -> s.overworld().getEntity(himars) instanceof VehicleEntity v
+				? "loaded " + Integer.bitCount(v.getLoadedMask()) + "/6, reserve " + v.getReserve() + "/" + v.reserveCapacity() : "gone");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT factory_resupply: {} after {} ticks", state, restocked);
+		server.runCommand("clear @a");
+		server.runCommand("gamemode spectator @a");
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(himars), Entity::discard));
+	}
+
+	private static int factoryPercent(TestServerContext server, BlockPos ctrl) {
+		return server.computeOnServer(s -> s.overworld().getBlockEntity(ctrl)
+				instanceof com.stasdoto.airdefense.factory.FactoryBlockEntity f ? f.buildPercent() : -1);
 	}
 
 	// --- helpers -----------------------------------------------------------------------------------

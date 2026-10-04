@@ -57,6 +57,22 @@ public class ManpadsItem extends Item {
 			player.sendOverlayMessage(Component.translatable("message.airdefense.no_lock"));
 			return InteractionResult.FAIL;
 		}
+		if (!player.getAbilities().instabuild) {
+			// Survival: every shot uses a Stinger missile from the inventory (made at a factory).
+			ItemStack missile = null;
+			for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+				ItemStack s = player.getInventory().getItem(i);
+				if (s.is(com.stasdoto.airdefense.registry.ModItems.STINGER_MISSILE)) {
+					missile = s;
+					break;
+				}
+			}
+			if (missile == null) {
+				player.sendOverlayMessage(Component.translatable("message.airdefense.no_stinger"));
+				return InteractionResult.FAIL;
+			}
+			missile.shrink(1);
+		}
 		Vec3 from = eye.add(look.scale(1.2)).add(0, -0.2, 0);
 		MissileEntity.launchInterceptor(serverLevel, MissileType.STINGER, from, look, target);
 		Effects.launchBlast(serverLevel, eye.subtract(look.scale(1.5)), MissileType.STINGER);

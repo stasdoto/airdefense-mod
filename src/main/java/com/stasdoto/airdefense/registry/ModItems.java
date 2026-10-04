@@ -8,12 +8,14 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 
 import com.stasdoto.airdefense.AirDefense;
+import com.stasdoto.airdefense.factory.FactoryKitItem;
 import com.stasdoto.airdefense.item.DesignatorItem;
 import com.stasdoto.airdefense.item.ManpadsItem;
 import com.stasdoto.airdefense.missile.MissileType;
@@ -23,6 +25,11 @@ import com.stasdoto.airdefense.vehicle.VehicleType;
 public final class ModItems {
 	public static final Item DESIGNATOR = register("designator", DesignatorItem::new, new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
 	public static final Item MANPADS = register("manpads", ManpadsItem::new, new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
+	public static final Item FACTORY_KIT = register("factory_kit", FactoryKitItem::new, new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
+	public static final Item FACTORY_CONTROLLER = register("factory_controller", p -> new BlockItem(ModBlocks.FACTORY_CONTROLLER, p),
+			new Item.Properties().useBlockDescriptionPrefix());
+	/** 35 mm rounds for the Gepard: one box = ten bursts. */
+	public static final Item GEPARD_AMMO = register("gepard_ammo", Item::new, new Item.Properties().stacksTo(16));
 
 	// Vehicles (the item ids are the ones the old one-block launchers had, so old inventories and recipes carry over).
 	public static final Item ISKANDER = vehicle("iskander_launcher", VehicleType.ISKANDER);
@@ -59,6 +66,9 @@ public final class ModItems {
 				output.accept(NASAMS);
 				output.accept(GEPARD);
 				output.accept(MANPADS);
+				output.accept(FACTORY_KIT);
+				output.accept(FACTORY_CONTROLLER);
+				output.accept(GEPARD_AMMO);
 				output.accept(ISKANDER_MISSILE);
 				output.accept(KALIBR_MISSILE);
 				output.accept(SHAHED_DRONE);

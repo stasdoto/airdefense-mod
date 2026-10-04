@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "top": "airdefense:block/factory_controller_top",
+    "front": "airdefense:block/factory_controller_front",
+    "side": "airdefense:block/factory_controller_side"
+  }
+}

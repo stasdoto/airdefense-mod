@@ -70,6 +70,8 @@ public class VehicleEntity extends LivingEntity {
 	private static final EntityDataAccessor<Float> DATA_TURRET_TARGET = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
 	private static final EntityDataAccessor<Integer> DATA_LOADED = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Integer> DATA_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+	/** Spare missiles (shots) carried for reloading; -1 = unlimited (vehicles put down in creative mode). */
+	private static final EntityDataAccessor<Integer> DATA_RESERVE = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
 
 	public static final int STOWED = 0;
 	public static final int DEPLOYED = 1;
@@ -213,6 +215,7 @@ public class VehicleEntity extends LivingEntity {
 		builder.define(DATA_TURRET_TARGET, 0f);
 		builder.define(DATA_LOADED, -1);
 		builder.define(DATA_AMMO, -1);
+		builder.define(DATA_RESERVE, -1);
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -281,6 +284,82 @@ public class VehicleEntity extends LivingEntity {
 
 	private void setAmmo(int ammo) {
 		entityData.set(DATA_AMMO, ammo);
+	}
+
+	// --- Ammunition reserve (stage 5: missiles come from the factory) ---
+
+	public boolean isUnlimited() {
+		return entityData.get(DATA_RESERVE) < 0;
+	}
+
+	public int getReserve() {
+		return Math.max(0, entityData.get(DATA_RESERVE));
+	}
+
+	private void setReserve(int reserve) {
+		entityData.set(DATA_RESERVE, reserve);
+	}
+
+	/** Put down by a survival player: reloads only from what it is given (by hand or from a factory nearby). */
+	public void setUnlimited(boolean unlimited) {
+		setReserve(unlimited ? -1 : 0);
+	}
+
+	/** Spare shots it can carry: two more salvos for launchers, two magazines for missile batteries, three for Gepard. */
+	public int reserveCapacity() {
+		if (vtype.isLauncher()) {
+			return vtype.rails() * 2;
+		}
+		return vtype.defense.magazine * (vtype == VehicleType.GEPARD ? 3 : 2);
+	}
+
+	public int reserveSpace() {
+		return isUnlimited() ? 0 : Math.max(0, reserveCapacity() - getReserve());
+	}
+
+	public void addReserve(int units) {
+		if (!isUnlimited() && units > 0) {
+			setReserve(Math.min(reserveCapacity(), getReserve() + units));
+		}
+	}
+
+	/** Takes up to {@code n} shots out of the reserve (all of them when unlimited) and says how many it got. */
+	private int takeReserve(int n) {
+		if (isUnlimited()) {
+			return n;
+		}
+		int k = Math.min(n, getReserve());
+		setReserve(getReserve() - k);
+		return k;
+	}
+
+	/** Launchers: missiles from the reserve onto the empty rails. */
+	private void reloadRails() {
+		int mask = getLoadedMask();
+		int n = takeReserve(vtype.rails() - Integer.bitCount(mask));
+		for (int i = 0; i < vtype.rails() && n > 0; i++) {
+			if ((mask & (1 << i)) == 0) {
+				mask |= 1 << i;
+				n--;
+			}
+		}
+		setLoadedMask(mask);
+		setAmmo(Integer.bitCount(mask));
+	}
+
+	/** Air defence: refill the magazine from the reserve; the canisters still holding missiles show on the model. */
+	private void reloadMagazine() {
+		DefenseType type = vtype.defense;
+		int have = Math.max(0, getAmmo());
+		setAmmo(have + takeReserve(type.magazine - have));
+		int rails = vtype.rails();
+		int perRail = Math.max(1, (type.magazine + rails - 1) / rails);
+		int first = Math.min(rails, (type.magazine - getAmmo()) / perRail);
+		int mask = 0;
+		for (int i = first; i < rails; i++) {
+			mask |= 1 << i;
+		}
+		setLoadedMask(getAmmo() > 0 ? mask : 0);
 	}
 
 	@Nullable
@@ -399,6 +478,13 @@ public class VehicleEntity extends LivingEntity {
 			return InteractionResult.PASS;
 		}
 		ItemStack stack = player.getItemInHand(hand);
+		com.stasdoto.airdefense.factory.Product product = com.stasdoto.airdefense.factory.Product.forItem(stack.getItem());
+		if (product != null && product == com.stasdoto.airdefense.factory.Product.forVehicle(vtype)) {
+			if (!level().isClientSide()) {
+				loadByHand(player, stack, product);
+			}
+			return InteractionResult.SUCCESS;
+		}
 		if (stack.getItem() instanceof DesignatorItem) {
 			if (level().isClientSide()) {
 				return InteractionResult.SUCCESS;
@@ -426,6 +512,26 @@ public class VehicleEntity extends LivingEntity {
 			player.startRiding(this);
 		}
 		return InteractionResult.SUCCESS;
+	}
+
+	/** Missiles (or ammunition boxes) handed over by a player go into the reserve. */
+	private void loadByHand(Player player, ItemStack stack, com.stasdoto.airdefense.factory.Product product) {
+		if (isUnlimited()) {
+			player.sendOverlayMessage(Component.translatable("message.airdefense.vehicle.unlimited"));
+			return;
+		}
+		int space = reserveSpace();
+		int items = Math.min(stack.getCount(), (space + product.units - 1) / product.units);
+		if (items <= 0) {
+			player.sendOverlayMessage(Component.translatable("message.airdefense.vehicle.reserve_full", getReserve(), reserveCapacity()));
+			return;
+		}
+		addReserve(items * product.units);
+		if (!player.getAbilities().instabuild) {
+			stack.shrink(items);
+		}
+		level().playSound(null, getX(), getY(), getZ(), net.minecraft.sounds.SoundEvents.ARMOR_EQUIP_IRON.value(), SoundSource.NEUTRAL, 1.0f, 0.8f);
+		player.sendOverlayMessage(Component.translatable("message.airdefense.vehicle.loaded", items, getReserve(), reserveCapacity()));
 	}
 
 	@Override
@@ -785,8 +891,11 @@ public class VehicleEntity extends LivingEntity {
 		}
 		if (reloadPending && cooldown == 0 && isFolded()) {
 			reloadPending = false;
-			setLoadedMask(fullMask());
-			setAmmo(vtype.magazine());
+			reloadRails();
+		} else if (!reloadPending && cooldown == 0 && !strikePending && salvoLeft == 0 && isFolded() && !isUnlimited()
+				&& getReserve() > 0 && getLoadedMask() != fullMask() && tickCount % 20 == 0) {
+			// Missiles arrived after the salvo: load them.
+			reloadRails();
 		}
 	}
 
@@ -870,8 +979,11 @@ public class VehicleEntity extends LivingEntity {
 		DefenseType type = vtype.defense;
 		boolean gun = type.interceptor == null;
 		if (reloadTimer > 0 && --reloadTimer == 0) {
-			setAmmo(type.magazine);
-			setLoadedMask(fullMask());
+			reloadMagazine();
+		}
+		if (getAmmo() <= 0 && reloadTimer == 0 && (isUnlimited() || getReserve() > 0)) {
+			// Empty, and missiles have arrived: start reloading.
+			reloadTimer = type.reload;
 		}
 		if (fireTimer > 0) {
 			fireTimer--;
@@ -1328,7 +1440,7 @@ public class VehicleEntity extends LivingEntity {
 		return new com.stasdoto.airdefense.map.MapStatusPayload.Entry(getId(), vtype.ordinal(), (float) getX(), (float) getY(), (float) getZ(),
 				getYRot(), getState(), getMode(), getLoadedMask(), getAmmo(), (int) Math.ceil(getHealth() / getMaxHealth() * 100), busy, firing,
 				t != null, t != null ? t.getX() : 0, t != null ? t.getY() : 0, t != null ? t.getZ() : 0,
-				tr != null && tr.isAlive() ? tr.getId() : -1);
+				tr != null && tr.isAlive() ? tr.getId() : -1, entityData.get(DATA_RESERVE));
 	}
 
 	/** Auto → manual → off → auto. */
@@ -1344,6 +1456,12 @@ public class VehicleEntity extends LivingEntity {
 		};
 	}
 
+	/** " · reserve 4/8" or " · reserve unlimited". */
+	public Component reserveText() {
+		return isUnlimited() ? Component.translatable("hud.airdefense.vehicle.reserve_inf")
+				: Component.translatable("hud.airdefense.vehicle.reserve", getReserve(), reserveCapacity());
+	}
+
 	public Component status() {
 		Component name = getType().getDescription();
 		int hp = (int) Math.ceil(getHealth() / getMaxHealth() * 100);
@@ -1354,7 +1472,7 @@ public class VehicleEntity extends LivingEntity {
 					: cooldown > 0
 					? Component.translatable("message.airdefense.status.reload", cooldown / 20 + 1)
 					: Component.translatable("message.airdefense.status.ready", Integer.bitCount(getLoadedMask()));
-			return Component.translatable("message.airdefense.vehicle.status_launcher", name, hp, ready);
+			return Component.translatable("message.airdefense.vehicle.status_launcher", name, hp, ready).append(reserveText());
 		}
 		DefenseType type = vtype.defense;
 		Component mode = Component.translatable(getMode() == MODE_AUTO ? "message.airdefense.status.on"
@@ -1362,7 +1480,7 @@ public class VehicleEntity extends LivingEntity {
 		Component ammoText = reloadTimer > 0
 				? Component.translatable("message.airdefense.status.reload", reloadTimer / 20 + 1)
 				: Component.translatable("message.airdefense.status.ammo", Math.max(getAmmo(), 0), type.magazine);
-		return Component.translatable("message.airdefense.vehicle.status_defense", name, hp, mode, ammoText, (int) type.range);
+		return Component.translatable("message.airdefense.vehicle.status_defense", name, hp, mode, ammoText, (int) type.range).append(reserveText());
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -1571,6 +1689,7 @@ public class VehicleEntity extends LivingEntity {
 		output.putInt("vehicle_cooldown", cooldown);
 		output.putInt("vehicle_reload", reloadTimer);
 		output.putBoolean("vehicle_reload_pending", reloadPending);
+		output.putInt("vehicle_reserve", entityData.get(DATA_RESERVE));
 	}
 
 	@Override
@@ -1582,6 +1701,8 @@ public class VehicleEntity extends LivingEntity {
 		cooldown = input.getIntOr("vehicle_cooldown", 0);
 		reloadTimer = input.getIntOr("vehicle_reload", 0);
 		reloadPending = input.getBooleanOr("vehicle_reload_pending", false);
+		// Vehicles from before stage 5 have no reserve entry: they keep reloading for free, as they always did.
+		setReserve(input.getIntOr("vehicle_reserve", -1));
 		fold();
 	}
 }

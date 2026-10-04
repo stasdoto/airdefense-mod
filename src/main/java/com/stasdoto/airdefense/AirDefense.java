@@ -16,6 +16,7 @@ import com.stasdoto.airdefense.registry.ModParticles;
 import com.stasdoto.airdefense.registry.ModSounds;
 import com.stasdoto.airdefense.registry.ModTickets;
 import com.stasdoto.airdefense.map.MapServer;
+import com.stasdoto.airdefense.factory.FactoryNet;
 import com.stasdoto.airdefense.vehicle.VehicleActionPayload;
 
 public class AirDefense implements ModInitializer {
@@ -35,6 +36,7 @@ public class AirDefense implements ModInitializer {
 		ModItems.init();
 		ModCommands.init();
 		MapServer.init();
+		FactoryNet.init();
 		LOGGER.info("Stasdoto Air Defense loaded");
 	}
 

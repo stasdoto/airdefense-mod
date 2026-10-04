@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 
 import com.stasdoto.airdefense.AirDefense;
 import com.stasdoto.airdefense.defense.DefenseBlockEntity;
+import com.stasdoto.airdefense.factory.FactoryBlockEntity;
 import com.stasdoto.airdefense.launcher.LauncherBlockEntity;
 
 public final class ModBlockEntities {
@@ -19,6 +20,10 @@ public final class ModBlockEntities {
 			AirDefense.id("defense"),
 			FabricBlockEntityTypeBuilder.<DefenseBlockEntity>create(DefenseBlockEntity::new,
 					ModBlocks.PATRIOT, ModBlocks.IRIS_T, ModBlocks.NASAMS, ModBlocks.GEPARD).build());
+
+	public static final BlockEntityType<FactoryBlockEntity> FACTORY = Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE,
+			AirDefense.id("factory"),
+			FabricBlockEntityTypeBuilder.<FactoryBlockEntity>create(FactoryBlockEntity::new, ModBlocks.FACTORY_CONTROLLER).build());
 
 	private ModBlockEntities() {
 	}
