@@ -31,6 +31,8 @@ public record NationActionPayload(int action, int settlement, int a, int x, int 
 	public static final int WORKERS_HOME = 12;
 	/** Open the village screen (from the tablet map). */
 	public static final int OPEN = 13;
+	/** Gifts that calm the village (and end a riot). */
+	public static final int CALM = 14;
 
 	public static final Type<NationActionPayload> TYPE = new Type<>(AirDefense.id("nation_action"));
 	public static final StreamCodec<ByteBuf, NationActionPayload> CODEC = StreamCodec.composite(

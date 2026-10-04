@@ -63,6 +63,8 @@ public class SoldierEntity extends PathfinderMob {
 	public static final int GUARD = 0;
 	public static final int SOLDIER = 1;
 	public static final int BANDIT = 2;
+	/** A villager who rose against the village's ruler ({@link #country} is the country he rebels against). */
+	public static final int REBEL = 3;
 
 	private static final EntityDataAccessor<Integer> DATA_ROLE = SynchedEntityData.defineId(SoldierEntity.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Integer> DATA_COLOR = SynchedEntityData.defineId(SoldierEntity.class, EntityDataSerializers.INT);
@@ -148,6 +150,8 @@ public class SoldierEntity extends PathfinderMob {
 		Item gun;
 		if (role == BANDIT) {
 			gun = roll < 55 ? ModItems.AK74 : ModItems.PM;
+		} else if (role == REBEL) {
+			gun = roll < 40 ? ModItems.AK74 : ModItems.PM;
 		} else {
 			gun = roll < 70 ? ModItems.AK74 : roll < 88 ? ModItems.PKM : ModItems.SVD;
 			setItemSlot(EquipmentSlot.HEAD, new ItemStack(ModItems.HELMET));
@@ -159,6 +163,9 @@ public class SoldierEntity extends PathfinderMob {
 	public Component title() {
 		Politics p = level() instanceof ServerLevel sl ? Politics.get(sl.getServer()) : null;
 		Country c = p == null ? null : p.country(country);
+		if (role() == REBEL) {
+			return Component.translatable("entity.airdefense.soldier.rebel");
+		}
 		String key = switch (role()) {
 			case BANDIT -> "entity.airdefense.soldier.bandit";
 			case SOLDIER -> "entity.airdefense.soldier.soldier";
@@ -246,8 +253,14 @@ public class SoldierEntity extends PathfinderMob {
 		if (role() == BANDIT) {
 			return e instanceof SoldierEntity s && s.role() == BANDIT;
 		}
+		if (role() == REBEL) {
+			if (e instanceof SoldierEntity s) {
+				return s.role() == REBEL && s.home == home;
+			}
+			return e instanceof AbstractVillager || e instanceof WorkerEntity;
+		}
 		if (e instanceof SoldierEntity s) {
-			return s.role() != BANDIT && s.country == country && (country >= 0 || s.home == home);
+			return s.role() != BANDIT && s.role() != REBEL && s.country == country && (country >= 0 || s.home == home);
 		}
 		if (e instanceof AbstractVillager || e instanceof IronGolem || e instanceof WorkerEntity) {
 			return true;
@@ -270,8 +283,19 @@ public class SoldierEntity extends PathfinderMob {
 			return e instanceof Player || e instanceof SoldierEntity || e instanceof AbstractVillager || e instanceof IronGolem
 					|| e instanceof WorkerEntity;
 		}
+		if (role() == REBEL) {
+			// Rebels fight their ruler's guards and soldiers, and the ruler himself.
+			if (e instanceof SoldierEntity s) {
+				return (s.role() == GUARD || s.role() == SOLDIER) && s.country == country;
+			}
+			if (e instanceof Player p && level() instanceof ServerLevel sl) {
+				Country c = Politics.get(sl.getServer()).country(country);
+				return c != null && p.getUUID().equals(c.owner);
+			}
+			return false;
+		}
 		if (e instanceof SoldierEntity s) {
-			return s.role() == BANDIT || Nations.atWar(level(), country, s.country);
+			return s.role() == BANDIT || s.role() == REBEL && s.country == country || Nations.atWar(level(), country, s.country);
 		}
 		if (e instanceof Enemy) {
 			return true;
@@ -349,7 +373,7 @@ public class SoldierEntity extends PathfinderMob {
 			cooldown = 6;
 			return;
 		}
-		float spread = role() == BANDIT ? 3.0f : 1.4f;
+		float spread = role() == BANDIT ? 3.0f : role() == REBEL ? 2.5f : 1.4f;
 		Vec3 dir = cone(straight, spread + gun.aimSpread);
 		GunServer.shoot(level, this, gun, eye, dir, GunServer.muzzle(this, straight), ++round);
 		ammo--;

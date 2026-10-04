@@ -43,6 +43,7 @@ public final class SkinBaker {
 			paintPerson(img, p);
 			switch (role) {
 				case SoldierEntity.BANDIT -> bandit(img, p, look);
+				case SoldierEntity.REBEL -> rebel(img, p, look);
 				case SoldierEntity.SOLDIER -> soldierClothes(img, p, color);
 				default -> guardClothes(img, p, color);
 			}
@@ -425,6 +426,23 @@ public final class SkinBaker {
 				front.set(img, i, 3, p.skin);
 			}
 		}
+	}
+
+	/** A villager who took up arms: his everyday clothes, a red scarf over the mouth, a red band on the arm. */
+	private static void rebel(NativeImage img, Person p, int look) {
+		villagerClothes(img, p, "none", "plains", look);
+		int red = 0xFFB0201C;
+		Face front = HEAD.front();
+		for (int i = 0; i < 8; i++) {
+			front.set(img, i, 6, red);
+			front.set(img, i, 7, shade(red, 0.85f));
+		}
+		for (Face f : new Face[]{HEAD.right(), HEAD.left(), HEAD.back()}) {
+			f.row(img, 6, red);
+			f.row(img, 7, shade(red, 0.85f));
+		}
+		LEFT_ARM.band(img, 2, 3, red);
+		RIGHT_ARM.band(img, 2, 2, red);
 	}
 
 	private static void villagerClothes(NativeImage img, Person p, String profession, String type, int look) {

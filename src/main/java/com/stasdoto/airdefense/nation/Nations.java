@@ -98,6 +98,7 @@ public final class Nations {
 			bandits(level, p);
 		}
 		Economy.tick(level, p);
+		Unrest.tick(level, p);
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -257,7 +258,7 @@ public final class Nations {
 			s.guardsAlive = guards.size();
 			Country c = p.country(s.country);
 			int want = c != null ? Math.max(1, Math.min(5, s.population / 3)) + (c.cityState ? 1 : 0) : s.population >= 5 ? 1 : 0;
-			if (guards.size() < want && s.captureTicks == 0 && level.getNearestPlayer(s.flag.getX(), s.flag.getY(), s.flag.getZ(), 12, false) == null
+			if (guards.size() < want && s.captureTicks == 0 && !s.riot && level.getNearestPlayer(s.flag.getX(), s.flag.getY(), s.flag.getZ(), 12, false) == null
 					&& level.getNearestPlayer(s.flag.getX(), s.flag.getY(), s.flag.getZ(), 160, false) != null) {
 				spawnGuard(level, s, c);
 			}
@@ -370,9 +371,17 @@ public final class Nations {
 	/** The village changes hands: new flag, new guards in time; the old country loses it. */
 	public static void transfer(ServerLevel level, Politics p, Settlement s, Country to) {
 		Country from = p.country(s.country);
+		if (s.riot) {
+			for (SoldierEntity r : Unrest.rebels(level, s)) {
+				r.demobilize(level);
+			}
+			s.riot = false;
+			s.riotTicks = 0;
+		}
 		s.country = to.id;
 		s.captureTicks = 0;
 		s.capturer = null;
+		s.capturedAt = -1;
 		if (to.capital < 0 || p.settlements.get(to.capital) == null) {
 			to.capital = s.id;
 		}
@@ -425,6 +434,8 @@ public final class Nations {
 			player.sendOverlayMessage(Component.translatable("nation.airdefense.capturing", s.name, s.captureTicks, CAPTURE_SECONDS));
 			if (s.captureTicks >= CAPTURE_SECONDS) {
 				transfer(level, p, s, countryOf(level, p, player, true));
+				// A village taken by force does not love its new ruler at first.
+				s.capturedAt = level.getGameTime();
 				player.sendSystemMessage(Component.translatable("nation.airdefense.captured", s.name));
 				level.playSound(null, s.flag, SoundEvents.RAID_HORN.value(), SoundSource.NEUTRAL, 2f, 1f);
 			}
@@ -462,7 +473,7 @@ public final class Nations {
 
 	/** A player shot at a country's man: that country remembers him (its guards shoot on sight). */
 	public static void offended(ServerLevel level, SoldierEntity soldier, Player player) {
-		if (soldier.role() == SoldierEntity.BANDIT) {
+		if (soldier.role() == SoldierEntity.BANDIT || soldier.role() == SoldierEntity.REBEL) {
 			return;
 		}
 		Politics p = Politics.get(level.getServer());

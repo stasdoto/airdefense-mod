@@ -32,8 +32,17 @@ public final class Settlement {
 			Codec.unboundedMap(UUIDUtil.STRING_CODEC, Codec.INT).optionalFieldOf("bonus", Map.of()).forGetter(s -> s.bonus),
 			UUIDUtil.CODEC.listOf().optionalFieldOf("guards", List.of()).forGetter(s -> new ArrayList<>(s.guards)),
 			UUIDUtil.CODEC.listOf().optionalFieldOf("soldiers", List.of()).forGetter(s -> new ArrayList<>(s.soldiers)),
-			VillageEconomy.CODEC.optionalFieldOf("economy").forGetter(s -> s.eco.isEmpty() ? Optional.empty() : Optional.of(s.eco))
-	).apply(i, Settlement::new));
+			VillageEconomy.CODEC.optionalFieldOf("economy").forGetter(s -> s.eco.isEmpty() ? Optional.empty() : Optional.of(s.eco)),
+			Codec.LONG.optionalFieldOf("captured_at", -1L).forGetter(s -> s.capturedAt),
+			Codec.LONG.optionalFieldOf("calm_until", 0L).forGetter(s -> s.calmUntil),
+			Codec.BOOL.optionalFieldOf("riot", false).forGetter(s -> s.riot)
+	).apply(i, (id, name, center, flag, country, elder, population, bonus, guards, soldiers, eco, capturedAt, calmUntil, riot) -> {
+		Settlement s = new Settlement(id, name, center, flag, country, elder, population, bonus, guards, soldiers, eco);
+		s.capturedAt = capturedAt;
+		s.calmUntil = calmUntil;
+		s.riot = riot;
+		return s;
+	}));
 
 	public final int id;
 	public String name;
@@ -52,7 +61,15 @@ public final class Settlement {
 	/** Store, buildings, workers, hangar. */
 	public final VillageEconomy eco;
 
-	// Not saved: a capture in progress.
+	/** When it was taken by force (game time, -1 = not lately): its people resent the new ruler for a while. */
+	public long capturedAt = -1;
+	/** Until when gifts (or a put-down riot) keep the people quiet. */
+	public long calmUntil;
+	/** A riot is going on. */
+	public boolean riot;
+
+	// Not saved: a capture in progress, how long rebels have held the flag.
+	public int riotTicks;
 	public UUID capturer;
 	public int captureTicks;
 	public int guardsAlive;

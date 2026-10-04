@@ -815,7 +815,7 @@ public class TacticalMapScreen extends Screen {
 			if (sx < mx0 || sx >= mx1 || sy < my0 || sy >= my1) {
 				continue;
 			}
-			int rim = m.role() == SoldierEntity.BANDIT ? 0xFFFF3A2A : m.mine() ? 0xFFFFFFFF : 0xFF101418;
+			int rim = m.role() == SoldierEntity.BANDIT || m.role() == SoldierEntity.REBEL ? 0xFFFF3A2A : m.mine() ? 0xFFFFFFFF : 0xFF101418;
 			g.fill(sx - 2, sy - 2, sx + 2, sy + 2, rim);
 			g.fill(sx - 1, sy - 1, sx + 1, sy + 1, m.color());
 		}

@@ -17,7 +17,8 @@ import com.stasdoto.airdefense.AirDefense;
  */
 public record VillageEconomyPayload(int id, int wood, int stone, int iron, int cap, boolean free, List<Integer> jobs, int idle,
 		int beds, int freeBeds, int births, List<Integer> built, List<Integer> queue, int builders, boolean hangar,
-		List<Integer> hangarQueue, int hangarPercent, int birthEvery) implements CustomPacketPayload {
+		List<Integer> hangarQueue, int hangarPercent, int birthEvery, int mood, List<Integer> moodReasons, int rebels, int calmPrice)
+		implements CustomPacketPayload {
 	public static final Type<VillageEconomyPayload> TYPE = new Type<>(AirDefense.id("village_economy"));
 	private static final StreamCodec<ByteBuf, List<Integer>> INTS = ByteBufCodecs.VAR_INT.apply(ByteBufCodecs.list(64));
 	public static final StreamCodec<ByteBuf, VillageEconomyPayload> CODEC = new StreamCodec<>() {
@@ -26,7 +27,8 @@ public record VillageEconomyPayload(int id, int wood, int stone, int iron, int c
 			return new VillageEconomyPayload(ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b),
 					ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b), b.readBoolean(), INTS.decode(b), ByteBufCodecs.VAR_INT.decode(b),
 					ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b), INTS.decode(b), INTS.decode(b),
-					ByteBufCodecs.VAR_INT.decode(b), b.readBoolean(), INTS.decode(b), ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b));
+					ByteBufCodecs.VAR_INT.decode(b), b.readBoolean(), INTS.decode(b), ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b),
+					b.readInt(), INTS.decode(b), ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b));
 		}
 
 		@Override
@@ -49,6 +51,10 @@ public record VillageEconomyPayload(int id, int wood, int stone, int iron, int c
 			INTS.encode(b, p.hangarQueue);
 			ByteBufCodecs.VAR_INT.encode(b, p.hangarPercent);
 			ByteBufCodecs.VAR_INT.encode(b, p.birthEvery);
+			b.writeInt(p.mood);
+			INTS.encode(b, p.moodReasons);
+			ByteBufCodecs.VAR_INT.encode(b, p.rebels);
+			ByteBufCodecs.VAR_INT.encode(b, p.calmPrice);
 		}
 	};
 

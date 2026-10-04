@@ -67,6 +67,7 @@ public class SettlementScreen extends Screen {
 	private final List<Button> buildButtons = new ArrayList<>();
 	private final List<Button> hangarButtons = new ArrayList<>();
 	private Button cancel;
+	private Button calm;
 
 	public SettlementScreen(SettlementInfoPayload info) {
 		this(info, null);
@@ -137,6 +138,8 @@ public class SettlementScreen extends Screen {
 				b -> send(NationActionPayload.RECALL, 0, 0)).bounds(x0 + 6, by + 24, bw, 20).build());
 		dismiss = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.dismiss"),
 				b -> send(NationActionPayload.DEMOBILIZE, 0, 0)).bounds(x0 + 12 + bw, by + 24, bw, 20).build());
+		calm = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.calm", 0),
+				b -> send(NationActionPayload.CALM, 0, 0)).bounds(x0 + w - 136, y0 + 54, 128, 14).build());
 		// Tabs.
 		int tw = (w - 16 - 9) / 4;
 		String[] names = {"overview", "work", "build", "hangar"};
@@ -219,6 +222,10 @@ public class SettlementScreen extends Screen {
 		for (int i = 0; i < tabs.length; i++) {
 			tabs[i].visible = mine;
 			tabs[i].active = tab != i;
+		}
+		calm.visible = mine && overview && eco != null && (eco.mood() < 0 || eco.rebels() > 0);
+		if (eco != null) {
+			calm.setMessage(Component.translatable("screen.airdefense.village.calm", eco.calmPrice()));
 		}
 		for (Button b : workButtons) {
 			b.visible = mine && tab == WORK;
@@ -333,6 +340,34 @@ public class SettlementScreen extends Screen {
 					g.text(font, Component.translatable("screen.airdefense.village.no_births"), x, y, C_BAD);
 				}
 				y += 11;
+				// The mood, and what makes it.
+				int mood = eco.mood();
+				String word = mood >= 10 ? "happy" : mood >= 0 ? "calm" : mood >= -15 ? "unhappy" : "angry";
+				int moodColor = mood >= 10 ? C_OK : mood >= 0 ? C_TEXT : mood >= -15 ? 0xFFFFB04A : C_BAD;
+				g.text(font, Component.translatable("screen.airdefense.village.mood",
+						Component.translatable("screen.airdefense.village.mood." + word), (mood > 0 ? "+" : "") + mood), x, y, moodColor);
+				y += 10;
+				StringBuilder why = new StringBuilder();
+				for (int code : eco.moodReasons()) {
+					int reason = code / 1000;
+					int value = code % 1000 - 500;
+					if (reason == 0 || value == 0) {
+						continue;
+					}
+					if (why.length() > 0) {
+						why.append(", ");
+					}
+					why.append(Component.translatable("screen.airdefense.village.mood.reason." + reason).getString()).append(' ')
+							.append(value > 0 ? "+" : "").append(value);
+				}
+				if (why.length() > 0) {
+					small(g, why.toString(), x, y, C_DIM);
+					y += 9 * Math.max(1, (int) Math.ceil(font.width(why.toString()) * 0.75 / (w - 16)));
+				}
+				if (eco.rebels() > 0) {
+					g.text(font, Component.translatable("screen.airdefense.village.riot", eco.rebels()), x, y + 1, C_BAD);
+					y += 12;
+				}
 			}
 		}
 		// Respect: a bar from -100 to +100 with the threshold for the charter.
@@ -355,8 +390,6 @@ public class SettlementScreen extends Screen {
 			}
 			y += 20;
 			small(g, Component.translatable("screen.airdefense.village.how").getString(), x, Math.min(y, y0 + h - 64), C_DIM);
-		} else {
-			small(g, Component.translatable("screen.airdefense.village.orders").getString(), x, Math.min(y + 2, y0 + h - 62), C_DIM);
 		}
 	}
 

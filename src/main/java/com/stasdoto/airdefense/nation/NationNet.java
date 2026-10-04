@@ -109,6 +109,11 @@ public final class NationNet {
 				}
 			}
 			case NationActionPayload.WORKERS_HOME -> Economy.allHome(level, player, s);
+			case NationActionPayload.CALM -> {
+				if (near || tablet) {
+					Unrest.calm(level, player, s);
+				}
+			}
 			case NationActionPayload.OPEN -> {
 				if (near || tablet && Economy.owner(politics, s, player)) {
 					sendInfo(level, player, s, true);
@@ -167,10 +172,16 @@ public final class NationNet {
 		for (int code : e.hangar) {
 			hangar.add(code % 100);
 		}
+		Unrest.Mood mood = Unrest.mood(level, Politics.get(level.getServer()), s);
+		List<Integer> reasons = new ArrayList<>();
+		for (int[] r : mood.reasons()) {
+			reasons.add(r[0] * 1000 + r[1] + 500);
+		}
 		ServerPlayNetworking.send(player, new VillageEconomyPayload(s.id, e.stock[0], e.stock[1], e.stock[2], e.cap(),
 				player.getAbilities().instabuild, jobs, Economy.free(level, s).size(), Economy.beds(level, s, false), Economy.beds(level, s, true),
 				e.births, built, queue, builders, e.count(BuildingType.HANGAR) > 0, hangar, Economy.hangarPercent(s),
-				Economy.birthEvery(level, Politics.get(level.getServer()), s)));
+				Economy.birthEvery(level, Politics.get(level.getServer()), s), mood.value(), reasons,
+				s.riot ? Unrest.rebels(level, s).size() : 0, Unrest.calmPrice(s)));
 	}
 
 	/** Villages within 2000 blocks and the soldiers that are loaded within 700. */
@@ -192,8 +203,8 @@ public final class NationNet {
 				e -> e.isAlive() && e.distanceToSqr(player) < 700 * 700)) {
 			Country c = p.country(e.country());
 			men.add(new NationMapPayload.Man(e.getId(), (int) Math.floor(e.getX()), (int) Math.floor(e.getZ()), e.role(),
-					e.role() == SoldierEntity.BANDIT ? 0xFF303030 : c == null ? 0xFFE8E8E8 : c.argb(),
-					own != null && e.country() == own.id && e.role() != SoldierEntity.BANDIT, e.home()));
+					e.role() == SoldierEntity.BANDIT ? 0xFF303030 : e.role() == SoldierEntity.REBEL ? 0xFFD03030 : c == null ? 0xFFE8E8E8 : c.argb(),
+					own != null && e.country() == own.id && e.role() != SoldierEntity.BANDIT && e.role() != SoldierEntity.REBEL, e.home()));
 			if (men.size() >= 200) {
 				break;
 			}

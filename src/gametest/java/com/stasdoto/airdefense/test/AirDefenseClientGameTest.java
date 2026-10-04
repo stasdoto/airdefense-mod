@@ -73,6 +73,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("breeding")) {
 				breeding(ctx, server);
 			}
+			if (scene("unrest")) {
+				unrest(ctx, server);
+			}
 			if (scene("strike")) {
 				unopposedIskander(ctx, server);
 				effectsCloseup(ctx, server, false);
@@ -1470,11 +1473,11 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		camera(server, x + 0.5, g + 6, 14.5, 180, 25);
 		ctx.waitTicks(40);
 		village(server, x, 0, new String[]{"none", "farmer", "none", "librarian", "none"});
-		// Four free beds by the square.
+		// Eight beds by the square (the five villagers take five of them).
 		server.runOnServer(s -> {
 			ServerLevel l = s.overworld();
-			for (int i = 0; i < 4; i++) {
-				BlockPos foot = new BlockPos(x - 3 + i * 2, g, 8);
+			for (int i = 0; i < 8; i++) {
+				BlockPos foot = new BlockPos(x - 7 + i * 2, g, 8);
 				var bed = Blocks.BED.pick(net.minecraft.world.item.DyeColor.RED).defaultBlockState()
 						.setValue(net.minecraft.world.level.block.BedBlock.FACING, net.minecraft.core.Direction.SOUTH);
 				l.setBlock(foot, bed.setValue(net.minecraft.world.level.block.BedBlock.PART, net.minecraft.world.level.block.state.properties.BedPart.FOOT), Block.UPDATE_ALL);
@@ -1539,6 +1542,111 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
 		server.runCommand("clear @a");
 		server.runCommand("difficulty normal");
+		server.runCommand("gamemode spectator @a");
+	}
+
+	private void unrest(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 36000;
+		int g = ground;
+		server.runCommand("difficulty normal");
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 1000");
+		camera(server, x + 0.5, g + 8, 16.5, 180, 25);
+		ctx.waitTicks(40);
+		village(server, x, 0, new String[]{"none", "farmer", "none", "librarian", "none", "mason", "none", "cleric", "none", "fisherman"});
+		waitUntil(ctx, () -> settlementAt(server, x, 0) >= 0, 400);
+		int id = settlementAt(server, x, 0);
+		server.runCommand("gamemode creative @a");
+		camera(server, x + 0.5, g, 9.5, 180, 0);
+		ctx.waitTicks(5);
+		server.runOnServer(s -> {
+			var l = s.overworld();
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var st = p.settlements.get(id);
+			var player = s.getPlayerList().getPlayers().getFirst();
+			com.stasdoto.airdefense.nation.Nations.takeOver(l, player, st);
+			// Half the village called up: the people do not like it.
+			com.stasdoto.airdefense.nation.Nations.mobilize(l, player, st, 99);
+			var c = p.country(st.country);
+			com.stasdoto.airdefense.nation.Nations.spawnGuard(l, st, c);
+		});
+		ctx.waitTicks(10);
+		ecoScreen(ctx, server, id, com.stasdoto.airdefense.client.nation.SettlementScreen.OVERVIEW);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("130_mood");
+		int mood = server.computeOnServer(s -> com.stasdoto.airdefense.nation.Unrest.mood(s.overworld(), com.stasdoto.airdefense.nation.Politics.get(s),
+				com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id)).value());
+		AirDefense.LOGGER.info("[airdefense-test] RESULT mood: {} with half the village called up", mood);
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+
+		// A riot: rebels make for the flag, the guard and the soldiers fight them.
+		boolean started = server.computeOnServer(s -> com.stasdoto.airdefense.nation.Unrest.startRiot(s.overworld(),
+				com.stasdoto.airdefense.nation.Politics.get(s), com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id)));
+		int rebels = server.computeOnServer(s -> com.stasdoto.airdefense.nation.Unrest.rebels(s.overworld(),
+				com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id)).size());
+		server.runCommand("gamemode spectator @a");
+		camera(server, x + 8.5, g + 5, 10.5, 140, 20);
+		ctx.waitTicks(80);
+		ctx.takeScreenshot("131_riot");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT riot: started {} rebels {}", started, rebels);
+		// Calmed with gifts (creative: free): the rebels go home.
+		server.runCommand("gamemode creative @a");
+		camera(server, x + 0.5, g, 9.5, 180, 0);
+		ctx.waitTicks(5);
+		ecoScreen(ctx, server, id, com.stasdoto.airdefense.client.nation.SettlementScreen.OVERVIEW);
+		ctx.takeScreenshot("132_riot_screen");
+		ecoAct(ctx, com.stasdoto.airdefense.nation.NationActionPayload.CALM, 0);
+		ctx.waitTicks(20);
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		int afterCalm = server.computeOnServer(s -> com.stasdoto.airdefense.nation.Unrest.rebels(s.overworld(),
+				com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id)).size());
+		AirDefense.LOGGER.info("[airdefense-test] RESULT calm: rebels left {} (calmed {})", afterCalm, com.stasdoto.airdefense.nation.Unrest.calmed);
+
+		// Another riot with nobody to stop it: the village breaks away.
+		server.runOnServer(s -> {
+			var l = s.overworld();
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var st = p.settlements.get(id);
+			st.calmUntil = 0;
+			for (var e : com.stasdoto.airdefense.nation.Nations.soldiers(l, st)) {
+				e.demobilize(l);
+			}
+			st.soldiers.clear();
+			for (var gd : com.stasdoto.airdefense.nation.Nations.guards(l, st)) {
+				gd.discard();
+			}
+			com.stasdoto.airdefense.nation.Unrest.startRiot(l, p, st);
+		});
+		server.runCommand("gamemode spectator @a");
+		camera(server, x + 8.5, g + 6, 12.5, 140, 25);
+		int took = waitUntil(ctx, () -> server.computeOnServer(s -> com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id).country < 0), 1200);
+		ctx.takeScreenshot("133_seceded");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT secede: after {} ticks (seceded {})", took, com.stasdoto.airdefense.nation.Unrest.seceded);
+
+		// A riot put down: the rebels are beaten.
+		int bx = x + 200;
+		camera(server, bx + 0.5, g + 8, 16.5, 180, 25);
+		ctx.waitTicks(30);
+		village(server, bx, 0, new String[]{"none", "farmer", "none", "mason", "none"});
+		waitUntil(ctx, () -> settlementAt(server, bx, 0) >= 0, 400);
+		int id2 = settlementAt(server, bx, 0);
+		server.runOnServer(s -> {
+			var l = s.overworld();
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var st = p.settlements.get(id2);
+			com.stasdoto.airdefense.nation.Nations.takeOver(l, s.getPlayerList().getPlayers().getFirst(), st);
+			com.stasdoto.airdefense.nation.Unrest.startRiot(l, p, st);
+		});
+		ctx.waitTicks(40);
+		server.runOnServer(s -> {
+			for (var e : com.stasdoto.airdefense.nation.Unrest.rebels(s.overworld(), com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id2))) {
+				e.kill(s.overworld());
+			}
+		});
+		int over = waitUntil(ctx, () -> server.computeOnServer(s -> !com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id2).riot), 200);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT suppressed: riot over after {} ticks (suppressed {}, riots {})", over,
+				com.stasdoto.airdefense.nation.Unrest.suppressed, com.stasdoto.airdefense.nation.Unrest.riots);
+		server.runCommand("kill @e[type=airdefense:soldier,distance=..10000]");
 		server.runCommand("gamemode spectator @a");
 	}
 
