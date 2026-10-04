@@ -33,7 +33,7 @@ jobs:
       - name: build
         id: build
         continue-on-error: true
-        run: ./gradlew build --stacktrace --warning-mode=none 2>&1 | tee build-log.txt; exit ${PIPESTATUS[0]}
+        run: ./gradlew build compileGametestJava --stacktrace --warning-mode=none 2>&1 | tee build-log.txt; exit ${PIPESTATUS[0]}
       - name: probe signatures
         if: ${{ inputs.probe != '' }}
         env:

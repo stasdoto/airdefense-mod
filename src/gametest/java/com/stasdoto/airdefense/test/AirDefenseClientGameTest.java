@@ -32,7 +32,6 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		System.setProperty("airdefense.debug", "true");
 		ctx.runOnClient(mc -> {
 			mc.options.renderDistance().set(12);
-			mc.options.hideGui = true;
 		});
 		try (TestSingleplayerContext sp = ctx.worldBuilder().setUseConsistentSettings(true).create()) {
 			TestServerContext server = sp.getServer();
