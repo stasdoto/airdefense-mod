@@ -196,8 +196,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			ctx.takeScreenshot(p + i + "_fx_" + at[i] + "t");
 		}
 		ctx.waitTicks(60);
-		AirDefense.LOGGER.info("[airdefense-test] crater flames spawned so far: {}",
-				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.fx.FxClient.FLAMES_SPAWNED));
+		int flames = com.stasdoto.airdefense.client.fx.FxClient.FLAMES_SPAWNED;
+		AirDefense.LOGGER.info("[airdefense-test] crater flames spawned so far: {}", flames);
 	}
 
 	private void patriotVsIskander(ClientGameTestContext ctx, TestServerContext server) {
