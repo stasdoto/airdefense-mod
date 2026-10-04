@@ -32,6 +32,11 @@ public final class ShotFx {
 	 * @param right unit vector to the shooter's right (where the case flies), or null for no case
 	 */
 	public static void shot(Minecraft mc, GunType gun, Vec3 muzzle, Vec3 to, int hit, int round, Vec3 right) {
+		shot(mc, gun, muzzle, to, hit, round, right, false);
+	}
+
+	/** @param own the shooter's own first-person view: a smaller flash and no smoke ball right in front of the eyes */
+	public static void shot(Minecraft mc, GunType gun, Vec3 muzzle, Vec3 to, int hit, int round, Vec3 right, boolean own) {
 		ClientLevel level = mc.level;
 		if (level == null) {
 			return;
@@ -41,10 +46,14 @@ public final class ShotFx {
 		Vec3 d = to.subtract(muzzle);
 		double dist = d.length();
 		Vec3 dir = dist > 1e-4 ? d.scale(1 / dist) : Vec3.ZERO;
-		float flash = gun == GunType.PM ? 0.22f : gun == GunType.SVD ? 0.5f : 0.36f;
-		pe.add(FxClient.flash(level, muzzle.x, muzzle.y, muzzle.z, flash).life(1, 2));
-		pe.add(FxClient.glow(level, muzzle.x, muzzle.y, muzzle.z, flash * 5, 2));
-		pe.add(FxClient.smokeWhite(level, muzzle.x, muzzle.y, muzzle.z, dir.x * 0.04, 0.01, dir.z * 0.04, 0.12f).life(20, 34));
+		float flash = (gun == GunType.PM ? 0.16f : gun == GunType.SVD ? 0.34f : 0.24f) * (own ? 0.6f : 1f);
+		pe.add(FxClient.flash(level, muzzle.x, muzzle.y, muzzle.z, flash).life(1, 1));
+		// A short light that brightens the surroundings at night (small and faint, or it hangs there as a disc).
+		pe.add(FxClient.glow(level, muzzle.x, muzzle.y, muzzle.z, flash * 1.6f, 1).alpha(0.22f, 1, 0.2f));
+		if (!own) {
+			Vec3 puff = muzzle.add(dir.scale(0.4));
+			pe.add(FxClient.smokeWhite(level, puff.x, puff.y, puff.z, dir.x * 0.03, 0.01, dir.z * 0.03, 0.05f).life(14, 24));
+		}
 		if (right != null) {
 			Vec3 port = muzzle.subtract(dir.scale(gun.longGun() ? 0.55 : 0.2));
 			Vec3 v = right.scale(0.1 + r.nextDouble() * 0.05).add(0, 0.1 + r.nextDouble() * 0.06, 0).subtract(dir.scale(0.02));

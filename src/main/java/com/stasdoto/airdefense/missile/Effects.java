@@ -190,7 +190,7 @@ public final class Effects {
 					!= HitResult.Type.MISS) {
 				continue;
 			}
-			float dmg = (float) (18 * Math.pow(1 - d / reach, 1.4));
+			float dmg = (float) (28 * Math.pow(1 - d / reach, 1.3));
 			if (dmg > 0.5f) {
 				e.hurtServer(level, ModDamageTypes.shrapnel(level, grenade, thrower), dmg);
 			}

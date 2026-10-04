@@ -200,7 +200,8 @@ def gun_models():
         hip_fp = {'rotation': [0, 4, 0], 'translation': [0, 1.5 if long_gun else 2.5, 0], 'scale': [scale] * 3}
         # Aimed: the sights (about 2 units above the grip) on the middle of the screen.
         sight = 2.2 * k * scale / 16
-        aim_fp = {'rotation': [0, 0, 0], 'translation': [-8.96, round((0.52 - sight - 0.02) * 16, 2), 2.5],
+        # (pushed a little forward so the stock is not right in front of the eye)
+        aim_fp = {'rotation': [0, 0, 0], 'translation': [-8.96, round((0.52 - sight - 0.035) * 16, 2), -2.5],
                   'scale': [scale] * 3}
         if name == 'svd':
             # Through the scope the rifle itself is not seen.
@@ -208,7 +209,12 @@ def gun_models():
         # Third person: arms raised in the charged-crossbow hold, the gun along the forearm.
         tp = {'rotation': [0, 0, 0], 'translation': [0, 0.5, -1.0], 'scale': [scale] * 3}
         tp_l = dict(tp)
-        for variant, fp in (('', hip_fp), ('_aim', aim_fp)):
+        variants = [('', hip_fp, elements), ('_aim', aim_fp, elements)]
+        if name == 'rpg7':
+            # Fired: the tube without the grenade sticking out of it.
+            empty = [element(b, k) for i, b in enumerate(boxes) if not 4 <= i <= 8]
+            variants += [('_empty', hip_fp, empty), ('_aim_empty', aim_fp, empty)]
+        for variant, fp, els in variants:
             display = {
                 'firstperson_righthand': fp,
                 'firstperson_lefthand': fp,
@@ -216,19 +222,25 @@ def gun_models():
                 'thirdperson_lefthand': tp_l,
                 'head': {'rotation': [0, 90, 0], 'translation': [0, 0, 0], 'scale': [scale] * 3},
             }
-            write_json({'textures': textures, 'elements': elements, 'display': display}, 'models', 'item', name + variant + '.json')
+            write_json({'textures': textures, 'elements': els, 'display': display}, 'models', 'item', name + variant + '.json')
         write_json({'parent': 'minecraft:item/generated', 'textures': {'layer0': 'airdefense:item/' + name}},
                    'models', 'item', name + '_icon.json')
+        def held(suffix):
+            return {
+                'type': 'minecraft:condition',
+                'property': 'minecraft:using_item',
+                'on_true': {'type': 'minecraft:model', 'model': 'airdefense:item/' + name + '_aim' + suffix},
+                'on_false': {'type': 'minecraft:model', 'model': 'airdefense:item/' + name + suffix},
+            }
+        in_hand = held('')
+        if name == 'rpg7':
+            in_hand = {'type': 'minecraft:condition', 'property': 'minecraft:has_component', 'component': 'airdefense:ammo',
+                       'on_true': held(''), 'on_false': held('_empty')}
         write_json({'model': {
             'type': 'minecraft:select',
             'property': 'minecraft:display_context',
             'cases': [{'when': ['gui', 'ground', 'fixed'], 'model': {'type': 'minecraft:model', 'model': 'airdefense:item/' + name + '_icon'}}],
-            'fallback': {
-                'type': 'minecraft:condition',
-                'property': 'minecraft:using_item',
-                'on_true': {'type': 'minecraft:model', 'model': 'airdefense:item/' + name + '_aim'},
-                'on_false': {'type': 'minecraft:model', 'model': 'airdefense:item/' + name},
-            },
+            'fallback': in_hand,
         }}, 'items', name + '.json')
         gun_icon(name, boxes)
         print(f'{name}: scale {scale}')

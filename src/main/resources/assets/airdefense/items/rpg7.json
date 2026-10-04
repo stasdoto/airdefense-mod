@@ -17,14 +17,31 @@
     ],
     "fallback": {
       "type": "minecraft:condition",
-      "property": "minecraft:using_item",
+      "property": "minecraft:has_component",
+      "component": "airdefense:ammo",
       "on_true": {
-        "type": "minecraft:model",
-        "model": "airdefense:item/rpg7_aim"
+        "type": "minecraft:condition",
+        "property": "minecraft:using_item",
+        "on_true": {
+          "type": "minecraft:model",
+          "model": "airdefense:item/rpg7_aim"
+        },
+        "on_false": {
+          "type": "minecraft:model",
+          "model": "airdefense:item/rpg7"
+        }
       },
       "on_false": {
-        "type": "minecraft:model",
-        "model": "airdefense:item/rpg7"
+        "type": "minecraft:condition",
+        "property": "minecraft:using_item",
+        "on_true": {
+          "type": "minecraft:model",
+          "model": "airdefense:item/rpg7_aim_empty"
+        },
+        "on_false": {
+          "type": "minecraft:model",
+          "model": "airdefense:item/rpg7_empty"
+        }
       }
     }
   }

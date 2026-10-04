@@ -38,7 +38,11 @@ public class GunItem extends Item {
 	}
 
 	public static void setAmmo(ItemStack stack, int rounds) {
-		stack.set(ModComponents.AMMO, Math.max(0, rounds));
+		if (rounds <= 0) {
+			stack.remove(ModComponents.AMMO);
+		} else {
+			stack.set(ModComponents.AMMO, rounds);
+		}
 	}
 
 	/** A gun with a full magazine (what the creative tab hands out). */

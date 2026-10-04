@@ -44,30 +44,54 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			ground = server.computeOnServer(s -> s.overworld().getHeight(Heightmap.Types.MOTION_BLOCKING, 0, 0));
 			AirDefense.LOGGER.info("[airdefense-test] ground level {}", ground);
 
-			lineup(ctx, server);
-			drive(ctx, server);
-			tabletMap(ctx, server);
-			factory(ctx, server);
-			sounds(ctx, server);
-			smallArms(ctx, server);
-			unopposedIskander(ctx, server);
-			effectsCloseup(ctx, server, false);
-			server.runCommand("time set 14500");
-			effectsCloseup(ctx, server, true);
-			server.runCommand("time set 1000");
-			patriotVsIskander(ctx, server);
-			droneSwarm(ctx, server);
-			server.runCommand("time set 15000");
-			himarsVsNasams(ctx, server);
-			server.runCommand("time set 1000");
-			droneVsNasams(ctx, server);
-			cruiseVsIrisT(ctx, server);
-			droneVsIrisT(ctx, server);
-			manualDefense(ctx, server, VehicleType.GEPARD, 16500, "manual_gepard");
-			manualDefense(ctx, server, VehicleType.IRIS_T, 18000, "manual_iris_t");
+			// AIRDEFENSE_SCENES (from the workflow) picks scenes for a quick run; empty = everything.
+			if (scene("lineup")) {
+				lineup(ctx, server);
+			}
+			if (scene("drive")) {
+				drive(ctx, server);
+			}
+			if (scene("map")) {
+				tabletMap(ctx, server);
+			}
+			if (scene("factory")) {
+				factory(ctx, server);
+			}
+			if (scene("sounds")) {
+				sounds(ctx, server);
+			}
+			if (scene("smallArms")) {
+				smallArms(ctx, server);
+			}
+			if (scene("strike")) {
+				unopposedIskander(ctx, server);
+				effectsCloseup(ctx, server, false);
+				server.runCommand("time set 14500");
+				effectsCloseup(ctx, server, true);
+				server.runCommand("time set 1000");
+			}
+			if (scene("defense")) {
+				patriotVsIskander(ctx, server);
+				droneSwarm(ctx, server);
+				server.runCommand("time set 15000");
+				himarsVsNasams(ctx, server);
+				server.runCommand("time set 1000");
+				droneVsNasams(ctx, server);
+				cruiseVsIrisT(ctx, server);
+				droneVsIrisT(ctx, server);
+			}
+			if (scene("manual")) {
+				manualDefense(ctx, server, VehicleType.GEPARD, 16500, "manual_gepard");
+				manualDefense(ctx, server, VehicleType.IRIS_T, 18000, "manual_iris_t");
+			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
+	}
+
+	private static boolean scene(String name) {
+		String only = System.getenv("AIRDEFENSE_SCENES");
+		return only == null || only.isBlank() || java.util.Arrays.asList(only.trim().split("\\s+")).contains(name);
 	}
 
 	// --- scenes ------------------------------------------------------------------------------------

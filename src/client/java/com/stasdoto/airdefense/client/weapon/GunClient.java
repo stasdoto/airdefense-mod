@@ -241,7 +241,7 @@ public final class GunClient {
 			GunServer.Trace t = GunServer.trace(p.level(), p, p.getEyePosition(), dir, gun.range);
 			int hit = t.entity() == null ? (t.block() != null ? ShotPayload.HIT_BLOCK : ShotPayload.HIT_NONE)
 					: t.entity() instanceof LivingEntity && !(t.entity() instanceof VehicleEntity) ? ShotPayload.HIT_FLESH : ShotPayload.HIT_METAL;
-			ShotFx.shot(mc, gun, muzzle, t.pos(), hit, round, right);
+			ShotFx.shot(mc, gun, muzzle, t.pos(), hit, round, right, firstPerson);
 			SquadAudio.play(muzzle, SquadAudio.of(gun.report), 1f);
 		}
 		// Recoil: the muzzle climbs and wanders a little (less when aiming or crouching).

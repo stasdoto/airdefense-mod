@@ -16,6 +16,10 @@ on:
         description: "Publish signature-only stubs of the compile classpath (for local compile checks)"
         type: boolean
         default: false
+      scenes:
+        description: "In-game test: only these scenes (space-separated names, empty = all)"
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -81,6 +85,7 @@ jobs:
           SDL_AUDIODRIVER: dummy
           SDL_VIDEODRIVER: x11
           ALSOFT_DRIVERS: "null"
+          AIRDEFENSE_SCENES: ${{ inputs.scenes }}
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq xvfb mesa-utils libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-vulkan-drivers > /dev/null
           xvfb-run -a -s "-screen 0 1280x720x24+32 +extension GLX +render -noreset" glxinfo -B 2>&1 | head -20 > glxinfo.txt || true
