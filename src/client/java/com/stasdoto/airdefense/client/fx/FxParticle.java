@@ -27,6 +27,8 @@ public class FxParticle extends SingleQuadParticle {
 	private boolean wind;
 	private ParticleOptions trail;
 	private int trailEvery;
+	/** Growth time constant in ticks: smoke swells fast at first, then slowly (like real smoke). 0 = ease over the whole life. */
+	private float growTau;
 
 	public FxParticle(ClientLevel level, double x, double y, double z, double vx, double vy, double vz, SpriteSet sprites) {
 		super(level, x, y, z, sprites.get(level.getRandom()));
@@ -71,6 +73,11 @@ public class FxParticle extends SingleQuadParticle {
 		this.g1 = g2;
 		this.b1 = b2;
 		setColor(r, g, b);
+		return this;
+	}
+
+	public FxParticle grow(float tauTicks) {
+		this.growTau = tauTicks;
 		return this;
 	}
 
@@ -156,6 +163,10 @@ public class FxParticle extends SingleQuadParticle {
 
 	@Override
 	public float getQuadSize(float partialTick) {
+		if (growTau > 0) {
+			float k = 1f - (float) Math.exp(-(age + partialTick) / growTau);
+			return Mth.lerp(k, size0, size1);
+		}
 		float t = Mth.clamp((age + partialTick) / lifetime, 0, 1);
 		float eased = 1 - (1 - t) * (1 - t);
 		return Mth.lerp(eased, size0, size1);

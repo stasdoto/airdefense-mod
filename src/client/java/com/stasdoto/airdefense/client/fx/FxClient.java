@@ -74,7 +74,7 @@ public final class FxClient {
 	static FxParticle spark(ClientLevel l, double x, double y, double z, double vx, double vy, double vz) {
 		return base(ModParticles.SPARK, l, x, y, z, vx, vy, vz).life(25, 50).size(0.22f, 0.08f)
 				.color(1f, 0.9f, 0.55f, 1f, 0.3f, 0.05f).alpha(1f, 1, 0.6f).glow().drag(0.97f).falls(0.035f)
-				.smokeTrail(ModParticles.DEBRIS_SMOKE, 2);
+				.smokeTrail(ModParticles.DEBRIS_SMOKE, 1);
 	}
 
 	/** Gepard shell: a bright dot flying along the shot line (velocity = direction * speed, life set by the caller). */
@@ -93,34 +93,34 @@ public final class FxClient {
 		FxParticle p = base(dark ? ModParticles.TRAIL_DARK : ModParticles.TRAIL, l, x, y, z, vx, vy, vz)
 				.drag(0.9f).windy().rise(0.0004f).spin((l.getRandom().nextFloat() - 0.5f) * 0.01f);
 		if (dark) {
-			return p.life(200, 280).size(0.5f, 2.8f).alpha(0.75f, 3, 0.4f).color(0.6f, 0.56f, 0.5f, 0.74f, 0.73f, 0.72f);
+			return p.life(200, 280).size(0.8f, 3.2f).grow(16).alpha(0.72f, 2, 0.4f).color(0.6f, 0.56f, 0.5f, 0.74f, 0.73f, 0.72f);
 		}
-		return p.life(260, 360).size(0.45f, 3.4f).alpha(0.6f, 3, 0.45f).color(0.97f, 0.97f, 0.97f, 0.86f, 0.87f, 0.9f);
+		return p.life(260, 360).size(0.8f, 3.8f).grow(18).alpha(0.62f, 2, 0.45f).color(0.97f, 0.97f, 0.97f, 0.86f, 0.87f, 0.9f);
 	}
 
 	/** Heavy black-brown explosion smoke that slowly lightens as it spreads. */
 	static FxParticle smokeBig(ClientLevel l, double x, double y, double z, double vx, double vy, double vz, float scale) {
-		return base(ModParticles.SMOKE_BIG, l, x, y, z, vx, vy, vz).life(380, 620).size(2.2f * scale, 7.5f * scale)
+		return base(ModParticles.SMOKE_BIG, l, x, y, z, vx, vy, vz).life(380, 620).size(2.2f * scale, 7.5f * scale).grow(70)
 				.alpha(0.88f, 6, 0.55f).color(0.11f, 0.1f, 0.09f, 0.4f, 0.39f, 0.38f)
 				.drag(0.94f).rise(0.0012f).windy().spin((l.getRandom().nextFloat() - 0.5f) * 0.006f);
 	}
 
 	static FxParticle smokeWhite(ClientLevel l, double x, double y, double z, double vx, double vy, double vz, float scale) {
-		return base(ModParticles.SMOKE_WHITE, l, x, y, z, vx, vy, vz).life(160, 260).size(1.3f * scale, 5.5f * scale)
+		return base(ModParticles.SMOKE_WHITE, l, x, y, z, vx, vy, vz).life(160, 260).size(1.3f * scale, 5.5f * scale).grow(40)
 				.alpha(0.78f, 4, 0.45f).color(0.88f, 0.86f, 0.83f, 0.8f, 0.8f, 0.8f)
 				.drag(0.9f).rise(0.0008f).windy().spin((l.getRandom().nextFloat() - 0.5f) * 0.01f);
 	}
 
 	/** Dust thrown along the ground by the blast wave. */
 	static FxParticle dust(ClientLevel l, double x, double y, double z, double vx, double vy, double vz, float scale) {
-		return base(ModParticles.DUST, l, x, y, z, vx, vy, vz).life(100, 170).size(1.0f * scale, 4.5f * scale)
+		return base(ModParticles.DUST, l, x, y, z, vx, vy, vz).life(100, 170).size(1.0f * scale, 4.5f * scale).grow(30)
 				.alpha(0.8f, 3, 0.4f).color(0.52f, 0.45f, 0.35f, 0.62f, 0.58f, 0.52f)
 				.drag(0.88f).rise(0.0008f).windy();
 	}
 
 	static FxParticle debrisSmoke(ClientLevel l, double x, double y, double z, double vx, double vy, double vz) {
-		return base(ModParticles.DEBRIS_SMOKE, l, x, y, z, vx, vy, vz).life(50, 90).size(0.25f, 1.4f)
-				.alpha(0.7f, 2, 0.4f).color(0.18f, 0.17f, 0.16f, 0.45f, 0.45f, 0.45f).drag(0.9f).windy().rise(0.0006f);
+		return base(ModParticles.DEBRIS_SMOKE, l, x, y, z, vx, vy, vz).life(50, 90).size(0.35f, 1.6f).grow(10)
+				.alpha(0.42f, 1, 0.35f).color(0.18f, 0.17f, 0.16f, 0.45f, 0.45f, 0.45f).drag(0.9f).windy().rise(0.0006f);
 	}
 
 	// --- composite effects ------------------------------------------------------------------------------
@@ -154,18 +154,19 @@ public final class FxClient {
 	private static void groundImpact(Minecraft mc, ClientLevel level, Vec3 at, float power) {
 		RandomSource r = level.getRandom();
 		float scale = power / 6f;
-		mc.particleEngine.add(flash(level, at.x, at.y + 1, at.z, power * 1.6f));
+		mc.particleEngine.add(flash(level, at.x, at.y + 1 + power * 0.5, at.z, power * 1.4f));
 
 		// Fireball: a cluster of glowing animated fire puffs bursting outwards and up.
-		int fire = (int) (8 + power * 3);
+		int fire = (int) (14 + power * 4);
 		for (int i = 0; i < fire; i++) {
-			Vec3 d = randomDir(r, 0.15);
-			double sp = 0.12 + r.nextDouble() * 0.35 * scale;
-			mc.particleEngine.add(fireball(level, at.x + d.x * power * 0.3, at.y + 0.5 + Math.abs(d.y) * power * 0.3, at.z + d.z * power * 0.3,
-					d.x * sp, Math.abs(d.y) * sp + 0.05, d.z * sp, 1.4f + power * 0.3f));
+			Vec3 d = randomDir(r, 0.25);
+			double sp = 0.1 + r.nextDouble() * 0.3 * scale;
+			double lift = 1.0 + Math.abs(d.y) * power * 0.45;
+			mc.particleEngine.add(fireball(level, at.x + d.x * power * 0.3, at.y + lift, at.z + d.z * power * 0.3,
+					d.x * sp, Math.abs(d.y) * sp + 0.08, d.z * sp, 1.0f + power * 0.22f));
 		}
 		// Burning fragments arcing out of the blast.
-		int sparks = (int) (14 + power * 5);
+		int sparks = (int) (8 + power * 2.5);
 		for (int i = 0; i < sparks; i++) {
 			Vec3 d = randomDir(r, 0.35);
 			double sp = 0.4 + r.nextDouble() * 0.8;
@@ -207,7 +208,7 @@ public final class FxClient {
 					(threat ? 0.55f : 0.35f) + size * 0.06f));
 		}
 		// Fragments falling down with smoke trails.
-		int sparks = (int) ((threat ? 18 : 8) + size * 4);
+		int sparks = (int) ((threat ? 10 : 5) + size * 2);
 		for (int i = 0; i < sparks; i++) {
 			Vec3 d = randomDir(r, -1);
 			double sp = 0.2 + r.nextDouble() * 0.6;
