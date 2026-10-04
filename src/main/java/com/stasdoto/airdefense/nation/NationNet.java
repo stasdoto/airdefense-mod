@@ -216,7 +216,8 @@ public final class NationNet {
 			Country c = p.country(s.country);
 			villages.add(new NationMapPayload.Village(s.id, s.name, s.center.getX(), s.center.getY(), s.center.getZ(),
 					c == null ? 0xFFE8E8E8 : c.argb(), c == null ? "" : c.name, c != null && own != null && c.id == own.id,
-					s.population, s.guardsAlive, s.soldiers.size(), s.flag.getX(), s.flag.getZ(), c != null && own != null && own.atWarWith(c.id)));
+					s.population, s.guardsAlive, s.soldiers.size(), s.flag.getX(), s.flag.getZ(), c != null && own != null && own.atWarWith(c.id),
+					mapBuildings(s)));
 			if (villages.size() >= 64) {
 				break;
 			}
@@ -233,6 +234,21 @@ public final class NationNet {
 			}
 		}
 		ServerPlayNetworking.send(player, new NationMapPayload(villages, men));
+	}
+
+	/** A village's buildings for the map (see {@link NationMapPayload.Village}). */
+	private static List<Integer> mapBuildings(Settlement s) {
+		List<Integer> out = new ArrayList<>();
+		for (Building b : s.eco.buildings) {
+			if (b.type == BuildingType.ROADS || out.size() >= 60) {
+				continue;
+			}
+			out.add(b.type.ordinal() << 4 | b.facing.get2DDataValue() << 1 | (b.done ? 1 : 0));
+			int dx = b.origin.getX() - s.center.getX();
+			int dz = b.origin.getZ() - s.center.getZ();
+			out.add(dx << 16 | dz & 0xFFFF);
+		}
+		return out;
 	}
 
 	/** For the map: where a village's soldiers should go (a picked point). */

@@ -13,14 +13,19 @@ import com.stasdoto.airdefense.AirDefense;
 
 /** Server to client, with every map refresh: villages (with their owners' colours) and soldiers around the player. */
 public record NationMapPayload(List<Village> villages, List<Man> men) implements CustomPacketPayload {
+	/**
+	 * @param buildings two numbers per building: (type << 4) | (facing << 1) | done, and its door's offset from the
+	 *                  village square as (dx << 16) | (dz & 0xFFFF)
+	 */
 	public record Village(int id, String name, int x, int y, int z, int color, String country, boolean mine, int population, int guards,
-			int soldiers, int fx, int fz, boolean war) {
+			int soldiers, int fx, int fz, boolean war, List<Integer> buildings) {
 	}
 
 	public record Man(int id, int x, int z, int role, int color, boolean mine, int home) {
 	}
 
 	public static final Type<NationMapPayload> TYPE = new Type<>(AirDefense.id("nation_map"));
+	private static final StreamCodec<ByteBuf, List<Integer>> INTS = ByteBufCodecs.INT.apply(ByteBufCodecs.list(64));
 	public static final StreamCodec<ByteBuf, NationMapPayload> CODEC = new StreamCodec<>() {
 		@Override
 		public NationMapPayload decode(ByteBuf b) {
@@ -29,7 +34,7 @@ public record NationMapPayload(List<Village> villages, List<Man> men) implements
 			for (int i = 0; i < n; i++) {
 				v.add(new Village(ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.STRING_UTF8.decode(b), b.readInt(), b.readInt(), b.readInt(),
 						b.readInt(), ByteBufCodecs.STRING_UTF8.decode(b), b.readBoolean(), ByteBufCodecs.VAR_INT.decode(b),
-						ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b), b.readInt(), b.readInt(), b.readBoolean()));
+						ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b), b.readInt(), b.readInt(), b.readBoolean(), INTS.decode(b)));
 			}
 			int m = ByteBufCodecs.VAR_INT.decode(b);
 			List<Man> men = new ArrayList<>();
@@ -58,6 +63,7 @@ public record NationMapPayload(List<Village> villages, List<Man> men) implements
 				b.writeInt(v.fx);
 				b.writeInt(v.fz);
 				b.writeBoolean(v.war);
+				INTS.encode(b, v.buildings);
 			}
 			ByteBufCodecs.VAR_INT.encode(b, p.men.size());
 			for (Man m : p.men) {

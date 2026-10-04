@@ -792,6 +792,7 @@ public class TacticalMapScreen extends Screen {
 				circle(g, sx, sy, r - 1, (color & 0x00FFFFFF) | 0x60000000, 0);
 			}
 			boolean sel = v.id() == selectedVillage;
+			drawBuildings(g, v);
 			// The flag at the town square.
 			int fx = (int) toScreenX(v.fx());
 			int fy = (int) toScreenY(v.fz());
@@ -808,6 +809,66 @@ public class TacticalMapScreen extends Screen {
 			if (scale() >= 0.25f || sel || v.mine()) {
 				String label = v.name();
 				small(g, label, (int) sx - (int) (font.width(label) * 0.375f), (int) sy + 4, sel ? 0xFFFFFFFF : 0xFFE6E9EC);
+			}
+		}
+	}
+
+	/** A village's buildings: their footprints, coloured by kind (outlined only while they are going up). */
+	private void drawBuildings(GuiGraphicsExtractor g, NationMapPayload.Village v) {
+		List<Integer> list = v.buildings();
+		for (int i = 0; i + 1 < list.size(); i += 2) {
+			int head = list.get(i);
+			int off = list.get(i + 1);
+			com.stasdoto.airdefense.nation.BuildingType type = com.stasdoto.airdefense.nation.BuildingType.byId(head >> 4);
+			net.minecraft.core.Direction facing = net.minecraft.core.Direction.from2DDataValue(head >> 1 & 3);
+			boolean done = (head & 1) == 1;
+			int ox = v.x() + (off >> 16);
+			int oz = v.z() + (short) (off & 0xFFFF);
+			int hw = type.halfWidth();
+			net.minecraft.core.Direction right = facing.getClockWise();
+			// Two opposite corners of the footprint (local x from -hw to hw, z from 0 to depth - 1).
+			int ax = ox + right.getStepX() * -hw;
+			int az = oz + right.getStepZ() * -hw;
+			int bx = ox + right.getStepX() * hw + facing.getStepX() * (type.depth - 1);
+			int bz = oz + right.getStepZ() * hw + facing.getStepZ() * (type.depth - 1);
+			int x0 = (int) Math.floor(toScreenX(Math.min(ax, bx)));
+			int z0 = (int) Math.floor(toScreenY(Math.min(az, bz)));
+			int x1 = (int) Math.ceil(toScreenX(Math.max(ax, bx) + 1));
+			int z1 = (int) Math.ceil(toScreenY(Math.max(az, bz) + 1));
+			if (x1 < mx0 || x0 > mx1 || z1 < my0 || z0 > my1) {
+				continue;
+			}
+			x1 = Math.max(x1, x0 + 2);
+			z1 = Math.max(z1, z0 + 2);
+			int color = switch (type) {
+				case SMALL_HOUSE, HOUSE -> 0xFF9A6A3E;
+				case APARTMENTS -> 0xFFD8D8D2;
+				case BARRACKS -> 0xFF5E6A3A;
+				case HANGAR -> 0xFF8A8E92;
+				case FACTORY -> 0xFFA04A36;
+				case HOSPITAL -> 0xFFF2F2F2;
+				case WAREHOUSE -> 0xFFC8A060;
+				default -> 0xFF808080;
+			};
+			if (done) {
+				g.fill(x0, z0, x1, z1, 0xFF101418);
+				g.fill(x0 + 1, z0 + 1, x1 - 1, z1 - 1, color);
+				if (type == com.stasdoto.airdefense.nation.BuildingType.HOSPITAL && x1 - x0 >= 5) {
+					int cx = (x0 + x1) / 2;
+					int cz = (z0 + z1) / 2;
+					g.fill(cx - 1, cz - 2, cx + 1, cz + 2, 0xFFD02020);
+					g.fill(cx - 2, cz - 1, cx + 2, cz + 1, 0xFFD02020);
+				}
+			} else {
+				// Still going up: a dashed outline.
+				for (int x = x0; x < x1; x += 2) {
+					g.fill(x, z0, x + 1, z0 + 1, color);
+					g.fill(x, z1 - 1, x + 1, z1, color);
+				}
+				for (int z = z0; z < z1; z += 2) {
+					g.fill(x0, z, x0 + 1, z + 1, color);
+					g.fill(x1 - 1, z, x1, z + 1, color);
+				}
 			}
 		}
 	}

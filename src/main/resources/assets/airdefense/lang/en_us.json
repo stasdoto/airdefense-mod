@@ -391,5 +391,18 @@
   "screen.airdefense.village.tribute": "Pay (%s emeralds)",
   "screen.airdefense.village.at_war": "You are at war with this country",
   "screen.airdefense.map.village_war": "%s · WAR",
-  "screen.airdefense.map.enemy": "Enemy: you are at war with this country"
+  "screen.airdefense.map.enemy": "Enemy: you are at war with this country",
+  "guide.airdefense.title": "Air Defense guide",
+  "guide.airdefense.page.1": "Air Defense - guide\n\nVehicles and missiles, air defence, the factory, weapons, villages and countries, building, the army and wars.\n\nTurn the page →",
+  "guide.airdefense.page.2": "VEHICLES\n\nPlace them from the Air Defense tab (right click the ground) or have them made in a village hangar.\nRight click a vehicle - get in.\nG - change seat.\nR - raise or stow the launcher.\nShift - get out.",
+  "guide.airdefense.page.3": "TABLET\n\nRight click - the map with your vehicles.\nPick a vehicle, click a target on the map, press Fire.\nShift + right click - mark the block you look at.",
+  "guide.airdefense.page.4": "AIR DEFENCE\n\nV - mode: auto / manual / off.\nAuto: the vehicle shoots down missiles and drones by itself.\nManual: take the gunner's seat, aim, left click fires.\nStinger: aim at the target, right click.",
+  "guide.airdefense.page.5": "FACTORY\n\nFactory kit: right click the ground - the factory builds itself.\nOrder missiles, drones and ammunition at its desk.\nVehicles nearby are restocked by themselves.",
+  "guide.airdefense.page.6": "WEAPONS\n\nLeft click - fire, right click - aim, R - reload.\nGrenade: right click - throw.\nNVG helmet: N - night vision.\nThe medkit heals.\nAmmunition: from the factory or the crafting table.",
+  "guide.airdefense.page.7": "VILLAGES\n\nShift + right click a villager - the village screen.\nMake it yours: respect + a charter from the elder for emeralds, or by force: beat the guards, hold the flag for 30 s.\nIn creative - at once.",
+  "guide.airdefense.page.8": "WORK AND BUILDING\n\nWork tab: woodcutters, stonecutters, miners, builders.\nBuild tab: houses, flats, barracks, hangar, factory, maternity hospital, warehouse, roads.\nHangar tab: vehicles.",
+  "guide.airdefense.page.9": "ARMY\n\nVillage screen: Call up.\nTablet, Army tab: pick the village, a point on the map, press To point.\nA barracks allows more soldiers and heals them.",
+  "guide.airdefense.page.10": "PEOPLE\n\nChildren are born while there are free beds - build houses. A maternity hospital speeds it up.\nFeed villagers bread by hand.\nMind the village's mood, or it may riot.",
+  "guide.airdefense.page.11": "WARS\n\nOn another country's village screen: Declare war or Propose peace.\nThe enemy sends squads - keep guards and soldiers at your flags.\nPeace can be bought with emeralds.",
+  "guide.airdefense.page.12": "IN CREATIVE\n\nEverything is free: buildings go up in seconds, the hangar needs no resources, any village can be taken at once.\n\nGood luck, commander!"
 }

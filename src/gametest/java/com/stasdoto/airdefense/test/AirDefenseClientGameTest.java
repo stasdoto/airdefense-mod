@@ -44,6 +44,24 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			server.runCommand("gamemode spectator @a");
 			ground = server.computeOnServer(s -> s.overworld().getHeight(Heightmap.Types.MOTION_BLOCKING, 0, 0));
 			AirDefense.LOGGER.info("[airdefense-test] ground level {}", ground);
+			int books = server.computeOnServer(s -> s.getPlayerList().getPlayers().getFirst().getInventory().countItem(net.minecraft.world.item.Items.WRITTEN_BOOK));
+			AirDefense.LOGGER.info("[airdefense-test] RESULT guide: books given on joining {}", books);
+			if (scene("guide")) {
+				// The guide book, a couple of its pages.
+				ctx.runOnClient(mc -> mc.gui.setScreen(new net.minecraft.client.gui.screens.inventory.BookViewScreen(
+						net.minecraft.client.gui.screens.inventory.BookViewScreen.BookAccess.fromItem(com.stasdoto.airdefense.guide.Guide.book()))));
+				ctx.waitTicks(10);
+				ctx.takeScreenshot("000_guide_1");
+				ctx.runOnClient(mc -> {
+					if (mc.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.BookViewScreen b) {
+						b.setPage(6);
+					}
+				});
+				ctx.waitTicks(5);
+				ctx.takeScreenshot("000_guide_7");
+				ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+				ctx.waitTicks(5);
+			}
 
 			// AIRDEFENSE_SCENES (from the workflow) picks scenes for a quick run; empty = everything.
 			if (scene("lineup")) {
@@ -1431,6 +1449,27 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(30);
 		ctx.takeScreenshot("119_hangar_vehicle");
 		AirDefense.LOGGER.info("[airdefense-test] RESULT hangar: vehicles made {} after {} ticks", com.stasdoto.airdefense.nation.Economy.vehiclesMade, made);
+		// The village with its buildings on the tablet map.
+		server.runCommand("gamemode creative @a");
+		camera(server, x + 0.5, g + 2, 6.5, 180, 0);
+		server.runOnServer(s -> s.getPlayerList().getPlayers().getFirst().setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,
+				new net.minecraft.world.item.ItemStack(com.stasdoto.airdefense.registry.ModItems.DESIGNATOR)));
+		ctx.waitTicks(5);
+		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.map.MapClient.open());
+		ctx.waitForScreen(com.stasdoto.airdefense.client.map.TacticalMapScreen.class);
+		ctx.waitTicks(40);
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				m.setTab(1);
+				m.centerOn(x, 0, 1);
+				m.selectVillage(id);
+			}
+		});
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("119a_map_buildings");
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		server.runCommand("clear @a");
+		server.runCommand("gamemode spectator @a");
 		// The maternity hospital: babies while there are free beds.
 		int born = server.computeOnServer(s -> {
 			var p = com.stasdoto.airdefense.nation.Politics.get(s);

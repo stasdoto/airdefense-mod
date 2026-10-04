@@ -62,6 +62,8 @@ public final class Economy {
 	/** Blocks per tick: a builder puts up 3 blocks a second; a creative order goes up at 8 blocks a tick. */
 	private static final double PER_BUILDER = 0.15;
 	private static final double FREE_RATE = 8;
+	/** The made-up countries' villages put up a building of their own now and then, slowly (5 blocks a second). */
+	private static final double AI_RATE = 0.25;
 	private static final int CLEAR_PER_TICK = 64;
 
 	/** Debug counters read by the automated test. */
@@ -71,6 +73,7 @@ public final class Economy {
 	public static int vehiclesMade;
 	public static int hired;
 	public static int fed;
+	public static int aiBuilt;
 
 	private static final Map<Integer, List<Blueprints.Placement>> PLANS = new HashMap<>();
 	private static final Map<Integer, Double> CREDIT = new HashMap<>();
@@ -100,6 +103,9 @@ public final class Economy {
 			if (t % 40 == 23 && e.count(BuildingType.BARRACKS) > 0) {
 				barracksHeal(level, s);
 			}
+			if ((t + s.id * 131L) % 6000 == 3000) {
+				aiGrowth(level, p, s);
+			}
 			if (t % 200 == 117 && level.isLoaded(s.center)) {
 				float chance = birthChance(p, s);
 				if (chance > 0 && level.getRandom().nextFloat() < chance) {
@@ -119,14 +125,15 @@ public final class Economy {
 		BlockPos site = siteCenter(b, s);
 		// On a road the builders spread out along it; on a building they have to be there.
 		int builders = b.free ? 0 : b.type == BuildingType.ROADS ? jobCounts(level, s)[WorkerEntity.BUILD] : buildersAt(level, s, site);
-		if ((b.free || builders > 0) && t % 20 == 0) {
-			// Keeps going while the owner is away.
+		boolean owned = owned(p, s);
+		if ((b.free || builders > 0) && t % 20 == 0 && owned) {
+			// Keeps going while the owner is away (the made-up countries build only where somebody is around).
 			level.getChunkSource().addTicketWithRadius(ModTickets.VEHICLE, ChunkPos.containing(site), 2);
 		}
 		if (!level.isLoaded(b.type == BuildingType.ROADS ? site : b.origin) || !b.free && builders == 0) {
 			return;
 		}
-		double credit = CREDIT.getOrDefault(b.id, 0.0) + (b.free ? FREE_RATE : builders * PER_BUILDER);
+		double credit = CREDIT.getOrDefault(b.id, 0.0) + (b.free ? (owned ? FREE_RATE : AI_RATE) : builders * PER_BUILDER);
 		switch (b.type) {
 			case FACTORY -> {
 				factoryStep(level, p, s, b);
@@ -868,6 +875,33 @@ public final class Economy {
 	public static int beds(ServerLevel level, Settlement s, boolean freeOnly) {
 		return (int) level.getPoiManager().getCountInRange(h -> h.is(PoiTypes.HOME), s.center, Settlement.RADIUS + 8,
 				freeOnly ? PoiManager.Occupancy.HAS_SPACE : PoiManager.Occupancy.ANY);
+	}
+
+	/**
+	 * A village of a made-up country (or an independent one) grows by itself: every five minutes or so, while somebody
+	 * is around, it may start a house (or a barracks, a warehouse) - up to three buildings of its own.
+	 */
+	private static void aiGrowth(ServerLevel level, Politics p, Settlement s) {
+		if (owned(p, s) || !level.isLoaded(s.flag) || s.eco.active() != null || s.eco.buildings.size() >= 3
+				|| level.getRandom().nextInt(100) >= 20 || Nations.villagers(level, s).size() < 3) {
+			return;
+		}
+		int roll = level.getRandom().nextInt(100);
+		BuildingType type;
+		if (beds(level, s, true) < 2) {
+			type = roll < 60 ? BuildingType.SMALL_HOUSE : BuildingType.HOUSE;
+		} else if (s.country >= 0 && s.eco.count(BuildingType.BARRACKS) == 0 && roll < 35) {
+			type = BuildingType.BARRACKS;
+		} else {
+			type = roll < 50 ? BuildingType.SMALL_HOUSE : roll < 80 ? BuildingType.HOUSE : BuildingType.WAREHOUSE;
+		}
+		Building b = Sites.find(level, p, s, type, p.newId(), true);
+		if (b != null) {
+			s.eco.buildings.add(b);
+			p.setDirty();
+			aiBuilt++;
+			AirDefense.LOGGER.info("[airdefense] {} starts a {} by itself", s.name, type.id);
+		}
 	}
 
 	/** Is the village a player's (his villages have children more easily, and they grow up faster)? */

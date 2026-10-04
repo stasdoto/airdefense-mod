@@ -98,6 +98,7 @@ public final class ModItems {
 			.icon(() -> new ItemStack(ISKANDER_MISSILE))
 			.title(Component.translatable("itemGroup.airdefense"))
 			.displayItems((params, output) -> {
+				output.accept(com.stasdoto.airdefense.guide.Guide.book());
 				output.accept(DESIGNATOR);
 				output.accept(ISKANDER);
 				output.accept(KALIBR);
