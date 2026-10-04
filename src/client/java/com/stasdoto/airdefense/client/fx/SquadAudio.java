@@ -30,7 +30,11 @@ public final class SquadAudio {
 		GUN(60, -1, 700),
 		LAUNCH_HEAVY(90, -1, 1000),
 		LAUNCH_LIGHT(60, -1, 600),
-		LAUNCH_MLRS(70, -1, 800);
+		LAUNCH_MLRS(70, -1, 800),
+		RIFLE(45, -1, 500),
+		MG(50, -1, 600),
+		SNIPER(60, -1, 800),
+		PISTOL(30, -1, 300);
 
 		/** Up to here the near layer; {@code mid} (if any) up to its border; then far; silent beyond {@code max}. */
 		final double near;
@@ -55,6 +59,21 @@ public final class SquadAudio {
 			case LAUNCH_HEAVY -> new SoundEvent[]{ModSounds.LAUNCH_HEAVY_NEAR, null, ModSounds.LAUNCH_HEAVY_FAR};
 			case LAUNCH_LIGHT -> new SoundEvent[]{ModSounds.LAUNCH_LIGHT_NEAR, null, ModSounds.LAUNCH_LIGHT_FAR};
 			case LAUNCH_MLRS -> new SoundEvent[]{ModSounds.LAUNCH_MLRS_NEAR, null, ModSounds.LAUNCH_MLRS_FAR};
+			case RIFLE -> new SoundEvent[]{ModSounds.RIFLE_NEAR, null, ModSounds.RIFLE_FAR};
+			case MG -> new SoundEvent[]{ModSounds.MG_NEAR, null, ModSounds.MG_FAR};
+			case SNIPER -> new SoundEvent[]{ModSounds.SNIPER_NEAR, null, ModSounds.SNIPER_FAR};
+			case PISTOL -> new SoundEvent[]{ModSounds.PISTOL_NEAR, null, ModSounds.PISTOL_FAR};
+		};
+	}
+
+	/** The report of a small arm. */
+	public static Kind of(com.stasdoto.airdefense.weapon.GunType.Report report) {
+		return switch (report) {
+			case RIFLE -> Kind.RIFLE;
+			case MG -> Kind.MG;
+			case SNIPER -> Kind.SNIPER;
+			case PISTOL -> Kind.PISTOL;
+			case ROCKET -> Kind.LAUNCH_LIGHT;
 		};
 	}
 

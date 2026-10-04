@@ -21,11 +21,13 @@ public enum MissileType {
 	STINGER("stinger_missile", Kind.INTERCEPTOR, false, 3.1, 0.3, 1.6f, false, 1f, 1.0f, 3.0, 150, 0.32, Trail.WHITE, null),
 	// Decoys: look like the real thing to a radar, carry no warhead (only a small charge).
 	ISKANDER_DECOY("stinger_missile", Kind.BALLISTIC, true, 4.0, 0.06, 0.5f, false, 1f, 1.5f, 0, 1200, 0.0, Trail.MEDIUM, null),
-	GERBERA("shahed_drone", Kind.DRONE, true, 0.82, 0.03, 0.7f, false, 1.5f, 1.7f, 0, 9000, 0.05, Trail.NONE, ModSounds.DRONE_BUZZ);
+	GERBERA("shahed_drone", Kind.DRONE, true, 0.82, 0.03, 0.7f, false, 1.5f, 1.7f, 0, 9000, 0.05, Trail.NONE, ModSounds.DRONE_BUZZ),
+	// RPG-7 rocket grenade: unguided, straight out of the tube, the sustainer burns 1.5 s, then it drops; shaped charge.
+	RPG("rpg_round", Kind.DIRECT, false, 3.4, 0.25, 2.2f, false, 1f, 1.0f, 0, 90, 0.0, Trail.SMALL, null);
 
-	public enum Kind { BALLISTIC, ROCKET, CRUISE, DRONE, INTERCEPTOR }
+	public enum Kind { BALLISTIC, ROCKET, CRUISE, DRONE, INTERCEPTOR, DIRECT }
 
-	public enum Trail { HEAVY, MEDIUM, JET, WHITE, NONE }
+	public enum Trail { HEAVY, MEDIUM, JET, WHITE, NONE, SMALL }
 
 	public final String itemId;
 	public final Kind kind;

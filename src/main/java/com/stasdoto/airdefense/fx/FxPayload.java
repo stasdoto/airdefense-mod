@@ -20,6 +20,8 @@ public record FxPayload(int kind, double x, double y, double z, float power, dou
 	public static final int TRACER = 4;
 	/** A gun burst (sound only, the tracers come separately). */
 	public static final int GUN = 5;
+	/** A hand grenade going off (small, sharp, no fires). */
+	public static final int GRENADE = 6;
 	/** For LAUNCH, {@code ax}: which launch sound (see the constants below). */
 	public static final int LAUNCH_SOUND_NONE = 0;
 	public static final int LAUNCH_SOUND_HEAVY = 1;

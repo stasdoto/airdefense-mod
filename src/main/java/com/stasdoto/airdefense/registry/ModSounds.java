@@ -42,6 +42,27 @@ public final class ModSounds {
 	public static final SoundEvent ENGINE_TRACKED = register("engine_tracked", 40);
 	public static final SoundEvent HYDRAULICS = register("hydraulics", 20);
 	public static final SoundEvent TURRET = register("turret", 20);
+	// Stage 7: small arms (near/far layers picked by the client like the big guns) and the gear.
+	public static final SoundEvent RIFLE_NEAR = register("rifle_near", 96);
+	public static final SoundEvent RIFLE_FAR = register("rifle_far", 600);
+	public static final SoundEvent MG_NEAR = register("mg_near", 96);
+	public static final SoundEvent MG_FAR = register("mg_far", 600);
+	public static final SoundEvent SNIPER_NEAR = register("sniper_near", 128);
+	public static final SoundEvent SNIPER_FAR = register("sniper_far", 800);
+	public static final SoundEvent PISTOL_NEAR = register("pistol_near", 64);
+	public static final SoundEvent PISTOL_FAR = register("pistol_far", 300);
+	public static final SoundEvent GUN_DRY = register("gun_dry", 12);
+	public static final SoundEvent GUN_MAG_OUT = register("gun_mag_out", 16);
+	public static final SoundEvent GUN_MAG_IN = register("gun_mag_in", 16);
+	public static final SoundEvent GUN_BOLT = register("gun_bolt", 16);
+	public static final SoundEvent RICOCHET = register("ricochet", 32);
+	public static final SoundEvent BULLET_HIT = register("bullet_hit", 24);
+	public static final SoundEvent HIT_MARKER = register("hit_marker", 8);
+	public static final SoundEvent GRENADE_PIN = register("grenade_pin", 12);
+	public static final SoundEvent GRENADE_BOUNCE = register("grenade_bounce", 16);
+	public static final SoundEvent THROW = register("throw", 12);
+	public static final SoundEvent NVG_SWITCH = register("nvg_switch", 8);
+	public static final SoundEvent MEDKIT = register("medkit", 12);
 	/** Handed to vanilla explosions: the client plays the real explosion sound itself, delayed by distance. */
 	public static final SoundEvent SILENT = register("silent", 16);
 

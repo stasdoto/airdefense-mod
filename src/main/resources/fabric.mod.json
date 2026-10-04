@@ -8,6 +8,12 @@
 	"license": "All-Rights-Reserved",
 	"icon": "assets/airdefense/icon.png",
 	"environment": "*",
+	"mixins": [
+		{
+			"config": "airdefense.client.mixins.json",
+			"environment": "client"
+		}
+	],
 	"entrypoints": {
 		"main": ["com.stasdoto.airdefense.AirDefense"],
 		"client": ["com.stasdoto.airdefense.client.AirDefenseClient"]

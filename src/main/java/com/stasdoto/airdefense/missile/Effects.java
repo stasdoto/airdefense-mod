@@ -7,17 +7,22 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.random.WeightedList;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.FallingBlockEntity;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import com.stasdoto.airdefense.fx.Fx;
 import com.stasdoto.airdefense.fx.FxPayload;
+import com.stasdoto.airdefense.registry.ModDamageTypes;
 import com.stasdoto.airdefense.registry.ModParticles;
 import com.stasdoto.airdefense.registry.ModSounds;
 import com.stasdoto.airdefense.vehicle.VehicleEntity;
@@ -133,6 +138,63 @@ public final class Effects {
 			default -> FxPayload.LAUNCH_SOUND_LIGHT;
 		};
 		Fx.send(level, FxPayload.LAUNCH, at, size, new Vec3(sound, 0, 0));
+	}
+
+	/**
+	 * An RPG rocket grenade goes off. A direct hit on a vehicle burns through the armour with its shaped charge;
+	 * otherwise a small crater and blast. No lingering fires (it is not a fuel-filled missile).
+	 */
+	public static void rpgImpact(ServerLevel level, Entity rocket, Vec3 at, @org.jetbrains.annotations.Nullable Entity owner,
+			@org.jetbrains.annotations.Nullable Entity direct) {
+		DamageSource source = level.damageSources().explosion(rocket, owner);
+		if (direct instanceof VehicleEntity vehicle) {
+			vehicle.hurtServer(level, source, 70f);
+		} else if (direct != null) {
+			direct.hurtServer(level, source, 14f);
+		}
+		level.explode(rocket, source, null, at.x, at.y, at.z, 2.2f, false, Level.ExplosionInteraction.TNT,
+				ModParticles.GLOW, ModParticles.GLOW, WeightedList.of(), Holder.direct(ModSounds.SILENT));
+		Fx.send(level, FxPayload.GROUND_IMPACT, at, 2.2f, new Vec3(0, 1, 1));
+		shockWave(level, rocket, at, 7, 0.5, 0.8);
+	}
+
+	/** The RPG's back-blast: a cloud of smoke behind the tube, the launch report, and it hurts whoever stands there. */
+	public static void rpgBackblast(ServerLevel level, Vec3 behind, Vec3 muzzle) {
+		Fx.send(level, FxPayload.LAUNCH, behind, 0.8f, new Vec3(FxPayload.LAUNCH_SOUND_LIGHT, 0, 0));
+		Vec3 back = behind.subtract(muzzle).normalize();
+		AABB box = new AABB(behind, behind).inflate(3.5);
+		for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && !e.isSpectator())) {
+			Vec3 d = e.position().add(0, e.getBbHeight() * 0.5, 0).subtract(behind);
+			if (d.length() < 3.5 && d.normalize().dot(back) > 0.3) {
+				e.hurtServer(level, level.damageSources().inFire(), 4f);
+				e.push(back.x * 0.6, 0.2, back.z * 0.6);
+			}
+		}
+	}
+
+	/**
+	 * A hand grenade: a sharp bang that hurts what is close, then the fragments - up to 12 blocks, but only what the
+	 * grenade can "see" (cover works). It does not dig into the ground.
+	 */
+	public static void grenade(ServerLevel level, Entity grenade, Vec3 at, @org.jetbrains.annotations.Nullable Entity thrower) {
+		level.explode(grenade, level.damageSources().explosion(grenade, thrower), null, at.x, at.y, at.z, 1.6f, false,
+				Level.ExplosionInteraction.NONE, ModParticles.GLOW, ModParticles.GLOW, WeightedList.of(), Holder.direct(ModSounds.SILENT));
+		Fx.send(level, FxPayload.GRENADE, at, 1.0f, Vec3.ZERO);
+		shockWave(level, grenade, at, 6, 0.5, 0.5);
+		double reach = 12;
+		AABB box = new AABB(at, at).inflate(reach);
+		for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && !e.isSpectator())) {
+			Vec3 c = e.getBoundingBox().getCenter();
+			double d = c.distanceTo(at);
+			if (d > reach || level.clip(new ClipContext(at, c, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, grenade)).getType()
+					!= HitResult.Type.MISS) {
+				continue;
+			}
+			float dmg = (float) (18 * Math.pow(1 - d / reach, 1.4));
+			if (dmg > 0.5f) {
+				e.hurtServer(level, ModDamageTypes.shrapnel(level, grenade, thrower), dmg);
+			}
+		}
 	}
 
 	/** The sound of a gun burst at the muzzle (heard late and duller far away). */

@@ -16,7 +16,7 @@ from scipy import signal
 from scipy.io import wavfile
 
 SR = 44100
-OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), '..', 'src', 'main', 'resources', 'assets', 'airdefense', 'sounds')
+OUT = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] != '-' else os.path.join(os.path.dirname(__file__), '..', 'src', 'main', 'resources', 'assets', 'airdefense', 'sounds')
 rng = np.random.default_rng(20261004)
 
 
@@ -322,10 +322,117 @@ def siren():
     save('siren', x, peak=0.8)
 
 
+# ---------------------------------------------------------------------------------------------------------------
+# Small arms (stage 7): one shot per sound, so automatic fire is the game repeating it; near = the sharp muzzle
+# blast with a short slap back from the surroundings, far = a dull pop that rolls and echoes.
+
+def shot(crack_gain, body_hz, body_tau, bang_gain, length):
+    s = np.zeros(int(length * SR))
+    k = int(0.0006 * SR)
+    n = np.zeros(int(0.01 * SR))
+    n[:k] = np.linspace(1, -0.8, k)
+    n[k:k + 60] = -0.8 * np.linspace(1, 0, 60)
+    place(s, hp(n, 300), 0, crack_gain)                                                        # muzzle blast N-wave
+    place(s, lp(white(0.09), 3500) * decay(int(0.09 * SR), 0.014), 0, bang_gain)               # the bang
+    place(s, np.sin(2 * np.pi * body_hz * t_axis(0.25)) * decay(int(0.25 * SR), body_tau), 0.0008, 0.9)  # chest thump
+    place(s, lp(brown(0.4), 300) * decay(int(0.4 * SR), 0.08, 0.004), 0, 0.6)                  # low rumble
+    return s
+
+
+def mechanism(gain=0.2):
+    """The bolt cycling: two quick metallic clacks."""
+    m = np.zeros(int(0.12 * SR))
+    place(m, bp(white(0.01), 2500, 7000) * decay(int(0.01 * SR), 0.002), 0.035, gain)
+    place(m, bp(white(0.012), 1800, 5000) * decay(int(0.012 * SR), 0.003), 0.07, gain * 0.8)
+    return m
+
+
+def gun_pair(name, crack_gain, body_hz, body_tau, bang_gain, near_len, tail, far_len, far_taps, variants=2):
+    for v in range(variants):
+        x = shot(crack_gain * rng.uniform(0.92, 1.05), body_hz * rng.uniform(0.95, 1.05), body_tau, bang_gain, near_len)
+        place(x, mechanism(), 0, 1.0)
+        # Slap-back from the nearest buildings and trees, then the open-air tail.
+        x = echoes(x, near_len, [(0.09 + 0.02 * v, 0.28, 2500), (0.21, 0.16, 1500)])
+        save(f'{name}_near_{v}', reverb(x, near_len, tail, damp=4500, mix=0.28))
+        f = lp(shot(0.3, body_hz * 0.8, body_tau * 1.5, 1.0, far_len), 700)
+        f = f * np.clip(t_axis(far_len) / 0.01, 0, 1)
+        f = echoes(f, far_len, far_taps)
+        save(f'{name}_far_{v}', reverb(f, far_len, far_len * 0.7, damp=700, mix=0.5))
+
+
+def clicks(spec, length):
+    """spec: (time, band low, band high, decay, gain) metallic transients."""
+    x = np.zeros(int(length * SR))
+    for at, lo, hi, tau, g in spec:
+        c = bp(white(max(0.01, tau * 6)), lo, hi) * decay(int(max(0.01, tau * 6) * SR), tau)
+        place(x, c, at, g)
+    return x
+
+
+def rub(at, dur, lo, hi, gain, length):
+    x = np.zeros(int(length * SR))
+    n = int(dur * SR)
+    env = np.sin(np.linspace(0, np.pi, n)) ** 2
+    place(x, bp(white(dur), lo, hi) * env, at, gain)
+    return x
+
+
+def small_arms():
+    gun_pair('rifle', 1.0, 150, 0.035, 0.9, 1.0, 0.8, 2.6, [(0.4, 0.5, 450), (1.0, 0.3, 300)])
+    gun_pair('mg', 1.0, 115, 0.045, 1.0, 1.0, 0.9, 2.8, [(0.45, 0.55, 400), (1.1, 0.3, 300)])
+    gun_pair('sniper', 1.2, 95, 0.06, 1.0, 2.2, 1.8, 4.5, [(0.55, 0.6, 400), (1.3, 0.4, 300), (2.4, 0.25, 220)])
+    gun_pair('pistol', 0.6, 200, 0.025, 0.8, 0.7, 0.5, 1.8, [(0.35, 0.4, 500)])
+    # Mechanics of the guns.
+    save('gun_dry', clicks([(0.0, 2500, 7000, 0.002, 1.0), (0.05, 1500, 4000, 0.003, 0.6)], 0.2), peak=0.6)
+    out = clicks([(0.0, 1500, 6000, 0.003, 1.0), (0.12, 2000, 5000, 0.002, 0.5)], 0.6) + rub(0.05, 0.3, 800, 3000, 0.25, 0.6)
+    save('gun_mag_out', out, peak=0.7)
+    mag_in = rub(0.0, 0.25, 700, 2500, 0.3, 0.6) + clicks([(0.27, 1200, 5000, 0.004, 1.0), (0.3, 3000, 8000, 0.002, 0.5)], 0.6)
+    save('gun_mag_in', mag_in, peak=0.75)
+    bolt = rub(0.0, 0.18, 1500, 6000, 0.4, 0.6) + clicks([(0.18, 2000, 7000, 0.003, 0.7), (0.32, 1000, 6000, 0.004, 1.0)], 0.6)
+    save('gun_bolt', bolt, peak=0.75)
+    # A round glancing off stone or steel: a ping and a falling whine.
+    for v in range(2):
+        t = t_axis(0.7)
+        f0 = 3200 - 400 * v
+        whine = sweep(f0, 900, 0.7, 4.5) * np.exp(-t / 0.22) * (1 + 0.3 * np.sin(2 * np.pi * 31 * t))
+        ping = clicks([(0.0, 3000, 9000, 0.002, 1.0)], 0.7)
+        save(f'ricochet_{v}', reverb(whine * 0.5 + ping, 0.8, 0.5, damp=6000, mix=0.2), peak=0.7)
+    # A round into a body: a dull, short thud.
+    for v in range(2):
+        th = lp(white(0.15), 600 + 200 * v) * decay(int(0.15 * SR), 0.025) + np.sin(2 * np.pi * 90 * t_axis(0.15)) * decay(int(0.15 * SR), 0.03) * 0.6
+        save(f'bullet_hit_{v}', th, peak=0.7)
+    save('hit_marker', clicks([(0.0, 3500, 9000, 0.0015, 1.0)], 0.08) + np.sin(2 * np.pi * 2200 * t_axis(0.08)) * decay(int(0.08 * SR), 0.012) * 0.3, peak=0.6)
+    # Grenade: the pin (a thin metallic ting), bouncing on the ground, the throw.
+    t = t_axis(0.5)
+    ting = (np.sin(2 * np.pi * 3400 * t) + 0.5 * np.sin(2 * np.pi * 5100 * t)) * np.exp(-t / 0.06)
+    save('grenade_pin', ting * 0.6 + clicks([(0.0, 2000, 8000, 0.002, 1.0)], 0.5), peak=0.6)
+    for v in range(2):
+        b = lp(white(0.2), 1200) * decay(int(0.2 * SR), 0.02) + bp(white(0.2), 2000, 5000) * decay(int(0.2 * SR), 0.006) * 0.4
+        save(f'grenade_bounce_{v}', b, peak=0.7)
+    t = t_axis(0.45)
+    sw = bp(white(0.45), 400, 3000) * np.sin(np.pi * np.clip(t / 0.45, 0, 1)) ** 2
+    save('throw', sw, peak=0.5)
+    # Night vision goggles: the click and the rising whine of the tube powering up.
+    t = t_axis(1.2)
+    up = np.sin(2 * np.pi * np.cumsum(5200 + 6000 * (1 - np.exp(-t / 0.35))) / SR) * np.exp(-t / 0.6) * 0.25
+    save('nvg_switch', up + clicks([(0.0, 1500, 6000, 0.003, 1.0)], 1.2), peak=0.5)
+    # Medkit: tearing a package and fabric rustling.
+    m = np.zeros(int(1.0 * SR))
+    for i in range(7):
+        at = 0.05 + i * 0.13 + rng.uniform(0, 0.04)
+        dur = rng.uniform(0.06, 0.12)
+        place(m, bp(white(dur), 1500, 8000) * np.sin(np.linspace(0, np.pi, int(dur * SR))) ** 2, at, rng.uniform(0.4, 0.9))
+    save('medkit', m, peak=0.6)
+
+
 if __name__ == '__main__':
+    if len(sys.argv) > 2 and sys.argv[2] == 'small_arms':
+        small_arms()
+        sys.exit(0)
     explosions()
     guns()
     crack()
     launches()
     loops()
     siren()
+    small_arms()

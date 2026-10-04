@@ -76,6 +76,11 @@ public class MissileEntity extends Entity {
 
 	private ItemStack displayStack;
 	private MissileType displayType;
+	/** Unguided rockets (RPG): who fired it (not hit by his own rocket), and what it flew into. */
+	@org.jetbrains.annotations.Nullable
+	private Entity owner;
+	@org.jetbrains.annotations.Nullable
+	private Entity directHit;
 
 	public MissileEntity(EntityType<? extends MissileEntity> type, Level level) {
 		super(type, level);
@@ -136,6 +141,7 @@ public class MissileEntity extends Entity {
 				m.speed = 0.7;
 			}
 			case INTERCEPTOR -> throw new IllegalArgumentException("use launchInterceptor");
+			case DIRECT -> throw new IllegalArgumentException("use launchDirect");
 		}
 		if (railDir != null && (type.kind == MissileType.Kind.CRUISE || type.kind == MissileType.Kind.DRONE)) {
 			m.launchDir = railDir.normalize();
@@ -172,6 +178,26 @@ public class MissileEntity extends Entity {
 		level.addFreshEntity(m);
 		MissileStats.INTERCEPTORS_LAUNCHED.incrementAndGet();
 		MissileStats.log("interceptor {} from {} at {}", type, fmt(pos), target == null ? "-" : target.getMissileType() + "@" + fmt(target.position()));
+		return m;
+	}
+
+	/** Fires an unguided rocket (RPG) straight along {@code dir}. */
+	public static MissileEntity launchDirect(ServerLevel level, MissileType type, Vec3 pos, Vec3 dir,
+			@org.jetbrains.annotations.Nullable Entity owner) {
+		MissileEntity m = new MissileEntity(ModEntities.MISSILE, level);
+		m.setMissileType(type);
+		m.setPos(pos);
+		m.launchPos = pos;
+		m.launchDir = dir.normalize();
+		m.target = pos.add(m.launchDir.scale(200));
+		m.health = type.health;
+		m.speed = 1.6;
+		m.owner = owner;
+		m.lastVel = m.launchDir.scale(m.speed);
+		m.updateRotation(m.launchDir);
+		m.setMotor(true);
+		level.addFreshEntity(m);
+		MissileStats.ROCKETS_FIRED.incrementAndGet();
 		return m;
 	}
 
@@ -305,13 +331,15 @@ public class MissileEntity extends Entity {
 			case BALLISTIC, ROCKET -> ballisticStep(type);
 			case CRUISE, DRONE -> cruiseStep(level, type);
 			case INTERCEPTOR -> interceptorStep(level, type);
+			case DIRECT -> directStep(type);
 		};
 		if (isRemoved() || vel == null) {
 			return;
 		}
 		Vec3 to = from.add(vel);
 
-		int safeTicks = type.kind == MissileType.Kind.INTERCEPTOR ? 4 : 8;
+		boolean direct = type.kind == MissileType.Kind.DIRECT;
+		int safeTicks = direct ? 0 : type.kind == MissileType.Kind.INTERCEPTOR ? 4 : 8;
 		if (life > safeTicks) {
 			BlockHitResult hit = level.clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, this));
 			if (hit.getType() != HitResult.Type.MISS) {
@@ -319,11 +347,13 @@ public class MissileEntity extends Entity {
 				detonate(hit.getLocation(), false);
 				return;
 			}
-			if (type.threat) {
+			if (type.threat || direct) {
 				EntityHitResult entityHit = ProjectileUtil.getEntityHitResult(level, this, from, to,
 						getBoundingBox().expandTowards(vel).inflate(1.0),
-						e -> e instanceof LivingEntity && e.isAlive() && !e.isSpectator(), 0.4f);
+						e -> e instanceof LivingEntity && e.isAlive() && !e.isSpectator() && (e != owner || life > 20)
+								&& (owner == null || !owner.isPassengerOfSameVehicle(e)), direct ? 0.1f : 0.4f);
 				if (entityHit != null) {
+					directHit = entityHit.getEntity();
 					setPos(entityHit.getLocation());
 					detonate(entityHit.getLocation(), false);
 					return;
@@ -339,6 +369,18 @@ public class MissileEntity extends Entity {
 		if (type.loopSound != null && life % 40 == 2) {
 			level.playSound(null, this, type.loopSound, SoundSource.HOSTILE, type.kind == MissileType.Kind.DRONE ? 3.0f : 2.0f, 1.0f);
 		}
+	}
+
+	// --- Unguided rockets (RPG): straight out of the tube, the sustainer burns ~1.5 s, then gravity takes over ---
+
+	private Vec3 directStep(MissileType type) {
+		boolean motor = life < 30;
+		setMotor(motor);
+		if (motor) {
+			speed = Math.min(type.maxSpeed, speed + type.accel);
+			return lastVel.normalize().scale(speed).add(0, -0.004, 0);
+		}
+		return lastVel.add(0, -0.05, 0).scale(0.995);
 	}
 
 	// --- Ballistic missiles and MLRS rockets: deterministic parabola that ends exactly on the target -----
@@ -657,6 +699,13 @@ public class MissileEntity extends Entity {
 			targetMissile.engagedBy = Math.max(0, targetMissile.engagedBy - 1);
 		}
 		discard();
+		if (type.kind == MissileType.Kind.DIRECT) {
+			MissileStats.ROCKET_IMPACTS.incrementAndGet();
+			MissileStats.log("{} {} at {} after {} ticks{}", type, inAir ? "self-destruct" : "IMPACT", fmt(at), life,
+					directHit == null ? "" : " on " + directHit.getType().getDescriptionId());
+			Effects.rpgImpact(level, this, at, owner, directHit);
+			return;
+		}
 		if (type.isDecoy()) {
 			// No warhead: a small pop and a puff of smoke.
 			(inAir ? MissileStats.DECOYS_DOWN : MissileStats.DECOYS_LANDED).incrementAndGet();
@@ -735,6 +784,15 @@ public class MissileEntity extends Entity {
 					if (tickCount % 3 == 0) {
 						particle(level, ModParticles.DEBRIS_SMOKE, nozzle, Vec3.ZERO, 0.05);
 					}
+				}
+			}
+			case SMALL -> {
+				// RPG: a short grey smoke trail and the bright sustainer while it burns.
+				if (motor) {
+					for (int i = 0; i < steps; i += 2) {
+						particle(level, ModParticles.DEBRIS_SMOKE, nozzle.subtract(seg.scale((double) i / steps)), dir.scale(-0.02), 0.08);
+					}
+					exhaust(level, nozzle, dir, 1);
 				}
 			}
 			case NONE -> {

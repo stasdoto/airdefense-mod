@@ -15,6 +15,7 @@ import com.stasdoto.airdefense.AirDefense;
 import com.stasdoto.airdefense.missile.MissileEntity;
 import com.stasdoto.airdefense.vehicle.VehicleEntity;
 import com.stasdoto.airdefense.vehicle.VehicleType;
+import com.stasdoto.airdefense.weapon.GrenadeEntity;
 
 public final class ModEntities {
 	private static final ResourceKey<EntityType<?>> MISSILE_KEY = ResourceKey.create(Registries.ENTITY_TYPE, AirDefense.id("missile"));
@@ -28,6 +29,15 @@ public final class ModEntities {
 					.noSave()
 					.noSummon()
 					.build(MISSILE_KEY));
+
+	private static final ResourceKey<EntityType<?>> GRENADE_KEY = ResourceKey.create(Registries.ENTITY_TYPE, AirDefense.id("grenade"));
+
+	public static final EntityType<GrenadeEntity> GRENADE = Registry.register(BuiltInRegistries.ENTITY_TYPE, GRENADE_KEY,
+			EntityType.Builder.<GrenadeEntity>of(GrenadeEntity::new, MobCategory.MISC)
+					.sized(0.25f, 0.25f)
+					.clientTrackingRange(8)
+					.updateInterval(2)
+					.build(GRENADE_KEY));
 
 	private static final Map<VehicleType, EntityType<VehicleEntity>> VEHICLES = new EnumMap<>(VehicleType.class);
 

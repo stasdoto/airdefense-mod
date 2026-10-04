@@ -18,6 +18,8 @@ import com.stasdoto.airdefense.registry.ModTickets;
 import com.stasdoto.airdefense.map.MapServer;
 import com.stasdoto.airdefense.factory.FactoryNet;
 import com.stasdoto.airdefense.vehicle.VehicleActionPayload;
+import com.stasdoto.airdefense.registry.ModComponents;
+import com.stasdoto.airdefense.weapon.GunServer;
 
 public class AirDefense implements ModInitializer {
 	public static final String MOD_ID = "airdefense";
@@ -26,6 +28,7 @@ public class AirDefense implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		ModSounds.init();
+		ModComponents.init();
 		ModTickets.init();
 		ModParticles.init();
 		PayloadTypeRegistry.clientboundPlay().register(FxPayload.TYPE, FxPayload.CODEC);
@@ -37,6 +40,7 @@ public class AirDefense implements ModInitializer {
 		ModCommands.init();
 		MapServer.init();
 		FactoryNet.init();
+		GunServer.init();
 		LOGGER.info("Stasdoto Air Defense loaded");
 	}
 

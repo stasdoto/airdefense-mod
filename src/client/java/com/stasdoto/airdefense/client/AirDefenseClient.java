@@ -7,6 +7,7 @@ import com.stasdoto.airdefense.client.fx.FxClient;
 import com.stasdoto.airdefense.client.factory.FactoryClient;
 import com.stasdoto.airdefense.client.map.MapClient;
 import com.stasdoto.airdefense.client.vehicle.VehicleClient;
+import com.stasdoto.airdefense.client.weapon.GunClient;
 import com.stasdoto.airdefense.registry.ModEntities;
 
 public class AirDefenseClient implements ClientModInitializer {
@@ -17,5 +18,6 @@ public class AirDefenseClient implements ClientModInitializer {
 		VehicleClient.init();
 		MapClient.init();
 		FactoryClient.init();
+		GunClient.init();
 	}
 }

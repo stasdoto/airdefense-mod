@@ -25,7 +25,13 @@ public enum Product {
 	IRIST("irist_missile", 600, 1, cost(Items.IRON_INGOT, 6, Items.GUNPOWDER, 3, Items.REDSTONE, 3, Items.GOLD_INGOT, 1)),
 	AMRAAM("amraam_missile", 500, 1, cost(Items.IRON_INGOT, 6, Items.GUNPOWDER, 3, Items.REDSTONE, 3)),
 	STINGER("stinger_missile", 300, 1, cost(Items.IRON_INGOT, 3, Items.GUNPOWDER, 2, Items.REDSTONE, 1)),
-	GEPARD_AMMO("gepard_ammo", 200, 10, cost(Items.COPPER_INGOT, 6, Items.GUNPOWDER, 4));
+	GEPARD_AMMO("gepard_ammo", 200, 10, cost(Items.COPPER_INGOT, 6, Items.GUNPOWDER, 4)),
+	// Small arms (stage 7): one order makes a batch of rounds (one item = one round).
+	AMMO_545("ammo_545", 160, 1, 60, cost(Items.COPPER_INGOT, 4, Items.GUNPOWDER, 4, Items.IRON_NUGGET, 4)),
+	AMMO_762("ammo_762", 200, 1, 60, cost(Items.COPPER_INGOT, 4, Items.GUNPOWDER, 6, Items.IRON_NUGGET, 4)),
+	AMMO_9MM("ammo_9mm", 120, 1, 64, cost(Items.COPPER_INGOT, 3, Items.GUNPOWDER, 3)),
+	RPG_ROUND("rpg_round", 300, 1, 2, cost(Items.IRON_INGOT, 2, Items.GUNPOWDER, 3, Items.TNT, 1)),
+	F1_GRENADE("f1_grenade", 240, 1, 4, cost(Items.IRON_INGOT, 3, Items.TNT, 1));
 
 	public record Cost(Item item, int count) {
 	}
@@ -33,12 +39,19 @@ public enum Product {
 	public final String itemId;
 	public final int ticks;
 	public final int units;
+	/** Items one order makes (ammunition comes in batches). */
+	public final int batch;
 	public final List<Cost> cost;
 
 	Product(String itemId, int ticks, int units, List<Cost> cost) {
+		this(itemId, ticks, units, 1, cost);
+	}
+
+	Product(String itemId, int ticks, int units, int batch, List<Cost> cost) {
 		this.itemId = itemId;
 		this.ticks = ticks;
 		this.units = units;
+		this.batch = batch;
 		this.cost = cost;
 	}
 

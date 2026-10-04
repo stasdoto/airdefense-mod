@@ -28,6 +28,7 @@ public class FactoryScreen extends Screen {
 
 	private FactoryStatusPayload status;
 	private int selected;
+	private int scroll;
 	private int refresh;
 	private int x0;
 	private int y0;
@@ -80,6 +81,21 @@ public class FactoryScreen extends Screen {
 	/** For the automated test: pick a product. */
 	public void select(Product p) {
 		selected = p.ordinal();
+		scroll = Math.max(0, Math.min(selected - visibleRows() / 2, Product.values().length - visibleRows()));
+	}
+
+	private int visibleRows() {
+		return Math.max(1, (h - 22 - 14) / ROW_H);
+	}
+
+	@Override
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+		if (mouseX >= x0 && mouseX < x0 + 166) {
+			int max = Math.max(0, Product.values().length - visibleRows());
+			scroll = Math.max(0, Math.min(max, scroll - (int) Math.signum(scrollY)));
+			return true;
+		}
+		return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
 	}
 
 	@Override
@@ -109,7 +125,8 @@ public class FactoryScreen extends Screen {
 		}
 		if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && event.x() >= x0 + 6 && event.x() < x0 + 162) {
 			int row = (int) ((event.y() - (y0 + 22)) / ROW_H);
-			if (row >= 0 && row < Product.values().length && event.y() >= y0 + 22) {
+			if (row >= 0 && row < visibleRows() && row + scroll < Product.values().length && event.y() >= y0 + 22) {
+				row += scroll;
 				selected = row;
 				return true;
 			}
@@ -136,10 +153,11 @@ public class FactoryScreen extends Screen {
 		g.text(font, state, x0 + w - 6 - font.width(state), y0 + 6, status.queue().isEmpty() ? C_DIM : C_OK);
 		Player player = minecraft.player;
 		Product[] products = Product.values();
-		// Product list.
-		for (int i = 0; i < products.length; i++) {
+		// Product list (scrolls with the mouse wheel).
+		int rows = visibleRows();
+		for (int i = scroll; i < products.length && i < scroll + rows; i++) {
 			Product p = products[i];
-			int y = y0 + 22 + i * ROW_H;
+			int y = y0 + 22 + (i - scroll) * ROW_H;
 			boolean sel = i == selected;
 			boolean hover = mouseX >= x0 + 6 && mouseX < x0 + 162 && mouseY >= y && mouseY < y + ROW_H;
 			if (sel || hover) {
@@ -149,6 +167,13 @@ public class FactoryScreen extends Screen {
 			g.text(font, new ItemStack(p.item()).getHoverName(), x0 + 26, y + 2, sel ? 0xFFFFFFFF : C_TEXT);
 			int inStock = i < status.stock().size() ? status.stock().get(i) : 0;
 			small(g, Component.translatable("screen.airdefense.factory.row", p.time(status.creative()) / 20, inStock).getString(), x0 + 26, y + 11, C_DIM);
+		}
+		if (products.length > rows) {
+			int trackH = rows * ROW_H;
+			int barH = Math.max(10, trackH * rows / products.length);
+			int barY = y0 + 22 + (trackH - barH) * scroll / Math.max(1, products.length - rows);
+			g.fill(x0 + 163, y0 + 22, x0 + 165, y0 + 22 + trackH, 0xFF303A44);
+			g.fill(x0 + 163, barY, x0 + 165, barY + barH, 0xFF8A96A2);
 		}
 		// Selected product: cost.
 		Product p = products[Math.max(0, Math.min(selected, products.length - 1))];
@@ -167,7 +192,8 @@ public class FactoryScreen extends Screen {
 				cy += 16;
 			}
 		}
-		small(g, Component.translatable("screen.airdefense.factory.time", p.time(status.creative()) / 20, p.units).getString(), rx, y0 + 102, C_DIM);
+		small(g, (p.batch > 1 ? Component.translatable("screen.airdefense.factory.time_batch", p.time(status.creative()) / 20, p.batch)
+				: Component.translatable("screen.airdefense.factory.time", p.time(status.creative()) / 20, p.units)).getString(), rx, y0 + 102, C_DIM);
 		// Queue.
 		g.text(font, Component.translatable("screen.airdefense.factory.queue", status.queue().size(), FactoryBlockEntity.MAX_QUEUE), rx, y0 + 136, C_TEXT);
 		List<Integer> q = status.queue();

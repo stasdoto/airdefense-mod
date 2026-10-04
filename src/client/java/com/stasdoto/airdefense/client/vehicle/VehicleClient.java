@@ -61,6 +61,10 @@ public final class VehicleClient {
 
 	private static void tick(Minecraft mc) {
 		LocalPlayer player = mc.player;
+		if (player != null) {
+			// On foot with a gun in hand, R reloads (it is the same key as the launcher's).
+			com.stasdoto.airdefense.client.weapon.GunClient.tick(mc);
+		}
 		if (player == null || !(player.getVehicle() instanceof VehicleEntity v)) {
 			// Drop presses made outside a vehicle so they don't fire later.
 			while (DEPLOY.consumeClick()) {

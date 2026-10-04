@@ -49,6 +49,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			tabletMap(ctx, server);
 			factory(ctx, server);
 			sounds(ctx, server);
+			smallArms(ctx, server);
 			unopposedIskander(ctx, server);
 			effectsCloseup(ctx, server, false);
 			server.runCommand("time set 14500");
@@ -694,6 +695,279 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			forVehicles(s.overworld(), List.of(himars), Entity::discard);
 		});
 		server.runCommand("gamemode spectator @a");
+	}
+
+	/**
+	 * Stage 7: small arms and gear, all through the real controls - firing with the left button (the AK at a row of
+	 * husks, glass, the PKM in third person, the SVD through the scope at a husk with and one without body armour),
+	 * reloading with R, the RPG at a vehicle, a grenade thrown at a group, helmet + vest, night vision at night, a
+	 * medkit.
+	 */
+	private void smallArms(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 23000;
+		int g = ground;
+		final int left = com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT;
+		final int right = com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT;
+		server.runCommand("difficulty normal");
+		server.runCommand("gamemode survival @a");
+		server.runCommand("clear @a");
+		server.runCommand("effect clear @a");
+		camera(server, x + 0.5, g, 0.5, 180, 0);
+		ctx.waitTicks(40);
+		server.runOnServer(s -> {
+			ServerPlayer p = s.getPlayerList().getPlayers().getFirst();
+			var inv = p.getInventory();
+			inv.setItem(0, com.stasdoto.airdefense.weapon.GunItem.loaded(com.stasdoto.airdefense.registry.ModItems.AK74));
+			inv.setItem(1, com.stasdoto.airdefense.weapon.GunItem.loaded(com.stasdoto.airdefense.registry.ModItems.PKM));
+			inv.setItem(2, com.stasdoto.airdefense.weapon.GunItem.loaded(com.stasdoto.airdefense.registry.ModItems.SVD));
+			inv.setItem(3, com.stasdoto.airdefense.weapon.GunItem.loaded(com.stasdoto.airdefense.registry.ModItems.PM));
+			inv.setItem(4, com.stasdoto.airdefense.weapon.GunItem.loaded(com.stasdoto.airdefense.registry.ModItems.RPG7));
+			inv.setItem(5, new net.minecraft.world.item.ItemStack(com.stasdoto.airdefense.registry.ModItems.F1_GRENADE, 4));
+			inv.setItem(6, new net.minecraft.world.item.ItemStack(com.stasdoto.airdefense.registry.ModItems.MEDKIT, 2));
+			inv.setItem(9, new net.minecraft.world.item.ItemStack(com.stasdoto.airdefense.registry.ModItems.AMMO_545, 90));
+			inv.setItem(10, new net.minecraft.world.item.ItemStack(com.stasdoto.airdefense.registry.ModItems.AMMO_762, 90));
+			inv.setItem(11, new net.minecraft.world.item.ItemStack(com.stasdoto.airdefense.registry.ModItems.RPG_ROUND, 4));
+			inv.setItem(12, new net.minecraft.world.item.ItemStack(com.stasdoto.airdefense.registry.ModItems.AMMO_9MM, 64));
+		});
+		selectSlot(ctx, 0);
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("90_gun_hip");
+
+		// AK-74 at four husks 18 blocks out (the second one has a helmet).
+		List<Integer> row = new ArrayList<>();
+		for (int i = 0; i < 4; i++) {
+			row.add(husk(server, x + 0.5 - 4.5 + i * 3, g, -17.5, i == 1, false));
+		}
+		ctx.waitTicks(10);
+		int shots0 = com.stasdoto.airdefense.weapon.GunServer.SHOTS.get();
+		int hits0 = com.stasdoto.airdefense.weapon.GunServer.HITS.get();
+		int heads0 = com.stasdoto.airdefense.weapon.GunServer.HEADSHOTS.get();
+		boolean firingShot = false;
+		for (int id : row) {
+			for (int t = 0; t < 20 && alive(server, id); t++) {
+				Vec3 at = entityPos(server, id).add(0, t < 8 ? 1.2 : 1.65, 0);
+				aimAt(ctx, at);
+				if (t == 0) {
+					ctx.getInput().holdMouse(left);
+				}
+				ctx.waitTick();
+				if (t == 3 && !firingShot) {
+					ctx.takeScreenshot("91_gun_firing");
+					firingShot = true;
+				}
+			}
+			ctx.getInput().releaseMouse(left);
+			ctx.waitTicks(4);
+		}
+		int killed = 0;
+		for (int id : row) {
+			killed += alive(server, id) ? 0 : 1;
+		}
+		int magLeft = server.computeOnServer(s -> com.stasdoto.airdefense.weapon.GunItem.ammo(s.getPlayerList().getPlayers().getFirst().getMainHandItem()));
+		AirDefense.LOGGER.info("[airdefense-test] RESULT ak74: shots={} hits={} headshots={} killed={}/4 magazine={} clientShots={} confirmedHits={}",
+				com.stasdoto.airdefense.weapon.GunServer.SHOTS.get() - shots0, com.stasdoto.airdefense.weapon.GunServer.HITS.get() - hits0,
+				com.stasdoto.airdefense.weapon.GunServer.HEADSHOTS.get() - heads0, killed, magLeft,
+				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.weapon.GunClient.shotsSent),
+				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.weapon.GunClient.hitsConfirmed));
+
+		// Reload with R from the rounds in the inventory.
+		ctx.getInput().pressKey(com.stasdoto.airdefense.client.vehicle.VehicleClient.DEPLOY);
+		ctx.waitTicks(8);
+		ctx.takeScreenshot("92_gun_reload");
+		ctx.waitTicks(60);
+		String reload = server.computeOnServer(s -> {
+			ServerPlayer p = s.getPlayerList().getPlayers().getFirst();
+			return "magazine " + com.stasdoto.airdefense.weapon.GunItem.ammo(p.getMainHandItem()) + "/30, spare "
+					+ com.stasdoto.airdefense.weapon.GunServer.countAmmo(p, com.stasdoto.airdefense.weapon.GunType.AK74);
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT reload: before {} -> {}", magLeft, reload);
+
+		// Aiming down the sights; then a glass wall that shatters.
+		ctx.getInput().holdMouse(right);
+		ctx.waitTicks(12);
+		ctx.takeScreenshot("93_gun_aim");
+		ctx.getInput().releaseMouse(right);
+		server.runCommand(String.format("fill %d %d -7 %d %d -7 minecraft:glass_pane", x - 2, g, x + 3, g + 2));
+		ctx.waitTicks(10);
+		int glass0 = com.stasdoto.airdefense.weapon.GunServer.GLASS_BROKEN.get();
+		for (int i = 0; i < 3; i++) {
+			aimAt(ctx, new Vec3(x - 1.5 + i * 2, g + 1.5, -6.5));
+			ctx.getInput().pressMouse(left);
+			ctx.waitTicks(4);
+		}
+		ctx.waitTicks(5);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT glass: panes broken {}", com.stasdoto.airdefense.weapon.GunServer.GLASS_BROKEN.get() - glass0);
+		server.runCommand(String.format("fill %d %d -7 %d %d -7 minecraft:air", x - 2, g, x + 3, g + 2));
+
+		// PKM, seen from the front in third person.
+		selectSlot(ctx, 1);
+		int mg1 = husk(server, x - 1.5, g, -26.5, false, false);
+		int mg2 = husk(server, x + 2.5, g, -26.5, false, false);
+		ctx.waitTicks(15);
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+		ctx.waitTicks(5);
+		ctx.getInput().holdMouse(left);
+		for (int t = 0; t < 40; t++) {
+			int target = alive(server, mg1) ? mg1 : mg2;
+			if (alive(server, target)) {
+				aimAt(ctx, entityPos(server, target).add(0, 1.2, 0));
+			}
+			ctx.waitTick();
+			if (t == 6) {
+				ctx.takeScreenshot("94_pkm_third_person");
+			}
+		}
+		ctx.getInput().releaseMouse(left);
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_BACK));
+		ctx.waitTicks(5);
+		ctx.takeScreenshot("94b_pkm_back");
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
+		AirDefense.LOGGER.info("[airdefense-test] RESULT pkm: killed {}/2, arm pose mixin {}", (alive(server, mg1) ? 0 : 1) + (alive(server, mg2) ? 0 : 1),
+				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.weapon.GunClient.armPoseApplied));
+
+		// SVD through the scope: one husk without and one with body armour and a helmet, a single round into each chest.
+		selectSlot(ctx, 2);
+		int plain = husk(server, x - 2.5, g, -40.5, false, false);
+		int armoured = husk(server, x + 3.5, g, -40.5, true, true);
+		ctx.waitTicks(15);
+		ctx.getInput().holdMouse(right);
+		aimAt(ctx, entityPos(server, plain).add(0, 1.15, 0));
+		ctx.waitTicks(15);
+		float zoom = ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.weapon.GunClient.fovMultiplier());
+		ctx.takeScreenshot("95_svd_scope");
+		ctx.getInput().pressMouse(left);
+		ctx.waitTicks(12);
+		aimAt(ctx, entityPos(server, armoured).add(0, 1.15, 0));
+		ctx.waitTicks(8);
+		ctx.getInput().pressMouse(left);
+		ctx.waitTicks(12);
+		ctx.getInput().releaseMouse(right);
+		float armouredHealth = server.computeOnServer(s -> s.overworld().getEntity(armoured) instanceof net.minecraft.world.entity.LivingEntity l && l.isAlive() ? l.getHealth() : 0f);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT svd: zoom {} plain husk {} armoured husk {} (health {})", zoom,
+				alive(server, plain) ? "alive" : "dead", alive(server, armoured) ? "alive" : "dead", armouredHealth);
+
+		// RPG-7 at a Gepard 30 blocks away.
+		selectSlot(ctx, 4);
+		int gepard = spawnVehicle(server, VehicleType.GEPARD, x, -32, 90);
+		ctx.waitTicks(20);
+		float hp0 = server.computeOnServer(s -> s.overworld().getEntity(gepard) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		int impacts0 = MissileStats.ROCKET_IMPACTS.get();
+		aimAt(ctx, new Vec3(x + 0.5, g + 1.3, -31.5));
+		ctx.waitTicks(3);
+		ctx.getInput().pressMouse(left);
+		ctx.waitTicks(5);
+		ctx.takeScreenshot("96_rpg_flight");
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("96b_rpg_hit");
+		ctx.waitTicks(30);
+		float hp1 = server.computeOnServer(s -> s.overworld().getEntity(gepard) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT rpg: gepard health {} -> {} (rocket impacts {})", hp0, hp1,
+				MissileStats.ROCKET_IMPACTS.get() - impacts0);
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(gepard), Entity::discard));
+
+		// A grenade at three husks standing together 10 blocks away.
+		selectSlot(ctx, 5);
+		List<Integer> group = new ArrayList<>();
+		group.add(husk(server, x - 0.5, g, -10.5, false, false));
+		group.add(husk(server, x + 1.5, g, -10.5, false, false));
+		group.add(husk(server, x + 0.5, g, -12.0, false, false));
+		ctx.waitTicks(15);
+		int boom0 = com.stasdoto.airdefense.weapon.GrenadeEntity.exploded;
+		aimAt(ctx, new Vec3(x + 0.5, g + 1.55, -9.0));
+		ctx.waitTicks(3);
+		ctx.getInput().pressMouse(right);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("97_grenade_rolling");
+		ctx.waitTicks(41);
+		ctx.takeScreenshot("97b_grenade_blast");
+		ctx.waitTicks(20);
+		int grenadeKills = 0;
+		for (int id : group) {
+			grenadeKills += alive(server, id) ? 0 : 1;
+		}
+		AirDefense.LOGGER.info("[airdefense-test] RESULT grenade: exploded {} killed {}/3", com.stasdoto.airdefense.weapon.GrenadeEntity.exploded - boom0, grenadeKills);
+
+		// Gear: helmet and vest (third person), then night vision goggles at night.
+		server.runOnServer(s -> {
+			ServerPlayer p = s.getPlayerList().getPlayers().getFirst();
+			p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, new net.minecraft.world.item.ItemStack(com.stasdoto.airdefense.registry.ModItems.HELMET));
+			p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, new net.minecraft.world.item.ItemStack(com.stasdoto.airdefense.registry.ModItems.VEST));
+		});
+		selectSlot(ctx, 0);
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("98_gear");
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
+		server.runCommand("time set 18000");
+		server.runOnServer(s -> s.getPlayerList().getPlayers().getFirst().setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD,
+				new net.minecraft.world.item.ItemStack(com.stasdoto.airdefense.registry.ModItems.NVG_HELMET)));
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("99a_night_without_nvg");
+		ctx.getInput().pressKey(com.stasdoto.airdefense.client.weapon.GunClient.NVG);
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("99_nvg_night");
+		boolean nvg = server.computeOnServer(s -> s.getPlayerList().getPlayers().getFirst().hasEffect(net.minecraft.world.effect.MobEffects.NIGHT_VISION));
+		AirDefense.LOGGER.info("[airdefense-test] RESULT nvg: night vision {}", nvg);
+		ctx.getInput().pressKey(com.stasdoto.airdefense.client.weapon.GunClient.NVG);
+		server.runCommand("time set 1000");
+
+		// Medkit: from 6 health, two seconds of bandaging.
+		selectSlot(ctx, 6);
+		server.runOnServer(s -> s.getPlayerList().getPlayers().getFirst().setHealth(6));
+		ctx.waitTicks(5);
+		ctx.getInput().holdMouse(right);
+		ctx.waitTicks(48);
+		ctx.getInput().releaseMouse(right);
+		ctx.waitTicks(10);
+		float health = server.computeOnServer(s -> s.getPlayerList().getPlayers().getFirst().getHealth());
+		AirDefense.LOGGER.info("[airdefense-test] RESULT medkit: health 6 -> {}", health);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT small_arms_fx: impacts drawn {} other shots seen {}",
+				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.fx.ShotFx.IMPACTS),
+				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.weapon.GunClient.otherShotsSeen));
+
+		server.runCommand("kill @e[type=minecraft:husk]");
+		server.runCommand("clear @a");
+		server.runCommand("effect clear @a");
+		server.runCommand("gamemode spectator @a");
+	}
+
+	private static int husk(TestServerContext server, double x, double y, double z, boolean helmet, boolean vest) {
+		return server.computeOnServer(s -> {
+			var h = net.minecraft.world.entity.EntityTypes.HUSK.create(s.overworld(), net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+			h.snapTo(x, y, z, 0, 0);
+			h.setNoAi(true);
+			h.setPersistenceRequired();
+			if (helmet) {
+				h.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, new net.minecraft.world.item.ItemStack(com.stasdoto.airdefense.registry.ModItems.HELMET));
+			}
+			if (vest) {
+				h.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, new net.minecraft.world.item.ItemStack(com.stasdoto.airdefense.registry.ModItems.VEST));
+			}
+			s.overworld().addFreshEntity(h);
+			return h.getId();
+		});
+	}
+
+	/** Where the entity is (or the origin, if it is gone). */
+	private static Vec3 entityPos(TestServerContext server, int id) {
+		return server.computeOnServer(s -> s.overworld().getEntity(id) instanceof Entity e ? e.position() : Vec3.ZERO);
+	}
+
+	private static boolean alive(TestServerContext server, int id) {
+		return server.computeOnServer(s -> s.overworld().getEntity(id) instanceof Entity e && e.isAlive());
+	}
+
+	private static void aimAt(ClientGameTestContext ctx, Vec3 target) {
+		float[] yp = ctx.computeOnClient(mc -> {
+			Vec3 d = target.subtract(mc.player.getEyePosition());
+			return new float[]{(float) Math.toDegrees(Math.atan2(-d.x, d.z)), (float) -Math.toDegrees(Math.atan2(d.y, Math.sqrt(d.x * d.x + d.z * d.z)))};
+		});
+		ctx.getInput().lookAt(yp[0], yp[1]);
+	}
+
+	private static void selectSlot(ClientGameTestContext ctx, int slot) {
+		ctx.getInput().pressKey(options -> options.keyHotbarSlots[slot]);
+		ctx.waitTicks(3);
 	}
 
 	// --- helpers -----------------------------------------------------------------------------------

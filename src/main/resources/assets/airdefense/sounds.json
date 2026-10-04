@@ -342,5 +342,224 @@
       }
     ],
     "subtitle": "subtitles.airdefense.turret"
+  },
+  "rifle_near": {
+    "sounds": [
+      {
+        "name": "airdefense:rifle_near_0",
+        "attenuation_distance": 96
+      },
+      {
+        "name": "airdefense:rifle_near_1",
+        "attenuation_distance": 96
+      }
+    ],
+    "subtitle": "subtitles.airdefense.gunshot"
+  },
+  "rifle_far": {
+    "sounds": [
+      {
+        "name": "airdefense:rifle_far_0",
+        "attenuation_distance": 600
+      },
+      {
+        "name": "airdefense:rifle_far_1",
+        "attenuation_distance": 600
+      }
+    ],
+    "subtitle": "subtitles.airdefense.gunshot_far"
+  },
+  "mg_near": {
+    "sounds": [
+      {
+        "name": "airdefense:mg_near_0",
+        "attenuation_distance": 96
+      },
+      {
+        "name": "airdefense:mg_near_1",
+        "attenuation_distance": 96
+      }
+    ],
+    "subtitle": "subtitles.airdefense.gunshot"
+  },
+  "mg_far": {
+    "sounds": [
+      {
+        "name": "airdefense:mg_far_0",
+        "attenuation_distance": 600
+      },
+      {
+        "name": "airdefense:mg_far_1",
+        "attenuation_distance": 600
+      }
+    ],
+    "subtitle": "subtitles.airdefense.gunshot_far"
+  },
+  "sniper_near": {
+    "sounds": [
+      {
+        "name": "airdefense:sniper_near_0",
+        "attenuation_distance": 128
+      },
+      {
+        "name": "airdefense:sniper_near_1",
+        "attenuation_distance": 128
+      }
+    ],
+    "subtitle": "subtitles.airdefense.gunshot"
+  },
+  "sniper_far": {
+    "sounds": [
+      {
+        "name": "airdefense:sniper_far_0",
+        "attenuation_distance": 800
+      },
+      {
+        "name": "airdefense:sniper_far_1",
+        "attenuation_distance": 800
+      }
+    ],
+    "subtitle": "subtitles.airdefense.gunshot_far"
+  },
+  "pistol_near": {
+    "sounds": [
+      {
+        "name": "airdefense:pistol_near_0",
+        "attenuation_distance": 64
+      },
+      {
+        "name": "airdefense:pistol_near_1",
+        "attenuation_distance": 64
+      }
+    ],
+    "subtitle": "subtitles.airdefense.gunshot"
+  },
+  "pistol_far": {
+    "sounds": [
+      {
+        "name": "airdefense:pistol_far_0",
+        "attenuation_distance": 300
+      },
+      {
+        "name": "airdefense:pistol_far_1",
+        "attenuation_distance": 300
+      }
+    ],
+    "subtitle": "subtitles.airdefense.gunshot_far"
+  },
+  "gun_dry": {
+    "sounds": [
+      {
+        "name": "airdefense:gun_dry",
+        "attenuation_distance": 12
+      }
+    ]
+  },
+  "gun_mag_out": {
+    "sounds": [
+      {
+        "name": "airdefense:gun_mag_out",
+        "attenuation_distance": 16
+      }
+    ],
+    "subtitle": "subtitles.airdefense.reload"
+  },
+  "gun_mag_in": {
+    "sounds": [
+      {
+        "name": "airdefense:gun_mag_in",
+        "attenuation_distance": 16
+      }
+    ],
+    "subtitle": "subtitles.airdefense.reload"
+  },
+  "gun_bolt": {
+    "sounds": [
+      {
+        "name": "airdefense:gun_bolt",
+        "attenuation_distance": 16
+      }
+    ],
+    "subtitle": "subtitles.airdefense.reload"
+  },
+  "ricochet": {
+    "sounds": [
+      {
+        "name": "airdefense:ricochet_0",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "airdefense:ricochet_1",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.airdefense.ricochet"
+  },
+  "bullet_hit": {
+    "sounds": [
+      {
+        "name": "airdefense:bullet_hit_0",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "airdefense:bullet_hit_1",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "hit_marker": {
+    "sounds": [
+      {
+        "name": "airdefense:hit_marker",
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "grenade_pin": {
+    "sounds": [
+      {
+        "name": "airdefense:grenade_pin",
+        "attenuation_distance": 12
+      }
+    ],
+    "subtitle": "subtitles.airdefense.grenade_pin"
+  },
+  "grenade_bounce": {
+    "sounds": [
+      {
+        "name": "airdefense:grenade_bounce_0",
+        "attenuation_distance": 16
+      },
+      {
+        "name": "airdefense:grenade_bounce_1",
+        "attenuation_distance": 16
+      }
+    ],
+    "subtitle": "subtitles.airdefense.grenade_bounce"
+  },
+  "throw": {
+    "sounds": [
+      {
+        "name": "airdefense:throw",
+        "attenuation_distance": 12
+      }
+    ]
+  },
+  "nvg_switch": {
+    "sounds": [
+      {
+        "name": "airdefense:nvg_switch",
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "medkit": {
+    "sounds": [
+      {
+        "name": "airdefense:medkit",
+        "attenuation_distance": 12
+      }
+    ],
+    "subtitle": "subtitles.airdefense.medkit"
   }
 }

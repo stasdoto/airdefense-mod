@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:white_wool",
+    "minecraft:paper",
+    "minecraft:red_dye",
+    "minecraft:glistering_melon_slice"
+  ],
+  "result": {
+    "id": "airdefense:medkit",
+    "count": 2
+  }
+}

@@ -183,7 +183,7 @@ public class FactoryBlockEntity extends BlockEntity {
 			if (++progress >= p.time(creative)) {
 				progress = 0;
 				queue.removeFirst();
-				stock[p.ordinal()]++;
+				stock[p.ordinal()] += p.batch;
 				level.playSound(null, worldPosition, SoundEvents.ANVIL_LAND, SoundSource.BLOCKS, 0.5f, 1.4f);
 			}
 			if (level.getGameTime() % 7 == 0) {

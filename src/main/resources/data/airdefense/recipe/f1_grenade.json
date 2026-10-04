@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    " I ",
+    "IXI",
+    " I "
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "X": "minecraft:tnt"
+  },
+  "result": {
+    "id": "airdefense:f1_grenade",
+    "count": 4
+  }
+}

@@ -1322,7 +1322,9 @@ public class VehicleEntity extends LivingEntity {
 		RandomSource r = level.getRandom();
 		Vec3 dir = railDirection(0);
 		double range = type.range;
-		Vec3 centre = railWorld(0);
+		// The two guns are harmonised: their fire meets on the line from the middle of the turret, so the aiming
+		// error is measured from there (from each barrel the target is a few degrees off at 20-30 blocks).
+		Vec3 centre = position().add(0, 2.3, 0);
 		List<MissileEntity> threats = level.getEntitiesOfClass(MissileEntity.class, new AABB(centre, centre).inflate(range),
 				m -> m.isAlive() && m.getMissileType().threat);
 		for (int barrel = 0; barrel < 2 && burstLeft > 0; barrel++, burstLeft--) {
@@ -1331,8 +1333,8 @@ public class VehicleEntity extends LivingEntity {
 			Vec3 bestAim = null;
 			double bestErr = 6;
 			for (MissileEntity m : threats) {
-				Vec3 aim = leadPoint(m, muzzle);
-				Vec3 to = aim.subtract(muzzle);
+				Vec3 aim = leadPoint(m, centre);
+				Vec3 to = aim.subtract(centre);
 				double d = to.length();
 				if (d > range || d < 1) {
 					continue;
@@ -1347,7 +1349,7 @@ public class VehicleEntity extends LivingEntity {
 			if (best != null) {
 				double dist = bestAim.distanceTo(muzzle);
 				double chance = DefenseType.gunHitChance(best.getMissileType().kind) * (1.0 - 0.45 * dist / range)
-						/ (1.0 + bestErr * bestErr / 3.0);
+						/ (1.0 + bestErr * bestErr / 5.0);
 				if (r.nextDouble() < chance) {
 					Vec3 end = bestAim.add(r.nextGaussian() * 0.3, r.nextGaussian() * 0.3, r.nextGaussian() * 0.3);
 					shells.add(new Shell(best, 1.5f, Math.max(1, (int) Math.round(dist / SHELL_SPEED))));
@@ -1603,13 +1605,18 @@ public class VehicleEntity extends LivingEntity {
 		if (!isAlive() || isInvulnerable()) {
 			return false;
 		}
-		if (source.isCreativePlayer() && source.getDirectEntity() instanceof Player) {
+		boolean smallArms = source.is(com.stasdoto.airdefense.registry.ModDamageTypes.BULLET)
+				|| source.is(com.stasdoto.airdefense.registry.ModDamageTypes.SHRAPNEL);
+		if (source.isCreativePlayer() && source.getDirectEntity() instanceof Player && !smallArms) {
 			ejectPassengers();
 			discard();
 			return true;
 		}
 		float k;
-		if (source.is(DamageTypeTags.IS_EXPLOSION)) {
+		if (smallArms) {
+			// Armour: rifle rounds and fragments barely scratch it.
+			k = 0.06f;
+		} else if (source.is(DamageTypeTags.IS_EXPLOSION)) {
 			k = 1.0f;
 		} else if (source.is(DamageTypeTags.IS_PROJECTILE)) {
 			k = 0.25f;

@@ -152,6 +152,20 @@ public final class FxClient {
 				.smokeTrail(ModParticles.TRACER_TAIL, 1).trailSteps(4);
 	}
 
+	/** An ordinary rifle or pistol round: a faint, quick streak (not a tracer, but the eye still catches it). */
+	static FxParticle streak(ClientLevel l, double x, double y, double z, double vx, double vy, double vz) {
+		return base(ModParticles.TRACER, l, x, y, z, vx, vy, vz).life(6, 6).size(0.06f, 0.05f)
+				.color(1f, 0.93f, 0.75f, 1f, 0.8f, 0.5f).alpha(0.5f, 1, 0.9f).glow().drag(1f)
+				.smokeTrail(ModParticles.TRACER_TAIL, 1).trailSteps(2);
+	}
+
+	/** A spent cartridge case flying out of the ejection port: a brass glint that tumbles and lands. */
+	static FxParticle casing(ClientLevel l, double x, double y, double z, double vx, double vy, double vz) {
+		return base(ModParticles.CHUNK, l, x, y, z, vx, vy, vz).life(28, 40).size(0.045f, 0.045f)
+				.color(0.95f, 0.75f, 0.3f, 0.75f, 0.55f, 0.2f).alpha(1f, 1, 0.85f).drag(0.98f).falls(0.05f)
+				.randomRoll().spin(0.6f).solid();
+	}
+
 	static FxParticle tracerTail(ClientLevel l, double x, double y, double z, double vx, double vy, double vz) {
 		return base(ModParticles.TRACER_TAIL, l, x, y, z, 0, 0, 0).life(2, 3).size(0.14f, 0.05f)
 				.color(1f, 0.75f, 0.35f, 1f, 0.45f, 0.1f).alpha(0.8f, 1, 0.1f).glow();
@@ -235,7 +249,8 @@ public final class FxClient {
 		}
 		Vec3 at = new Vec3(p.x(), p.y(), p.z());
 		switch (p.kind()) {
-			case FxPayload.GROUND_IMPACT -> groundImpact(mc, level, at, p.power());
+			case FxPayload.GROUND_IMPACT -> groundImpact(mc, level, at, p.power(), p.az() < 0.5);
+			case FxPayload.GRENADE -> grenade(mc, level, at);
 			case FxPayload.AIR_BURST_THREAT -> airBurst(mc, level, at, p.power(), true);
 			case FxPayload.AIR_BURST_INTERCEPTOR -> airBurst(mc, level, at, p.power(), false);
 			case FxPayload.LAUNCH -> {
@@ -273,7 +288,46 @@ public final class FxClient {
 		return Math.max(1, Math.round(base * detail));
 	}
 
-	private static void groundImpact(Minecraft mc, ClientLevel level, Vec3 at, float power) {
+	/** A hand grenade: a sharp flash, a fountain of dirt and a grey-brown puff, fragments - and no fires. */
+	private static void grenade(Minecraft mc, ClientLevel level, Vec3 at) {
+		RandomSource r = level.getRandom();
+		var pe = mc.particleEngine;
+		pe.add(flash(level, at.x, at.y + 0.4, at.z, 2.2f));
+		pe.add(glow(level, at.x, at.y + 0.6, at.z, 3.5f, 6));
+		for (int i = 0; i < 4; i++) {
+			pe.add(fireball(level, at.x, at.y + 0.5, at.z, r.nextGaussian() * 0.04, 0.05, r.nextGaussian() * 0.04, 0.9f).life(8, 12));
+		}
+		for (int i = 0; i < 10; i++) {
+			double a = r.nextDouble() * Mth.TWO_PI;
+			double side = r.nextDouble() * 0.15;
+			pe.add(dirt(level, at.x, at.y + 0.3, at.z, Math.cos(a) * side, 0.3 + r.nextDouble() * 0.45, Math.sin(a) * side, 0.55f));
+		}
+		for (int i = 0; i < 14; i++) {
+			Vec3 d = randomDir(r, 0.3);
+			double sp = 0.3 + r.nextDouble() * 0.6;
+			pe.add(chunk(level, at.x, at.y + 0.4, at.z, d.x * sp, Math.abs(d.y) * sp + 0.2, d.z * sp));
+		}
+		for (int i = 0; i < 10; i++) {
+			Vec3 d = randomDir(r, 0.05);
+			double sp = 0.5 + r.nextDouble() * 0.7;
+			pe.add(spark(level, at.x, at.y + 0.4, at.z, d.x * sp, Math.abs(d.y) * sp + 0.15, d.z * sp).life(6, 14));
+		}
+		for (int i = 0; i < 12; i++) {
+			double a = Mth.TWO_PI * i / 12;
+			pe.add(shock(level, at.x, at.y + 0.4, at.z, Math.cos(a) * 1.0, 0.02, Math.sin(a) * 1.0).size(0.5f, 1.6f));
+		}
+		for (int i = 0; i < 9; i++) {
+			double a = r.nextDouble() * Mth.TWO_PI;
+			double sp = 0.05 + r.nextDouble() * 0.12;
+			pe.add(smokeBig(level, at.x + r.nextGaussian() * 0.4, at.y + 0.8, at.z + r.nextGaussian() * 0.4,
+					Math.cos(a) * sp, 0.04 + r.nextDouble() * 0.06, Math.sin(a) * sp, 0.35f).life(120, 200));
+		}
+		double dist = mc.player.position().distanceTo(at);
+		after((int) (dist / SOUND_BLOCKS_PER_TICK), () -> CameraShake.add((float) Math.min(1.2, 6.0 / (dist + 4))));
+		SquadAudio.play(at, SquadAudio.Kind.EXPLOSION, 0.4f);
+	}
+
+	private static void groundImpact(Minecraft mc, ClientLevel level, Vec3 at, float power, boolean fires) {
 		RandomSource r = level.getRandom();
 		float scale = power / 6f;
 		float lod = detail(mc, at);
@@ -337,8 +391,8 @@ public final class FxClient {
 				}
 			});
 		}
-		// 6. Fires burning in the crater for ~12 s, with embers and thin smoke.
-		for (int k = 0; k < 60; k++) {
+		// 6. Fires burning in the crater for ~12 s, with embers and thin smoke (not after an RPG hit).
+		for (int k = 0; k < (fires ? 60 : 0); k++) {
 			after(6 + k * 4, () -> {
 				double a = r.nextDouble() * Mth.TWO_PI;
 				double d = r.nextDouble() * power * 0.55;

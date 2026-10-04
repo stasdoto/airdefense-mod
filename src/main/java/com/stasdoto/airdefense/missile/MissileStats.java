@@ -7,6 +7,8 @@ import com.stasdoto.airdefense.AirDefense;
 /** Counters used by the automated in-game test (and handy for debugging); logging only with -Dairdefense.debug=true. */
 public final class MissileStats {
 	public static final AtomicInteger STRIKES_LAUNCHED = new AtomicInteger();
+	public static final AtomicInteger ROCKETS_FIRED = new AtomicInteger();
+	public static final AtomicInteger ROCKET_IMPACTS = new AtomicInteger();
 	public static final AtomicInteger INTERCEPTORS_LAUNCHED = new AtomicInteger();
 	public static final AtomicInteger THREATS_SHOT_DOWN = new AtomicInteger();
 	public static final AtomicInteger GROUND_IMPACTS = new AtomicInteger();
