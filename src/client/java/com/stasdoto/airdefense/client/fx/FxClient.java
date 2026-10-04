@@ -72,7 +72,7 @@ public final class FxClient {
 
 	/** Burning fragment: glowing, falls, leaves a thin smoke trail. */
 	static FxParticle spark(ClientLevel l, double x, double y, double z, double vx, double vy, double vz) {
-		return base(ModParticles.SPARK, l, x, y, z, vx, vy, vz).life(25, 50).size(0.22f, 0.08f)
+		return base(ModParticles.SPARK, l, x, y, z, vx, vy, vz).life(18, 34).size(0.22f, 0.08f)
 				.color(1f, 0.9f, 0.55f, 1f, 0.3f, 0.05f).alpha(1f, 1, 0.6f).glow().drag(0.97f).falls(0.035f)
 				.smokeTrail(ModParticles.DEBRIS_SMOKE, 1);
 	}
@@ -119,8 +119,8 @@ public final class FxClient {
 	}
 
 	static FxParticle debrisSmoke(ClientLevel l, double x, double y, double z, double vx, double vy, double vz) {
-		return base(ModParticles.DEBRIS_SMOKE, l, x, y, z, vx, vy, vz).life(50, 90).size(0.35f, 1.6f).grow(10)
-				.alpha(0.42f, 1, 0.35f).color(0.18f, 0.17f, 0.16f, 0.45f, 0.45f, 0.45f).drag(0.9f).windy().rise(0.0006f);
+		return base(ModParticles.DEBRIS_SMOKE, l, x, y, z, vx, vy, vz).life(40, 70).size(0.25f, 0.9f).grow(10)
+				.alpha(0.3f, 1, 0.3f).color(0.18f, 0.17f, 0.16f, 0.45f, 0.45f, 0.45f).drag(0.9f).windy().rise(0.0006f);
 	}
 
 	// --- composite effects ------------------------------------------------------------------------------
