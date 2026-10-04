@@ -27,11 +27,15 @@ import net.minecraft.world.phys.Vec3;
 import com.stasdoto.airdefense.registry.ModSounds;
 
 /**
- * Target designation tablet: right-click to mark the block you're looking at (up to 600 blocks, as far as the world is loaded),
- * sneak + right-click to clear. Right-click a launcher with it to fire at the mark.
+ * Target designation tablet: right-click opens the tactical map (pick a launcher and a target, fire, switch air
+ * defence modes); sneak + right-click marks the block you're looking at (up to 600 blocks, as far as the world is
+ * loaded). Right-click a launcher with it to fire at the mark.
  */
 public class DesignatorItem extends Item {
 	public static final double RANGE = 600;
+	/** Opens the map screen; set by the client code (the screen is client-only). */
+	public static Runnable openMap = () -> {
+	};
 
 	public DesignatorItem(Properties properties) {
 		super(properties);
@@ -40,12 +44,13 @@ public class DesignatorItem extends Item {
 	@Override
 	public InteractionResult use(Level level, Player player, InteractionHand hand) {
 		ItemStack stack = player.getItemInHand(hand);
-		if (level.isClientSide()) {
+		if (!player.isSecondaryUseActive()) {
+			if (level.isClientSide()) {
+				openMap.run();
+			}
 			return InteractionResult.SUCCESS;
 		}
-		if (player.isSecondaryUseActive()) {
-			clearTarget(stack);
-			player.sendOverlayMessage(Component.translatable("message.airdefense.target_cleared"));
+		if (level.isClientSide()) {
 			return InteractionResult.SUCCESS;
 		}
 		Vec3 eye = player.getEyePosition();
@@ -61,6 +66,18 @@ public class DesignatorItem extends Item {
 		player.sendOverlayMessage(Component.translatable("message.airdefense.target_set", pos.getX(), pos.getY(), pos.getZ(), dist));
 		level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.DESIGNATE, SoundSource.PLAYERS, 1.0f, 1.0f);
 		return InteractionResult.SUCCESS;
+	}
+
+	/** The tablet in either hand, or null. */
+	@Nullable
+	public static ItemStack held(Player player) {
+		for (InteractionHand hand : InteractionHand.values()) {
+			ItemStack stack = player.getItemInHand(hand);
+			if (stack.getItem() instanceof DesignatorItem) {
+				return stack;
+			}
+		}
+		return null;
 	}
 
 	@Nullable

@@ -46,6 +46,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 
 			lineup(ctx, server);
 			drive(ctx, server);
+			tabletMap(ctx, server);
 			unopposedIskander(ctx, server);
 			effectsCloseup(ctx, server, false);
 			server.runCommand("time set 14500");
@@ -358,6 +359,107 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.takeScreenshot("53_iris_drones");
 		ctx.waitTicks(260);
 		report("iris_t_vs_5_shahed", before);
+	}
+
+	/**
+	 * Stage 3: the tablet map, used the way a player does: right-click with the tablet, click the HIMARS, zoom out with
+	 * the wheel, click a target, press "Fire!"; then switch a Patriot off from the map.
+	 */
+	private void tabletMap(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 15000;
+		int g = ground;
+		// Some landmarks so the map has something to show: a lake, a road, buildings, a wood.
+		server.runCommand(String.format("fill %d %d %d %d %d %d minecraft:water", x - 60, g - 1, 20, x - 25, g - 1, 55));
+		server.runCommand(String.format("fill %d %d %d %d %d %d minecraft:gravel", x - 150, g - 1, -3, x + 150, g - 1, 2));
+		server.runCommand(String.format("fill %d %d %d %d %d %d minecraft:stone_bricks hollow", x + 40, g, 25, x + 52, g + 6, 37));
+		server.runCommand(String.format("fill %d %d %d %d %d %d minecraft:bricks hollow", x + 60, g, 30, x + 66, g + 4, 50));
+		server.runCommand(String.format("fill %d %d %d %d %d %d minecraft:oak_leaves", x - 90, g, -60, x - 50, g + 3, -25));
+		server.runCommand(String.format("fill %d %d %d %d %d %d minecraft:sand", x + 80, g - 1, -80, x + 120, g - 1, -40));
+		server.runCommand("gamemode creative @a");
+		camera(server, x, g + 1, 70, 180, 0);
+		ctx.waitTicks(40);
+		int himars = spawnVehicle(server, VehicleType.HIMARS, x, 10, 180);
+		int iskander = spawnVehicle(server, VehicleType.ISKANDER, x + 22, 15, 180);
+		int patriot = spawnVehicle(server, VehicleType.PATRIOT, x - 25, 60, 200);
+		spawnVehicle(server, VehicleType.GEPARD, x + 30, 70, 160);
+		server.runCommand("clear @a");
+		server.runCommand("item replace entity @a hotbar.0 with airdefense:designator");
+		ctx.runOnClient(mc -> mc.player.getInventory().setSelectedSlot(0));
+		ctx.waitTicks(80);
+		// Right-click with the tablet opens the map.
+		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT);
+		ctx.waitForScreen(com.stasdoto.airdefense.client.map.TacticalMapScreen.class);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("60_map_overview");
+		int scale = ctx.computeOnClient(mc -> mc.getWindow().getGuiScale());
+		// Click the HIMARS icon.
+		int[] pos = ctx.computeOnClient(mc -> {
+			var s = (com.stasdoto.airdefense.client.map.TacticalMapScreen) mc.gui.screen();
+			for (int[] v : s.vehicleScreenPositions()) {
+				if (v[0] == himars) {
+					return v;
+				}
+			}
+			return null;
+		});
+		AirDefense.LOGGER.info("[airdefense-test] HIMARS on the map at gui {} (scale {})", pos == null ? "-" : pos[1] + "," + pos[2], scale);
+		if (pos == null) {
+			return;
+		}
+		ctx.getInput().setCursorPos(pos[1] * scale + 1, pos[2] * scale + 1);
+		ctx.waitTicks(2);
+		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
+		ctx.waitTicks(5);
+		// Zoom out twice (the target is 300 blocks north), then click the target.
+		ctx.getInput().scroll(-1);
+		ctx.waitTicks(2);
+		ctx.getInput().scroll(-1);
+		ctx.waitTicks(5);
+		double[] t = ctx.computeOnClient(mc -> {
+			var s = (com.stasdoto.airdefense.client.map.TacticalMapScreen) mc.gui.screen();
+			return new double[]{s.toScreenX(x + 6.5), s.toScreenY(-290.5)};
+		});
+		ctx.getInput().setCursorPos(t[0] * scale + 1, t[1] * scale + 1);
+		ctx.waitTicks(2);
+		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
+		ctx.waitTicks(25);
+		ctx.takeScreenshot("61_map_target");
+		int launched = MissileStats.STRIKES_LAUNCHED.get();
+		boolean fired = ctx.tryClickScreenButton("Fire!");
+		AirDefense.LOGGER.info("[airdefense-test] Fire! button pressed: {}", fired);
+		int waited = waitUntil(ctx, () -> MissileStats.STRIKES_LAUNCHED.get() > launched, 400);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("62_map_firing");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT map_strike: launched={} after {} ticks", MissileStats.STRIKES_LAUNCHED.get() - launched, waited);
+		// Switch the Patriot off from the map.
+		int[] pp = ctx.computeOnClient(mc -> {
+			var s = (com.stasdoto.airdefense.client.map.TacticalMapScreen) mc.gui.screen();
+			for (int[] v : s.vehicleScreenPositions()) {
+				if (v[0] == patriot) {
+					return v;
+				}
+			}
+			return null;
+		});
+		if (pp != null) {
+			ctx.getInput().setCursorPos(pp[1] * scale + 1, pp[2] * scale + 1);
+			ctx.waitTicks(2);
+			ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
+			ctx.waitTicks(5);
+			boolean off = ctx.tryClickScreenButton("Air defence: auto (turn off)");
+			AirDefense.LOGGER.info("[airdefense-test] AD mode button pressed: {}", off);
+			ctx.waitTicks(20);
+			int mode = server.computeOnServer(s -> s.overworld().getEntity(patriot) instanceof VehicleEntity v ? v.getMode() : -1);
+			AirDefense.LOGGER.info("[airdefense-test] RESULT map_mode: patriot mode after the button = {} (0 = off)", mode);
+			ctx.takeScreenshot("63_map_patriot_off");
+		}
+		ctx.waitTicks(80);
+		ctx.takeScreenshot("64_map_rockets");
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		ctx.waitTicks(10);
+		server.runCommand("clear @a");
+		server.runCommand("gamemode spectator @a");
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(himars, iskander, patriot), Entity::discard));
 	}
 
 	// --- helpers -----------------------------------------------------------------------------------

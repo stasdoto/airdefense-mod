@@ -52,6 +52,7 @@ import com.stasdoto.airdefense.missile.MissileEntity;
 import com.stasdoto.airdefense.missile.MissileType;
 import com.stasdoto.airdefense.registry.ModParticles;
 import com.stasdoto.airdefense.registry.ModSounds;
+import com.stasdoto.airdefense.registry.ModTickets;
 
 /**
  * A drivable military vehicle at real size: wheels or tracks, a driver and a gunner seat, and either a strike
@@ -82,7 +83,7 @@ public class VehicleEntity extends LivingEntity {
 	public static final int ACTION_STOW_FOR_MARCH = 3;
 	public static final int ACTION_FIRE = 4;
 
-	private static final int MIN_STRIKE_DISTANCE = 24;
+	public static final int MIN_STRIKE_DISTANCE = 24;
 	/** Missile batteries deploy after standing still this long (a blast wave rocking the truck does not count as driving). */
 	private static final int DEPLOY_STILL_TICKS = 20;
 	/** Gepard: speed of its 35 mm rounds in blocks per tick (slowed down from the real ~60 so the tracers can be seen). */
@@ -695,6 +696,11 @@ public class VehicleEntity extends LivingEntity {
 		if (marchTicks > 0) {
 			marchTicks--;
 		}
+		if ((tickCount + getId()) % 20 == 0) {
+			// Keeps its own ground loaded and running: visible and controllable on the tablet map from anywhere,
+			// air defence keeps guarding while the player is far away.
+			level.getChunkSource().addTicketWithRadius(ModTickets.VEHICLE, ChunkPos.containing(blockPosition()), 2);
+		}
 		if (vtype.isLauncher()) {
 			tickLauncher(level);
 		} else {
@@ -720,6 +726,12 @@ public class VehicleEntity extends LivingEntity {
 		if (dist < MIN_STRIKE_DISTANCE) {
 			if (player != null) {
 				player.sendOverlayMessage(Component.translatable("message.airdefense.too_close", MIN_STRIKE_DISTANCE));
+			}
+			return false;
+		}
+		if (dist > type.maxRange) {
+			if (player != null) {
+				player.sendOverlayMessage(Component.translatable("message.airdefense.too_far", (int) dist, type.maxRange));
 			}
 			return false;
 		}
@@ -873,10 +885,6 @@ public class VehicleEntity extends LivingEntity {
 			setElevationTarget(0);
 			setTurretTarget(0);
 			return;
-		}
-		if (getMode() == MODE_AUTO && (tickCount + getId()) % 20 == 0) {
-			// On duty: keeps its own ground loaded and running, so it still guards the sky when the player is far away.
-			level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, ChunkPos.containing(blockPosition()), 2);
 		}
 		VehicleGeometry.Geometry g = vtype.geometry;
 		if (!gun) {
@@ -1139,6 +1147,29 @@ public class VehicleEntity extends LivingEntity {
 		speed = 0;
 		setState(DEPLOYED);
 		setElevationTarget(vtype.geometry.deployElevation() > 0 ? vtype.geometry.deployElevation() : 45);
+	}
+
+	/** Air defence mode set from the tablet map (auto / off). */
+	public void setModeByOrder(int mode, @Nullable Player player) {
+		if (!vtype.isDefense() || (mode != MODE_AUTO && mode != MODE_OFF)) {
+			return;
+		}
+		setMode(mode);
+		if (player != null) {
+			player.sendOverlayMessage(Component.translatable(mode == MODE_AUTO ? "message.airdefense.vehicle.mode_auto" : "message.airdefense.vehicle.mode_off"));
+		}
+	}
+
+	/** Everything the tablet map shows about this vehicle (server side). */
+	public com.stasdoto.airdefense.map.MapStatusPayload.Entry mapEntry() {
+		int busy = vtype.isLauncher() ? cooldown : reloadTimer;
+		boolean firing = vtype.isLauncher() && (strikePending || salvoLeft > 0);
+		BlockPos t = strikeTarget;
+		MissileEntity tr = tracked;
+		return new com.stasdoto.airdefense.map.MapStatusPayload.Entry(getId(), vtype.ordinal(), (float) getX(), (float) getY(), (float) getZ(),
+				getYRot(), getState(), getMode(), getLoadedMask(), getAmmo(), (int) Math.ceil(getHealth() / getMaxHealth() * 100), busy, firing,
+				t != null, t != null ? t.getX() : 0, t != null ? t.getY() : 0, t != null ? t.getZ() : 0,
+				tr != null && tr.isAlive() ? tr.getId() : -1);
 	}
 
 	private void cycleMode(Player player) {
