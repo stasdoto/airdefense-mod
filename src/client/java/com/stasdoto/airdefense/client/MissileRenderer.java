@@ -2,6 +2,7 @@ package com.stasdoto.airdefense.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import org.joml.Matrix4f;
 
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -58,8 +59,8 @@ public class MissileRenderer extends EntityRenderer<MissileEntity, MissileRender
 	public void submit(MissileRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
 		poseStack.pushPose();
 		poseStack.translate(0, state.boundingBoxHeight / 2, 0);
-		poseStack.mulPose(Axis.YP.rotationDegrees(state.yaw));
-		poseStack.mulPose(Axis.XP.rotationDegrees(-state.pitch));
+		poseStack.mulPose(new Matrix4f().rotation(Axis.YP.rotationDegrees(state.yaw)));
+		poseStack.mulPose(new Matrix4f().rotation(Axis.XP.rotationDegrees(-state.pitch)));
 		poseStack.scale(state.scale, state.scale, state.scale);
 		state.item.submit(poseStack, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor);
 		poseStack.popPose();

@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=north,powered=false": {
+      "model": "airdefense:block/kalibr_launcher"
+    },
+    "facing=north,powered=true": {
+      "model": "airdefense:block/kalibr_launcher"
+    },
+    "facing=east,powered=false": {
+      "model": "airdefense:block/kalibr_launcher",
+      "y": 90
+    },
+    "facing=east,powered=true": {
+      "model": "airdefense:block/kalibr_launcher",
+      "y": 90
+    },
+    "facing=south,powered=false": {
+      "model": "airdefense:block/kalibr_launcher",
+      "y": 180
+    },
+    "facing=south,powered=true": {
+      "model": "airdefense:block/kalibr_launcher",
+      "y": 180
+    },
+    "facing=west,powered=false": {
+      "model": "airdefense:block/kalibr_launcher",
+      "y": 270
+    },
+    "facing=west,powered=true": {
+      "model": "airdefense:block/kalibr_launcher",
+      "y": 270
+    }
+  }
+}

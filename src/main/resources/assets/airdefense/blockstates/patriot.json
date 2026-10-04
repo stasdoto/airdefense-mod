@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "airdefense:block/patriot"
+    },
+    "facing=east": {
+      "model": "airdefense:block/patriot",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "airdefense:block/patriot",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "airdefense:block/patriot",
+      "y": 270
+    }
+  }
+}

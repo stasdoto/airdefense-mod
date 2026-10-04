@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "ODO",
+    "IRI",
+    "III"
+  ],
+  "key": {
+    "O": "minecraft:observer",
+    "D": "minecraft:dispenser",
+    "I": "minecraft:iron_block",
+    "R": "minecraft:redstone_block"
+  },
+  "result": {
+    "id": "airdefense:gepard",
+    "count": 1
+  }
+}

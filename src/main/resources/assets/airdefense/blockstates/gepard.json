@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "airdefense:block/gepard"
+    },
+    "facing=east": {
+      "model": "airdefense:block/gepard",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "airdefense:block/gepard",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "airdefense:block/gepard",
+      "y": 270
+    }
+  }
+}

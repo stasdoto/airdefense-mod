@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "  F",
+    " O ",
+    "I  "
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "O": "minecraft:observer",
+    "F": "minecraft:firework_rocket"
+  },
+  "result": {
+    "id": "airdefense:manpads",
+    "count": 1
+  }
+}

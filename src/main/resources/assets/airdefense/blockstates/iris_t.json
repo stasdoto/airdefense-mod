@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "airdefense:block/iris_t"
+    },
+    "facing=east": {
+      "model": "airdefense:block/iris_t",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "airdefense:block/iris_t",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "airdefense:block/iris_t",
+      "y": 270
+    }
+  }
+}
