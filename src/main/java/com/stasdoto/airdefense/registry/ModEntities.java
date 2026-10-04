@@ -17,6 +17,7 @@ import com.stasdoto.airdefense.vehicle.VehicleEntity;
 import com.stasdoto.airdefense.vehicle.VehicleType;
 import com.stasdoto.airdefense.weapon.GrenadeEntity;
 import com.stasdoto.airdefense.nation.SoldierEntity;
+import com.stasdoto.airdefense.nation.WorkerEntity;
 
 public final class ModEntities {
 	private static final ResourceKey<EntityType<?>> MISSILE_KEY = ResourceKey.create(Registries.ENTITY_TYPE, AirDefense.id("missile"));
@@ -50,6 +51,16 @@ public final class ModEntities {
 					.clientTrackingRange(10)
 					.build(SOLDIER_KEY));
 
+	private static final ResourceKey<EntityType<?>> WORKER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, AirDefense.id("worker"));
+
+	/** Villagers at work (gathering or building). */
+	public static final EntityType<WorkerEntity> WORKER = Registry.register(BuiltInRegistries.ENTITY_TYPE, WORKER_KEY,
+			EntityType.Builder.<WorkerEntity>of(WorkerEntity::new, MobCategory.MISC)
+					.sized(0.6f, 1.8f)
+					.eyeHeight(1.62f)
+					.clientTrackingRange(10)
+					.build(WORKER_KEY));
+
 	private static final Map<VehicleType, EntityType<VehicleEntity>> VEHICLES = new EnumMap<>(VehicleType.class);
 
 	static {
@@ -77,6 +88,7 @@ public final class ModEntities {
 
 	public static void init() {
 		FabricDefaultAttributeRegistry.register(SOLDIER, SoldierEntity.createAttributes());
+		FabricDefaultAttributeRegistry.register(WORKER, WorkerEntity.createAttributes());
 		for (VehicleType type : VehicleType.values()) {
 			FabricDefaultAttributeRegistry.register(vehicle(type), VehicleEntity.createAttributes(type));
 		}

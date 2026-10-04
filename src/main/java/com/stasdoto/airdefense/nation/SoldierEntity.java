@@ -77,6 +77,9 @@ public class SoldierEntity extends PathfinderMob {
 	private VillagerData origin;
 	@Nullable
 	private UUID originId;
+	/** The whole villager he was (trades, experience, gossip, homes), for going home as him. */
+	@Nullable
+	private net.minecraft.nbt.CompoundTag villagerTag;
 	private int ammo = -1;
 	private int reload;
 	private int cooldown;
@@ -207,6 +210,10 @@ public class SoldierEntity extends PathfinderMob {
 		this.originId = id;
 	}
 
+	public void setVillagerTag(net.minecraft.nbt.CompoundTag tag) {
+		this.villagerTag = tag;
+	}
+
 	@Nullable
 	public VillagerData origin() {
 		return origin;
@@ -242,7 +249,7 @@ public class SoldierEntity extends PathfinderMob {
 		if (e instanceof SoldierEntity s) {
 			return s.role() != BANDIT && s.country == country && (country >= 0 || s.home == home);
 		}
-		if (e instanceof AbstractVillager || e instanceof IronGolem) {
+		if (e instanceof AbstractVillager || e instanceof IronGolem || e instanceof WorkerEntity) {
 			return true;
 		}
 		if (e instanceof Player p && level() instanceof ServerLevel sl) {
@@ -260,7 +267,8 @@ public class SoldierEntity extends PathfinderMob {
 			return false;
 		}
 		if (role() == BANDIT) {
-			return e instanceof Player || e instanceof SoldierEntity || e instanceof AbstractVillager || e instanceof IronGolem;
+			return e instanceof Player || e instanceof SoldierEntity || e instanceof AbstractVillager || e instanceof IronGolem
+					|| e instanceof WorkerEntity;
 		}
 		if (e instanceof SoldierEntity s) {
 			return s.role() == BANDIT || Nations.atWar(level(), country, s.country);
@@ -431,6 +439,9 @@ public class SoldierEntity extends PathfinderMob {
 		if (originId != null) {
 			output.store("origin_id", UUIDUtil.CODEC, originId);
 		}
+		if (villagerTag != null) {
+			output.store("villager", net.minecraft.nbt.CompoundTag.CODEC, villagerTag);
+		}
 	}
 
 	@Override
@@ -444,6 +455,7 @@ public class SoldierEntity extends PathfinderMob {
 		order = input.read("order", BlockPos.CODEC).orElse(null);
 		origin = input.read("origin", VillagerData.CODEC).orElse(null);
 		originId = input.read("origin_id", UUIDUtil.CODEC).orElse(null);
+		villagerTag = input.read("villager", net.minecraft.nbt.CompoundTag.CODEC).orElse(null);
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -574,17 +586,27 @@ public class SoldierEntity extends PathfinderMob {
 
 	/** Called up villagers go home: they become villagers again (same person, same face). */
 	public void demobilize(ServerLevel level) {
-		var villager = net.minecraft.world.entity.EntityTypes.VILLAGER.create(level, net.minecraft.world.entity.EntitySpawnReason.CONVERSION);
+		net.minecraft.world.entity.npc.villager.Villager villager = null;
+		if (villagerTag != null && level.getEntity(originId == null ? UUID.randomUUID() : originId) == null) {
+			Entity e = EntityType.loadEntityRecursive(net.minecraft.world.entity.EntityTypes.VILLAGER, villagerTag, level,
+					net.minecraft.world.entity.EntitySpawnReason.CONVERSION, net.minecraft.world.entity.EntityProcessor.NOP);
+			if (e instanceof net.minecraft.world.entity.npc.villager.Villager v) {
+				villager = v;
+			}
+		}
 		if (villager == null) {
-			return;
+			villager = net.minecraft.world.entity.EntityTypes.VILLAGER.create(level, net.minecraft.world.entity.EntitySpawnReason.CONVERSION);
+			if (villager == null) {
+				return;
+			}
+			if (origin != null) {
+				villager.setVillagerData(origin);
+			}
+			if (originId != null && level.getEntity(originId) == null) {
+				villager.setUUID(originId);
+			}
 		}
 		villager.snapTo(getX(), getY(), getZ(), getYRot(), getXRot());
-		if (origin != null) {
-			villager.setVillagerData(origin);
-		}
-		if (originId != null && level.getEntity(originId) == null) {
-			villager.setUUID(originId);
-		}
 		level.addFreshEntity(villager);
 		discard();
 	}

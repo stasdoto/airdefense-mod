@@ -88,6 +88,7 @@ public class TacticalMapScreen extends Screen {
 	private Button sendButton;
 	private Button homeButton;
 	private Button dismissButton;
+	private Button manageButton;
 
 	public TacticalMapScreen() {
 		super(Component.translatable("screen.airdefense.map.title"));
@@ -107,6 +108,8 @@ public class TacticalMapScreen extends Screen {
 				.bounds(px0 + 4, my0 + 1, pw / 2 - 1, 13).build());
 		tabArmy = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.tab_army"), b -> setTab(1))
 				.bounds(px0 + 4 + pw / 2 + 1, my0 + 1, pw - pw / 2 - 1, 13).build());
+		manageButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.manage"), b -> army(NationActionPayload.OPEN))
+				.bounds(px0 + 4, my1 - 64, pw, 20).build());
 		callButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.call"), b -> army(NationActionPayload.MOBILIZE))
 				.bounds(px0 + 4, my1 - 42, pw / 2 - 1, 20).build());
 		dismissButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.dismiss"), b -> army(NationActionPayload.DEMOBILIZE))
@@ -310,6 +313,8 @@ public class TacticalMapScreen extends Screen {
 		boolean mine = v != null && v.mine();
 		callButton.visible = army;
 		dismissButton.visible = army;
+		manageButton.visible = army;
+		manageButton.active = mine;
 		sendButton.visible = army;
 		homeButton.visible = army;
 		callButton.active = mine;

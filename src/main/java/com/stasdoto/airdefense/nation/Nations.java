@@ -97,6 +97,7 @@ public final class Nations {
 		if (t % 1200 == 300) {
 			bandits(level, p);
 		}
+		Economy.tick(level, p);
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -237,7 +238,7 @@ public final class Nations {
 				continue;
 			}
 			List<Villager> villagers = villagers(level, s);
-			s.population = villagers.size();
+			s.population = villagers.size() + Economy.workers(level, s).size();
 			Villager elder = s.elder == null ? null : level.getEntity(s.elder) instanceof Villager v && v.isAlive() ? v : null;
 			if (elder == null && !villagers.isEmpty()) {
 				for (Villager v : villagers) {
@@ -495,7 +496,8 @@ public final class Nations {
 				adults++;
 			}
 		}
-		return Math.max(0, Math.min(adults - 2, (adults + s.soldiers.size()) / 2 - s.soldiers.size()));
+		// Half the grown-ups (four more for every barracks), and at least two stay at home.
+		return Math.max(0, Math.min(adults - 2, (adults + s.soldiers.size()) / 2 - s.soldiers.size() + Economy.barracksBonus(s)));
 	}
 
 	public static int mobilize(ServerLevel level, ServerPlayer player, Settlement s, int count) {
@@ -516,6 +518,7 @@ public final class Nations {
 			}
 			SoldierEntity e = SoldierEntity.create(level, SoldierEntity.SOLDIER, c.id, c.color, s.id, v.position(), lookOf(v.getUUID()));
 			e.setOrigin(v.getVillagerData(), v.getUUID());
+			e.setVillagerTag(WorkerEntity.save(level, v));
 			e.setHomeTo(s.flag, 16);
 			v.discard();
 			level.addFreshEntity(e);

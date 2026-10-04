@@ -67,6 +67,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("nations")) {
 				nations(ctx, server);
 			}
+			if (scene("economy")) {
+				economy(ctx, server);
+			}
 			if (scene("strike")) {
 				unopposedIskander(ctx, server);
 				effectsCloseup(ctx, server, false);
@@ -1184,6 +1187,310 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runCommand("kill @e[type=airdefense:soldier,distance=..10000]");
 		server.runCommand("clear @a");
 		server.runCommand("gamemode spectator @a");
+	}
+
+	private void economy(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 32000;
+		int g = ground;
+		server.runCommand("difficulty peaceful");
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 1000");
+		camera(server, x + 0.5, g + 10, 20.5, 180, 25);
+		ctx.waitTicks(40);
+		String[] jobs = {"none", "none", "none", "farmer", "librarian", "cleric", "mason", "none", "fisherman", "none", "toolsmith", "nitwit",
+				"none", "shepherd"};
+		village(server, x, 0, jobs);
+		// A little wood and some rock near the village for the gatherers.
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			for (int i = 0; i < 4; i++) {
+				int tx = x - 30 + i * 5;
+				int tz = -36 - (i % 2) * 3;
+				for (int y = 0; y < 5; y++) {
+					l.setBlock(new BlockPos(tx, g + y, tz), Blocks.OAK_LOG.defaultBlockState(), Block.UPDATE_ALL);
+				}
+				for (int dx = -2; dx <= 2; dx++) {
+					for (int dz = -2; dz <= 2; dz++) {
+						for (int y = 3; y <= 6; y++) {
+							BlockPos q = new BlockPos(tx + dx, g + y, tz + dz);
+							if (l.getBlockState(q).isAir() && Math.abs(dx) + Math.abs(dz) + Math.max(0, y - 5) * 2 <= 3) {
+								l.setBlock(q, Blocks.OAK_LEAVES.defaultBlockState().setValue(net.minecraft.world.level.block.LeavesBlock.PERSISTENT, true),
+										Block.UPDATE_ALL);
+							}
+						}
+					}
+				}
+			}
+			for (int i = 0; i < 3; i++) {
+				int rx = x + 28 + i * 4;
+				for (int dx = 0; dx < 2; dx++) {
+					for (int dz = 0; dz < 2; dz++) {
+						l.setBlock(new BlockPos(rx + dx, g, 36 + dz), (i == 2 ? Blocks.IRON_ORE : Blocks.STONE).defaultBlockState(), Block.UPDATE_ALL);
+						l.setBlock(new BlockPos(rx + dx, g + 1, 36 + dz), Blocks.ANDESITE.defaultBlockState(), Block.UPDATE_ALL);
+					}
+				}
+			}
+		});
+		waitUntil(ctx, () -> settlementAt(server, x, 0) >= 0, 400);
+		int id = settlementAt(server, x, 0);
+		server.runCommand("gamemode creative @a");
+		camera(server, x + 0.5, g, 9.5, 180, 0);
+		ctx.waitTicks(5);
+		server.runOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			com.stasdoto.airdefense.nation.Nations.takeOver(s.overworld(), s.getPlayerList().getPlayers().getFirst(), p.settlements.get(id));
+		});
+		ctx.waitTicks(5);
+		ecoScreen(ctx, server, id, com.stasdoto.airdefense.client.nation.SettlementScreen.WORK);
+		// Put people to work: two woodcutters, two stonecutters, an iron miner, three builders.
+		int[] want = {2, 2, 1, 3};
+		for (int j = 0; j < want.length; j++) {
+			for (int k = 0; k < want[j]; k++) {
+				int job = j;
+				ctx.runOnClient(mc -> {
+					if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.nation.SettlementScreen sc) {
+						sc.act(com.stasdoto.airdefense.nation.NationActionPayload.JOB, job, 1);
+					}
+				});
+				ctx.waitTicks(3);
+			}
+		}
+		ctx.waitTicks(25);
+		ctx.takeScreenshot("110_work_tab");
+		int[] counts = server.computeOnServer(s -> com.stasdoto.airdefense.nation.Economy.jobCounts(s.overworld(),
+				com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id)));
+		AirDefense.LOGGER.info("[airdefense-test] RESULT workers: wood {} stone {} iron {} build {} (hired {})", counts[0], counts[1], counts[2],
+				counts[3], com.stasdoto.airdefense.nation.Economy.hired);
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		ctx.waitTicks(5);
+
+		// Survival: resources handed over, a small house paid for and put up by the builders; gatherers deliver.
+		server.runCommand("gamemode survival @a");
+		server.runCommand("clear @a");
+		server.runCommand("give @a minecraft:oak_log 32");
+		server.runCommand("give @a minecraft:cobblestone 64");
+		server.runCommand("give @a minecraft:iron_ingot 20");
+		camera(server, x + 6.5, g, 6.5, 135, 10);
+		ctx.waitTicks(10);
+		ecoScreen(ctx, server, id, com.stasdoto.airdefense.client.nation.SettlementScreen.WORK);
+		ecoAct(ctx, com.stasdoto.airdefense.nation.NationActionPayload.DONATE, 0);
+		ctx.waitTicks(25);
+		int[] stock = stock(server, id);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT donate: wood {} stone {} iron {}", stock[0], stock[1], stock[2]);
+		ctx.takeScreenshot("110b_store");
+		ecoScreen(ctx, server, id, com.stasdoto.airdefense.client.nation.SettlementScreen.BUILD);
+		ecoAct(ctx, com.stasdoto.airdefense.nation.NationActionPayload.BUILD, com.stasdoto.airdefense.nation.BuildingType.SMALL_HOUSE.ordinal());
+		ctx.waitTicks(25);
+		int[] paid = stock(server, id);
+		ctx.takeScreenshot("110c_build_tab");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT house_paid: wood {} -> {}, stone {} -> {}", stock[0], paid[0], stock[1], paid[1]);
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		BlockPos house = server.computeOnServer(s -> {
+			var st = com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id);
+			return st.eco.buildings.isEmpty() ? BlockPos.ZERO : st.eco.buildings.getFirst().middle();
+		});
+		server.runCommand("gamemode spectator @a");
+		camera(server, house.getX() + 10.5, g + 7, house.getZ() + 10.5, 135, 22);
+		int t0 = 0;
+		boolean shotMid = false;
+		for (; t0 < 2400; t0 += 20) {
+			ctx.waitTicks(20);
+			int pct = buildingPercent(server, id, 0);
+			if (!shotMid && pct >= 40) {
+				shotMid = true;
+				ctx.takeScreenshot("111_builders_at_work");
+			}
+			if (pct >= 100) {
+				break;
+			}
+		}
+		ctx.takeScreenshot("112_small_house");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT small_house: {}% after {} ticks, delivered {}", buildingPercent(server, id, 0), t0,
+				com.stasdoto.airdefense.nation.Economy.delivered);
+		// The gatherers at work.
+		camera(server, x - 22.5, g + 6, -24.5, 160, 20);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("113_woodcutters");
+		camera(server, x + 34.5, g + 5, 28.5, 180, 25);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("113b_stonecutters");
+
+		// Creative: everything else, free and fast.
+		server.runCommand("gamemode creative @a");
+		camera(server, x + 0.5, g + 2, 6.5, 180, 0);
+		ctx.waitTicks(10);
+		ecoScreen(ctx, server, id, com.stasdoto.airdefense.client.nation.SettlementScreen.BUILD);
+		com.stasdoto.airdefense.nation.BuildingType[] first = {com.stasdoto.airdefense.nation.BuildingType.HOUSE,
+				com.stasdoto.airdefense.nation.BuildingType.APARTMENTS, com.stasdoto.airdefense.nation.BuildingType.BARRACKS,
+				com.stasdoto.airdefense.nation.BuildingType.HANGAR, com.stasdoto.airdefense.nation.BuildingType.HOSPITAL,
+				com.stasdoto.airdefense.nation.BuildingType.WAREHOUSE};
+		for (var t : first) {
+			ecoAct(ctx, com.stasdoto.airdefense.nation.NationActionPayload.BUILD, t.ordinal());
+			ctx.waitTicks(6);
+		}
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("114_build_queue");
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		server.runCommand("gamemode spectator @a");
+		camera(server, x - 58.5, g + 42, -58.5, -45, 32);
+		int waited = waitUntil(ctx, () -> server.computeOnServer(s -> com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id).eco.active() == null), 3000);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("115_village_built");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT creative_buildings: done after {} ticks, built {}", waited,
+				com.stasdoto.airdefense.nation.Economy.built);
+		// The factory and the roads.
+		server.runCommand("gamemode creative @a");
+		camera(server, x + 0.5, g + 2, 6.5, 180, 0);
+		ctx.waitTicks(10);
+		ecoScreen(ctx, server, id, com.stasdoto.airdefense.client.nation.SettlementScreen.BUILD);
+		ecoAct(ctx, com.stasdoto.airdefense.nation.NationActionPayload.BUILD, com.stasdoto.airdefense.nation.BuildingType.FACTORY.ordinal());
+		ctx.waitTicks(10);
+		ecoAct(ctx, com.stasdoto.airdefense.nation.NationActionPayload.BUILD, com.stasdoto.airdefense.nation.BuildingType.ROADS.ordinal());
+		ctx.waitTicks(10);
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		server.runCommand("gamemode spectator @a");
+		camera(server, x + 58.5, g + 46, 58.5, 135, 34);
+		waited = waitUntil(ctx, () -> server.computeOnServer(s -> com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id).eco.active() == null), 3000);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("116_factory_roads");
+		String layout = server.computeOnServer(s -> {
+			StringBuilder sb = new StringBuilder();
+			for (var b : com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id).eco.buildings) {
+				sb.append(b.type.id).append(b.done ? "" : "(unfinished)").append('@').append(b.origin.getX() - x).append(',').append(b.origin.getZ())
+						.append(' ').append(b.facing).append("; ");
+			}
+			return sb.toString();
+		});
+		int beds = server.computeOnServer(s -> com.stasdoto.airdefense.nation.Economy.beds(s.overworld(),
+				com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id), false));
+		AirDefense.LOGGER.info("[airdefense-test] RESULT layout: factory+roads after {} ticks, beds {}: {}", waited, beds, layout);
+		// Close-ups of the buildings.
+		String[] shots = {"house", "apartments", "barracks", "hangar", "hospital", "warehouse", "factory"};
+		for (String name : shots) {
+			double[] cam = server.computeOnServer(s -> {
+				for (var b : com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id).eco.buildings) {
+					if (b.type.id.equals(name)) {
+						int dist = Math.max(b.type.width, b.type.height) + 4;
+						BlockPos front = b.at(-b.type.halfWidth() - 2, 0, -dist);
+						BlockPos mid = b.middle();
+						double dx = mid.getX() - front.getX();
+						double dz = mid.getZ() - front.getZ();
+						float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+						return new double[]{front.getX() + 0.5, b.origin.getY() + 3 + b.type.height * 0.35, front.getZ() + 0.5, yaw};
+					}
+				}
+				return null;
+			});
+			if (cam != null) {
+				camera(server, cam[0], cam[1], cam[2], (float) cam[3], 12);
+				ctx.waitTicks(25);
+				ctx.takeScreenshot("117_" + name);
+			}
+		}
+		// Inside the hangar a vehicle is made (creative: in seconds) and rolls out onto its floor.
+		server.runCommand("gamemode creative @a");
+		camera(server, x + 0.5, g + 2, 6.5, 180, 0);
+		ctx.waitTicks(10);
+		ecoScreen(ctx, server, id, com.stasdoto.airdefense.client.nation.SettlementScreen.HANGAR);
+		ecoAct(ctx, com.stasdoto.airdefense.nation.NationActionPayload.VEHICLE, VehicleType.GEPARD.ordinal());
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("118_hangar_tab");
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		int made = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Economy.vehiclesMade > 0, 400);
+		double[] hcam = server.computeOnServer(s -> {
+			for (var b : com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id).eco.buildings) {
+				if (b.type == com.stasdoto.airdefense.nation.BuildingType.HANGAR) {
+					BlockPos at = b.at(0, 4, -6);
+					return new double[]{at.getX() + 0.5, at.getY(), at.getZ() + 0.5, b.facing.toYRot()};
+				}
+			}
+			return new double[]{x, g + 5, 0, 0};
+		});
+		server.runCommand("gamemode spectator @a");
+		camera(server, hcam[0], hcam[1], hcam[2], (float) hcam[3], 8);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("119_hangar_vehicle");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT hangar: vehicles made {} after {} ticks", com.stasdoto.airdefense.nation.Economy.vehiclesMade, made);
+		// The maternity hospital: babies while there are free beds.
+		int born = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var st = p.settlements.get(id);
+			int n = 0;
+			for (int i = 0; i < 3; i++) {
+				if (com.stasdoto.airdefense.nation.Economy.birth(s.overworld(), p, st)) {
+					n++;
+				}
+			}
+			return n;
+		});
+		int mob = server.computeOnServer(s -> com.stasdoto.airdefense.nation.Nations.mobilizable(s.overworld(),
+				com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id)));
+		AirDefense.LOGGER.info("[airdefense-test] RESULT hospital: born {} · barracks: can call up {}", born, mob);
+		// Everybody home from work: the same villagers again (trades kept).
+		String before = professions(server, x);
+		server.runCommand("gamemode creative @a");
+		camera(server, x + 0.5, g + 2, 6.5, 180, 0);
+		ctx.waitTicks(10);
+		ecoScreen(ctx, server, id, com.stasdoto.airdefense.client.nation.SettlementScreen.OVERVIEW);
+		ctx.takeScreenshot("119b_overview");
+		ecoAct(ctx, com.stasdoto.airdefense.nation.NationActionPayload.WORKERS_HOME, 0);
+		ctx.waitTicks(20);
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		String after = professions(server, x);
+		int left = server.computeOnServer(s -> com.stasdoto.airdefense.nation.Economy.workers(s.overworld(),
+				com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id)).size());
+		AirDefense.LOGGER.info("[airdefense-test] RESULT home: workers left {}; villagers before [{}] after [{}]", left, before, after);
+		server.runCommand("kill @e[type=airdefense:soldier,distance=..10000]");
+		server.runCommand("kill @e[type=airdefense:gepard,distance=..10000]");
+		server.runCommand("clear @a");
+		server.runCommand("difficulty normal");
+		server.runCommand("gamemode spectator @a");
+	}
+
+	/** Opens the village screen of village {@code id} on the given tab. */
+	private static void ecoScreen(ClientGameTestContext ctx, TestServerContext server, int id, int tab) {
+		server.runOnServer(s -> com.stasdoto.airdefense.nation.NationNet.sendInfo(s.overworld(), s.getPlayerList().getPlayers().getFirst(),
+				com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id), true));
+		ctx.waitTicks(10);
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.nation.SettlementScreen sc) {
+				sc.setTab(tab);
+			}
+		});
+		ctx.waitTicks(10);
+	}
+
+	private static void ecoAct(ClientGameTestContext ctx, int action, int a) {
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.nation.SettlementScreen sc) {
+				sc.act(action, a);
+			}
+		});
+	}
+
+	private static int[] stock(TestServerContext server, int id) {
+		return server.computeOnServer(s -> com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id).eco.stock.clone());
+	}
+
+	private static int buildingPercent(TestServerContext server, int id, int index) {
+		return server.computeOnServer(s -> {
+			var list = com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id).eco.buildings;
+			return index < list.size() ? list.get(index).percent() : -1;
+		});
+	}
+
+	/** Professions of the villagers around a village, sorted (to compare before and after work). */
+	private String professions(TestServerContext server, int x) {
+		int g = ground;
+		return server.computeOnServer(s -> {
+			List<String> list = new ArrayList<>();
+			for (var v : s.overworld().getEntitiesOfClass(net.minecraft.world.entity.npc.villager.Villager.class,
+					new net.minecraft.world.phys.AABB(x - 90, g - 10, -90, x + 90, g + 30, 90), v -> v.isAlive() && !v.isBaby())) {
+				list.add(v.getVillagerData().profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("?"));
+			}
+			java.util.Collections.sort(list);
+			return String.join(",", list);
+		});
 	}
 
 	/** A little village: a bell on the square and villagers of the given trades around it. */

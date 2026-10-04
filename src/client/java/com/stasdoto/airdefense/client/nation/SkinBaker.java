@@ -58,6 +58,17 @@ public final class SkinBaker {
 		});
 	}
 
+	/** A villager at work: his own clothes with the gear of the job (plaid shirt, hard hat, high-visibility vest). */
+	public static Identifier worker(int look, int job, String profession, String type) {
+		long key = ((long) look << 32) ^ ((long) profession.hashCode() << 12) ^ type.hashCode() ^ (long) (job + 1) << 52 ^ 0x3EE7L << 40;
+		return bake(key, img -> {
+			Person p = Person.of(look);
+			paintPerson(img, p);
+			villagerClothes(img, p, profession, type, look);
+			workGear(img, p, job, look);
+		});
+	}
+
 	/**
 	 * The texture as a player skin: the player model draws its body from the render state's skin, so the people's
 	 * render states carry this one (otherwise they would all look like the default player).
@@ -477,6 +488,78 @@ public final class SkinBaker {
 			}
 			case "nitwit" -> outfit(img, p, 0xFF3E7A3E, 0xFF3E7A3E, 0xFF3E7A3E, shoes, 11);
 			default -> outfit(img, p, shirt, shirt, trousers, shoes, 7);
+		}
+	}
+
+	private static void workGear(NativeImage img, Person p, int job, int look) {
+		Random r = new Random(look ^ 0x30B5L);
+		switch (job) {
+			case com.stasdoto.airdefense.nation.WorkerEntity.WOOD -> {
+				// Lumberjack: a red (or green) checked shirt, sleeves rolled up a little.
+				int a = r.nextBoolean() ? 0xFFB02A26 : 0xFF2E6A3A;
+				int b = 0xFF1E1E22;
+				for (Part part : new Part[]{BODY, RIGHT_ARM, LEFT_ARM}) {
+					int rows = part == BODY ? 9 : 7;
+					for (Face f : part.sides()) {
+						for (int j = 0; j < rows; j++) {
+							for (int i = 0; i < f.w; i++) {
+								f.set(img, i, j, ((i >> 1) + (j >> 1) & 1) == 0 ? a : mix(a, b, 0.55f));
+							}
+						}
+					}
+					part.top().fill(img, a);
+				}
+				BODY.band(img, 9, 9, 0xFF3A2A1E);
+			}
+			case com.stasdoto.airdefense.nation.WorkerEntity.STONE -> {
+				// Stonecutter: grey work jacket, dust on the trousers, an orange hard hat.
+				int jacket = 0xFF6E6A62;
+				BODY.band(img, 0, 8, jacket);
+				BODY.top().fill(img, jacket);
+				for (Part arm : new Part[]{RIGHT_ARM, LEFT_ARM}) {
+					arm.band(img, 0, 8, jacket);
+					arm.top().fill(img, jacket);
+					arm.band(img, 10, 11, 0xFF5A4A30);
+				}
+				BODY.front().set(img, 3, 1, 0xFFD8D4CC);
+				BODY.front().set(img, 4, 1, 0xFFD8D4CC);
+				hat(img, 0xFFE07A20, 1);
+			}
+			case com.stasdoto.airdefense.nation.WorkerEntity.IRON -> {
+				// Miner: dark overalls, a yellow helmet with a lamp.
+				int overall = 0xFF2E3440;
+				BODY.band(img, 0, 11, overall);
+				BODY.top().fill(img, overall);
+				for (Part leg : new Part[]{RIGHT_LEG, LEFT_LEG}) {
+					leg.band(img, 0, 9, overall);
+					leg.top().fill(img, overall);
+				}
+				for (Part arm : new Part[]{RIGHT_ARM, LEFT_ARM}) {
+					arm.band(img, 0, 9, overall);
+					arm.top().fill(img, overall);
+					arm.band(img, 10, 11, 0xFF2A2A26);
+				}
+				BODY.band(img, 6, 6, 0xFFB8B040);
+				hat(img, 0xFFE0C020, 1);
+				HEAD.front().set(img, 3, 0, 0xFFFFF4B0);
+				HEAD.front().set(img, 4, 0, 0xFFFFF4B0);
+			}
+			default -> {
+				// Builder: an orange vest with reflective stripes over his clothes, a yellow hard hat.
+				int vest = 0xFFF07A18;
+				int stripe = 0xFFE8E8D8;
+				for (Face f : new Face[]{BODY.front(), BODY.back(), BODY.right(), BODY.left()}) {
+					for (int j = 0; j <= 9; j++) {
+						f.row(img, j, vest);
+					}
+					f.row(img, 4, stripe);
+					f.row(img, 7, stripe);
+				}
+				BODY.top().fill(img, vest);
+				BODY.front().set(img, 3, 0, shade(vest, 0.8f));
+				BODY.front().set(img, 4, 0, shade(vest, 0.8f));
+				hat(img, 0xFFF2D21E, 1);
+			}
 		}
 	}
 

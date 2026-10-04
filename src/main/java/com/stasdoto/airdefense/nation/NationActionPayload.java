@@ -17,6 +17,20 @@ public record NationActionPayload(int action, int settlement, int a, int x, int 
 	public static final int DEMOBILIZE = 4;
 	public static final int ORDER = 5;
 	public static final int RECALL = 6;
+	/** One worker more or fewer: a = job, x = +1 / -1. */
+	public static final int JOB = 7;
+	/** Order a building: a = building type. */
+	public static final int BUILD = 8;
+	/** Take a building that has not been started out of the line: a = its place in the line. */
+	public static final int CANCEL = 9;
+	/** Hand over wood, stone and iron from the inventory. */
+	public static final int DONATE = 10;
+	/** Order a vehicle from the hangar: a = vehicle type. */
+	public static final int VEHICLE = 11;
+	/** All workers go home. */
+	public static final int WORKERS_HOME = 12;
+	/** Open the village screen (from the tablet map). */
+	public static final int OPEN = 13;
 
 	public static final Type<NationActionPayload> TYPE = new Type<>(AirDefense.id("nation_action"));
 	public static final StreamCodec<ByteBuf, NationActionPayload> CODEC = StreamCodec.composite(

@@ -31,7 +31,8 @@ public final class Settlement {
 			Codec.INT.optionalFieldOf("population", 0).forGetter(s -> s.population),
 			Codec.unboundedMap(UUIDUtil.STRING_CODEC, Codec.INT).optionalFieldOf("bonus", Map.of()).forGetter(s -> s.bonus),
 			UUIDUtil.CODEC.listOf().optionalFieldOf("guards", List.of()).forGetter(s -> new ArrayList<>(s.guards)),
-			UUIDUtil.CODEC.listOf().optionalFieldOf("soldiers", List.of()).forGetter(s -> new ArrayList<>(s.soldiers))
+			UUIDUtil.CODEC.listOf().optionalFieldOf("soldiers", List.of()).forGetter(s -> new ArrayList<>(s.soldiers)),
+			VillageEconomy.CODEC.optionalFieldOf("economy").forGetter(s -> s.eco.isEmpty() ? Optional.empty() : Optional.of(s.eco))
 	).apply(i, Settlement::new));
 
 	public final int id;
@@ -48,6 +49,8 @@ public final class Settlement {
 	public final List<UUID> guards = new ArrayList<>();
 	/** Villagers called up from here (soldiers of the owner's army). */
 	public final List<UUID> soldiers = new ArrayList<>();
+	/** Store, buildings, workers, hangar. */
+	public final VillageEconomy eco;
 
 	// Not saved: a capture in progress.
 	public UUID capturer;
@@ -56,6 +59,11 @@ public final class Settlement {
 
 	public Settlement(int id, String name, BlockPos center, BlockPos flag, int country, Optional<UUID> elder, int population,
 			Map<UUID, Integer> bonus, List<UUID> guards, List<UUID> soldiers) {
+		this(id, name, center, flag, country, elder, population, bonus, guards, soldiers, Optional.empty());
+	}
+
+	public Settlement(int id, String name, BlockPos center, BlockPos flag, int country, Optional<UUID> elder, int population,
+			Map<UUID, Integer> bonus, List<UUID> guards, List<UUID> soldiers, Optional<VillageEconomy> eco) {
 		this.id = id;
 		this.name = name;
 		this.center = center;
@@ -66,6 +74,7 @@ public final class Settlement {
 		this.bonus.putAll(bonus);
 		this.guards.addAll(guards);
 		this.soldiers.addAll(soldiers);
+		this.eco = eco.orElseGet(VillageEconomy::new);
 	}
 
 	public boolean contains(BlockPos pos) {

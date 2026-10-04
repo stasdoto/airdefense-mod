@@ -25,6 +25,7 @@ public final class NationNet {
 		PayloadTypeRegistry.serverboundPlay().register(NationActionPayload.TYPE, NationActionPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(SettlementInfoPayload.TYPE, SettlementInfoPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(NationMapPayload.TYPE, NationMapPayload.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(VillageEconomyPayload.TYPE, VillageEconomyPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(NationActionPayload.TYPE, (payload, context) -> handle(context.player(), payload));
 		// Shift + right click on a villager: the village's affairs (trading is a plain right click).
 		UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
@@ -77,6 +78,36 @@ public final class NationNet {
 				}
 			}
 			case NationActionPayload.RECALL -> Nations.order(level, player, s, null);
+			case NationActionPayload.JOB -> {
+				if (near || tablet) {
+					Economy.assign(level, player, s, p.a(), p.x());
+				}
+			}
+			case NationActionPayload.BUILD -> {
+				if (near || tablet) {
+					Economy.order(level, player, s, BuildingType.byId(p.a()));
+				}
+			}
+			case NationActionPayload.CANCEL -> Economy.cancel(level, player, s, p.a());
+			case NationActionPayload.DONATE -> {
+				if (near) {
+					Economy.donate(level, player, s);
+				} else {
+					player.sendOverlayMessage(Component.translatable("nation.airdefense.eco.come_closer"));
+				}
+			}
+			case NationActionPayload.VEHICLE -> {
+				if (near || tablet) {
+					Economy.orderVehicle(level, player, s, com.stasdoto.airdefense.vehicle.VehicleType.byId(p.a()));
+				}
+			}
+			case NationActionPayload.WORKERS_HOME -> Economy.allHome(level, player, s);
+			case NationActionPayload.OPEN -> {
+				if (near || tablet && Economy.owner(politics, s, player)) {
+					sendInfo(level, player, s, true);
+				}
+				return;
+			}
 			default -> {
 				return;
 			}
@@ -91,7 +122,7 @@ public final class NationNet {
 		Politics p = Politics.get(level.getServer());
 		Country c = p.country(s.country);
 		boolean mine = c != null && player.getUUID().equals(c.owner);
-		s.population = Nations.villagers(level, s).size();
+		s.population = Nations.villagers(level, s).size() + Economy.workers(level, s).size();
 		Component problem = Nations.charterProblem(level, p, s, player);
 		String elder = "";
 		if (s.elder != null && level.getEntity(s.elder) instanceof Villager v && v.getCustomName() != null) {
@@ -101,6 +132,37 @@ public final class NationNet {
 				c != null && c.cityState, mine, Nations.villagers(level, s).size(), Nations.guards(level, s).size(), Nations.soldiers(level, s).size(),
 				mine ? Nations.mobilizable(level, s) : 0, Nations.reputation(level, s, player), Nations.charterPrice(p, s),
 				problem == null ? "" : problem.getString(), player.getAbilities().instabuild, elder));
+		if (mine) {
+			sendEconomy(level, player, s);
+		}
+	}
+
+	/** The household of one of the player's villages. */
+	public static void sendEconomy(ServerLevel level, ServerPlayer player, Settlement s) {
+		VillageEconomy e = s.eco;
+		List<Integer> jobs = new ArrayList<>();
+		for (int n : Economy.jobCounts(level, s)) {
+			jobs.add(n);
+		}
+		List<Integer> built = new ArrayList<>();
+		for (BuildingType t : BuildingType.values()) {
+			built.add(e.count(t));
+		}
+		List<Integer> queue = new ArrayList<>();
+		for (Building b : e.buildings) {
+			if (!b.done) {
+				queue.add(b.type.ordinal() * 1000 + b.percent());
+			}
+		}
+		Building active = e.active();
+		int builders = active == null ? 0 : Economy.buildersAt(level, s, Economy.siteCenter(active, s));
+		List<Integer> hangar = new ArrayList<>();
+		for (int code : e.hangar) {
+			hangar.add(code % 100);
+		}
+		ServerPlayNetworking.send(player, new VillageEconomyPayload(s.id, e.stock[0], e.stock[1], e.stock[2], e.cap(),
+				player.getAbilities().instabuild, jobs, Economy.free(level, s).size(), Economy.beds(level, s, false), Economy.beds(level, s, true),
+				e.births, built, queue, builders, e.count(BuildingType.HANGAR) > 0, hangar, Economy.hangarPercent(s)));
 	}
 
 	/** Villages within 2000 blocks and the soldiers that are loaded within 700. */
