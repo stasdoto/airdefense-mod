@@ -12,6 +12,10 @@ on:
         description: "Space-separated class names (or pkg:<package>) to print signatures for"
         type: string
         default: ""
+      devkit:
+        description: "Publish signature-only stubs of the compile classpath (for local compile checks)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -60,6 +64,14 @@ jobs:
               javap -p -cp "$CP" "$c" >> probe.txt 2>&1 || true
             fi
           done
+      - name: devkit stubs
+        if: ${{ inputs.devkit }}
+        run: |
+          ./gradlew exportDevkit --no-configuration-cache -q || true
+          mkdir -p /tmp/out
+          ls build/devkit/cp > /tmp/out/devkit-cp.txt
+          java .github/devkit/Stubber.java /tmp/out/stubs $(find build/devkit/cp -maxdepth 1 -name '*.jar') 2>&1 | tail -40 | tee /tmp/out/stubber-log.txt
+          du -sh /tmp/out/stubs
       - name: in-game test
         if: ${{ inputs.gametest }}
         continue-on-error: true
@@ -91,7 +103,7 @@ jobs:
           echo "${{ github.sha }} ${{ steps.build.outcome }}" > /tmp/out/STATUS
           # Separate result branches, so a probe or a plain build never overwrites in-game test results.
           BR=ci-out
-          if [ -n "${{ inputs.probe }}" ]; then BR=ci-probe; elif [ "${{ inputs.gametest }}" = "true" ]; then BR=ci-test; fi
+          if [ "${{ inputs.devkit }}" = "true" ]; then BR=ci-devkit; elif [ -n "${{ inputs.probe }}" ]; then BR=ci-probe; elif [ "${{ inputs.gametest }}" = "true" ]; then BR=ci-test; fi
           cd /tmp/out
           git init -q -b "$BR"
           git config user.name "ci"; git config user.email "ci@users.noreply.github.com"

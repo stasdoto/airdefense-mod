@@ -95,7 +95,7 @@ tasks.register('exportDevkit') {
 	notCompatibleWithConfigurationCache("dev helper")
 	doLast {
 		project.copy {
-			from(sourceSets.main.compileClasspath + sourceSets.client.compileClasspath)
+			from(sourceSets.main.compileClasspath + sourceSets.client.compileClasspath + sourceSets.gametest.compileClasspath)
 			into(project.layout.buildDirectory.dir("devkit/cp"))
 		}
 	}
