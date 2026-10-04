@@ -1,0 +1,615 @@
+package com.stasdoto.airdefense.nation;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+
+import org.jetbrains.annotations.Nullable;
+
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.ai.village.poi.PoiManager;
+import net.minecraft.world.entity.ai.village.poi.PoiTypes;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BannerBlock;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.entity.EntityTypeTest;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+
+import com.stasdoto.airdefense.AirDefense;
+
+/**
+ * The politics of the world, run on the server: villages are found as players come near them and get a name and a
+ * political status (part of a country the world made up, a one-village city state, or independent); countries keep
+ * guards at their villages' flags; bandits roam; players gain villages peacefully (respect + a charter bought from the
+ * elder), by force (no guards left, hold the flag for 30 s) or, in creative, at once; owners call up soldiers and
+ * send them around from the tablet map.
+ */
+public final class Nations {
+	public static final int CAPTURE_SECONDS = 30;
+	public static final int CHARTER_REPUTATION = 25;
+	public static final int WANTED_REPUTATION = -40;
+	/** Debug counters read by the automated test. */
+	public static int discovered;
+	public static int guardsSpawned;
+	public static int banditsSpawned;
+	public static int captures;
+
+	private Nations() {
+	}
+
+	public static void init() {
+		ServerTickEvents.END_LEVEL_TICK.register(level -> {
+			if (level.dimension() == Level.OVERWORLD) {
+				tick(level);
+			}
+		});
+		// Defending a village earns respect there.
+		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
+			if (!(entity.level() instanceof ServerLevel level) || !(source.getEntity() instanceof ServerPlayer player)) {
+				return;
+			}
+			boolean bandit = entity instanceof SoldierEntity s && s.role() == SoldierEntity.BANDIT;
+			if (!bandit && !(entity instanceof Enemy)) {
+				return;
+			}
+			Politics p = Politics.get(level.getServer());
+			Settlement s = p.settlementAt(entity.blockPosition());
+			if (s != null) {
+				s.bonus.merge(player.getUUID(), bandit ? 6 : 3, (a, b) -> Math.min(80, a + b));
+				p.setDirty();
+			}
+		});
+		NationNet.init();
+	}
+
+	private static void tick(ServerLevel level) {
+		long t = level.getGameTime();
+		Politics p = Politics.get(level.getServer());
+		if (t % 100 == 0) {
+			discover(level, p);
+		}
+		if (t % 20 == 7) {
+			captureTick(level, p);
+		}
+		if (t % 200 == 50) {
+			maintain(level, p);
+		}
+		if (t % 1200 == 300) {
+			bandits(level, p);
+		}
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Villages and their politics
+
+	private static void discover(ServerLevel level, Politics p) {
+		for (Villager v : level.getEntities(EntityTypeTest.forClass(Villager.class), v -> v.isAlive() && !v.isBaby())) {
+			if (p.settlementAt(v.blockPosition()) != null) {
+				continue;
+			}
+			// The town square: the bell nearest to this villager, or where he stands.
+			BlockPos center = level.getPoiManager().findClosest(h -> h.is(PoiTypes.MEETING), v.blockPosition(), 48, PoiManager.Occupancy.ANY)
+					.orElse(v.blockPosition());
+			if (p.settlementAt(center) != null) {
+				continue;
+			}
+			found(level, p, center);
+		}
+	}
+
+	/** A new village on the political map, with its status decided by a roll that is fixed for this world and place. */
+	public static Settlement found(ServerLevel level, Politics p, BlockPos center) {
+		Random r = new Random(level.getSeed() ^ center.asLong() * 0x9E3779B97F4A7C15L);
+		Set<String> names = new HashSet<>();
+		p.settlements.values().forEach(s -> names.add(s.name));
+		int id = p.newId();
+		Settlement s = new Settlement(id, Names.village(r, names), center, flagSpot(level, center), -1, Optional.empty(), 0,
+				Map.of(), List.of(), List.of());
+		p.settlements.put(id, s);
+		Country near = null;
+		double nearD = 640 * 640;
+		for (Country c : p.countries.values()) {
+			Settlement cap = p.settlements.get(c.capital);
+			if (c.owner == null && !c.cityState && cap != null && cap.center.distSqr(center) < nearD) {
+				near = c;
+				nearD = cap.center.distSqr(center);
+			}
+		}
+		if (near != null && r.nextInt(100) < 55) {
+			s.country = near.id;
+		} else {
+			int roll = r.nextInt(100);
+			if (roll < 35) {
+				s.country = newCountry(p, r, null, "", id, false).id;
+			} else if (roll < 55) {
+				s.country = newCountry(p, r, null, "", id, true).id;
+			}
+		}
+		placeFlag(level, p, s);
+		p.setDirty();
+		discovered++;
+		AirDefense.LOGGER.info("[airdefense] village {} at {} -> {}", s.name, center.toShortString(),
+				s.country < 0 ? "independent" : p.country(s.country).name);
+		return s;
+	}
+
+	private static Country newCountry(Politics p, Random r, @Nullable Player owner, String ownerName, int capital, boolean cityState) {
+		Set<String> names = new HashSet<>();
+		Set<Integer> colors = new HashSet<>();
+		for (Country c : p.countries.values()) {
+			names.add(c.name);
+			colors.add(c.color);
+		}
+		int color = -1;
+		for (int i = 0; i < 30 && color < 0; i++) {
+			int c = 1 + r.nextInt(15);
+			if (!colors.contains(c)) {
+				color = c;
+			}
+		}
+		if (color < 0) {
+			color = 1 + r.nextInt(15);
+		}
+		Country c = new Country(p.newId(), Names.country(r, names), color, Optional.ofNullable(owner == null ? null : owner.getUUID()),
+				ownerName, capital, cityState, List.of());
+		p.countries.put(c.id, c);
+		return c;
+	}
+
+	/** Makes this village the capital of a new country of the world's own (or a city state). */
+	public static Country makeCountry(ServerLevel level, Settlement s, boolean cityState) {
+		Politics p = Politics.get(level.getServer());
+		Country c = newCountry(p, new Random(s.center.asLong()), null, "", s.id, cityState);
+		s.country = c.id;
+		placeFlag(level, p, s);
+		p.setDirty();
+		return c;
+	}
+
+	/** The player's own country (made on his first village). */
+	public static Country countryOf(ServerLevel level, Politics p, ServerPlayer player, boolean create) {
+		Country c = p.countryOwnedBy(player.getUUID());
+		if (c == null && create) {
+			c = newCountry(p, new Random(player.getUUID().getLeastSignificantBits()), player, player.getName().getString(), -1, false);
+			c.name = Component.translatable("nation.airdefense.player_country", player.getName().getString()).getString();
+			p.setDirty();
+		}
+		return c;
+	}
+
+	/** A free spot on the ground right next to the town square for the flag. */
+	private static BlockPos flagSpot(ServerLevel level, BlockPos center) {
+		for (int ring = 2; ring <= 5; ring++) {
+			for (Direction d : Direction.Plane.HORIZONTAL) {
+				int x = center.getX() + d.getStepX() * ring;
+				int z = center.getZ() + d.getStepZ() * ring;
+				int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+				BlockPos pos = new BlockPos(x, y, z);
+				if (Math.abs(y - center.getY()) <= 3 && level.getBlockState(pos).isAir() && level.getBlockState(pos.above()).isAir()
+						&& level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP)) {
+					return pos;
+				}
+			}
+		}
+		return center.above(2);
+	}
+
+	/** A banner in the owner's colour (white for an independent village). */
+	public static void placeFlag(ServerLevel level, Politics p, Settlement s) {
+		if (!level.isLoaded(s.flag)) {
+			return;
+		}
+		Country c = p.country(s.country);
+		DyeColor dye = c == null ? DyeColor.WHITE : c.dye();
+		BlockState want = Blocks.BANNER.pick(dye).defaultBlockState().setValue(BannerBlock.ROTATION, 4);
+		BlockState now = level.getBlockState(s.flag);
+		if (now.getBlock() != want.getBlock()) {
+			if (!now.isAir() && !(now.getBlock() instanceof BannerBlock)) {
+				s.flag = flagSpot(level, s.center);
+			}
+			level.setBlock(s.flag, want, 3);
+		}
+	}
+
+	private static void maintain(ServerLevel level, Politics p) {
+		for (Settlement s : p.settlements.values()) {
+			if (!level.isLoaded(s.center)) {
+				continue;
+			}
+			List<Villager> villagers = villagers(level, s);
+			s.population = villagers.size();
+			Villager elder = s.elder == null ? null : level.getEntity(s.elder) instanceof Villager v && v.isAlive() ? v : null;
+			if (elder == null && !villagers.isEmpty()) {
+				for (Villager v : villagers) {
+					if (!v.isBaby()) {
+						elder = v;
+						break;
+					}
+				}
+				if (elder != null) {
+					s.elder = elder.getUUID();
+					elder.setCustomName(Component.translatable("nation.airdefense.elder", s.name));
+					p.setDirty();
+				}
+			}
+			List<SoldierEntity> guards = guards(level, s);
+			s.guardsAlive = guards.size();
+			Country c = p.country(s.country);
+			int want = c != null ? Math.max(1, Math.min(5, s.population / 3)) + (c.cityState ? 1 : 0) : s.population >= 5 ? 1 : 0;
+			if (guards.size() < want && s.captureTicks == 0 && level.getNearestPlayer(s.flag.getX(), s.flag.getY(), s.flag.getZ(), 12, false) == null
+					&& level.getNearestPlayer(s.flag.getX(), s.flag.getY(), s.flag.getZ(), 160, false) != null) {
+				spawnGuard(level, s, c);
+			}
+			placeFlag(level, p, s);
+		}
+	}
+
+	public static List<Villager> villagers(ServerLevel level, Settlement s) {
+		return level.getEntitiesOfClass(Villager.class, new AABB(s.center).inflate(Settlement.RADIUS, 32, Settlement.RADIUS),
+				v -> v.isAlive() && s.contains(v.blockPosition()));
+	}
+
+	public static List<SoldierEntity> guards(ServerLevel level, Settlement s) {
+		return level.getEntitiesOfClass(SoldierEntity.class, new AABB(s.center).inflate(Settlement.RADIUS + 16, 32, Settlement.RADIUS + 16),
+				g -> g.isAlive() && g.role() == SoldierEntity.GUARD && g.home() == s.id);
+	}
+
+	public static List<SoldierEntity> soldiers(ServerLevel level, Settlement s) {
+		List<SoldierEntity> out = new ArrayList<>();
+		for (UUID id : s.soldiers) {
+			if (level.getEntity(id) instanceof SoldierEntity e && e.isAlive()) {
+				out.add(e);
+			}
+		}
+		return out;
+	}
+
+	public static SoldierEntity spawnGuard(ServerLevel level, Settlement s, @Nullable Country c) {
+		Random r = new Random();
+		int x = s.flag.getX() + r.nextInt(5) - 2;
+		int z = s.flag.getZ() + r.nextInt(5) - 2;
+		int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+		SoldierEntity g = SoldierEntity.create(level, SoldierEntity.GUARD, c == null ? -1 : c.id, c == null ? -1 : c.color, s.id,
+				new Vec3(x + 0.5, y, z + 0.5), r.nextInt());
+		g.setHomeTo(s.flag, 14);
+		level.addFreshEntity(g);
+		guardsSpawned++;
+		return g;
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Respect, charters, capture
+
+	/** How much the village thinks of this player: what its villagers say about him, plus what he did for it. */
+	public static int reputation(ServerLevel level, Settlement s, Player player) {
+		int sum = 0;
+		for (Villager v : villagers(level, s)) {
+			sum += v.getPlayerReputation(player);
+		}
+		return Math.max(-100, Math.min(100, sum)) + s.bonus.getOrDefault(player.getUUID(), 0);
+	}
+
+	public static int charterPrice(Politics p, Settlement s) {
+		Country c = p.country(s.country);
+		int base = 10 + 3 * s.population;
+		return c == null ? base : base * 2;
+	}
+
+	/** Why the player cannot buy the charter now (null = he can). */
+	@Nullable
+	public static Component charterProblem(ServerLevel level, Politics p, Settlement s, ServerPlayer player) {
+		Country c = p.country(s.country);
+		if (c != null && player.getUUID().equals(c.owner)) {
+			return Component.translatable("nation.airdefense.already_yours");
+		}
+		if (c != null && c.owner != null) {
+			return Component.translatable("nation.airdefense.other_player", c.ownerName);
+		}
+		if (reputation(level, s, player) < CHARTER_REPUTATION) {
+			return Component.translatable("nation.airdefense.need_respect", CHARTER_REPUTATION);
+		}
+		if (!player.getAbilities().instabuild && player.getInventory().countItem(net.minecraft.world.item.Items.EMERALD) < charterPrice(p, s)) {
+			return Component.translatable("nation.airdefense.need_emeralds", charterPrice(p, s));
+		}
+		return null;
+	}
+
+	public static boolean buyCharter(ServerLevel level, ServerPlayer player, Settlement s) {
+		Politics p = Politics.get(level.getServer());
+		Component problem = charterProblem(level, p, s, player);
+		if (problem != null) {
+			player.sendOverlayMessage(problem);
+			return false;
+		}
+		if (!player.getAbilities().instabuild) {
+			int left = charterPrice(p, s);
+			for (int i = 0; i < player.getInventory().getContainerSize() && left > 0; i++) {
+				var stack = player.getInventory().getItem(i);
+				if (stack.is(net.minecraft.world.item.Items.EMERALD)) {
+					int k = Math.min(left, stack.getCount());
+					stack.shrink(k);
+					left -= k;
+				}
+			}
+		}
+		transfer(level, p, s, countryOf(level, p, player, true));
+		player.sendSystemMessage(Component.translatable("nation.airdefense.charter_bought", s.name));
+		level.playSound(null, s.flag, SoundEvents.VILLAGER_CELEBRATE, SoundSource.NEUTRAL, 1f, 1f);
+		return true;
+	}
+
+	/** Creative: the village is yours at once. */
+	public static void takeOver(ServerLevel level, ServerPlayer player, Settlement s) {
+		Politics p = Politics.get(level.getServer());
+		transfer(level, p, s, countryOf(level, p, player, true));
+		player.sendSystemMessage(Component.translatable("nation.airdefense.taken", s.name));
+	}
+
+	/** The village changes hands: new flag, new guards in time; the old country loses it. */
+	public static void transfer(ServerLevel level, Politics p, Settlement s, Country to) {
+		Country from = p.country(s.country);
+		s.country = to.id;
+		s.captureTicks = 0;
+		s.capturer = null;
+		if (to.capital < 0 || p.settlements.get(to.capital) == null) {
+			to.capital = s.id;
+		}
+		// Guards of the old owner that are still around lay down their arms and leave.
+		for (SoldierEntity g : guards(level, s)) {
+			g.discard();
+		}
+		if (from != null) {
+			List<Settlement> left = p.settlementsOf(from.id);
+			if (from.capital == s.id) {
+				from.capital = left.isEmpty() ? -1 : left.getFirst().id;
+			}
+			if (left.isEmpty() && from.owner == null) {
+				p.countries.remove(from.id);
+			}
+		}
+		placeFlag(level, p, s);
+		p.setDirty();
+		captures++;
+	}
+
+	/** Every second: someone standing at a village's flag with no guards left takes it after 30 s. */
+	private static void captureTick(ServerLevel level, Politics p) {
+		for (Settlement s : p.settlements.values()) {
+			if (!level.isLoaded(s.flag)) {
+				continue;
+			}
+			Player at = level.getNearestPlayer(s.flag.getX() + 0.5, s.flag.getY(), s.flag.getZ() + 0.5, 5, false);
+			Country owner = p.country(s.country);
+			boolean mine = at != null && owner != null && at.getUUID().equals(owner.owner);
+			if (!(at instanceof ServerPlayer player) || at.isSpectator() || mine) {
+				if (s.captureTicks > 0) {
+					s.captureTicks = Math.max(0, s.captureTicks - 2);
+				}
+				continue;
+			}
+			int guards = guards(level, s).size();
+			s.guardsAlive = guards;
+			if (guards > 0) {
+				if (level.getGameTime() % 100 == 7) {
+					player.sendOverlayMessage(Component.translatable("nation.airdefense.capture_guarded", guards));
+				}
+				continue;
+			}
+			if (!player.getUUID().equals(s.capturer)) {
+				s.capturer = player.getUUID();
+				s.captureTicks = 0;
+			}
+			s.captureTicks++;
+			player.sendOverlayMessage(Component.translatable("nation.airdefense.capturing", s.name, s.captureTicks, CAPTURE_SECONDS));
+			if (s.captureTicks >= CAPTURE_SECONDS) {
+				transfer(level, p, s, countryOf(level, p, player, true));
+				player.sendSystemMessage(Component.translatable("nation.airdefense.captured", s.name));
+				level.playSound(null, s.flag, SoundEvents.RAID_HORN.value(), SoundSource.NEUTRAL, 2f, 1f);
+			}
+		}
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Who fights whom
+
+	public static boolean atWar(Level level, int a, int b) {
+		if (a < 0 || b < 0 || a == b || !(level instanceof ServerLevel sl)) {
+			return false;
+		}
+		Politics p = Politics.get(sl.getServer());
+		Country ca = p.country(a);
+		Country cb = p.country(b);
+		return ca != null && cb != null && (ca.atWarWith(b) || cb.atWarWith(a));
+	}
+
+	/** Do this country's (or village's) guards shoot at this player? */
+	public static boolean hostileToPlayer(ServerLevel level, SoldierEntity soldier, Player player) {
+		Politics p = Politics.get(level.getServer());
+		Country mine = p.countryOwnedBy(player.getUUID());
+		if (mine != null && atWar(level, soldier.country(), mine.id)) {
+			return true;
+		}
+		Country theirs = p.country(soldier.country());
+		if (theirs != null && theirs.wanted.contains(player.getUUID())) {
+			return true;
+		}
+		Settlement home = p.settlements.get(soldier.home());
+		return home != null && soldier.role() == SoldierEntity.GUARD && home.contains(player.blockPosition())
+				&& reputation(level, home, player) <= WANTED_REPUTATION;
+	}
+
+	/** A player shot at a country's man: that country remembers him (its guards shoot on sight). */
+	public static void offended(ServerLevel level, SoldierEntity soldier, Player player) {
+		if (soldier.role() == SoldierEntity.BANDIT) {
+			return;
+		}
+		Politics p = Politics.get(level.getServer());
+		Country c = p.country(soldier.country());
+		if (c != null && !player.getUUID().equals(c.owner) && c.wanted.add(player.getUUID())) {
+			p.setDirty();
+		}
+		Settlement home = p.settlements.get(soldier.home());
+		if (home != null) {
+			home.bonus.merge(player.getUUID(), -15, Integer::sum);
+			p.setDirty();
+		}
+	}
+
+	public static void soldierDied(ServerLevel level, SoldierEntity soldier) {
+		Politics p = Politics.get(level.getServer());
+		Settlement home = p.settlements.get(soldier.home());
+		if (home != null && home.soldiers.remove(soldier.getUUID())) {
+			p.setDirty();
+		}
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Army: calling villagers up, sending them around, letting them go home
+
+	/** How many more of this village's people can be called up (at least two stay at home). */
+	public static int mobilizable(ServerLevel level, Settlement s) {
+		int adults = 0;
+		for (Villager v : villagers(level, s)) {
+			if (!v.isBaby()) {
+				adults++;
+			}
+		}
+		return Math.max(0, Math.min(adults - 2, (adults + s.soldiers.size()) / 2 - s.soldiers.size()));
+	}
+
+	public static int mobilize(ServerLevel level, ServerPlayer player, Settlement s, int count) {
+		Politics p = Politics.get(level.getServer());
+		Country c = p.country(s.country);
+		if (c == null || !player.getUUID().equals(c.owner)) {
+			player.sendOverlayMessage(Component.translatable("nation.airdefense.not_yours"));
+			return 0;
+		}
+		int n = Math.min(count, mobilizable(level, s));
+		int done = 0;
+		for (Villager v : villagers(level, s)) {
+			if (done >= n) {
+				break;
+			}
+			if (v.isBaby() || v.getUUID().equals(s.elder)) {
+				continue;
+			}
+			SoldierEntity e = SoldierEntity.create(level, SoldierEntity.SOLDIER, c.id, c.color, s.id, v.position(), lookOf(v.getUUID()));
+			e.setOrigin(v.getVillagerData(), v.getUUID());
+			e.setHomeTo(s.flag, 16);
+			v.discard();
+			level.addFreshEntity(e);
+			s.soldiers.add(e.getUUID());
+			done++;
+		}
+		p.setDirty();
+		player.sendOverlayMessage(Component.translatable("nation.airdefense.mobilized", done, s.name));
+		return done;
+	}
+
+	/** The face a villager has (and keeps as a soldier): from his UUID. */
+	public static int lookOf(UUID id) {
+		return (int) (id.getMostSignificantBits() ^ id.getLeastSignificantBits() ^ (id.getLeastSignificantBits() >>> 32));
+	}
+
+	public static int order(ServerLevel level, ServerPlayer player, Settlement s, @Nullable BlockPos target) {
+		Politics p = Politics.get(level.getServer());
+		Country c = p.country(s.country);
+		if (c == null || !player.getUUID().equals(c.owner)) {
+			return 0;
+		}
+		int n = 0;
+		for (SoldierEntity e : soldiers(level, s)) {
+			e.orderTo(target == null ? s.flag : target);
+			n++;
+		}
+		player.sendOverlayMessage(Component.translatable(target == null ? "nation.airdefense.ordered_home" : "nation.airdefense.ordered", n));
+		return n;
+	}
+
+	public static int demobilize(ServerLevel level, ServerPlayer player, Settlement s) {
+		Politics p = Politics.get(level.getServer());
+		Country c = p.country(s.country);
+		if (c == null || !player.getUUID().equals(c.owner)) {
+			return 0;
+		}
+		int n = 0;
+		for (SoldierEntity e : soldiers(level, s)) {
+			s.soldiers.remove(e.getUUID());
+			e.demobilize(level);
+			n++;
+		}
+		p.setDirty();
+		player.sendOverlayMessage(Component.translatable("nation.airdefense.demobilized", n));
+		return n;
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Bandits
+
+	private static void bandits(ServerLevel level, Politics p) {
+		Random r = new Random();
+		for (ServerPlayer player : level.players()) {
+			if (player.isSpectator() || r.nextInt(100) >= 4) {
+				continue;
+			}
+			Settlement target = null;
+			double best = 160 * 160;
+			for (Settlement s : p.settlements.values()) {
+				double d = s.center.distSqr(player.blockPosition());
+				Country c = p.country(s.country);
+				if (d < best && (c == null || !player.getUUID().equals(c.owner) || r.nextBoolean())) {
+					best = d;
+					target = s;
+				}
+			}
+			if (target != null) {
+				raid(level, target, 2 + r.nextInt(3));
+			}
+		}
+	}
+
+	/** A bandit gang turns up 50-70 blocks from the village and heads for it. */
+	public static List<SoldierEntity> raid(ServerLevel level, Settlement target, int count) {
+		Random r = new Random();
+		List<SoldierEntity> gang = new ArrayList<>();
+		double a = r.nextDouble() * Math.PI * 2;
+		double d = 50 + r.nextDouble() * 20;
+		for (int i = 0; i < count; i++) {
+			int x = (int) Math.floor(target.center.getX() + Math.cos(a) * d + r.nextInt(5) - 2);
+			int z = (int) Math.floor(target.center.getZ() + Math.sin(a) * d + r.nextInt(5) - 2);
+			if (!level.isLoaded(new BlockPos(x, 64, z))) {
+				continue;
+			}
+			int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+			SoldierEntity b = SoldierEntity.create(level, SoldierEntity.BANDIT, -1, -1, -1, new Vec3(x + 0.5, y, z + 0.5), r.nextInt());
+			b.orderTo(target.center);
+			level.addFreshEntity(b);
+			gang.add(b);
+			banditsSpawned++;
+		}
+		if (!gang.isEmpty()) {
+			AirDefense.LOGGER.info("[airdefense] {} bandits head for {}", gang.size(), target.name);
+		}
+		return gang;
+	}
+}

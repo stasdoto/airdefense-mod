@@ -145,30 +145,41 @@ public final class GunServer {
 			ROCKETS.incrementAndGet();
 			return;
 		}
-		Trace t = trace(level, player, eye, dir, gun.range);
+		shoot(level, player, gun, eye, dir, muzzle, st.round);
+	}
+
+	/**
+	 * One round from anyone - a player or a soldier: traced through the world, damage dealt, glass broken (players
+	 * only), and everyone around told what to draw and hear. Returns what it hit ({@link ShotPayload} HIT_*).
+	 */
+	public static int shoot(ServerLevel level, LivingEntity shooter, GunType gun, Vec3 eye, Vec3 dir, Vec3 muzzle, int round) {
+		Trace t = trace(level, shooter, eye, dir, gun.range);
 		int hit = ShotPayload.HIT_NONE;
 		if (t.entity() != null) {
-			hit = damage(level, player, gun, t.entity(), t.pos(), eye.distanceTo(t.pos()));
+			hit = damage(level, shooter, gun, t.entity(), t.pos(), eye.distanceTo(t.pos()));
 		} else if (t.block() != null) {
 			hit = ShotPayload.HIT_BLOCK;
-			breakGlass(level, player, t.block().getBlockPos());
+			if (shooter instanceof ServerPlayer player) {
+				breakGlass(level, player, t.block().getBlockPos());
+			}
 		}
-		ShotPayload shot = new ShotPayload(player.getId(), gun.ordinal(), muzzle.x, muzzle.y, muzzle.z, t.pos().x, t.pos().y, t.pos().z,
-				hit, st.round);
+		ShotPayload shot = new ShotPayload(shooter.getId(), gun.ordinal(), muzzle.x, muzzle.y, muzzle.z, t.pos().x, t.pos().y, t.pos().z,
+				hit, round);
 		double hear = gun == GunType.SVD ? 800 : gun == GunType.PM ? 300 : 600;
 		for (ServerPlayer p : PlayerLookup.around(level, muzzle, hear)) {
 			if (ServerPlayNetworking.canSend(p, ShotPayload.TYPE)) {
 				ServerPlayNetworking.send(p, shot);
 			}
 		}
+		return hit;
 	}
 
 	/** Where the rounds leave the barrel for those watching from outside (the shooter sees his own gun). */
-	public static Vec3 muzzle(Player player, Vec3 look) {
-		float yaw = player.getYRot() * Mth.DEG_TO_RAD;
-		double side = player.getMainArm() == HumanoidArm.LEFT ? -0.22 : 0.22;
-		Vec3 right = new Vec3(-Mth.cos(yaw), 0, -Mth.sin(yaw));
-		return player.getEyePosition().add(look.scale(0.9)).add(right.scale(side)).add(0, -0.18, 0);
+	public static Vec3 muzzle(LivingEntity shooter, Vec3 look) {
+		double side = shooter.getMainArm() == HumanoidArm.LEFT ? -0.22 : 0.22;
+		Vec3 flat = new Vec3(look.x, 0, look.z);
+		Vec3 right = flat.lengthSqr() < 1e-6 ? Vec3.ZERO : new Vec3(-flat.z, 0, flat.x).normalize();
+		return shooter.getEyePosition().add(look.scale(0.9)).add(right.scale(side)).add(0, -0.18, 0);
 	}
 
 	/** Follows a shot from {@code from} along {@code dir}: the first entity or block in the way (client and server). */
@@ -192,7 +203,7 @@ public final class GunServer {
 	 * Deals one round's damage. A head is worth 1.8x (a helmet stops most of that), a body armour vest takes more than
 	 * half of a hit in the chest; vehicles and missiles mostly shrug rifle rounds off.
 	 */
-	private static int damage(ServerLevel level, ServerPlayer shooter, GunType gun, Entity target, Vec3 at, double dist) {
+	private static int damage(ServerLevel level, LivingEntity shooter, GunType gun, Entity target, Vec3 at, double dist) {
 		float dmg = gun.damageAt(dist);
 		int hit;
 		if (target instanceof MissileEntity) {

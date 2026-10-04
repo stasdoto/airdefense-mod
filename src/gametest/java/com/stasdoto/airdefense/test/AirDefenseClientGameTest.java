@@ -11,6 +11,7 @@ import net.minecraft.client.CameraType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -62,6 +63,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 			if (scene("smallArms")) {
 				smallArms(ctx, server);
+			}
+			if (scene("nations")) {
+				nations(ctx, server);
 			}
 			if (scene("strike")) {
 				unopposedIskander(ctx, server);
@@ -953,6 +957,275 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runCommand("clear @a");
 		server.runCommand("effect clear @a");
 		server.runCommand("gamemode spectator @a");
+	}
+
+	/**
+	 * Stage 8: villages and countries. A village is found and named; people look like people (every one different);
+	 * a charter is bought from the elder (respect + emeralds) through the village screen; two villagers are called up
+	 * and sent to a point from the tablet map; bandits raid; a second village with a made-up country's guards is
+	 * taken by force (guards beaten, 30 s at the flag); a third is taken at once in creative.
+	 */
+	private void nations(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 26000;
+		int g = ground;
+		server.runCommand("difficulty normal");
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 1000");
+		camera(server, x + 0.5, g + 6, 14.5, 180, 25);
+		ctx.waitTicks(30);
+		String[] jobs = {"farmer", "librarian", "cleric", "armorer", "butcher", "fisherman", "shepherd", "mason", "none", "toolsmith"};
+		village(server, x, 0, jobs);
+		int a = waitUntil(ctx, () -> settlementAt(server, x, 0) >= 0, 400);
+		int villageA = settlementAt(server, x, 0);
+		String nameA = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var st = p.settlements.get(villageA);
+			if (st == null) {
+				return "-";
+			}
+			// Make it independent for the peaceful purchase.
+			st.country = -1;
+			com.stasdoto.airdefense.nation.Nations.placeFlag(s.overworld(), p, st);
+			return st.name;
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT village_found: '{}' after {} ticks", nameA, a);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("100_village_people");
+		camera(server, x + 3.5, g + 1, 4.5, 150, 5);
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("100b_people_closeup");
+
+		// Peaceful: respect + emeralds, the charter bought on the village screen (Shift + right click on a villager).
+		server.runCommand("gamemode survival @a");
+		server.runCommand("clear @a");
+		server.runCommand("give @a minecraft:emerald 64");
+		server.runOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			p.settlements.get(villageA).bonus.put(s.getPlayerList().getPlayers().getFirst().getUUID(), 40);
+		});
+		camera(server, x + 0.5, g, 6.5, 180, 0);
+		ctx.waitTicks(10);
+		boolean clicked = false;
+		for (int attempt = 0; attempt < 6 && !clicked; attempt++) {
+			Vec3 v = server.computeOnServer(s -> {
+				var list = s.overworld().getEntitiesOfClass(net.minecraft.world.entity.npc.villager.Villager.class,
+						new net.minecraft.world.phys.AABB(x - 12, g - 2, -12, x + 12, g + 4, 12));
+				return list.isEmpty() ? Vec3.ZERO : list.getFirst().getEyePosition();
+			});
+			server.runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %d %.1f", v.x, g, v.z + 2.2));
+			ctx.waitTicks(3);
+			aimAt(ctx, v.add(0, -0.3, 0));
+			ctx.getInput().holdShift();
+			ctx.waitTicks(3);
+			aimAt(ctx, v.add(0, -0.3, 0));
+			ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT);
+			ctx.waitTicks(2);
+			ctx.getInput().releaseShift();
+			if (ctx.computeOnClient(mc -> mc.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.MerchantScreen)) {
+				ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+				ctx.waitTicks(3);
+			}
+			for (int t = 0; t < 20 && !clicked; t++) {
+				ctx.waitTick();
+				clicked = ctx.computeOnClient(mc -> mc.gui.screen() instanceof com.stasdoto.airdefense.client.nation.SettlementScreen);
+			}
+		}
+		if (!clicked) {
+			server.runOnServer(s -> com.stasdoto.airdefense.nation.NationNet.sendInfo(s.overworld(), s.getPlayerList().getPlayers().getFirst(),
+					com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(villageA), true));
+			ctx.waitTicks(10);
+		}
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("101_village_screen");
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.nation.SettlementScreen sc) {
+				sc.act(com.stasdoto.airdefense.nation.NationActionPayload.BUY, 0);
+			}
+		});
+		ctx.waitTicks(20);
+		String owner = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var c = p.country(p.settlements.get(villageA).country);
+			return c == null ? "nobody" : c.name + (c.owner != null ? " (player)" : "");
+		});
+		int emeralds = server.computeOnServer(s -> s.getPlayerList().getPlayers().getFirst().getInventory().countItem(net.minecraft.world.item.Items.EMERALD));
+		AirDefense.LOGGER.info("[airdefense-test] RESULT charter: screen by click {} -> owner {} emeralds left {}", clicked, owner, emeralds);
+
+		// Call up two villagers.
+		for (int i = 0; i < 2; i++) {
+			ctx.runOnClient(mc -> {
+				if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.nation.SettlementScreen sc) {
+					sc.act(com.stasdoto.airdefense.nation.NationActionPayload.MOBILIZE, 1);
+				}
+			});
+			ctx.waitTicks(10);
+		}
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("102_village_mine");
+		int soldiers = server.computeOnServer(s -> com.stasdoto.airdefense.nation.Nations.soldiers(s.overworld(),
+				com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(villageA)).size());
+		AirDefense.LOGGER.info("[airdefense-test] RESULT mobilize: soldiers {}", soldiers);
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		ctx.waitTicks(5);
+		camera(server, x + 4.5, g + 1, 7.5, 160, 10);
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("102b_soldiers");
+
+		// The tablet map: the army tab, the village, a point 40 blocks east, "To point".
+		server.runOnServer(s -> s.getPlayerList().getPlayers().getFirst().setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,
+				new net.minecraft.world.item.ItemStack(com.stasdoto.airdefense.registry.ModItems.DESIGNATOR)));
+		ctx.waitTicks(5);
+		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.map.MapClient.open());
+		ctx.waitForScreen(com.stasdoto.airdefense.client.map.TacticalMapScreen.class);
+		ctx.waitTicks(30);
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				m.setTab(1);
+				m.centerOn(x + 20, 0, 1);
+				m.selectVillage(villageA);
+				m.pickPoint(x + 40, 0);
+			}
+		});
+		ctx.waitTicks(30);
+		boolean sent = ctx.tryClickScreenButton("To point");
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("103_map_army");
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		double before = server.computeOnServer(s -> soldierDistance(s.overworld(), villageA, x + 40, 0));
+		camera(server, x + 20.5, g + 12, 18.5, 180, 35);
+		ctx.waitTicks(200);
+		double after = server.computeOnServer(s -> soldierDistance(s.overworld(), villageA, x + 40, 0));
+		ctx.takeScreenshot("104_squad_moved");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT order: button {} distance to the point {} -> {}", sent, (int) before, (int) after);
+
+		// Bandits raid the village; its guards (a new owner gets guards in time) and soldiers fight back.
+		server.runOnServer(s -> {
+			var st = com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(villageA);
+			com.stasdoto.airdefense.nation.Nations.spawnGuard(s.overworld(), st, com.stasdoto.airdefense.nation.Politics.get(s).country(st.country));
+			com.stasdoto.airdefense.nation.Nations.raid(s.overworld(), st, 3);
+		});
+		server.runCommand("gamemode spectator @a");
+		camera(server, x + 0.5, g + 18, 30.5, 180, 30);
+		int bandits0 = com.stasdoto.airdefense.nation.Nations.banditsSpawned;
+		for (int t = 0; t < 700; t += 50) {
+			ctx.waitTicks(50);
+			if (t == 300) {
+				ctx.takeScreenshot("105_bandits");
+			}
+		}
+		int banditsAlive = server.computeOnServer(s -> s.overworld().getEntitiesOfClass(com.stasdoto.airdefense.nation.SoldierEntity.class,
+				new net.minecraft.world.phys.AABB(x - 120, g - 10, -120, x + 120, g + 30, 120),
+				e -> e.isAlive() && e.role() == com.stasdoto.airdefense.nation.SoldierEntity.BANDIT).size());
+		AirDefense.LOGGER.info("[airdefense-test] RESULT bandits: came {} still alive {}", 3, banditsAlive);
+		server.runCommand("kill @e[type=airdefense:soldier,distance=..10000]");
+
+		// By force: village B belongs to a country the world made up and has guards.
+		int bx = x + 220;
+		camera(server, bx + 0.5, g + 8, 16.5, 180, 25);
+		ctx.waitTicks(30);
+		village(server, bx, 0, new String[]{"farmer", "mason", "none", "fletcher", "shepherd"});
+		waitUntil(ctx, () -> settlementAt(server, bx, 0) >= 0, 400);
+		int villageB = settlementAt(server, bx, 0);
+		String countryB = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var st = p.settlements.get(villageB);
+			var c = com.stasdoto.airdefense.nation.Nations.makeCountry(s.overworld(), st, false);
+			com.stasdoto.airdefense.nation.Nations.spawnGuard(s.overworld(), st, c);
+			com.stasdoto.airdefense.nation.Nations.spawnGuard(s.overworld(), st, c);
+			return c.name;
+		});
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("106_guards");
+		// The guards are beaten (here simply killed), then the player stands at the flag for 30 seconds.
+		server.runOnServer(s -> {
+			var st = com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(villageB);
+			for (var gd : com.stasdoto.airdefense.nation.Nations.guards(s.overworld(), st)) {
+				gd.kill(s.overworld());
+			}
+		});
+		server.runCommand("gamemode survival @a");
+		BlockPos flag = server.computeOnServer(s -> com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(villageB).flag);
+		camera(server, flag.getX() + 2.5, flag.getY(), flag.getZ() + 0.5, 90, 0);
+		int took = waitUntil(ctx, () -> server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var c = p.country(p.settlements.get(villageB).country);
+			return c != null && c.owner != null;
+		}), 900);
+		ctx.takeScreenshot("107_captured");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT capture: {} village {} taken after {} ticks", countryB, villageB, took);
+
+		// Creative: a third village taken at once.
+		int cx = x + 440;
+		server.runCommand("gamemode creative @a");
+		camera(server, cx + 0.5, g + 6, 12.5, 180, 25);
+		ctx.waitTicks(30);
+		village(server, cx, 0, new String[]{"none", "farmer", "cleric"});
+		waitUntil(ctx, () -> settlementAt(server, cx, 0) >= 0, 400);
+		int villageC = settlementAt(server, cx, 0);
+		server.runOnServer(s -> com.stasdoto.airdefense.nation.NationNet.sendInfo(s.overworld(), s.getPlayerList().getPlayers().getFirst(),
+				com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(villageC), true));
+		ctx.waitTicks(10);
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.nation.SettlementScreen sc) {
+				sc.act(com.stasdoto.airdefense.nation.NationActionPayload.TAKE, 0);
+			}
+		});
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("108_creative_take");
+		boolean takenC = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var c = p.country(p.settlements.get(villageC).country);
+			return c != null && c.owner != null;
+		});
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT creative_take: {} (villages found {}, guards spawned {}, captures {})", takenC,
+				com.stasdoto.airdefense.nation.Nations.discovered, com.stasdoto.airdefense.nation.Nations.guardsSpawned,
+				com.stasdoto.airdefense.nation.Nations.captures);
+		server.runCommand("kill @e[type=airdefense:soldier,distance=..10000]");
+		server.runCommand("clear @a");
+		server.runCommand("gamemode spectator @a");
+	}
+
+	/** A little village: a bell on the square and villagers of the given trades around it. */
+	private void village(TestServerContext server, int x, int z, String[] jobs) {
+		int g = ground;
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			l.setBlock(new BlockPos(x, g, z), Blocks.BELL.defaultBlockState(), Block.UPDATE_ALL);
+			for (int i = 0; i < jobs.length; i++) {
+				double a = Math.PI * 2 * i / jobs.length;
+				var v = net.minecraft.world.entity.EntityTypes.VILLAGER.create(l, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+				v.snapTo(x + 0.5 + Math.cos(a) * 4, g, z + 0.5 + Math.sin(a) * 4, (float) Math.toDegrees(a) + 90, 0);
+				var key = net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.VILLAGER_PROFESSION,
+						net.minecraft.resources.Identifier.withDefaultNamespace(jobs[i]));
+				v.setVillagerData(v.getVillagerData().withProfession(l.registryAccess(), key));
+				v.setVillagerXp(1);
+				v.setPersistenceRequired();
+				l.addFreshEntity(v);
+			}
+		});
+	}
+
+	private int settlementAt(TestServerContext server, int x, int z) {
+		int g = ground;
+		return server.computeOnServer(s -> {
+			var st = com.stasdoto.airdefense.nation.Politics.get(s).settlementAt(new BlockPos(x, g, z));
+			return st == null ? -1 : st.id;
+		});
+	}
+
+	/** Average distance (horizontal) of a village's called-up soldiers to a point. */
+	private static double soldierDistance(ServerLevel level, int village, int x, int z) {
+		var st = com.stasdoto.airdefense.nation.Politics.get(level.getServer()).settlements.get(village);
+		var list = com.stasdoto.airdefense.nation.Nations.soldiers(level, st);
+		if (list.isEmpty()) {
+			return -1;
+		}
+		double sum = 0;
+		for (var e : list) {
+			sum += Math.sqrt(Mth.square(e.getX() - x) + Mth.square(e.getZ() - z));
+		}
+		return sum / list.size();
 	}
 
 	private static int husk(TestServerContext server, double x, double y, double z, boolean helmet, boolean vest) {

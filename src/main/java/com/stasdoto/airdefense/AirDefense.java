@@ -41,6 +41,7 @@ public class AirDefense implements ModInitializer {
 		MapServer.init();
 		FactoryNet.init();
 		GunServer.init();
+		com.stasdoto.airdefense.nation.Nations.init();
 		LOGGER.info("Stasdoto Air Defense loaded");
 	}
 

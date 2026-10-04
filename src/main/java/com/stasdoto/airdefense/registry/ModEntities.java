@@ -16,6 +16,7 @@ import com.stasdoto.airdefense.missile.MissileEntity;
 import com.stasdoto.airdefense.vehicle.VehicleEntity;
 import com.stasdoto.airdefense.vehicle.VehicleType;
 import com.stasdoto.airdefense.weapon.GrenadeEntity;
+import com.stasdoto.airdefense.nation.SoldierEntity;
 
 public final class ModEntities {
 	private static final ResourceKey<EntityType<?>> MISSILE_KEY = ResourceKey.create(Registries.ENTITY_TYPE, AirDefense.id("missile"));
@@ -38,6 +39,16 @@ public final class ModEntities {
 					.clientTrackingRange(8)
 					.updateInterval(2)
 					.build(GRENADE_KEY));
+
+	private static final ResourceKey<EntityType<?>> SOLDIER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, AirDefense.id("soldier"));
+
+	/** Guards, soldiers and bandits (people with guns). */
+	public static final EntityType<SoldierEntity> SOLDIER = Registry.register(BuiltInRegistries.ENTITY_TYPE, SOLDIER_KEY,
+			EntityType.Builder.<SoldierEntity>of(SoldierEntity::new, MobCategory.MISC)
+					.sized(0.6f, 1.8f)
+					.eyeHeight(1.62f)
+					.clientTrackingRange(10)
+					.build(SOLDIER_KEY));
 
 	private static final Map<VehicleType, EntityType<VehicleEntity>> VEHICLES = new EnumMap<>(VehicleType.class);
 
@@ -65,6 +76,7 @@ public final class ModEntities {
 	}
 
 	public static void init() {
+		FabricDefaultAttributeRegistry.register(SOLDIER, SoldierEntity.createAttributes());
 		for (VehicleType type : VehicleType.values()) {
 			FabricDefaultAttributeRegistry.register(vehicle(type), VehicleEntity.createAttributes(type));
 		}

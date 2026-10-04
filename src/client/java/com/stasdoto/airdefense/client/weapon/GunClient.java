@@ -314,8 +314,8 @@ public final class GunClient {
 		Vec3 from = s.from();
 		Vec3 to = s.to();
 		Vec3 right = null;
-		if (mc.level.getEntity(s.shooter()) instanceof Player shooter) {
-			float yaw = shooter.getYRot() * Mth.DEG_TO_RAD;
+		if (mc.level.getEntity(s.shooter()) instanceof LivingEntity shooter) {
+			float yaw = shooter.getYHeadRot() * Mth.DEG_TO_RAD;
 			right = new Vec3(-Mth.cos(yaw), 0, -Mth.sin(yaw));
 		}
 		ShotFx.shot(mc, gun, from, to, s.hit(), s.round(), right);

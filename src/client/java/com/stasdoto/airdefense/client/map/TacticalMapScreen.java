@@ -21,7 +21,12 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
+import com.stasdoto.airdefense.client.nation.NationClient;
 import com.stasdoto.airdefense.item.DesignatorItem;
+import com.stasdoto.airdefense.nation.NationActionPayload;
+import com.stasdoto.airdefense.nation.NationMapPayload;
+import com.stasdoto.airdefense.nation.Settlement;
+import com.stasdoto.airdefense.nation.SoldierEntity;
 import com.stasdoto.airdefense.map.MapActionPayload;
 import com.stasdoto.airdefense.map.MapStatusPayload;
 import com.stasdoto.airdefense.missile.MissileEntity;
@@ -74,6 +79,15 @@ public class TacticalMapScreen extends Screen {
 	private Button modeButton;
 	private Button clearButton;
 	private Button meButton;
+	/** Panel tab: 0 = vehicles, 1 = villages and the army. */
+	private int tab;
+	private int selectedVillage = -1;
+	private Button tabVehicles;
+	private Button tabArmy;
+	private Button callButton;
+	private Button sendButton;
+	private Button homeButton;
+	private Button dismissButton;
 
 	public TacticalMapScreen() {
 		super(Component.translatable("screen.airdefense.map.title"));
@@ -87,8 +101,20 @@ public class TacticalMapScreen extends Screen {
 		my1 = height - 16;
 		px0 = width - PANEL_W - 4;
 		int pw = PANEL_W - 8;
-		listTop = my0 + 14;
+		listTop = my0 + 16;
 		listBottom = my1 - 70;
+		tabVehicles = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.tab_vehicles"), b -> setTab(0))
+				.bounds(px0 + 4, my0 + 1, pw / 2 - 1, 13).build());
+		tabArmy = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.tab_army"), b -> setTab(1))
+				.bounds(px0 + 4 + pw / 2 + 1, my0 + 1, pw - pw / 2 - 1, 13).build());
+		callButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.call"), b -> army(NationActionPayload.MOBILIZE))
+				.bounds(px0 + 4, my1 - 42, pw / 2 - 1, 20).build());
+		dismissButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.dismiss"), b -> army(NationActionPayload.DEMOBILIZE))
+				.bounds(px0 + 4 + pw / 2 + 1, my1 - 42, pw - pw / 2 - 1, 20).build());
+		sendButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.send"), b -> army(NationActionPayload.ORDER))
+				.bounds(px0 + 4, my1 - 20, pw / 2 - 1, 20).build());
+		homeButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.home"), b -> army(NationActionPayload.RECALL))
+				.bounds(px0 + 4 + pw / 2 + 1, my1 - 20, pw - pw / 2 - 1, 20).build());
 		fireButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.fire"), b -> fire())
 				.bounds(px0 + 4, my1 - 20, pw, 20).build());
 		modeButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.mode_auto"), b -> toggleMode())
@@ -277,6 +303,26 @@ public class TacticalMapScreen extends Screen {
 		if (fireButton == null) {
 			return;
 		}
+		boolean army = tab == 1;
+		tabVehicles.active = army;
+		tabArmy.active = !army;
+		NationMapPayload.Village v = selectedVillage();
+		boolean mine = v != null && v.mine();
+		callButton.visible = army;
+		dismissButton.visible = army;
+		sendButton.visible = army;
+		homeButton.visible = army;
+		callButton.active = mine;
+		dismissButton.active = mine && v.soldiers() > 0;
+		sendButton.active = mine && v.soldiers() > 0 && target != null;
+		homeButton.active = mine && v.soldiers() > 0;
+		clearButton.visible = !army;
+		meButton.visible = !army;
+		if (army) {
+			fireButton.visible = false;
+			modeButton.visible = false;
+			return;
+		}
 		MapStatusPayload.Entry sel = selectedEntry();
 		boolean defense = sel != null && typeOf(sel).isDefense();
 		fireButton.visible = !defense;
@@ -332,6 +378,71 @@ public class TacticalMapScreen extends Screen {
 		updateButtons();
 	}
 
+	// ------------------------------------------------------------------------------------------------
+	// Villages and the army
+
+	/** For the automated test: a click on the map at this world point (sets the target point). */
+	public void pickPoint(int x, int z) {
+		setTarget(x, z);
+	}
+
+	public void setTab(int tab) {
+		this.tab = tab;
+		listScroll = 0;
+		updateButtons();
+	}
+
+	private static List<NationMapPayload.Village> villages() {
+		List<NationMapPayload.Village> list = new ArrayList<>(NationClient.villages());
+		// Your own villages first.
+		list.sort((a, b) -> Boolean.compare(b.mine(), a.mine()));
+		return list;
+	}
+
+	@Nullable
+	private NationMapPayload.Village selectedVillage() {
+		for (NationMapPayload.Village v : NationClient.villages()) {
+			if (v.id() == selectedVillage) {
+				return v;
+			}
+		}
+		return null;
+	}
+
+	public void selectVillage(int id) {
+		selectedVillage = id;
+		updateButtons();
+	}
+
+	@Nullable
+	private NationMapPayload.Village villageAt(double sx, double sy) {
+		NationMapPayload.Village best = null;
+		double bestD = 10 * 10;
+		for (NationMapPayload.Village v : NationClient.villages()) {
+			double d = Mth.square(toScreenX(v.x()) - sx) + Mth.square(toScreenY(v.z()) - sy);
+			if (d < bestD) {
+				bestD = d;
+				best = v;
+			}
+		}
+		return best;
+	}
+
+	private void army(int action) {
+		NationMapPayload.Village v = selectedVillage();
+		if (v == null) {
+			return;
+		}
+		if (action == NationActionPayload.ORDER) {
+			if (target == null) {
+				return;
+			}
+			NationClient.send(action, v.id(), 0, target.getX(), target.getY(), target.getZ());
+		} else {
+			NationClient.send(action, v.id(), 1, 0, 0, 0);
+		}
+	}
+
 	/** For the automated test: the map point that a screen position shows. */
 	public int[] worldAt(double sx, double sy) {
 		return new int[]{Mth.floor(toWorldX(sx)), Mth.floor(toWorldZ(sy))};
@@ -383,6 +494,18 @@ public class TacticalMapScreen extends Screen {
 		}
 		if (x >= px0 && x < px0 + PANEL_W && y >= listTop && y < listBottom && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
 			int row = (int) ((y - listTop) / ROW_H) + listScroll;
+			if (tab == 1) {
+				List<NationMapPayload.Village> villages = villages();
+				if (row >= 0 && row < villages.size()) {
+					NationMapPayload.Village v = villages.get(row);
+					selectVillage(v.id());
+					follow = false;
+					centerX = v.x();
+					centerZ = v.z();
+					return true;
+				}
+				return false;
+			}
 			List<MapStatusPayload.Entry> list = entries();
 			if (row >= 0 && row < list.size()) {
 				MapStatusPayload.Entry e = list.get(row);
@@ -417,8 +540,11 @@ public class TacticalMapScreen extends Screen {
 		if (pressedInMap && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
 			pressedInMap = false;
 			if (!dragMoved) {
-				MapStatusPayload.Entry hit = vehicleAt(event.x(), event.y());
-				if (hit != null) {
+				MapStatusPayload.Entry hit = tab == 0 ? vehicleAt(event.x(), event.y()) : null;
+				NationMapPayload.Village village = tab == 1 ? villageAt(event.x(), event.y()) : null;
+				if (village != null) {
+					selectVillage(village.id());
+				} else if (hit != null) {
 					select(hit.id());
 				} else {
 					setTarget(Mth.floor(toWorldX(event.x())), Mth.floor(toWorldZ(event.y())));
@@ -442,7 +568,8 @@ public class TacticalMapScreen extends Screen {
 		}
 		if (x >= px0 && y >= listTop && y < listBottom && scrollY != 0) {
 			int rows = Math.max(1, (listBottom - listTop) / ROW_H);
-			listScroll = Mth.clamp(listScroll - (int) Math.signum(scrollY), 0, Math.max(0, entries().size() - rows));
+			int size = tab == 1 ? villages().size() : entries().size();
+			listScroll = Mth.clamp(listScroll - (int) Math.signum(scrollY), 0, Math.max(0, size - rows));
 			return true;
 		}
 		return super.mouseScrolled(x, y, scrollX, scrollY);
@@ -478,9 +605,11 @@ public class TacticalMapScreen extends Screen {
 		drawTerrain(g);
 		drawGrid(g);
 		drawRanges(g);
+		drawVillages(g);
 		drawTarget(g);
 		drawMissiles(g, partialTick);
 		drawVehicles(g);
+		drawMen(g);
 		drawPlayer(g, partialTick);
 		g.disableScissor();
 		drawScaleBar(g);
@@ -642,6 +771,51 @@ public class TacticalMapScreen extends Screen {
 		}
 	}
 
+	/** Villages: their area in the owner's colour (dotted for independent ones), the flag, the name. */
+	private void drawVillages(GuiGraphicsExtractor g) {
+		for (NationMapPayload.Village v : NationClient.villages()) {
+			double sx = toScreenX(v.x());
+			double sy = toScreenY(v.z());
+			double r = Settlement.RADIUS * scale();
+			if (sx + r < mx0 || sx - r > mx1 || sy + r < my0 || sy - r > my1) {
+				continue;
+			}
+			boolean independent = v.country().isEmpty();
+			int color = v.color();
+			circle(g, sx, sy, r, (color & 0x00FFFFFF) | 0xC0000000, independent ? 3 : 0);
+			if (!independent && r > 6) {
+				circle(g, sx, sy, r - 1, (color & 0x00FFFFFF) | 0x60000000, 0);
+			}
+			boolean sel = v.id() == selectedVillage;
+			// The flag at the town square.
+			int fx = (int) toScreenX(v.fx());
+			int fy = (int) toScreenY(v.fz());
+			g.fill(fx, fy - 7, fx + 1, fy + 1, 0xFF101418);
+			g.fill(fx + 1, fy - 7, fx + 6, fy - 3, color);
+			if (sel) {
+				circle(g, sx, sy, Math.max(6, r) + 2, 0xFFFFFFFF, 2);
+			}
+			if (scale() >= 0.25f || sel || v.mine()) {
+				String label = v.name();
+				small(g, label, (int) sx - (int) (font.width(label) * 0.375f), (int) sy + 4, sel ? 0xFFFFFFFF : 0xFFE6E9EC);
+			}
+		}
+	}
+
+	/** Guards, soldiers (yours with a white rim) and bandits (dark with a red rim). */
+	private void drawMen(GuiGraphicsExtractor g) {
+		for (NationMapPayload.Man m : NationClient.men()) {
+			int sx = (int) toScreenX(m.x() + 0.5);
+			int sy = (int) toScreenY(m.z() + 0.5);
+			if (sx < mx0 || sx >= mx1 || sy < my0 || sy >= my1) {
+				continue;
+			}
+			int rim = m.role() == SoldierEntity.BANDIT ? 0xFFFF3A2A : m.mine() ? 0xFFFFFFFF : 0xFF101418;
+			g.fill(sx - 2, sy - 2, sx + 2, sy + 2, rim);
+			g.fill(sx - 1, sy - 1, sx + 1, sy + 1, m.color());
+		}
+	}
+
 	private void drawPlayer(GuiGraphicsExtractor g, float partialTick) {
 		Player p = minecraft.player;
 		if (p == null) {
@@ -691,8 +865,11 @@ public class TacticalMapScreen extends Screen {
 		int x1 = px0 + PANEL_W;
 		g.fill(x0, my0 - 2, x1, my1 + 2, 0xF0182028);
 		g.fill(x0, my0 - 2, x1, my0 - 1, 0xFF3A4652);
+		if (tab == 1) {
+			drawArmyPanel(g, mouseX, mouseY);
+			return;
+		}
 		List<MapStatusPayload.Entry> list = entries();
-		g.text(font, Component.translatable("screen.airdefense.map.vehicles", list.size()), x0 + 5, my0 + 2, 0xFFFFD24A);
 		if (list.isEmpty()) {
 			g.textWithWordWrap(font, Component.translatable("screen.airdefense.map.none"), x0 + 5, listTop + 4, PANEL_W - 10, C_DIM);
 		}
@@ -746,6 +923,50 @@ public class TacticalMapScreen extends Screen {
 		}
 	}
 
+	private void drawArmyPanel(GuiGraphicsExtractor g, int mouseX, int mouseY) {
+		int x0 = px0;
+		int x1 = px0 + PANEL_W;
+		List<NationMapPayload.Village> list = villages();
+		if (list.isEmpty()) {
+			g.textWithWordWrap(font, Component.translatable("screen.airdefense.map.no_villages"), x0 + 5, listTop + 4, PANEL_W - 10, C_DIM);
+		}
+		int rows = Math.max(1, (listBottom - listTop) / ROW_H);
+		listScroll = Mth.clamp(listScroll, 0, Math.max(0, list.size() - rows));
+		for (int i = 0; i < rows && i + listScroll < list.size(); i++) {
+			NationMapPayload.Village v = list.get(i + listScroll);
+			int y = listTop + i * ROW_H;
+			boolean sel = v.id() == selectedVillage;
+			boolean hover = mouseX >= x0 && mouseX < x1 && mouseY >= y && mouseY < y + ROW_H;
+			if (sel || hover) {
+				g.fill(x0 + 2, y, x1 - 2, y + ROW_H - 1, sel ? 0xFF2E3D4C : 0xFF222C36);
+			}
+			g.fill(x0 + 5, y + 3, x0 + 10, y + 8, v.color());
+			g.text(font, v.name(), x0 + 13, y + 1, sel ? 0xFFFFFFFF : v.mine() ? 0xFF8AE07A : C_TEXT);
+			String line = v.mine() ? Component.translatable("screen.airdefense.map.village_mine", v.population(), v.soldiers()).getString()
+					: v.country().isEmpty() ? Component.translatable("screen.airdefense.map.village_free", v.population()).getString()
+					: v.country() + " · " + Component.translatable("screen.airdefense.map.village_guards", v.guards()).getString();
+			small(g, line, x0 + 13, y + 11, C_DIM);
+		}
+		g.fill(x0 + 2, my1 - 68, x1 - 2, my1 - 67, 0xFF3A4652);
+		NationMapPayload.Village sel = selectedVillage();
+		Component l1;
+		Component l2 = null;
+		if (sel == null) {
+			l1 = Component.translatable("screen.airdefense.map.select_village");
+		} else if (!sel.mine()) {
+			l1 = Component.literal(sel.name());
+			l2 = Component.translatable("screen.airdefense.map.not_yours");
+		} else {
+			l1 = Component.translatable("screen.airdefense.map.army_of", sel.name(), sel.soldiers());
+			l2 = target == null ? Component.translatable("screen.airdefense.map.pick_point")
+					: Component.translatable("screen.airdefense.map.point", target.getX(), target.getZ());
+		}
+		small(g, l1.getString(), x0 + 5, my1 - 64, C_TEXT);
+		if (l2 != null) {
+			small(g, l2.getString(), x0 + 5, my1 - 55, C_DIM);
+		}
+	}
+
 	// ------------------------------------------------------------------------------------------------
 	// Primitives
 
@@ -794,6 +1015,15 @@ public class TacticalMapScreen extends Screen {
 
 	// ------------------------------------------------------------------------------------------------
 	// For the automated test
+
+	/** For the automated test: villages on screen as {id, x, y}. */
+	public List<int[]> villageScreenPositions() {
+		List<int[]> out = new ArrayList<>();
+		for (NationMapPayload.Village v : NationClient.villages()) {
+			out.add(new int[]{v.id(), (int) toScreenX(v.x()), (int) toScreenY(v.z())});
+		}
+		return out;
+	}
 
 	public List<int[]> vehicleScreenPositions() {
 		List<int[]> out = new ArrayList<>();

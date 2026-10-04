@@ -149,6 +149,15 @@ _RPG = [
 ]
 RPG7 = [B(b[0], b[1] + 0.6, b[2] - 1.6, b[3], b[4] + 0.6, b[5] - 1.6, b[6]) for b in _RPG]
 
+# Parts not drawn in the aimed view (stock, grip, trigger guard).
+AIM_HIDDEN = {
+    'ak74': {0, 1, 2, 3, 18, 19, 20},
+    'pkm': {0, 1, 2, 3, 6, 7, 8, 9},
+    'svd': {0, 1, 2, 3, 4, 5},
+    'pm': {2, 3},
+    'rpg7': {9, 10, 11},
+}
+
 # k: design scale (keeps the model inside Minecraft's -16..32 limit); then the display scale gives the real size.
 GUNS = {
     #        boxes  k     length in the world (blocks)  hip translation, aim translation (first person)
@@ -209,11 +218,16 @@ def gun_models():
         # Third person: arms raised in the charged-crossbow hold, the gun along the forearm.
         tp = {'rotation': [0, 0, 0], 'translation': [0, 0.5, -1.0], 'scale': [scale] * 3}
         tp_l = dict(tp)
-        variants = [('', hip_fp, elements), ('_aim', aim_fp, elements)]
+        # Looking down the sights the stock and the grip are at the cheek and below the eye: left out, or the gun
+        # would be a block in the middle of the view.
+        rear = AIM_HIDDEN.get(name, set())
+        aim_elements = [element(b, k) for i, b in enumerate(boxes) if i not in rear]
+        variants = [('', hip_fp, elements), ('_aim', aim_fp, aim_elements)]
         if name == 'rpg7':
             # Fired: the tube without the grenade sticking out of it.
             empty = [element(b, k) for i, b in enumerate(boxes) if not 4 <= i <= 8]
-            variants += [('_empty', hip_fp, empty), ('_aim_empty', aim_fp, empty)]
+            empty_aim = [element(b, k) for i, b in enumerate(boxes) if not 4 <= i <= 8 and i not in rear]
+            variants += [('_empty', hip_fp, empty), ('_aim_empty', aim_fp, empty_aim)]
         for variant, fp, els in variants:
             display = {
                 'firstperson_righthand': fp,

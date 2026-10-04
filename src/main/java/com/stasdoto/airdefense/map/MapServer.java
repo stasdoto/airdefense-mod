@@ -73,6 +73,7 @@ public final class MapServer {
 			}
 		}
 		ServerPlayNetworking.send(player, status(level, player));
+		com.stasdoto.airdefense.nation.NationNet.sendMap(level, player);
 	}
 
 	/** A point picked on the map, on the ground: the height comes from the world (the chunk is loaded for it if needed). */
