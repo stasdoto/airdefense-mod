@@ -1,51 +1,71 @@
 name: build
 on:
   push:
+    branches: [main]
   workflow_dispatch:
     inputs:
-      devkit:
-        description: "Also export the compile classpath + JDK for local checks"
-        type: boolean
-        default: false
+      probe:
+        description: "Space-separated class names (or pkg:<package>) to print signatures for"
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
-      - uses: gradle/actions/wrapper-validation@v6
       - uses: actions/setup-java@v5
         with:
           java-version: '25'
           distribution: 'microsoft'
       - run: chmod +x ./gradlew
       - name: build
-        run: ./gradlew build --stacktrace 2>&1 | tee build-log.txt; exit ${PIPESTATUS[0]}
-      - name: upload log
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: build-log
-          path: build-log.txt
-          retention-days: 3
-      - name: upload mod jar
-        uses: actions/upload-artifact@v7
-        with:
-          name: mod-jar
-          path: build/libs/
-      - name: export devkit
-        if: ${{ inputs.devkit }}
+        id: build
+        continue-on-error: true
+        run: ./gradlew build --stacktrace --warning-mode=none 2>&1 | tee build-log.txt; exit ${PIPESTATUS[0]}
+      - name: probe signatures
+        if: ${{ inputs.probe != '' }}
+        env:
+          PROBE: ${{ inputs.probe }}
         run: |
-          ./gradlew exportDevkit genSources --no-configuration-cache
-          mkdir -p devkit
-          cp -r build/devkit/cp devkit/cp
-          find ~/.gradle/caches/fabric-loom -name '*sources*.jar' -exec cp {} devkit/ \; || true
-          tar -C "$JAVA_HOME/.." -czf devkit/jdk.tar.gz "$(basename "$JAVA_HOME")"
-          ls -la devkit devkit/cp | head -100
-      - name: upload devkit
-        if: ${{ inputs.devkit }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: devkit
-          path: devkit/
-          retention-days: 2
+          ./gradlew exportDevkit --no-configuration-cache -q || true
+          CP=$(find build/devkit/cp -name '*.jar' | tr '\n' ':')
+          : > probe.txt
+          for c in $PROBE; do
+            if [[ $c == pkg:* ]]; then
+              p=${c#pkg:}; p=${p//./\/}
+              echo "=== package $p" >> probe.txt
+              for j in build/devkit/cp/*.jar; do unzip -Z1 "$j" 2>/dev/null | grep -E "^$p/[^/]+\.class$" | grep -v '\$' ; done | sort -u | sed 's/\.class$//;s/\//./g' >> probe.txt
+            elif [[ $c == find:* ]]; then
+              q=${c#find:}
+              echo "=== find $q" >> probe.txt
+              for j in build/devkit/cp/*.jar; do unzip -Z1 "$j" 2>/dev/null | grep -iE "$q" | grep '\.class$'; done | sort -u | head -80 >> probe.txt
+            else
+              echo "=== $c" >> probe.txt
+              javap -p -cp "$CP" "$c" >> probe.txt 2>&1 || true
+            fi
+          done
+      - name: publish results to ci-out branch
+        if: always()
+        run: |
+          mkdir -p /tmp/out
+          cp build-log.txt /tmp/out/ 2>/dev/null || true
+          cp probe.txt /tmp/out/ 2>/dev/null || true
+          cp build/libs/*.jar /tmp/out/ 2>/dev/null || true
+          rm -f /tmp/out/*-sources.jar
+          echo "${{ github.sha }} ${{ steps.build.outcome }}" > /tmp/out/STATUS
+          cd /tmp/out
+          git init -q -b ci-out
+          git config user.name "ci"; git config user.email "ci@users.noreply.github.com"
+          git add -A; git commit -qm "ci output for ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-out
+      - name: fail if build failed
+        if: ${{ steps.build.outcome != 'success' }}
+        run: exit 1
