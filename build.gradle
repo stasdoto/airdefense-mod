@@ -11,16 +11,6 @@ repositories {
 	// for more information about repositories.
 }
 
-fabricApi {
-	configureTests {
-		createSourceSet = true
-		modId = "airdefense-test"
-		enableGameTests = false
-		enableClientGameTests = true
-		eula = true // agreeing to the Minecraft EULA for the automated test client
-	}
-}
-
 loom {
 	splitEnvironmentSourceSets()
 
@@ -39,6 +29,16 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "airdefense-test"
+		enableGameTests = false
+		enableClientGameTests = true
+		eula = true // agreeing to the Minecraft EULA for the automated test client
+	}
 }
 
 processResources {
