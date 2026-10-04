@@ -5,13 +5,26 @@ import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.stasdoto.airdefense.command.ModCommands;
+import com.stasdoto.airdefense.registry.ModBlockEntities;
+import com.stasdoto.airdefense.registry.ModBlocks;
+import com.stasdoto.airdefense.registry.ModEntities;
+import com.stasdoto.airdefense.registry.ModItems;
+import com.stasdoto.airdefense.registry.ModSounds;
+
 public class AirDefense implements ModInitializer {
 	public static final String MOD_ID = "airdefense";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 	@Override
 	public void onInitialize() {
-		LOGGER.info("Stasdoto Air Defense loading");
+		ModSounds.init();
+		ModEntities.init();
+		ModBlocks.init();
+		ModBlockEntities.init();
+		ModItems.init();
+		ModCommands.init();
+		LOGGER.info("Stasdoto Air Defense loaded");
 	}
 
 	public static Identifier id(String path) {
