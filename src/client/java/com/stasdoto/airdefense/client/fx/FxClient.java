@@ -145,11 +145,11 @@ public final class FxClient {
 				.drag(0.96f).rise(0.0025f).turbulent(0.02f).windy();
 	}
 
-	/** Gepard shell: a bright dot flying along the shot line, leaving a short glowing streak. */
+	/** Gepard shell: a bright dot flying along the shot line, leaving a short glowing streak behind it. */
 	static FxParticle tracer(ClientLevel l, double x, double y, double z, double vx, double vy, double vz) {
 		return base(ModParticles.TRACER, l, x, y, z, vx, vy, vz).life(14, 14).size(0.19f, 0.16f)
 				.color(1f, 0.85f, 0.45f, 1f, 0.55f, 0.15f).alpha(1f, 1, 0.85f).glow().drag(1f)
-				.smokeTrail(ModParticles.TRACER_TAIL, 1);
+				.smokeTrail(ModParticles.TRACER_TAIL, 1).trailSteps(4);
 	}
 
 	static FxParticle tracerTail(ClientLevel l, double x, double y, double z, double vx, double vy, double vz) {
@@ -243,7 +243,7 @@ public final class FxClient {
 				Vec3 end = new Vec3(p.ax(), p.ay(), p.az());
 				Vec3 d = end.subtract(at);
 				double dist = d.length();
-				double speed = 4.0;
+				double speed = p.power() > 0 ? p.power() : 4.0;
 				Vec3 v = d.scale(speed / Math.max(dist, 1e-3));
 				FxParticle t = tracer(level, at.x, at.y, at.z, v.x, v.y, v.z);
 				t.setLifetime(Math.max(1, (int) (dist / speed)));
@@ -415,8 +415,9 @@ public final class FxClient {
 	private static void launch(Minecraft mc, ClientLevel level, Vec3 at, float size) {
 		RandomSource r = level.getRandom();
 		var pe = mc.particleEngine;
-		pe.add(flash(level, at.x, at.y + 0.5, at.z, size * 1.3f));
-		pe.add(glow(level, at.x, at.y + 0.5, at.z, size * 3f, 12));
+		// Short and tight: a big lingering halo used to hang behind the launcher as an orange disc at night.
+		pe.add(flash(level, at.x, at.y + 0.5, at.z, size * 1.1f));
+		pe.add(glow(level, at.x, at.y + size * 0.6, at.z, size * 1.4f, 5).alpha(0.4f, 1, 0.3f));
 		for (int i = 0; i < n(10 + size * 10, 1); i++) {
 			double a = r.nextDouble() * Mth.TWO_PI;
 			double sp = 0.15 + r.nextDouble() * 0.35 * size;

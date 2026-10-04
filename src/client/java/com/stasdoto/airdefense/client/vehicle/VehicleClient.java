@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -42,6 +43,13 @@ public final class VehicleClient {
 		VehicleEntity.stowRequester = v -> send(v, VehicleEntity.ACTION_STOW_FOR_MARCH);
 		ClientTickEvents.START_CLIENT_TICK.register(VehicleClient::tick);
 		HudElementRegistry.addLast(AirDefense.id("vehicle_hud"), VehicleClient::hud);
+		// Vanilla draws the mount's hearts over the hotbar; a vehicle has armour (shown in our panel), not hearts.
+		HudElementRegistry.replaceElement(VanillaHudElements.MOUNT_HEALTH, original -> (g, delta) -> {
+			LocalPlayer player = Minecraft.getInstance().player;
+			if (player == null || !(player.getVehicle() instanceof VehicleEntity)) {
+				original.extractRenderState(g, delta);
+			}
+		});
 	}
 
 	private static void send(VehicleEntity v, int action) {
@@ -97,8 +105,9 @@ public final class VehicleClient {
 		}
 		Component l3 = Component.translatable(driver ? "hud.airdefense.vehicle.keys_driver" : "hud.airdefense.vehicle.keys_gunner",
 				DEPLOY.getTranslatedKeyMessage(), MODE.getTranslatedKeyMessage(), SEAT.getTranslatedKeyMessage());
+		// Top left corner: the bottom of the screen belongs to the chat, the hotbar and the hearts.
 		int x = 6;
-		int y = g.guiHeight() - 64;
+		int y = 6;
 		int w = Math.max(font.width(l1), Math.max(font.width(l2), font.width(l3))) + 8;
 		g.fill(x - 3, y - 3, x + w, y + 32, 0x88000000);
 		g.text(font, l1, x, y, 0xFFFFE08A);

@@ -438,9 +438,13 @@ public class MissileEntity extends Entity {
 		speed = Math.min(type.maxSpeed, speed + type.accel);
 		setMotor(life < type.maxLife * 0.75);
 		Vec3 dir = currentDir();
-		if (life <= 5) {
+		if (life <= 3) {
+			// Clear the canister first.
 			return dir.scale(speed);
 		}
+		// Right after launch the missile is slow and steers with thrust vectoring: it turns over much faster
+		// (a vertically launched IRIS-T pitches over towards a low target within a few metres).
+		double turn = type.turnRate * (life <= 18 ? 2.5 : 1.0);
 		MissileEntity tgt = targetMissile;
 		if (tgt == null || tgt.isRemoved() || tgt.detonated) {
 			if (tgt != null) {
@@ -454,7 +458,7 @@ public class MissileEntity extends Entity {
 					detonate(position(), true);
 					return null;
 				}
-				return dir.scale(speed);
+				return avoidGround(level, position(), dir, turn).scale(speed);
 			}
 			noTargetTicks = 0;
 			tgt.engagedBy++;
@@ -511,7 +515,23 @@ public class MissileEntity extends Entity {
 		}
 		Vec3 aim = tp.add(tv.scale(Math.min(tHit, 120)));
 		target = aim;
-		return turnTowards(dir, aim.subtract(pos).normalize(), type.turnRate).scale(speed);
+		Vec3 next = turnTowards(dir, aim.subtract(pos).normalize(), turn);
+		return avoidGround(level, pos, next, turn).scale(speed);
+	}
+
+	/** If three steps ahead would be closer than 2 blocks to the ground, pull up instead of ploughing into it. */
+	private Vec3 avoidGround(ServerLevel level, Vec3 pos, Vec3 dir, double turn) {
+		Vec3 ahead = pos.add(dir.scale(speed * 3));
+		BlockPos p = BlockPos.containing(ahead.x, ahead.y, ahead.z);
+		if (!level.hasChunkAt(p)) {
+			return dir;
+		}
+		int ground = level.getHeight(Heightmap.Types.MOTION_BLOCKING, p.getX(), p.getZ());
+		if (ahead.y >= ground + 2) {
+			return dir;
+		}
+		Vec3 climb = new Vec3(dir.x, Math.max(dir.y, 0.3), dir.z);
+		return turnTowards(dir, climb.normalize(), Math.max(turn, 0.35));
 	}
 
 	private MissileEntity findNewTarget(ServerLevel level, Vec3 dir) {
@@ -579,6 +599,9 @@ public class MissileEntity extends Entity {
 			(inAir ? MissileStats.THREATS_SHOT_DOWN : MissileStats.GROUND_IMPACTS).incrementAndGet();
 		} else {
 			MissileStats.INTERCEPTOR_BURSTS.incrementAndGet();
+			if (!inAir) {
+				MissileStats.INTERCEPTOR_CRASHES.incrementAndGet();
+			}
 		}
 		MissileStats.log("{} {} at {} after {} ticks (aim {})", type, inAir ? "AIR-BURST" : "IMPACT", fmt(at), life, fmt(target));
 		if (inAir) {

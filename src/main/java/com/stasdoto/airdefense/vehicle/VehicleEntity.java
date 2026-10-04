@@ -1,6 +1,8 @@
 package com.stasdoto.airdefense.vehicle;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -81,6 +83,13 @@ public class VehicleEntity extends LivingEntity {
 	public static final int ACTION_FIRE = 4;
 
 	private static final int MIN_STRIKE_DISTANCE = 24;
+	/** Missile batteries deploy after standing still this long (a blast wave rocking the truck does not count as driving). */
+	private static final int DEPLOY_STILL_TICKS = 20;
+	/** Gepard: speed of its 35 mm rounds in blocks per tick (slowed down from the real ~60 so the tracers can be seen). */
+	public static final double SHELL_SPEED = 8.0;
+	/** Gepard: how far the guns may still be off the lead point and keep firing (degrees). */
+	private static final float GUN_YAW_TOLERANCE = 10f;
+	private static final float GUN_ELEVATION_TOLERANCE = 8f;
 	/** Client hook: asks the server to fold the launcher when the driver wants to drive off (set by client code). */
 	public static Consumer<VehicleEntity> stowRequester = v -> {
 	};
@@ -135,6 +144,21 @@ public class VehicleEntity extends LivingEntity {
 	@Nullable
 	private MissileEntity tracked;
 	private Vec3 lastServerPos = Vec3.ZERO;
+	/** Gepard: rounds of the current burst still to fire, and rounds in flight that will hit when they arrive. */
+	private int burstLeft;
+	private final List<Shell> shells = new ArrayList<>();
+
+	private static final class Shell {
+		final MissileEntity target;
+		final float damage;
+		int ticks;
+
+		Shell(MissileEntity target, float damage, int ticks) {
+			this.target = target;
+			this.damage = damage;
+			this.ticks = ticks;
+		}
+	}
 
 	public VehicleEntity(EntityType<? extends VehicleEntity> entityType, Level level, VehicleType vtype) {
 		super(entityType, level);
@@ -648,7 +672,8 @@ public class VehicleEntity extends LivingEntity {
 		if (rate > 0 && (!needRoof || roofOpen >= 0.99f || elevTarget < elevation)) {
 			// Erectors slow down near the ends of their travel, like hydraulics do.
 			float d = elevTarget - elevation;
-			float step = Math.min(rate, Math.max(rate * 0.25f, Math.abs(d) * 0.08f));
+			// Gun mounts track at full speed; the big hydraulic erectors slow down near the end.
+			float step = vtype == VehicleType.GEPARD ? rate : Math.min(rate, Math.max(rate * 0.25f, Math.abs(d) * 0.08f));
 			elevation += Mth.clamp(d, -step, step);
 		}
 		if (vtype.turretRate > 0) {
@@ -659,7 +684,9 @@ public class VehicleEntity extends LivingEntity {
 
 	private void serverLogic(ServerLevel level) {
 		Vec3 pos = position();
-		if (pos.distanceToSqr(lastServerPos) < 0.0004) {
+		// Only driving counts as moving: a hop from a nearby blast or settling on the ground does not.
+		double moved = Mth.square(pos.x - lastServerPos.x) + Mth.square(pos.z - lastServerPos.z);
+		if (moved < 0.0025) {
 			stationaryTicks++;
 		} else {
 			stationaryTicks = 0;
@@ -825,6 +852,7 @@ public class VehicleEntity extends LivingEntity {
 
 	private void tickDefense(ServerLevel level) {
 		DefenseType type = vtype.defense;
+		boolean gun = type.interceptor == null;
 		if (reloadTimer > 0 && --reloadTimer == 0) {
 			setAmmo(type.magazine);
 			setLoadedMask(fullMask());
@@ -835,27 +863,50 @@ public class VehicleEntity extends LivingEntity {
 		if (sirenTimer > 0) {
 			sirenTimer--;
 		}
-		boolean onTheMove = marchTicks > 0 || (vtype != VehicleType.GEPARD && stationaryTicks < 30);
+		tickShells(level);
+		boolean onTheMove = marchTicks > 0 || (!gun && stationaryTicks < DEPLOY_STILL_TICKS);
 		boolean active = getMode() != MODE_OFF && !onTheMove;
 		setState(active ? DEPLOYED : STOWED);
 		if (!active) {
 			tracked = null;
+			burstLeft = 0;
 			setElevationTarget(0);
 			setTurretTarget(0);
 			return;
 		}
+		if (getMode() == MODE_AUTO && (tickCount + getId()) % 20 == 0) {
+			// On duty: keeps its own ground loaded and running, so it still guards the sky when the player is far away.
+			level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, ChunkPos.containing(blockPosition()), 2);
+		}
 		VehicleGeometry.Geometry g = vtype.geometry;
-		if (vtype != VehicleType.GEPARD) {
+		if (!gun) {
 			setElevationTarget(g.deployElevation());
 		}
 		Vec3 radar = position().add(0, 3.0, 0);
-		if ((tickCount + getId()) % 3 == 0) {
-			tracked = pickThreat(level, type, radar);
-		}
-		if (tracked == null || !tracked.isAlive()) {
+		// Hold the current target instead of flicking between targets: the guns and turret need time to settle.
+		if (tracked != null && !canEngage(type, tracked, radar)) {
 			tracked = null;
-			if (vtype == VehicleType.GEPARD) {
-				setElevationTarget(0);
+		}
+		// Missile batteries: once enough interceptors are on their way to this one, move on to the next.
+		if (tracked != null && !gun && tracked.getEngagedBy() >= type.shotsPerTarget(tracked.getMissileType().kind)) {
+			tracked = null;
+		}
+		if (tracked == null) {
+			burstLeft = 0;
+			if ((tickCount + getId()) % 3 == 0) {
+				tracked = pickThreat(level, type, radar);
+			}
+		} else if (gun && (tickCount + getId()) % 10 == 0) {
+			// ...unless something much closer turns up (a drone diving at us).
+			MissileEntity best = pickThreat(level, type, radar);
+			if (best != null && best != tracked && best.distanceToSqr(radar) < tracked.distanceToSqr(radar) * 0.36) {
+				tracked = best;
+				burstLeft = 0;
+			}
+		}
+		if (tracked == null) {
+			if (gun) {
+				setElevationTarget(10);
 			}
 			return;
 		}
@@ -863,29 +914,21 @@ public class VehicleEntity extends LivingEntity {
 			level.playSound(null, radar.x, radar.y, radar.z, ModSounds.SIREN, SoundSource.BLOCKS, 3.0f, 1.0f);
 			sirenTimer = 130;
 		}
-		Vec3 aimPoint = tracked.position();
-		if (vtype == VehicleType.GEPARD) {
-			double flightTicks = tracked.position().distanceTo(radar) / 3.0;
-			aimPoint = aimPoint.add(tracked.getFlightVelocity().scale(flightTicks));
-			double h = Math.sqrt(Mth.square(aimPoint.x - getX()) + Mth.square(aimPoint.z - getZ()));
-			setElevationTarget((float) Mth.clamp(Math.toDegrees(Math.atan2(aimPoint.y - (getY() + 2.3), h)), -5, 85));
+		if (gun) {
+			tickGun(level, type, tracked);
+			return;
 		}
 		if (g.turret() != null) {
-			setTurretTarget(relativeBearing(aimPoint));
+			// The launcher turns towards the threat, but missiles do not need it to: they turn by themselves after launch.
+			setTurretTarget(relativeBearing(tracked.position()));
 		}
 		if (getMode() != MODE_AUTO || fireTimer > 0 || getAmmo() <= 0 || elevationLagging()) {
 			return;
 		}
-		float tolerance = vtype == VehicleType.GEPARD ? 4f : 20f;
-		if (g.turret() != null && Math.abs(Mth.wrapDegrees(turretYaw - getTurretTarget())) > tolerance) {
-			return;
-		}
-		if (vtype == VehicleType.GEPARD) {
-			gunBurst(level, tracked);
-		} else {
-			fireInterceptor(level, type, tracked);
-		}
-		fireTimer = type.interval;
+		fireInterceptor(level, type, tracked);
+		// A second interceptor for the same target goes out right after the first (ripple fire), the next target waits.
+		boolean another = tracked.getEngagedBy() < type.shotsPerTarget(tracked.getMissileType().kind);
+		fireTimer = another ? 6 : type.interval;
 		setAmmo(getAmmo() - 1);
 		if (getAmmo() <= 0) {
 			reloadTimer = type.reload;
@@ -893,7 +936,7 @@ public class VehicleEntity extends LivingEntity {
 	}
 
 	private boolean elevationLagging() {
-		return Math.abs(elevation - getElevationTarget()) > (vtype == VehicleType.GEPARD ? 4f : 1.5f);
+		return Math.abs(elevation - getElevationTarget()) > (vtype == VehicleType.GEPARD ? GUN_ELEVATION_TOLERANCE : 1.5f);
 	}
 
 	@Nullable
@@ -901,15 +944,27 @@ public class VehicleEntity extends LivingEntity {
 		double range = type.range;
 		AABB box = new AABB(radar.x - range, radar.y - range, radar.z - range, radar.x + range, radar.y + range, radar.z + range);
 		List<MissileEntity> threats = level.getEntitiesOfClass(MissileEntity.class, box,
-				m -> m.getMissileType().threat && m.isAlive() && m.distanceToSqr(radar) < range * range);
-		if (threats.isEmpty()) {
-			return null;
-		}
+				m -> canEngage(type, m, radar)
+						&& (type.interceptor == null || m.getEngagedBy() < type.shotsPerTarget(m.getMissileType().kind)));
 		return threats.stream()
-				.filter(m -> type == DefenseType.GEPARD || m == tracked || m.getEngagedBy() < type.shotsPerTarget(m.getMissileType().kind))
-				.filter(m -> m.getY() > level.getMinY() && !isAboutToLeave(m, radar, range) && worthEngagingNow(m, radar, range))
 				.min(Comparator.comparingDouble((MissileEntity m) -> type.priority(m.getMissileType().kind) * 1e6 + m.distanceToSqr(radar)))
 				.orElse(null);
+	}
+
+	/** In range, still flying, and worth shooting at right now with this system. */
+	private boolean canEngage(DefenseType type, MissileEntity m, Vec3 radar) {
+		if (!m.isAlive() || !m.getMissileType().threat || m.getY() <= level().getMinY()) {
+			return false;
+		}
+		double range = type.range;
+		if (m.distanceToSqr(radar) > range * range || isAboutToLeave(m, radar, range)) {
+			return false;
+		}
+		if (type.interceptor == null) {
+			// Guns cannot do anything against a ballistic missile coming down at Mach 6.
+			return m.getMissileType().kind != MissileType.Kind.BALLISTIC;
+		}
+		return worthEngagingNow(m, radar, range);
 	}
 
 	/** Ballistic missiles and rockets are engaged on the way down (terminal phase), unless already close. */
@@ -943,22 +998,84 @@ public class VehicleEntity extends LivingEntity {
 		level.playSound(null, from.x, from.y, from.z, ModSounds.RADAR_LOCK, SoundSource.BLOCKS, 1.0f, 1.0f);
 	}
 
-	/** Gepard: a 6-round burst from the twin 35 mm guns with tracers; each round can hit or miss. */
-	private void gunBurst(ServerLevel level, MissileEntity target) {
+	// --- Gepard: twin 35 mm guns ---
+
+	/** Where to point the guns: the spot the target will be at when a round fired now gets there. */
+	private Vec3 leadPoint(MissileEntity target, Vec3 muzzle) {
+		Vec3 p = target.position();
+		Vec3 v = target.getFlightVelocity();
+		Vec3 aim = p;
+		for (int i = 0; i < 3; i++) {
+			aim = p.add(v.scale(aim.distanceTo(muzzle) / SHELL_SPEED));
+		}
+		return aim;
+	}
+
+	private void tickGun(ServerLevel level, DefenseType type, MissileEntity target) {
+		Vec3 muzzle = position().add(0, 2.3, 0);
+		Vec3 aim = leadPoint(target, muzzle);
+		double h = Math.sqrt(Mth.square(aim.x - getX()) + Mth.square(aim.z - getZ()));
+		setElevationTarget((float) Mth.clamp(Math.toDegrees(Math.atan2(aim.y - muzzle.y, h)), -5, 85));
+		setTurretTarget(relativeBearing(aim));
+		float yawErr = Math.abs(Mth.wrapDegrees(turretYaw - getTurretTarget()));
+		float elevErr = Math.abs(elevation - getElevationTarget());
+		boolean onTarget = yawErr <= GUN_YAW_TOLERANCE && elevErr <= GUN_ELEVATION_TOLERANCE;
+		if (burstLeft > 0) {
+			if (onTarget) {
+				fireRounds(level, target, aim, yawErr, elevErr);
+			} else {
+				burstLeft = 0;
+			}
+			return;
+		}
+		if (getMode() != MODE_AUTO || fireTimer > 0 || getAmmo() <= 0 || !onTarget) {
+			return;
+		}
+		RandomSource r = level.getRandom();
+		level.playSound(null, muzzle.x, muzzle.y, muzzle.z, ModSounds.GEPARD_BURST, SoundSource.BLOCKS, 3.0f, 0.95f + r.nextFloat() * 0.1f);
+		burstLeft = 6;
+		fireTimer = type.interval;
+		setAmmo(getAmmo() - 1);
+		if (getAmmo() <= 0) {
+			reloadTimer = type.reload;
+		}
+		fireRounds(level, target, aim, yawErr, elevErr);
+	}
+
+	/** One round from each barrel. The closer the guns are on the lead point, the better the chance to hit. */
+	private void fireRounds(ServerLevel level, MissileEntity target, Vec3 aim, float yawErr, float elevErr) {
 		RandomSource r = level.getRandom();
 		MissileType.Kind kind = target.getMissileType().kind;
-		Vec3 muzzleL = railWorld(0);
-		Vec3 muzzleR = railWorld(vtype.rails() - 1);
-		double dist = target.position().distanceTo(muzzleL);
-		double baseChance = DefenseType.gunHitChance(kind) * (1.0 - 0.5 * dist / vtype.defense.range);
-		Vec3 aim = target.position().add(target.getFlightVelocity().scale(dist / 3.0));
-		level.playSound(null, muzzleL.x, muzzleL.y, muzzleL.z, ModSounds.GEPARD_BURST, SoundSource.BLOCKS, 3.0f, 0.95f + r.nextFloat() * 0.1f);
-		for (int round = 0; round < 6; round++) {
-			boolean hit = r.nextDouble() < baseChance;
-			Vec3 end = hit ? aim : aim.add(r.nextGaussian() * 2.5, r.nextGaussian() * 2.5, r.nextGaussian() * 2.5);
-			Effects.tracer(level, round % 2 == 0 ? muzzleL : muzzleR, end);
-			if (hit && target.isAlive()) {
-				target.hurtServer(level, level.damageSources().generic(), 1.5f);
+		double aimFactor = 1.0 / (1.0 + (yawErr * yawErr + elevErr * elevErr) / 40.0);
+		for (int barrel = 0; barrel < 2 && burstLeft > 0; barrel++, burstLeft--) {
+			Vec3 muzzle = railWorld(barrel == 0 ? 0 : vtype.rails() - 1);
+			double dist = aim.distanceTo(muzzle);
+			double chance = DefenseType.gunHitChance(kind) * (1.0 - 0.45 * dist / vtype.defense.range) * aimFactor;
+			boolean hit = r.nextDouble() < chance;
+			int flight = Math.max(1, (int) Math.round(dist / SHELL_SPEED));
+			Vec3 end;
+			if (hit) {
+				end = aim.add(r.nextGaussian() * 0.3, r.nextGaussian() * 0.3, r.nextGaussian() * 0.3);
+				shells.add(new Shell(target, 1.5f, flight));
+			} else {
+				// A miss flies on past the target and burns out.
+				double spread = 1.2 + dist * 0.035;
+				Vec3 off = aim.add(r.nextGaussian() * spread, r.nextGaussian() * spread, r.nextGaussian() * spread);
+				end = muzzle.add(off.subtract(muzzle).normalize().scale(dist + 24));
+			}
+			Effects.tracer(level, muzzle, end, (float) SHELL_SPEED);
+		}
+	}
+
+	/** Rounds in flight: the damage lands when the shell gets there, the same moment its tracer does. */
+	private void tickShells(ServerLevel level) {
+		for (Iterator<Shell> it = shells.iterator(); it.hasNext(); ) {
+			Shell s = it.next();
+			if (--s.ticks <= 0) {
+				it.remove();
+				if (s.target.isAlive()) {
+					s.target.hurtServer(level, level.damageSources().generic(), s.damage);
+				}
 			}
 		}
 	}

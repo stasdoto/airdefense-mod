@@ -20,6 +20,7 @@ import com.stasdoto.airdefense.fx.Fx;
 import com.stasdoto.airdefense.fx.FxPayload;
 import com.stasdoto.airdefense.registry.ModParticles;
 import com.stasdoto.airdefense.registry.ModSounds;
+import com.stasdoto.airdefense.vehicle.VehicleEntity;
 
 /**
  * Explosions: crater, flying debris, shock wave and sound that carries far. The visuals (fireball, smoke column,
@@ -129,9 +130,14 @@ public final class Effects {
 		Fx.send(level, FxPayload.LAUNCH, at, size, Vec3.ZERO);
 	}
 
-	/** One glowing tracer round from {@code from} to {@code to} (Gepard). */
+	/** Old one-block Gepard (only kept for worlds from before vehicles). */
 	public static void tracer(ServerLevel level, Vec3 from, Vec3 to) {
-		Fx.send(level, FxPayload.TRACER, from, 0, to);
+		tracer(level, from, to, 4.0f);
+	}
+
+	/** One glowing tracer round flying from {@code from} to {@code to} at {@code speed} blocks per tick (Gepard). */
+	public static void tracer(ServerLevel level, Vec3 from, Vec3 to, float speed) {
+		Fx.send(level, FxPayload.TRACER, from, speed, to);
 	}
 
 	/**
@@ -147,7 +153,9 @@ public final class Effects {
 	private static void shockWave(ServerLevel level, Entity source, Vec3 at, double outer, double inner, double strength) {
 		AABB box = new AABB(at.x - outer, at.y - outer, at.z - outer, at.x + outer, at.y + outer, at.z + outer);
 		for (Entity e : level.getEntities(source, box)) {
-			if (e instanceof FallingBlockEntity || e instanceof MissileEntity || e.isSpectator()) {
+			// Vehicles weigh 20-40 tonnes: a blast wave does not throw them around (and must not make an air defence
+			// battery think it is being driven, which would fold it up mid-fight).
+			if (e instanceof FallingBlockEntity || e instanceof MissileEntity || e instanceof VehicleEntity || e.isSpectator()) {
 				continue;
 			}
 			Vec3 d = e.position().subtract(at);

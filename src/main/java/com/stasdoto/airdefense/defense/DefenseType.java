@@ -6,13 +6,14 @@ import com.stasdoto.airdefense.missile.MissileType;
 
 /**
  * Air defence systems. Range in blocks, magazine = interceptors (Gepard: bursts) before reloading,
- * reload/interval in ticks. Gepard has no interceptor: it fires its guns directly.
+ * reload/interval in ticks (interval = time between shots at different targets). Gepard has no interceptor: it fires
+ * its guns directly.
  */
 public enum DefenseType {
-	PATRIOT(MissileType.PAC3, 220, 8, 500, 22),
-	IRIS_T(MissileType.IRIST, 140, 8, 360, 14),
-	NASAMS(MissileType.AMRAAM, 120, 6, 360, 16),
-	GEPARD(null, 64, 30, 300, 12);
+	PATRIOT(MissileType.PAC3, 220, 8, 500, 14),
+	IRIS_T(MissileType.IRIST, 140, 8, 360, 10),
+	NASAMS(MissileType.AMRAAM, 120, 6, 360, 10),
+	GEPARD(null, 64, 30, 300, 10);
 
 	@Nullable
 	public final MissileType interceptor;
@@ -57,13 +58,13 @@ public enum DefenseType {
 		};
 	}
 
-	/** Gepard: chance that one round of a burst hits a target of this kind. */
+	/** Gepard: chance that one round hits a target of this kind (at point-blank range, guns right on the lead point). */
 	public static double gunHitChance(MissileType.Kind kind) {
 		return switch (kind) {
-			case DRONE -> 0.22;
-			case CRUISE -> 0.15;
-			case ROCKET -> 0.04;
-			default -> 0.012;
+			case DRONE -> 0.3;
+			case CRUISE -> 0.2;
+			case ROCKET -> 0.06;
+			default -> 0.01;
 		};
 	}
 }

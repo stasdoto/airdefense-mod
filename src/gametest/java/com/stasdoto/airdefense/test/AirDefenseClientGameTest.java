@@ -25,7 +25,8 @@ import com.stasdoto.airdefense.vehicle.VehicleType;
 /**
  * Plays every system in a real client and records screenshots + counters: the vehicle line-up (folded and deployed),
  * driving, an unopposed Iskander strike, close-up explosions by day and night, Patriot vs Iskander, Gepard vs a Shahed
- * swarm, NASAMS vs a HIMARS salvo, IRIS-T vs cruise missiles.
+ * swarm, NASAMS vs a HIMARS salvo at night and vs drones, IRIS-T vs cruise missiles and vs drones. Each air defence
+ * scene logs a RESULT line (shot down / reached the ground).
  */
 @SuppressWarnings("UnstableApiUsage")
 public class AirDefenseClientGameTest implements FabricClientGameTest {
@@ -52,10 +53,12 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			server.runCommand("time set 1000");
 			patriotVsIskander(ctx, server);
 			droneSwarm(ctx, server);
-			server.runCommand("time set 13800");
+			server.runCommand("time set 15000");
 			himarsVsNasams(ctx, server);
 			server.runCommand("time set 1000");
+			droneVsNasams(ctx, server);
 			cruiseVsIrisT(ctx, server);
+			droneVsIrisT(ctx, server);
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
@@ -181,11 +184,15 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	private void effectsCloseup(ClientGameTestContext ctx, TestServerContext server, boolean night) {
 		int x = night ? 10500 : 9000;
 		BlockPos target = new BlockPos(x, ground - 1, 140);
+		// The launcher's chunk has to be loaded before the vehicle is put there, so the camera goes there first.
+		camera(server, x + 10, ground + 5, -10, 150, 10);
+		ctx.waitTicks(30);
 		int id = spawnVehicle(server, VehicleType.ISKANDER, x, 0, 0);
-		camera(server, x + 38, ground + 5, 150, 104.7f, -14);
-		ctx.waitTicks(40);
+		ctx.waitTicks(5);
 		int impacts = MissileStats.GROUND_IMPACTS.get();
 		strike(server, id, target);
+		ctx.waitTicks(20);
+		camera(server, x + 38, ground + 5, 150, 104.7f, -14);
 		waitUntil(ctx, () -> MissileStats.GROUND_IMPACTS.get() > impacts, 600);
 		String p = night ? "17n_" : "16_";
 		int[] at = {1, 4, 10, 25, 60, 140};
@@ -200,18 +207,53 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		AirDefense.LOGGER.info("[airdefense-test] crater flames spawned so far: {}", flames);
 	}
 
+	/**
+	 * Puts an air defence vehicle down with the camera next to it and lets it deploy (it then keeps its own ground
+	 * loaded while on duty), so it is ready when the attack comes.
+	 */
+	private int prepareDefense(ClientGameTestContext ctx, TestServerContext server, VehicleType type, int x, int z, float yaw) {
+		camera(server, x + 8, ground + 5, z + 8, 135, 10);
+		ctx.waitTicks(30);
+		int id = spawnVehicle(server, type, x, z, yaw);
+		ctx.waitTicks(90);
+		return id;
+	}
+
+	/** Launcher spawned with the camera near it (its chunk must be loaded), then fires. */
+	private int launchFrom(ClientGameTestContext ctx, TestServerContext server, VehicleType type, int x, int z, BlockPos target) {
+		camera(server, x + 10, ground + 5, z - 10, 30, 10);
+		ctx.waitTicks(30);
+		int id = spawnVehicle(server, type, x, z, 0);
+		ctx.waitTicks(5);
+		strike(server, id, target);
+		return id;
+	}
+
+	private static int[] counters() {
+		return new int[]{MissileStats.STRIKES_LAUNCHED.get(), MissileStats.THREATS_SHOT_DOWN.get(), MissileStats.GROUND_IMPACTS.get(),
+				MissileStats.INTERCEPTORS_LAUNCHED.get(), MissileStats.INTERCEPTOR_CRASHES.get()};
+	}
+
+	private static void report(String scene, int[] before) {
+		int[] now = counters();
+		AirDefense.LOGGER.info("[airdefense-test] RESULT {}: threats={} shotDown={} reachedGround={} interceptors={} interceptorCrashes={}",
+				scene, now[0] - before[0], now[1] - before[1], now[2] - before[2], now[3] - before[3], now[4] - before[4]);
+	}
+
 	private void patriotVsIskander(ClientGameTestContext ctx, TestServerContext server) {
 		int x = 3000;
 		BlockPos target = new BlockPos(x, ground - 1, 90);
-		int launcher = spawnVehicle(server, VehicleType.ISKANDER, x, -150, 0);
-		spawnVehicle(server, VehicleType.PATRIOT, x + 14, 70, 180);
+		prepareDefense(ctx, server, VehicleType.PATRIOT, x + 14, 70, 180);
 		camera(server, x + 30, ground + 4, 94, 155, -18);
-		ctx.waitTicks(60);
+		ctx.waitTicks(20);
 		ctx.takeScreenshot("19_patriot_ready");
+		int[] before = counters();
 		int shot = MissileStats.THREATS_SHOT_DOWN.get();
 		int impacts = MissileStats.GROUND_IMPACTS.get();
 		int interceptors = MissileStats.INTERCEPTORS_LAUNCHED.get();
-		strike(server, launcher, target);
+		launchFrom(ctx, server, VehicleType.ISKANDER, x, -150, target);
+		ctx.waitTicks(60);
+		camera(server, x + 30, ground + 4, 94, 155, -18);
 		int t = waitUntil(ctx, () -> MissileStats.INTERCEPTORS_LAUNCHED.get() > interceptors, 600);
 		ctx.waitTicks(4);
 		ctx.takeScreenshot("20_patriot_launch");
@@ -224,38 +266,38 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.takeScreenshot("23_patriot_after");
 		ctx.waitTicks(300);
 		ctx.takeScreenshot("24_patriot_second");
-		AirDefense.LOGGER.info("[airdefense-test] after Patriot vs Iskander (first interceptor after {} ticks): {}", t, MissileStats.summary());
+		AirDefense.LOGGER.info("[airdefense-test] first Patriot interceptor after {} ticks", t);
+		report("patriot_vs_iskander", before);
 	}
 
 	private void droneSwarm(ClientGameTestContext ctx, TestServerContext server) {
 		int x = 4500;
 		BlockPos target = new BlockPos(x, ground - 1, 60);
-		int launcher = spawnVehicle(server, VehicleType.SHAHED, x, -180, 0);
-		spawnVehicle(server, VehicleType.GEPARD, x + 10, 40, 180);
-		camera(server, x + 6, ground + 6, -168, 160, 10);
-		ctx.waitTicks(60);
-		strike(server, launcher, target);
+		prepareDefense(ctx, server, VehicleType.GEPARD, x + 10, 40, 180);
+		int[] before = counters();
+		launchFrom(ctx, server, VehicleType.SHAHED, x, -180, target);
 		ctx.waitTicks(30);
+		camera(server, x + 6, ground + 6, -168, 160, 10);
+		ctx.waitTicks(5);
 		ctx.takeScreenshot("30_shahed_takeoff");
 		ctx.waitTicks(60);
 		camera(server, x + 20, ground + 4, 64, 160, -12);
 		for (int i = 0; i < 6; i++) {
-			ctx.waitTicks(i < 2 ? 70 : 30);
+			ctx.waitTicks(i < 2 ? 70 : 25);
 			ctx.takeScreenshot("3" + (i + 1) + "_shahed_defense");
 		}
-		ctx.waitTicks(200);
-		AirDefense.LOGGER.info("[airdefense-test] after Shahed swarm: {}", MissileStats.summary());
+		ctx.waitTicks(250);
+		report("gepard_vs_5_shahed", before);
 	}
 
 	private void himarsVsNasams(ClientGameTestContext ctx, TestServerContext server) {
 		int x = 6000;
 		BlockPos target = new BlockPos(x, ground - 1, 80);
-		int launcher = spawnVehicle(server, VehicleType.HIMARS, x, -140, 0);
-		spawnVehicle(server, VehicleType.NASAMS, x + 12, 64, 180);
-		camera(server, x + 12, ground + 4, -128, 150, 5);
-		ctx.waitTicks(60);
+		prepareDefense(ctx, server, VehicleType.NASAMS, x + 12, 64, 180);
+		int[] before = counters();
 		int launched = MissileStats.STRIKES_LAUNCHED.get();
-		strike(server, launcher, target);
+		launchFrom(ctx, server, VehicleType.HIMARS, x, -140, target);
+		camera(server, x + 12, ground + 4, -128, 150, 5);
 		waitUntil(ctx, () -> MissileStats.STRIKES_LAUNCHED.get() > launched, 300);
 		ctx.waitTicks(4);
 		ctx.takeScreenshot("40_himars_salvo");
@@ -267,18 +309,31 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(40);
 		ctx.takeScreenshot("43_himars_impacts");
 		ctx.waitTicks(200);
-		AirDefense.LOGGER.info("[airdefense-test] after HIMARS vs NASAMS: {}", MissileStats.summary());
+		report("nasams_vs_himars_salvo", before);
+	}
+
+	private void droneVsNasams(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 12000;
+		BlockPos target = new BlockPos(x, ground - 1, 70);
+		prepareDefense(ctx, server, VehicleType.NASAMS, x + 12, 50, 180);
+		int[] before = counters();
+		launchFrom(ctx, server, VehicleType.SHAHED, x, -170, target);
+		ctx.waitTicks(120);
+		camera(server, x + 26, ground + 6, 70, 150, -12);
+		ctx.waitTicks(120);
+		ctx.takeScreenshot("45_nasams_drones");
+		ctx.waitTicks(260);
+		report("nasams_vs_5_shahed", before);
 	}
 
 	private void cruiseVsIrisT(ClientGameTestContext ctx, TestServerContext server) {
 		int x = 7500;
 		BlockPos target = new BlockPos(x, ground - 1, 80);
-		int launcher = spawnVehicle(server, VehicleType.KALIBR, x, -160, 0);
-		spawnVehicle(server, VehicleType.IRIS_T, x + 12, 50, 180);
-		camera(server, x + 16, ground + 5, -146, 150, 0);
-		ctx.waitTicks(60);
+		prepareDefense(ctx, server, VehicleType.IRIS_T, x + 12, 50, 180);
+		int[] before = counters();
 		int launched = MissileStats.STRIKES_LAUNCHED.get();
-		strike(server, launcher, target);
+		launchFrom(ctx, server, VehicleType.KALIBR, x, -160, target);
+		camera(server, x + 16, ground + 5, -146, 150, 0);
 		waitUntil(ctx, () -> MissileStats.STRIKES_LAUNCHED.get() > launched, 400);
 		ctx.waitTicks(10);
 		ctx.takeScreenshot("50_kalibr_launch");
@@ -288,7 +343,21 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(60);
 		ctx.takeScreenshot("52_kalibr_iris");
 		ctx.waitTicks(260);
-		AirDefense.LOGGER.info("[airdefense-test] after Kalibr vs IRIS-T: {}", MissileStats.summary());
+		report("iris_t_vs_2_kalibr", before);
+	}
+
+	private void droneVsIrisT(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 13500;
+		BlockPos target = new BlockPos(x, ground - 1, 70);
+		prepareDefense(ctx, server, VehicleType.IRIS_T, x + 12, 50, 180);
+		int[] before = counters();
+		launchFrom(ctx, server, VehicleType.SHAHED, x, -170, target);
+		ctx.waitTicks(120);
+		camera(server, x + 26, ground + 6, 70, 150, -12);
+		ctx.waitTicks(120);
+		ctx.takeScreenshot("53_iris_drones");
+		ctx.waitTicks(260);
+		report("iris_t_vs_5_shahed", before);
 	}
 
 	// --- helpers -----------------------------------------------------------------------------------

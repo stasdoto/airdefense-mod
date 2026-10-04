@@ -34,6 +34,7 @@ public class FxParticle extends SingleQuadParticle {
 	private float turbulence;
 	private ParticleOptions trail;
 	private int trailEvery;
+	private int trailSteps = 1;
 
 	public FxParticle(ClientLevel level, double x, double y, double z, double vx, double vy, double vz, SpriteSet sprites) {
 		super(level, x, y, z, sprites.get(level.getRandom()));
@@ -167,6 +168,12 @@ public class FxParticle extends SingleQuadParticle {
 		return this;
 	}
 
+	/** Fills the path covered each tick with this many trail particles (fast tracers would leave dotted lines). */
+	public FxParticle trailSteps(int steps) {
+		this.trailSteps = Math.max(1, steps);
+		return this;
+	}
+
 	// --- behaviour ----------------------------------------------------------------------------------
 
 	@Override
@@ -215,7 +222,10 @@ public class FxParticle extends SingleQuadParticle {
 			updateLoopSprite();
 		}
 		if (trail != null && age % trailEvery == 0 && !(onGround && hasPhysics)) {
-			level.addParticle(trail, true, true, x, y, z, 0, 0, 0);
+			for (int i = 0; i < trailSteps; i++) {
+				double k = (double) i / trailSteps;
+				level.addParticle(trail, true, true, Mth.lerp(k, x, xo), Mth.lerp(k, y, yo), Mth.lerp(k, z, zo), 0, 0, 0);
+			}
 		}
 	}
 
