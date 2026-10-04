@@ -69,6 +69,18 @@ public class LauncherBlockEntity extends BlockEntity {
 		player.sendOverlayMessage(Component.translatable("message.airdefense.launch", newTarget.getX(), newTarget.getY(), newTarget.getZ(), (int) dist));
 	}
 
+	/** Fire at a target without a player (used by the automated test and command blocks). */
+	public boolean commandStrike(BlockPos newTarget) {
+		if (salvoLeft > 0 || cooldown > 0) {
+			return false;
+		}
+		target = newTarget;
+		salvoLeft = type().salvo;
+		salvoTimer = 1;
+		setChanged();
+		return true;
+	}
+
 	/** Redstone pulse: repeat the last strike. */
 	public void fireAtStoredTarget() {
 		if (target != null && salvoLeft == 0 && cooldown == 0) {

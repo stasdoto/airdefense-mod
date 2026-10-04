@@ -4,6 +4,10 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      gametest:
+        description: "Run the automated in-game test (real client under xvfb) and publish screenshots"
+        type: boolean
+        default: false
       probe:
         description: "Space-separated class names (or pkg:<package>) to print signatures for"
         type: string
@@ -52,6 +56,23 @@ jobs:
               javap -p -cp "$CP" "$c" >> probe.txt 2>&1 || true
             fi
           done
+      - name: in-game test
+        if: ${{ inputs.gametest }}
+        continue-on-error: true
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          MESA_GL_VERSION_OVERRIDE: "4.6"
+          SDL_AUDIODRIVER: dummy
+          ALSOFT_DRIVERS: "null"
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb mesa-utils libgl1-mesa-dri > /dev/null
+          timeout 40m xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClientGameTest --stacktrace 2>&1 | tail -400 > gametest-log.txt || true
+          mkdir -p /tmp/out/screens
+          find . -path ./.gradle -prune -o -name '*.png' -path '*screenshots*' -print -exec cp {} /tmp/out/screens/ \;
+          find . -path ./.gradle -prune -o -name 'latest.log' -path '*logs*' -print | head -3
+          LOG=$(find . -path ./.gradle -prune -o -name 'latest.log' -path '*logs*' -print | head -1)
+          [ -n "$LOG" ] && cp "$LOG" /tmp/out/game-latest.log || true
+          cp gametest-log.txt /tmp/out/ || true
       - name: publish results to ci-out branch
         if: always()
         run: |

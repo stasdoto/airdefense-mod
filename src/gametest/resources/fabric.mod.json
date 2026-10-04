@@ -1,0 +1,13 @@
+{
+	"schemaVersion": 1,
+	"id": "airdefense-test",
+	"version": "1.0.0",
+	"name": "Stasdoto Air Defense - automated test",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-client-gametest": ["com.stasdoto.airdefense.test.AirDefenseClientGameTest"]
+	},
+	"depends": {
+		"airdefense": "*"
+	}
+}

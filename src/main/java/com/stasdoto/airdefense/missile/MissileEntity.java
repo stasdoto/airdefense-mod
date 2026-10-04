@@ -122,6 +122,8 @@ public class MissileEntity extends Entity {
 		m.updateRotation(m.launchDir);
 		m.setMotor(true);
 		level.addFreshEntity(m);
+		MissileStats.STRIKES_LAUNCHED.incrementAndGet();
+		MissileStats.log("launch {} from {} to {}", type, fmt(pos), fmt(target));
 		return m;
 	}
 
@@ -143,7 +145,13 @@ public class MissileEntity extends Entity {
 		m.updateRotation(m.launchDir);
 		m.setMotor(true);
 		level.addFreshEntity(m);
+		MissileStats.INTERCEPTORS_LAUNCHED.incrementAndGet();
+		MissileStats.log("interceptor {} from {} at {}", type, fmt(pos), target == null ? "-" : target.getMissileType() + "@" + fmt(target.position()));
 		return m;
+	}
+
+	private static String fmt(Vec3 v) {
+		return String.format("(%.0f %.0f %.0f)", v.x, v.y, v.z);
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -513,6 +521,12 @@ public class MissileEntity extends Entity {
 			targetMissile.engagedBy = Math.max(0, targetMissile.engagedBy - 1);
 		}
 		discard();
+		if (type.threat) {
+			(inAir ? MissileStats.THREATS_SHOT_DOWN : MissileStats.GROUND_IMPACTS).incrementAndGet();
+		} else {
+			MissileStats.INTERCEPTOR_BURSTS.incrementAndGet();
+		}
+		MissileStats.log("{} {} at {} after {} ticks (aim {})", type, inAir ? "AIR-BURST" : "IMPACT", fmt(at), life, fmt(target));
 		if (inAir) {
 			Effects.airBurst(level, this, at, type);
 		} else {
