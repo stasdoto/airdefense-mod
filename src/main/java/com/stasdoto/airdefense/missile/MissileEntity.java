@@ -67,6 +67,12 @@ public class MissileEntity extends Entity {
 	private int engagedBy;
 	private int noTargetTicks;
 	private boolean detonated;
+	/** Interceptors: the tick at which the seeker will lose its target (-1 = it won't); threats: decoys already let go. */
+	private int seekerFailAt = -1;
+	private boolean lostLock;
+	private boolean decoysReleased;
+	/** Fixed per missile: a radar that sees through this share of decoys (or more) recognises this one as fake. */
+	private final double decoyRoll;
 
 	private ItemStack displayStack;
 	private MissileType displayType;
@@ -75,6 +81,7 @@ public class MissileEntity extends Entity {
 		super(type, level);
 		this.noPhysics = true;
 		this.setNoGravity(true);
+		this.decoyRoll = this.random.nextDouble();
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -137,7 +144,7 @@ public class MissileEntity extends Entity {
 		m.updateRotation(m.launchDir);
 		m.setMotor(true);
 		level.addFreshEntity(m);
-		MissileStats.STRIKES_LAUNCHED.incrementAndGet();
+		(type.isDecoy() ? MissileStats.DECOYS_LAUNCHED : MissileStats.STRIKES_LAUNCHED).incrementAndGet();
 		MissileStats.log("launch {} from {} to {}", type, fmt(pos), fmt(target));
 		return m;
 	}
@@ -156,6 +163,9 @@ public class MissileEntity extends Entity {
 		if (target != null) {
 			target.engagedBy++;
 			m.target = target.position();
+		}
+		if (level.getRandom().nextDouble() < type.seekerFailChance()) {
+			m.seekerFailAt = (int) (type.maxLife * (0.1 + level.getRandom().nextDouble() * 0.3));
 		}
 		m.updateRotation(m.launchDir);
 		m.setMotor(true);
@@ -215,6 +225,11 @@ public class MissileEntity extends Entity {
 
 	public Vec3 getTarget() {
 		return target;
+	}
+
+	/** See {@link #decoyRoll}: compared with a radar's discrimination to decide whether it is fooled by a decoy. */
+	public double decoyRoll() {
+		return decoyRoll;
 	}
 
 	@Override
@@ -370,12 +385,41 @@ public class MissileEntity extends Entity {
 		double next = Math.min(1.0, arcS + speed / Math.max(len, 1e-3));
 		Vec3 v = arcPoint(next).subtract(position());
 		arcS = next;
+		if (type == MissileType.ISKANDER && !decoysReleased && arcS > 0.55 && level() instanceof ServerLevel server) {
+			releaseDecoys(server);
+		}
 		if (next >= 1.0) {
 			// Overshoot slightly so the block ray-cast definitely finds the ground at the aim point.
 			v = v.add(v.normalize().scale(2.0));
 		}
 		setMotor(type.kind == MissileType.Kind.ROCKET ? arcS < 0.25 : arcS < 0.5);
 		return v;
+	}
+
+	/** Iskander-M: after the top of the arc it throws out two decoys that dive at points around the target. */
+	private void releaseDecoys(ServerLevel level) {
+		decoysReleased = true;
+		for (int i = 0; i < 2; i++) {
+			MissileEntity d = new MissileEntity(ModEntities.MISSILE, level);
+			d.setMissileType(MissileType.ISKANDER_DECOY);
+			d.setPos(position());
+			d.launchPos = position();
+			double a = random.nextDouble() * Math.PI * 2;
+			double r = 16 + random.nextDouble() * 30;
+			d.target = target.add(Math.cos(a) * r, 0, Math.sin(a) * r);
+			d.health = MissileType.ISKANDER_DECOY.health;
+			d.phase = 1;
+			d.arcStart = position();
+			d.arcS = 0;
+			d.arcApex = 4 + random.nextDouble() * 10;
+			d.speed = speed * (0.8 + random.nextDouble() * 0.15);
+			d.lastVel = lastVel.add(random.nextGaussian() * 0.4, 0.3, random.nextGaussian() * 0.4);
+			d.updateRotation(d.lastVel);
+			d.setMotor(false);
+			level.addFreshEntity(d);
+			MissileStats.DECOYS_LAUNCHED.incrementAndGet();
+		}
+		MissileStats.log("ISKANDER released decoys at {}", fmt(position()));
 	}
 
 	// --- Cruise missiles and drones: hold altitude over the terrain, turn towards the target, dive at the end ---
@@ -445,6 +489,24 @@ public class MissileEntity extends Entity {
 		// Right after launch the missile is slow and steers with thrust vectoring: it turns over much faster
 		// (a vertically launched IRIS-T pitches over towards a low target within a few metres).
 		double turn = type.turnRate * (life <= 18 ? 2.5 : 1.0);
+		if (seekerFailAt > 0 && life >= seekerFailAt) {
+			// The seeker has lost it: the missile flies on blind and blows itself up.
+			if (!lostLock) {
+				lostLock = true;
+				noTargetTicks = 0;
+				if (targetMissile != null) {
+					targetMissile.engagedBy = Math.max(0, targetMissile.engagedBy - 1);
+					targetMissile = null;
+				}
+				MissileStats.SEEKER_FAILURES.incrementAndGet();
+				MissileStats.log("{} lost its target at {}", type, fmt(position()));
+			}
+			if (++noTargetTicks > 30) {
+				detonate(position(), true);
+				return null;
+			}
+			return avoidGround(level, position(), dir, turn).scale(speed);
+		}
 		MissileEntity tgt = targetMissile;
 		if (tgt == null || tgt.isRemoved() || tgt.detonated) {
 			if (tgt != null) {
@@ -595,6 +657,13 @@ public class MissileEntity extends Entity {
 			targetMissile.engagedBy = Math.max(0, targetMissile.engagedBy - 1);
 		}
 		discard();
+		if (type.isDecoy()) {
+			// No warhead: a small pop and a puff of smoke.
+			(inAir ? MissileStats.DECOYS_DOWN : MissileStats.DECOYS_LANDED).incrementAndGet();
+			MissileStats.log("{} {} at {}", type, inAir ? "decoy shot down" : "decoy landed", fmt(at));
+			com.stasdoto.airdefense.fx.Fx.send(level, com.stasdoto.airdefense.fx.FxPayload.AIR_BURST_INTERCEPTOR, at, 0.8f, Vec3.ZERO);
+			return;
+		}
 		if (type.threat) {
 			(inAir ? MissileStats.THREATS_SHOT_DOWN : MissileStats.GROUND_IMPACTS).incrementAndGet();
 		} else {

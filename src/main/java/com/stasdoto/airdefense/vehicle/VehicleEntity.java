@@ -846,7 +846,9 @@ public class VehicleEntity extends LivingEntity {
 		RandomSource r = level.getRandom();
 		Vec3 aim = new Vec3(strikeTarget.getX() + 0.5 + r.nextGaussian() * type.spread, strikeTarget.getY() + 1.0,
 				strikeTarget.getZ() + 0.5 + r.nextGaussian() * type.spread);
-		MissileEntity.launchStrike(level, type.missile, from, aim, forward(), dir);
+		// A Shahed salvo always has a few Gerbera decoys in it: cheap foam drones meant to soak up air defence.
+		MissileType missile = type.missile == MissileType.SHAHED && r.nextFloat() < 0.35f ? MissileType.GERBERA : type.missile;
+		MissileEntity.launchStrike(level, missile, from, aim, forward(), dir);
 		setLoadedMask(getLoadedMask() & ~(1 << rail));
 		setAmmo(Math.max(0, getAmmo() - 1));
 		Effects.launchBlast(level, from.subtract(dir.scale(2.5)), type.missile);
@@ -889,6 +891,10 @@ public class VehicleEntity extends LivingEntity {
 		VehicleGeometry.Geometry g = vtype.geometry;
 		if (!gun) {
 			setElevationTarget(g.deployElevation());
+		}
+		if (getMode() == MODE_MANUAL) {
+			tickManual(level, type, gun);
+			return;
 		}
 		Vec3 radar = position().add(0, 3.0, 0);
 		// Hold the current target instead of flicking between targets: the guns and turret need time to settle.
@@ -966,6 +972,10 @@ public class VehicleEntity extends LivingEntity {
 		}
 		double range = type.range;
 		if (m.distanceToSqr(radar) > range * range || isAboutToLeave(m, radar, range)) {
+			return false;
+		}
+		// A decoy this radar sees through is ignored (each decoy has a fixed "how convincing" roll).
+		if (m.getMissileType().isDecoy() && m.decoyRoll() < type.discrimination) {
 			return false;
 		}
 		if (type.interceptor == null) {
@@ -1075,6 +1085,143 @@ public class VehicleEntity extends LivingEntity {
 		}
 	}
 
+	// --- Manual mode: the gunner aims with his own eyes ---
+
+	/** The turret and guns follow where the gunner looks; he fires with the left mouse button (see {@link #manualFire}). */
+	private void tickManual(ServerLevel level, DefenseType type, boolean gun) {
+		tracked = null;
+		Player gunner = getGunner();
+		VehicleGeometry.Geometry g = vtype.geometry;
+		if (gunner == null) {
+			// Nobody at the sight: hold fire.
+			burstLeft = 0;
+			if (gun) {
+				setElevationTarget(10);
+			}
+			return;
+		}
+		if (g.turret() != null) {
+			setTurretTarget(Mth.wrapDegrees(gunner.getYRot() - getYRot()));
+		}
+		if (gun) {
+			setElevationTarget(Mth.clamp(-gunner.getXRot(), -5, 85));
+			if (burstLeft > 0) {
+				fireManualRounds(level, type);
+			}
+		}
+	}
+
+	/** Fire button from the gunner's seat: a burst along the barrels, or an interceptor at the threat in the sight. */
+	public void manualFire(Player player) {
+		if (!vtype.isDefense() || getMode() != MODE_MANUAL || getGunner() != player || getState() != DEPLOYED
+				|| !(level() instanceof ServerLevel level)) {
+			return;
+		}
+		DefenseType type = vtype.defense;
+		if (fireTimer > 0 || getAmmo() <= 0 || burstLeft > 0) {
+			return;
+		}
+		if (type.interceptor == null) {
+			RandomSource r = level.getRandom();
+			Vec3 muzzle = railWorld(0);
+			level.playSound(null, muzzle.x, muzzle.y, muzzle.z, ModSounds.GEPARD_BURST, SoundSource.BLOCKS, 3.0f, 0.95f + r.nextFloat() * 0.1f);
+			burstLeft = 6;
+			fireRounds(type);
+			fireManualRounds(level, type);
+			return;
+		}
+		if (elevationLagging()) {
+			return;
+		}
+		MissileEntity lock = manualLock(player, type);
+		if (lock == null) {
+			player.sendOverlayMessage(Component.translatable("message.airdefense.no_lock"));
+			fireTimer = 10;
+			return;
+		}
+		fireInterceptor(level, type, lock);
+		fireRounds(type);
+	}
+
+	/** Counts one shot (a burst or a missile) against the magazine and starts the reload when it is empty. */
+	private void fireRounds(DefenseType type) {
+		fireTimer = type.interval;
+		setAmmo(getAmmo() - 1);
+		if (getAmmo() <= 0) {
+			reloadTimer = type.reload;
+		}
+	}
+
+	/** The threat closest to the middle of the sight, within 8 degrees (what a missile battery's operator locks on). */
+	@Nullable
+	public MissileEntity manualLock(Player player, DefenseType type) {
+		Vec3 eye = player.getEyePosition();
+		Vec3 look = player.getLookAngle();
+		double range = type.range;
+		MissileEntity best = null;
+		double bestCos = Math.cos(Math.toRadians(8));
+		for (MissileEntity m : level().getEntitiesOfClass(MissileEntity.class, new AABB(eye, eye).inflate(range),
+				m -> m.isAlive() && m.getMissileType().threat)) {
+			Vec3 to = m.position().subtract(eye);
+			double d = to.length();
+			if (d > range || d < 3) {
+				continue;
+			}
+			double c = to.scale(1 / d).dot(look);
+			if (c > bestCos) {
+				bestCos = c;
+				best = m;
+			}
+		}
+		return best;
+	}
+
+	/**
+	 * Manual Gepard: two rounds along the barrels each tick of the burst. A round hits the threat whose lead point is
+	 * nearest the line of fire, with a chance that falls off quickly with the aiming error; the rest fly on.
+	 */
+	private void fireManualRounds(ServerLevel level, DefenseType type) {
+		RandomSource r = level.getRandom();
+		Vec3 dir = railDirection(0);
+		double range = type.range;
+		Vec3 centre = railWorld(0);
+		List<MissileEntity> threats = level.getEntitiesOfClass(MissileEntity.class, new AABB(centre, centre).inflate(range),
+				m -> m.isAlive() && m.getMissileType().threat);
+		for (int barrel = 0; barrel < 2 && burstLeft > 0; barrel++, burstLeft--) {
+			Vec3 muzzle = railWorld(barrel == 0 ? 0 : vtype.rails() - 1);
+			MissileEntity best = null;
+			Vec3 bestAim = null;
+			double bestErr = 6;
+			for (MissileEntity m : threats) {
+				Vec3 aim = leadPoint(m, muzzle);
+				Vec3 to = aim.subtract(muzzle);
+				double d = to.length();
+				if (d > range || d < 1) {
+					continue;
+				}
+				double err = Math.toDegrees(Math.acos(Mth.clamp(to.scale(1 / d).dot(dir), -1, 1)));
+				if (err < bestErr) {
+					bestErr = err;
+					best = m;
+					bestAim = aim;
+				}
+			}
+			if (best != null) {
+				double dist = bestAim.distanceTo(muzzle);
+				double chance = DefenseType.gunHitChance(best.getMissileType().kind) * (1.0 - 0.45 * dist / range)
+						/ (1.0 + bestErr * bestErr / 3.0);
+				if (r.nextDouble() < chance) {
+					Vec3 end = bestAim.add(r.nextGaussian() * 0.3, r.nextGaussian() * 0.3, r.nextGaussian() * 0.3);
+					shells.add(new Shell(best, 1.5f, Math.max(1, (int) Math.round(dist / SHELL_SPEED))));
+					Effects.tracer(level, muzzle, end, (float) SHELL_SPEED);
+					continue;
+				}
+			}
+			Vec3 d = dir.add(r.nextGaussian() * 0.012, r.nextGaussian() * 0.012, r.nextGaussian() * 0.012).normalize();
+			Effects.tracer(level, muzzle, muzzle.add(d.scale(range + 20)), (float) SHELL_SPEED);
+		}
+	}
+
 	/** Rounds in flight: the damage lands when the shell gets there, the same moment its tracer does. */
 	private void tickShells(ServerLevel level) {
 		for (Iterator<Shell> it = shells.iterator(); it.hasNext(); ) {
@@ -1096,6 +1243,7 @@ public class VehicleEntity extends LivingEntity {
 			return;
 		}
 		switch (action) {
+			case ACTION_FIRE -> manualFire(player);
 			case ACTION_SEAT -> switchSeat(player);
 			case ACTION_STOW_FOR_MARCH -> {
 				if (!isDriver(player)) {
@@ -1149,15 +1297,24 @@ public class VehicleEntity extends LivingEntity {
 		setElevationTarget(vtype.geometry.deployElevation() > 0 ? vtype.geometry.deployElevation() : 45);
 	}
 
-	/** Air defence mode set from the tablet map (auto / off). */
+	/** Air defence mode set from the tablet map or the mode key (auto / manual / off). */
 	public void setModeByOrder(int mode, @Nullable Player player) {
-		if (!vtype.isDefense() || (mode != MODE_AUTO && mode != MODE_OFF)) {
+		if (!vtype.isDefense() || mode < MODE_OFF || mode > MODE_MANUAL) {
 			return;
 		}
 		setMode(mode);
+		burstLeft = 0;
 		if (player != null) {
-			player.sendOverlayMessage(Component.translatable(mode == MODE_AUTO ? "message.airdefense.vehicle.mode_auto" : "message.airdefense.vehicle.mode_off"));
+			player.sendOverlayMessage(Component.translatable(modeMessage(mode)));
 		}
+	}
+
+	private static String modeMessage(int mode) {
+		return switch (mode) {
+			case MODE_AUTO -> "message.airdefense.vehicle.mode_auto";
+			case MODE_MANUAL -> "message.airdefense.vehicle.mode_manual";
+			default -> "message.airdefense.vehicle.mode_off";
+		};
 	}
 
 	/** Everything the tablet map shows about this vehicle (server side). */
@@ -1172,10 +1329,17 @@ public class VehicleEntity extends LivingEntity {
 				tr != null && tr.isAlive() ? tr.getId() : -1);
 	}
 
+	/** Auto → manual → off → auto. */
 	private void cycleMode(Player player) {
-		int mode = getMode() == MODE_AUTO ? MODE_OFF : MODE_AUTO;
-		setMode(mode);
-		player.sendOverlayMessage(Component.translatable(mode == MODE_AUTO ? "message.airdefense.vehicle.mode_auto" : "message.airdefense.vehicle.mode_off"));
+		setModeByOrder(nextMode(getMode()), player);
+	}
+
+	public static int nextMode(int mode) {
+		return switch (mode) {
+			case MODE_AUTO -> MODE_MANUAL;
+			case MODE_MANUAL -> MODE_OFF;
+			default -> MODE_AUTO;
+		};
 	}
 
 	public Component status() {
@@ -1191,7 +1355,8 @@ public class VehicleEntity extends LivingEntity {
 			return Component.translatable("message.airdefense.vehicle.status_launcher", name, hp, ready);
 		}
 		DefenseType type = vtype.defense;
-		Component mode = Component.translatable(getMode() == MODE_AUTO ? "message.airdefense.status.on" : "message.airdefense.status.off");
+		Component mode = Component.translatable(getMode() == MODE_AUTO ? "message.airdefense.status.on"
+				: getMode() == MODE_MANUAL ? "message.airdefense.status.manual" : "message.airdefense.status.off");
 		Component ammoText = reloadTimer > 0
 				? Component.translatable("message.airdefense.status.reload", reloadTimer / 20 + 1)
 				: Component.translatable("message.airdefense.status.ammo", Math.max(getAmmo(), 0), type.magazine);

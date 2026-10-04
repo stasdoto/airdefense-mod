@@ -60,6 +60,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			droneVsNasams(ctx, server);
 			cruiseVsIrisT(ctx, server);
 			droneVsIrisT(ctx, server);
+			manualDefense(ctx, server, VehicleType.GEPARD, 16500, "manual_gepard");
+			manualDefense(ctx, server, VehicleType.IRIS_T, 18000, "manual_iris_t");
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
@@ -232,13 +234,16 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 
 	private static int[] counters() {
 		return new int[]{MissileStats.STRIKES_LAUNCHED.get(), MissileStats.THREATS_SHOT_DOWN.get(), MissileStats.GROUND_IMPACTS.get(),
-				MissileStats.INTERCEPTORS_LAUNCHED.get(), MissileStats.INTERCEPTOR_CRASHES.get()};
+				MissileStats.INTERCEPTORS_LAUNCHED.get(), MissileStats.INTERCEPTOR_CRASHES.get(), MissileStats.DECOYS_LAUNCHED.get(),
+				MissileStats.DECOYS_DOWN.get(), MissileStats.SEEKER_FAILURES.get()};
 	}
 
 	private static void report(String scene, int[] before) {
 		int[] now = counters();
-		AirDefense.LOGGER.info("[airdefense-test] RESULT {}: threats={} shotDown={} reachedGround={} interceptors={} interceptorCrashes={}",
-				scene, now[0] - before[0], now[1] - before[1], now[2] - before[2], now[3] - before[3], now[4] - before[4]);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT {}: threats={} shotDown={} reachedGround={} interceptors={} interceptorCrashes={}"
+						+ " decoys={} decoysShotAt={} seekerFailures={}",
+				scene, now[0] - before[0], now[1] - before[1], now[2] - before[2], now[3] - before[3], now[4] - before[4],
+				now[5] - before[5], now[6] - before[6], now[7] - before[7]);
 	}
 
 	private void patriotVsIskander(ClientGameTestContext ctx, TestServerContext server) {
@@ -368,16 +373,16 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	private void tabletMap(ClientGameTestContext ctx, TestServerContext server) {
 		int x = 15000;
 		int g = ground;
-		// Some landmarks so the map has something to show: a lake, a road, buildings, a wood.
+		server.runCommand("gamemode creative @a");
+		camera(server, x, g + 1, 70, 180, 0);
+		ctx.waitTicks(40);
+		// (Once the area is loaded:) some landmarks so the map has something to show: a lake, a road, buildings, a wood.
 		server.runCommand(String.format("fill %d %d %d %d %d %d minecraft:water", x - 60, g - 1, 20, x - 25, g - 1, 55));
 		server.runCommand(String.format("fill %d %d %d %d %d %d minecraft:gravel", x - 150, g - 1, -3, x + 150, g - 1, 2));
 		server.runCommand(String.format("fill %d %d %d %d %d %d minecraft:stone_bricks hollow", x + 40, g, 25, x + 52, g + 6, 37));
 		server.runCommand(String.format("fill %d %d %d %d %d %d minecraft:bricks hollow", x + 60, g, 30, x + 66, g + 4, 50));
 		server.runCommand(String.format("fill %d %d %d %d %d %d minecraft:oak_leaves", x - 90, g, -60, x - 50, g + 3, -25));
 		server.runCommand(String.format("fill %d %d %d %d %d %d minecraft:sand", x + 80, g - 1, -80, x + 120, g - 1, -40));
-		server.runCommand("gamemode creative @a");
-		camera(server, x, g + 1, 70, 180, 0);
-		ctx.waitTicks(40);
 		int himars = spawnVehicle(server, VehicleType.HIMARS, x, 10, 180);
 		int iskander = spawnVehicle(server, VehicleType.ISKANDER, x + 22, 15, 180);
 		int patriot = spawnVehicle(server, VehicleType.PATRIOT, x - 25, 60, 200);
@@ -448,11 +453,11 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			ctx.waitTicks(2);
 			ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
 			ctx.waitTicks(5);
-			boolean off = ctx.tryClickScreenButton("Air defence: auto (turn off)");
+			boolean off = ctx.tryClickScreenButton("AD mode: auto");
 			AirDefense.LOGGER.info("[airdefense-test] AD mode button pressed: {}", off);
 			ctx.waitTicks(20);
 			int mode = server.computeOnServer(s -> s.overworld().getEntity(patriot) instanceof VehicleEntity v ? v.getMode() : -1);
-			AirDefense.LOGGER.info("[airdefense-test] RESULT map_mode: patriot mode after the button = {} (0 = off)", mode);
+			AirDefense.LOGGER.info("[airdefense-test] RESULT map_mode: patriot mode after the button = {} (2 = manual)", mode);
 			ctx.takeScreenshot("63_map_patriot_off");
 		}
 		ctx.waitTicks(80);
@@ -462,6 +467,88 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runCommand("clear @a");
 		server.runCommand("gamemode spectator @a");
 		server.runOnServer(s -> forVehicles(s.overworld(), List.of(himars, iskander, patriot), Entity::discard));
+	}
+
+	/**
+	 * Stage 4: manual fire. The player sits at the sight of a Gepard (then an IRIS-T) in manual mode, keeps the sight on
+	 * the incoming drones like a gunner would (lead for the guns) and holds the left mouse button.
+	 */
+	private void manualDefense(ClientGameTestContext ctx, TestServerContext server, VehicleType adType, int x, String scene) {
+		BlockPos target = new BlockPos(x, ground - 1, 60);
+		server.runCommand("gamemode creative @a");
+		int ad = prepareDefense(ctx, server, adType, x + 10, 40, 180);
+		// The launcher keeps its own chunk loaded once it has been placed, so it can be placed first and fired later.
+		camera(server, x + 10, ground + 5, -180, 30, 10);
+		ctx.waitTicks(30);
+		int launcher = spawnVehicle(server, VehicleType.SHAHED, x, -170, 0);
+		ctx.waitTicks(10);
+		camera(server, x + 12, ground + 2, 44, 180, 0);
+		ctx.waitTicks(20);
+		server.runOnServer(s -> {
+			ServerPlayer p = s.getPlayerList().getPlayers().getFirst();
+			if (s.overworld().getEntity(ad) instanceof VehicleEntity v) {
+				p.startRiding(v);
+				v.switchSeat(p);
+				v.setModeByOrder(VehicleEntity.MODE_MANUAL, p);
+			}
+		});
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
+		ctx.waitTicks(30);
+		int[] before = counters();
+		strike(server, launcher, target);
+		boolean gun = adType == VehicleType.GEPARD;
+		ctx.getInput().holdMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
+		for (int i = 0; i < 520; i++) {
+			float[] look = ctx.computeOnClient(mc -> aimAtThreat(mc, gun ? 75 : 150, gun));
+			if (look != null) {
+				ctx.getInput().lookAt(look[0], look[1]);
+			}
+			ctx.waitTick();
+			if (i == 300 || i == 360 || i == 420) {
+				ctx.takeScreenshot("7" + (gun ? "0" : "5") + "_" + scene + "_" + i);
+			}
+		}
+		ctx.getInput().releaseMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
+		ctx.waitTicks(60);
+		report(scene, before);
+		server.runOnServer(s -> {
+			ServerPlayer p = s.getPlayerList().getPlayers().getFirst();
+			p.stopRiding();
+			forVehicles(s.overworld(), List.of(ad, launcher), Entity::discard);
+		});
+		server.runCommand("gamemode spectator @a");
+	}
+
+	/** Look angles at the nearest threat (at its lead point for guns), as a gunner keeping it in the sight would. */
+	private static float[] aimAtThreat(net.minecraft.client.Minecraft mc, double range, boolean lead) {
+		Vec3 eye = mc.player.getEyePosition();
+		com.stasdoto.airdefense.missile.MissileEntity best = null;
+		double bestD = range;
+		for (Entity e : mc.level.entitiesForRendering()) {
+			if (e instanceof com.stasdoto.airdefense.missile.MissileEntity m && m.getMissileType().threat) {
+				double d = m.position().distanceTo(eye);
+				if (d < bestD) {
+					bestD = d;
+					best = m;
+				}
+			}
+		}
+		if (best == null) {
+			return null;
+		}
+		Vec3 p = best.position();
+		if (lead) {
+			Vec3 vel = best.position().subtract(best.xo, best.yo, best.zo);
+			Vec3 aim = p;
+			for (int i = 0; i < 3; i++) {
+				aim = p.add(vel.scale(aim.distanceTo(eye) / VehicleEntity.SHELL_SPEED));
+			}
+			p = aim;
+		}
+		Vec3 d = p.subtract(eye);
+		float yaw = (float) Math.toDegrees(Math.atan2(-d.x, d.z));
+		float pitch = (float) -Math.toDegrees(Math.atan2(d.y, Math.sqrt(d.x * d.x + d.z * d.z)));
+		return new float[]{yaw, pitch};
 	}
 
 	// --- helpers -----------------------------------------------------------------------------------

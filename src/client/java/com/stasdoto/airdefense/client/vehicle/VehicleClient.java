@@ -71,6 +71,17 @@ public final class VehicleClient {
 			return;
 		}
 		v.setClientInput(v.isDriver(player) ? player.input.keyPresses : Input.EMPTY);
+		if (GunnerHud.isManualGunner(player, v)) {
+			// Manual mode: the left button is the trigger (and must not hit the vehicle or break blocks).
+			boolean click = false;
+			while (mc.options.keyAttack.consumeClick()) {
+				click = true;
+			}
+			mc.options.keyAttack.setDown(false);
+			if (mc.gui.screen() == null && (click || mc.mouseHandler.isLeftPressed()) && v.getState() == VehicleEntity.DEPLOYED) {
+				send(v, VehicleEntity.ACTION_FIRE);
+			}
+		}
 		while (DEPLOY.consumeClick()) {
 			send(v, VehicleEntity.ACTION_DEPLOY);
 		}
@@ -100,11 +111,16 @@ public final class VehicleClient {
 			l2 = Component.translatable(v.getState() == VehicleEntity.DEPLOYED ? "hud.airdefense.vehicle.deployed" : "hud.airdefense.vehicle.stowed",
 					Integer.bitCount(v.getLoadedMask()), type.rails());
 		} else {
-			l2 = Component.translatable(v.getMode() == VehicleEntity.MODE_AUTO ? "hud.airdefense.vehicle.ad_auto" : "hud.airdefense.vehicle.ad_off",
-					v.getAmmo(), type.magazine());
+			String mode = switch (v.getMode()) {
+				case VehicleEntity.MODE_AUTO -> "hud.airdefense.vehicle.ad_auto";
+				case VehicleEntity.MODE_MANUAL -> "hud.airdefense.vehicle.ad_manual";
+				default -> "hud.airdefense.vehicle.ad_off";
+			};
+			l2 = Component.translatable(mode, v.getAmmo(), type.magazine());
 		}
-		Component l3 = Component.translatable(driver ? "hud.airdefense.vehicle.keys_driver" : "hud.airdefense.vehicle.keys_gunner",
-				DEPLOY.getTranslatedKeyMessage(), MODE.getTranslatedKeyMessage(), SEAT.getTranslatedKeyMessage());
+		String keys = driver ? "hud.airdefense.vehicle.keys_driver"
+				: GunnerHud.isManualGunner(player, v) ? "hud.airdefense.vehicle.keys_manual" : "hud.airdefense.vehicle.keys_gunner";
+		Component l3 = Component.translatable(keys, DEPLOY.getTranslatedKeyMessage(), MODE.getTranslatedKeyMessage(), SEAT.getTranslatedKeyMessage());
 		// Top left corner: the bottom of the screen belongs to the chat, the hotbar and the hearts.
 		int x = 6;
 		int y = 6;
@@ -113,5 +129,6 @@ public final class VehicleClient {
 		g.text(font, l1, x, y, 0xFFFFE08A);
 		g.text(font, l2, x, y + 10, 0xFFE0E0E0);
 		g.text(font, l3, x, y + 20, 0xFFA0A0A0);
+		GunnerHud.draw(g, delta, v, player);
 	}
 }

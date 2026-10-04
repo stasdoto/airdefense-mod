@@ -13,6 +13,10 @@ public final class MissileStats {
 	public static final AtomicInteger INTERCEPTOR_BURSTS = new AtomicInteger();
 	/** Interceptors that flew into the ground instead of bursting in the air (should stay near zero). */
 	public static final AtomicInteger INTERCEPTOR_CRASHES = new AtomicInteger();
+	public static final AtomicInteger SEEKER_FAILURES = new AtomicInteger();
+	public static final AtomicInteger DECOYS_LAUNCHED = new AtomicInteger();
+	public static final AtomicInteger DECOYS_DOWN = new AtomicInteger();
+	public static final AtomicInteger DECOYS_LANDED = new AtomicInteger();
 
 	private MissileStats() {
 	}
@@ -30,6 +34,7 @@ public final class MissileStats {
 	public static String summary() {
 		return "strikes=" + STRIKES_LAUNCHED.get() + " interceptors=" + INTERCEPTORS_LAUNCHED.get()
 				+ " shotDown=" + THREATS_SHOT_DOWN.get() + " impacts=" + GROUND_IMPACTS.get()
-				+ " interceptorBursts=" + INTERCEPTOR_BURSTS.get() + " interceptorCrashes=" + INTERCEPTOR_CRASHES.get();
+				+ " interceptorBursts=" + INTERCEPTOR_BURSTS.get() + " interceptorCrashes=" + INTERCEPTOR_CRASHES.get()
+				+ " seekerFailures=" + SEEKER_FAILURES.get() + " decoys=" + DECOYS_LAUNCHED.get() + " decoysDown=" + DECOYS_DOWN.get();
 	}
 }

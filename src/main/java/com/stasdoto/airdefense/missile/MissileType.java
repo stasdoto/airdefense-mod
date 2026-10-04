@@ -18,7 +18,10 @@ public enum MissileType {
 	PAC3("pac3_missile", Kind.INTERCEPTOR, false, 5.2, 0.35, 2.5f, false, 2f, 1.85f, 3.2, 220, 0.24, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
 	IRIST("irist_missile", Kind.INTERCEPTOR, false, 4.3, 0.32, 2.2f, false, 2f, 1.27f, 4.0, 190, 0.3, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
 	AMRAAM("amraam_missile", Kind.INTERCEPTOR, false, 4.0, 0.3, 2.2f, false, 2f, 1.43f, 4.0, 190, 0.26, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
-	STINGER("stinger_missile", Kind.INTERCEPTOR, false, 3.1, 0.3, 1.6f, false, 1f, 1.0f, 3.0, 150, 0.32, Trail.WHITE, null);
+	STINGER("stinger_missile", Kind.INTERCEPTOR, false, 3.1, 0.3, 1.6f, false, 1f, 1.0f, 3.0, 150, 0.32, Trail.WHITE, null),
+	// Decoys: look like the real thing to a radar, carry no warhead (only a small charge).
+	ISKANDER_DECOY("stinger_missile", Kind.BALLISTIC, true, 4.0, 0.06, 0.5f, false, 1f, 1.5f, 0, 1200, 0.0, Trail.MEDIUM, null),
+	GERBERA("shahed_drone", Kind.DRONE, true, 0.82, 0.03, 0.7f, false, 1.5f, 1.7f, 0, 9000, 0.05, Trail.NONE, ModSounds.DRONE_BUZZ);
 
 	public enum Kind { BALLISTIC, ROCKET, CRUISE, DRONE, INTERCEPTOR }
 
@@ -57,23 +60,42 @@ public enum MissileType {
 		this.loopSound = loopSound;
 	}
 
+	/** A decoy: on the radar it is a missile or a drone, but it has no real warhead. */
+	public boolean isDecoy() {
+		return this == ISKANDER_DECOY || this == GERBERA;
+	}
+
+	/**
+	 * Chance that this interceptor's seeker loses the target on the way (clutter, a hard turn, a failure):
+	 * it then flies on blind and blows itself up.
+	 */
+	public double seekerFailChance() {
+		return switch (this) {
+			case PAC3 -> 0.05;
+			case IRIST -> 0.06;
+			case AMRAAM -> 0.08;
+			case STINGER -> 0.15;
+			default -> 0;
+		};
+	}
+
 	/** Chance that this interceptor destroys a target of the given kind once its fuse triggers. */
 	public double killChance(Kind target) {
 		return switch (this) {
 			case PAC3 -> switch (target) {
-				case BALLISTIC -> 0.9;
-				case ROCKET -> 0.85;
-				default -> 0.92;
+				case BALLISTIC -> 0.82;
+				case ROCKET -> 0.78;
+				default -> 0.85;
 			};
 			case IRIST -> switch (target) {
-				case BALLISTIC -> 0.35;
-				case ROCKET -> 0.7;
-				default -> 0.93;
+				case BALLISTIC -> 0.3;
+				case ROCKET -> 0.62;
+				default -> 0.86;
 			};
 			case AMRAAM -> switch (target) {
-				case BALLISTIC -> 0.15;
-				case ROCKET -> 0.5;
-				default -> 0.88;
+				case BALLISTIC -> 0.12;
+				case ROCKET -> 0.45;
+				default -> 0.8;
 			};
 			case STINGER -> switch (target) {
 				case BALLISTIC -> 0.03;

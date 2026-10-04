@@ -253,6 +253,8 @@ public class TacticalMapScreen extends Screen {
 			}
 		} else if (e.mode() == VehicleEntity.MODE_OFF) {
 			s = Component.translatable("screen.airdefense.map.st.off");
+		} else if (e.mode() == VehicleEntity.MODE_MANUAL) {
+			s = Component.translatable("screen.airdefense.map.st.manual", Math.max(0, e.ammo()), type.magazine());
 		} else if (e.busy() > 0) {
 			s = Component.translatable("screen.airdefense.map.st.reload", e.busy() / 20 + 1);
 		} else if (e.state() != VehicleEntity.DEPLOYED) {
@@ -278,7 +280,11 @@ public class TacticalMapScreen extends Screen {
 		fireButton.active = sel != null && typeOf(sel).isLauncher() && cannotFire(sel) == null;
 		modeButton.visible = defense;
 		if (defense) {
-			modeButton.setMessage(Component.translatable(sel.mode() == VehicleEntity.MODE_OFF ? "screen.airdefense.map.mode_off" : "screen.airdefense.map.mode_auto"));
+			modeButton.setMessage(Component.translatable(switch (sel.mode()) {
+				case VehicleEntity.MODE_AUTO -> "screen.airdefense.map.mode_auto";
+				case VehicleEntity.MODE_MANUAL -> "screen.airdefense.map.mode_manual";
+				default -> "screen.airdefense.map.mode_off";
+			}));
 		}
 		clearButton.active = target != null;
 		meButton.active = !follow;
@@ -300,7 +306,7 @@ public class TacticalMapScreen extends Screen {
 		if (sel == null || !typeOf(sel).isDefense()) {
 			return;
 		}
-		int mode = sel.mode() == VehicleEntity.MODE_OFF ? VehicleEntity.MODE_AUTO : VehicleEntity.MODE_OFF;
+		int mode = VehicleEntity.nextMode(sel.mode());
 		MapClient.send(new MapActionPayload(MapActionPayload.SET_MODE, sel.id(), mode, 0, 0));
 	}
 

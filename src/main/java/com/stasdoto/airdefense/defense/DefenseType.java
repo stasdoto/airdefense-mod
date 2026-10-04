@@ -10,10 +10,10 @@ import com.stasdoto.airdefense.missile.MissileType;
  * its guns directly.
  */
 public enum DefenseType {
-	PATRIOT(MissileType.PAC3, 220, 8, 500, 14),
-	IRIS_T(MissileType.IRIST, 140, 8, 360, 10),
-	NASAMS(MissileType.AMRAAM, 120, 6, 360, 10),
-	GEPARD(null, 64, 30, 300, 10);
+	PATRIOT(MissileType.PAC3, 220, 8, 500, 14, 0.65),
+	IRIS_T(MissileType.IRIST, 140, 8, 360, 10, 0.45),
+	NASAMS(MissileType.AMRAAM, 120, 6, 360, 10, 0.4),
+	GEPARD(null, 64, 30, 300, 10, 0.6);
 
 	@Nullable
 	public final MissileType interceptor;
@@ -21,13 +21,16 @@ public enum DefenseType {
 	public final int magazine;
 	public final int reload;
 	public final int interval;
+	/** How good the radar (or Gepard's optics) is at telling a decoy from the real thing: share of decoys it sees through. */
+	public final double discrimination;
 
-	DefenseType(@Nullable MissileType interceptor, double range, int magazine, int reload, int interval) {
+	DefenseType(@Nullable MissileType interceptor, double range, int magazine, int reload, int interval, double discrimination) {
 		this.interceptor = interceptor;
 		this.range = range;
 		this.magazine = magazine;
 		this.reload = reload;
 		this.interval = interval;
+		this.discrimination = discrimination;
 	}
 
 	/** How many interceptors this system sends at one target of the given kind (Patriot fires two at ballistic missiles). */
@@ -61,9 +64,9 @@ public enum DefenseType {
 	/** Gepard: chance that one round hits a target of this kind (at point-blank range, guns right on the lead point). */
 	public static double gunHitChance(MissileType.Kind kind) {
 		return switch (kind) {
-			case DRONE -> 0.3;
-			case CRUISE -> 0.2;
-			case ROCKET -> 0.06;
+			case DRONE -> 0.24;
+			case CRUISE -> 0.16;
+			case ROCKET -> 0.05;
 			default -> 0.01;
 		};
 	}
