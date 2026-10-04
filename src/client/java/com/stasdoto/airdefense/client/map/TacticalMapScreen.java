@@ -497,7 +497,7 @@ public class TacticalMapScreen extends Screen {
 				return true;
 			}
 		}
-		if (x >= px0 && x < px0 + PANEL_W && y >= listTop && y < listBottom && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
+		if (x >= px0 && x < px0 + PANEL_W && y >= listTop && y < listEnd() && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
 			int row = (int) ((y - listTop) / ROW_H) + listScroll;
 			if (tab == 1) {
 				List<NationMapPayload.Village> villages = villages();
@@ -571,8 +571,8 @@ public class TacticalMapScreen extends Screen {
 			centerZ = wz - (y - mapCenterY()) / scale();
 			return true;
 		}
-		if (x >= px0 && y >= listTop && y < listBottom && scrollY != 0) {
-			int rows = Math.max(1, (listBottom - listTop) / ROW_H);
+		if (x >= px0 && y >= listTop && y < listEnd() && scrollY != 0) {
+			int rows = Math.max(1, (listEnd() - listTop) / ROW_H);
 			int size = tab == 1 ? villages().size() : entries().size();
 			listScroll = Mth.clamp(listScroll - (int) Math.signum(scrollY), 0, Math.max(0, size - rows));
 			return true;
@@ -797,6 +797,11 @@ public class TacticalMapScreen extends Screen {
 			int fy = (int) toScreenY(v.fz());
 			g.fill(fx, fy - 7, fx + 1, fy + 1, 0xFF101418);
 			g.fill(fx + 1, fy - 7, fx + 6, fy - 3, color);
+			if (v.war()) {
+				// At war with you: a red ring.
+				circle(g, sx, sy, Math.max(5, r) + 1, 0xFFFF3A2A, 0);
+				circle(g, sx, sy, Math.max(5, r) + 2, 0xFFFF3A2A, 0);
+			}
 			if (sel) {
 				circle(g, sx, sy, Math.max(6, r) + 2, 0xFFFFFFFF, 2);
 			}
@@ -935,7 +940,7 @@ public class TacticalMapScreen extends Screen {
 		if (list.isEmpty()) {
 			g.textWithWordWrap(font, Component.translatable("screen.airdefense.map.no_villages"), x0 + 5, listTop + 4, PANEL_W - 10, C_DIM);
 		}
-		int rows = Math.max(1, (listBottom - listTop) / ROW_H);
+		int rows = Math.max(1, (listEnd() - listTop) / ROW_H);
 		listScroll = Mth.clamp(listScroll, 0, Math.max(0, list.size() - rows));
 		for (int i = 0; i < rows && i + listScroll < list.size(); i++) {
 			NationMapPayload.Village v = list.get(i + listScroll);
@@ -947,12 +952,13 @@ public class TacticalMapScreen extends Screen {
 			}
 			g.fill(x0 + 5, y + 3, x0 + 10, y + 8, v.color());
 			g.text(font, v.name(), x0 + 13, y + 1, sel ? 0xFFFFFFFF : v.mine() ? 0xFF8AE07A : C_TEXT);
-			String line = v.mine() ? Component.translatable("screen.airdefense.map.village_mine", v.population(), v.soldiers()).getString()
+			String line = v.war() ? Component.translatable("screen.airdefense.map.village_war", v.country()).getString()
+					: v.mine() ? Component.translatable("screen.airdefense.map.village_mine", v.population(), v.soldiers()).getString()
 					: v.country().isEmpty() ? Component.translatable("screen.airdefense.map.village_free", v.population()).getString()
 					: v.country() + " · " + Component.translatable("screen.airdefense.map.village_guards", v.guards()).getString();
 			small(g, line, x0 + 13, y + 11, C_DIM);
 		}
-		g.fill(x0 + 2, my1 - 68, x1 - 2, my1 - 67, 0xFF3A4652);
+		g.fill(x0 + 2, my1 - 92, x1 - 2, my1 - 91, 0xFF3A4652);
 		NationMapPayload.Village sel = selectedVillage();
 		Component l1;
 		Component l2 = null;
@@ -960,16 +966,21 @@ public class TacticalMapScreen extends Screen {
 			l1 = Component.translatable("screen.airdefense.map.select_village");
 		} else if (!sel.mine()) {
 			l1 = Component.literal(sel.name());
-			l2 = Component.translatable("screen.airdefense.map.not_yours");
+			l2 = Component.translatable(sel.war() ? "screen.airdefense.map.enemy" : "screen.airdefense.map.not_yours");
 		} else {
 			l1 = Component.translatable("screen.airdefense.map.army_of", sel.name(), sel.soldiers());
 			l2 = target == null ? Component.translatable("screen.airdefense.map.pick_point")
 					: Component.translatable("screen.airdefense.map.point", target.getX(), target.getZ());
 		}
-		small(g, l1.getString(), x0 + 5, my1 - 64, C_TEXT);
+		small(g, l1.getString(), x0 + 5, my1 - 88, C_TEXT);
 		if (l2 != null) {
-			small(g, l2.getString(), x0 + 5, my1 - 55, C_DIM);
+			small(g, l2.getString(), x0 + 5, my1 - 79, sel != null && sel.war() ? 0xFFFF7A6A : C_DIM);
 		}
+	}
+
+	/** Where the list ends: higher on the army tab (its buttons take more room). */
+	private int listEnd() {
+		return tab == 1 ? my1 - 94 : listBottom;
 	}
 
 	// ------------------------------------------------------------------------------------------------

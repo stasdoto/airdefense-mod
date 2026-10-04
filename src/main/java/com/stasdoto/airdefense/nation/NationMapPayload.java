@@ -14,7 +14,7 @@ import com.stasdoto.airdefense.AirDefense;
 /** Server to client, with every map refresh: villages (with their owners' colours) and soldiers around the player. */
 public record NationMapPayload(List<Village> villages, List<Man> men) implements CustomPacketPayload {
 	public record Village(int id, String name, int x, int y, int z, int color, String country, boolean mine, int population, int guards,
-			int soldiers, int fx, int fz) {
+			int soldiers, int fx, int fz, boolean war) {
 	}
 
 	public record Man(int id, int x, int z, int role, int color, boolean mine, int home) {
@@ -29,7 +29,7 @@ public record NationMapPayload(List<Village> villages, List<Man> men) implements
 			for (int i = 0; i < n; i++) {
 				v.add(new Village(ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.STRING_UTF8.decode(b), b.readInt(), b.readInt(), b.readInt(),
 						b.readInt(), ByteBufCodecs.STRING_UTF8.decode(b), b.readBoolean(), ByteBufCodecs.VAR_INT.decode(b),
-						ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b), b.readInt(), b.readInt()));
+						ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b), b.readInt(), b.readInt(), b.readBoolean()));
 			}
 			int m = ByteBufCodecs.VAR_INT.decode(b);
 			List<Man> men = new ArrayList<>();
@@ -57,6 +57,7 @@ public record NationMapPayload(List<Village> villages, List<Man> men) implements
 				ByteBufCodecs.VAR_INT.encode(b, v.soldiers);
 				b.writeInt(v.fx);
 				b.writeInt(v.fz);
+				b.writeBoolean(v.war);
 			}
 			ByteBufCodecs.VAR_INT.encode(b, p.men.size());
 			for (Man m : p.men) {

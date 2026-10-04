@@ -27,8 +27,33 @@ public final class Country {
 			Codec.INT.optionalFieldOf("capital", -1).forGetter(c -> c.capital),
 			Codec.BOOL.optionalFieldOf("city_state", false).forGetter(c -> c.cityState),
 			Codec.INT.listOf().optionalFieldOf("wars", List.of()).forGetter(c -> new ArrayList<>(c.wars)),
-			UUIDUtil.CODEC.listOf().optionalFieldOf("wanted", List.of()).forGetter(c -> new ArrayList<>(c.wanted))
-	).apply(i, Country::new));
+			UUIDUtil.CODEC.listOf().optionalFieldOf("wanted", List.of()).forGetter(c -> new ArrayList<>(c.wanted)),
+			Codec.LONG.listOf().optionalFieldOf("war_since", List.of()).forGetter(c -> {
+				List<Long> out = new ArrayList<>();
+				c.warSince.forEach((k, v) -> {
+					out.add((long) k);
+					out.add(v);
+				});
+				return out;
+			}),
+			Codec.INT.listOf().optionalFieldOf("war_score", List.of()).forGetter(c -> {
+				List<Integer> out = new ArrayList<>();
+				c.warScore.forEach((k, v) -> {
+					out.add(k);
+					out.add(v);
+				});
+				return out;
+			})
+	).apply(i, (id, name, color, owner, ownerName, capital, cityState, wars, wanted, since, score) -> {
+		Country c = new Country(id, name, color, owner, ownerName, capital, cityState, wars, wanted);
+		for (int k = 0; k + 1 < since.size(); k += 2) {
+			c.warSince.put((int) (long) since.get(k), since.get(k + 1));
+		}
+		for (int k = 0; k + 1 < score.size(); k += 2) {
+			c.warScore.put(score.get(k), score.get(k + 1));
+		}
+		return c;
+	}));
 
 	public final int id;
 	public String name;
@@ -42,6 +67,10 @@ public final class Country {
 	public final Set<Integer> wars = new HashSet<>();
 	/** Players who shot at this country's people: its guards shoot them on sight. */
 	public final Set<UUID> wanted = new HashSet<>();
+	/** When each war began (game time), by enemy country. */
+	public final java.util.Map<Integer, Long> warSince = new java.util.HashMap<>();
+	/** Villages won minus villages lost in each war, by enemy country. */
+	public final java.util.Map<Integer, Integer> warScore = new java.util.HashMap<>();
 
 	public Country(int id, String name, int color, Optional<UUID> owner, String ownerName, int capital, boolean cityState, List<Integer> wars) {
 		this(id, name, color, owner, ownerName, capital, cityState, wars, List.of());

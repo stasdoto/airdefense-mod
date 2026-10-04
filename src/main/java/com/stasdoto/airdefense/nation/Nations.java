@@ -99,6 +99,7 @@ public final class Nations {
 		}
 		Economy.tick(level, p);
 		Unrest.tick(level, p);
+		War.tick(level, p);
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -258,7 +259,7 @@ public final class Nations {
 			s.guardsAlive = guards.size();
 			Country c = p.country(s.country);
 			int want = c != null ? Math.max(1, Math.min(5, s.population / 3)) + (c.cityState ? 1 : 0) : s.population >= 5 ? 1 : 0;
-			if (guards.size() < want && s.captureTicks == 0 && !s.riot && level.getNearestPlayer(s.flag.getX(), s.flag.getY(), s.flag.getZ(), 12, false) == null
+			if (guards.size() < want && s.captureTicks == 0 && !s.riot && s.aiCaptureTicks == 0 && level.getNearestPlayer(s.flag.getX(), s.flag.getY(), s.flag.getZ(), 12, false) == null
 					&& level.getNearestPlayer(s.flag.getX(), s.flag.getY(), s.flag.getZ(), 160, false) != null) {
 				spawnGuard(level, s, c);
 			}
@@ -396,6 +397,12 @@ public final class Nations {
 			}
 			if (left.isEmpty() && from.owner == null) {
 				p.countries.remove(from.id);
+				// A country that is gone is at war with nobody.
+				for (Country c : p.countries.values()) {
+					c.wars.remove(from.id);
+					c.warSince.remove(from.id);
+					c.warScore.remove(from.id);
+				}
 			}
 		}
 		placeFlag(level, p, s);
@@ -433,7 +440,13 @@ public final class Nations {
 			s.captureTicks++;
 			player.sendOverlayMessage(Component.translatable("nation.airdefense.capturing", s.name, s.captureTicks, CAPTURE_SECONDS));
 			if (s.captureTicks >= CAPTURE_SECONDS) {
-				transfer(level, p, s, countryOf(level, p, player, true));
+				Country winner = countryOf(level, p, player, true);
+				// Taking a village of a made-up country by force means war with it (if there is none yet).
+				if (owner != null && owner.owner == null && !owner.atWarWith(winner.id)) {
+					War.declare(level, p, owner, winner, Component.translatable("nation.airdefense.war.why_capture", s.name));
+				}
+				War.scored(p, winner, owner);
+				transfer(level, p, s, winner);
 				// A village taken by force does not love its new ruler at first.
 				s.capturedAt = level.getGameTime();
 				player.sendSystemMessage(Component.translatable("nation.airdefense.captured", s.name));

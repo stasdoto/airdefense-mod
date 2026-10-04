@@ -70,6 +70,8 @@ public final class Settlement {
 
 	// Not saved: a capture in progress, how long rebels have held the flag.
 	public int riotTicks;
+	/** Seconds enemy soldiers have held the flag (of a player's village) with nobody to stop them. */
+	public int aiCaptureTicks;
 	public UUID capturer;
 	public int captureTicks;
 	public int guardsAlive;

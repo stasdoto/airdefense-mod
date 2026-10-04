@@ -114,6 +114,21 @@ public final class NationNet {
 					Unrest.calm(level, player, s);
 				}
 			}
+			case NationActionPayload.DECLARE_WAR -> {
+				if (near || tablet) {
+					War.playerDeclares(level, player, s);
+				}
+			}
+			case NationActionPayload.PEACE -> {
+				if (near || tablet) {
+					War.proposePeace(level, player, s);
+				}
+			}
+			case NationActionPayload.TRIBUTE -> {
+				if (near || tablet) {
+					War.payTribute(level, player, s);
+				}
+			}
 			case NationActionPayload.OPEN -> {
 				if (near || tablet && Economy.owner(politics, s, player)) {
 					sendInfo(level, player, s, true);
@@ -140,10 +155,18 @@ public final class NationNet {
 		if (s.elder != null && level.getEntity(s.elder) instanceof Villager v && v.getCustomName() != null) {
 			elder = v.getCustomName().getString();
 		}
+		// War with the country that owns this village: 0 = not possible, 1 = can be declared, 2 = at war.
+		Country own = p.countryOwnedBy(player.getUUID());
+		int war = 0;
+		int tribute = 0;
+		if (c != null && c.owner == null && !mine) {
+			war = own != null && own.atWarWith(c.id) ? 2 : 1;
+			tribute = own != null ? War.tribute(own, c) : 0;
+		}
 		ServerPlayNetworking.send(player, new SettlementInfoPayload(open, s.id, s.name, c == null ? "" : c.name, c == null ? 0 : c.argb(),
 				c != null && c.cityState, mine, Nations.villagers(level, s).size(), Nations.guards(level, s).size(), Nations.soldiers(level, s).size(),
 				mine ? Nations.mobilizable(level, s) : 0, Nations.reputation(level, s, player), Nations.charterPrice(p, s),
-				problem == null ? "" : problem.getString(), player.getAbilities().instabuild, elder));
+				problem == null ? "" : problem.getString(), player.getAbilities().instabuild, elder, war, tribute));
 		if (mine) {
 			sendEconomy(level, player, s);
 		}
@@ -193,7 +216,7 @@ public final class NationNet {
 			Country c = p.country(s.country);
 			villages.add(new NationMapPayload.Village(s.id, s.name, s.center.getX(), s.center.getY(), s.center.getZ(),
 					c == null ? 0xFFE8E8E8 : c.argb(), c == null ? "" : c.name, c != null && own != null && c.id == own.id,
-					s.population, s.guardsAlive, s.soldiers.size(), s.flag.getX(), s.flag.getZ()));
+					s.population, s.guardsAlive, s.soldiers.size(), s.flag.getX(), s.flag.getZ(), c != null && own != null && own.atWarWith(c.id)));
 			if (villages.size() >= 64) {
 				break;
 			}

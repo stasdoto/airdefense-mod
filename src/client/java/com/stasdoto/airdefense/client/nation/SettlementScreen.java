@@ -68,6 +68,9 @@ public class SettlementScreen extends Screen {
 	private final List<Button> hangarButtons = new ArrayList<>();
 	private Button cancel;
 	private Button calm;
+	private Button declareWar;
+	private Button peace;
+	private Button tribute;
 
 	public SettlementScreen(SettlementInfoPayload info) {
 		this(info, null);
@@ -138,6 +141,12 @@ public class SettlementScreen extends Screen {
 				b -> send(NationActionPayload.RECALL, 0, 0)).bounds(x0 + 6, by + 24, bw, 20).build());
 		dismiss = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.dismiss"),
 				b -> send(NationActionPayload.DEMOBILIZE, 0, 0)).bounds(x0 + 12 + bw, by + 24, bw, 20).build());
+		declareWar = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.declare_war"),
+				b -> send(NationActionPayload.DECLARE_WAR, 0, 0)).bounds(x0 + 6, by, bw, 20).build());
+		peace = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.peace"),
+				b -> send(NationActionPayload.PEACE, 0, 0)).bounds(x0 + 6, by, bw, 20).build());
+		tribute = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.tribute", 0),
+				b -> send(NationActionPayload.TRIBUTE, 0, 0)).bounds(x0 + 12 + bw, by, bw, 20).build());
 		calm = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.calm", 0),
 				b -> send(NationActionPayload.CALM, 0, 0)).bounds(x0 + w - 136, y0 + 54, 128, 14).build());
 		// Tabs.
@@ -210,6 +219,10 @@ public class SettlementScreen extends Screen {
 		buy.active = info.problem().isEmpty();
 		buy.setMessage(Component.translatable("screen.airdefense.village.buy", info.price()));
 		take.visible = !mine && info.creative();
+		declareWar.visible = !mine && info.war() == 1;
+		peace.visible = !mine && info.war() == 2;
+		tribute.visible = !mine && info.war() == 2 && info.tribute() > 0;
+		tribute.setMessage(Component.translatable("screen.airdefense.village.tribute", info.tribute()));
 		callOne.visible = mine && overview;
 		callAll.visible = mine && overview;
 		recall.visible = mine && overview;
@@ -383,6 +396,10 @@ public class SettlementScreen extends Screen {
 		g.fill(need, y - 2, need + 1, y + 6, C_GOLD);
 		y += 10;
 		if (!info.mine()) {
+			if (info.war() == 2) {
+				g.text(font, Component.translatable("screen.airdefense.village.at_war"), x, y, C_BAD);
+				y += 11;
+			}
 			if (!info.problem().isEmpty()) {
 				g.textWithWordWrap(font, Component.literal(info.problem()), x, y, w - 16, C_BAD);
 			} else {

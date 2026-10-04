@@ -33,6 +33,12 @@ public record NationActionPayload(int action, int settlement, int a, int x, int 
 	public static final int OPEN = 13;
 	/** Gifts that calm the village (and end a riot). */
 	public static final int CALM = 14;
+	/** War on the country that owns this village. */
+	public static final int DECLARE_WAR = 15;
+	/** Ask that country for peace. */
+	public static final int PEACE = 16;
+	/** Pay what it asks for peace. */
+	public static final int TRIBUTE = 17;
 
 	public static final Type<NationActionPayload> TYPE = new Type<>(AirDefense.id("nation_action"));
 	public static final StreamCodec<ByteBuf, NationActionPayload> CODEC = StreamCodec.composite(

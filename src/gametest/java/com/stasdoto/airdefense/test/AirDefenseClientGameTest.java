@@ -76,6 +76,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("unrest")) {
 				unrest(ctx, server);
 			}
+			if (scene("war")) {
+				war(ctx, server);
+			}
 			if (scene("strike")) {
 				unopposedIskander(ctx, server);
 				effectsCloseup(ctx, server, false);
@@ -1647,6 +1650,134 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		AirDefense.LOGGER.info("[airdefense-test] RESULT suppressed: riot over after {} ticks (suppressed {}, riots {})", over,
 				com.stasdoto.airdefense.nation.Unrest.suppressed, com.stasdoto.airdefense.nation.Unrest.riots);
 		server.runCommand("kill @e[type=airdefense:soldier,distance=..10000]");
+		server.runCommand("gamemode spectator @a");
+	}
+
+	private void war(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 38000;
+		int bx = x + 120;
+		int g = ground;
+		server.runCommand("difficulty normal");
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 1000");
+		camera(server, x + 60.5, g + 30, 30.5, 180, 40);
+		ctx.waitTicks(40);
+		village(server, x, 0, new String[]{"none", "farmer", "none", "librarian", "none", "mason", "none", "cleric"});
+		village(server, bx, 0, new String[]{"none", "farmer", "none", "fletcher", "none"});
+		waitUntil(ctx, () -> settlementAt(server, x, 0) >= 0 && settlementAt(server, bx, 0) >= 0, 400);
+		int a = settlementAt(server, x, 0);
+		int b = settlementAt(server, bx, 0);
+		String enemy = server.computeOnServer(s -> {
+			var l = s.overworld();
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var player = s.getPlayerList().getPlayers().getFirst();
+			var stA = p.settlements.get(a);
+			com.stasdoto.airdefense.nation.Nations.takeOver(l, player, stA);
+			com.stasdoto.airdefense.nation.Nations.spawnGuard(l, stA, p.country(stA.country));
+			com.stasdoto.airdefense.nation.Nations.spawnGuard(l, stA, p.country(stA.country));
+			var stB = p.settlements.get(b);
+			var c = com.stasdoto.airdefense.nation.Nations.makeCountry(l, stB, false);
+			com.stasdoto.airdefense.nation.Nations.spawnGuard(l, stB, c);
+			return c.name;
+		});
+		// War declared from the enemy village's screen.
+		server.runCommand("gamemode creative @a");
+		camera(server, bx + 0.5, g, 9.5, 180, 0);
+		ctx.waitTicks(10);
+		ecoScreen(ctx, server, b, com.stasdoto.airdefense.client.nation.SettlementScreen.OVERVIEW);
+		ctx.takeScreenshot("140_enemy_village");
+		ecoAct(ctx, com.stasdoto.airdefense.nation.NationActionPayload.DECLARE_WAR, 0);
+		ctx.waitTicks(25);
+		ctx.takeScreenshot("140b_war_declared");
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		boolean atWar = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			return com.stasdoto.airdefense.nation.Nations.atWar(s.overworld(), p.settlements.get(a).country, p.settlements.get(b).country);
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT war_declared: {} against {} (declared {})", atWar, enemy, com.stasdoto.airdefense.nation.War.declared);
+		// The tablet map shows the enemy.
+		server.runOnServer(s -> s.getPlayerList().getPlayers().getFirst().setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,
+				new net.minecraft.world.item.ItemStack(com.stasdoto.airdefense.registry.ModItems.DESIGNATOR)));
+		ctx.waitTicks(5);
+		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.map.MapClient.open());
+		ctx.waitForScreen(com.stasdoto.airdefense.client.map.TacticalMapScreen.class);
+		ctx.waitTicks(30);
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				m.setTab(1);
+				m.centerOn(x + 60, 0, 1);
+				m.selectVillage(b);
+			}
+		});
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("141_map_war");
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		server.runCommand("clear @a");
+
+		// The enemy sends a squad against village A; its guards fight.
+		server.runCommand("gamemode spectator @a");
+		camera(server, x + 10.5, g + 8, 14.5, 150, 25);
+		ctx.waitTicks(20);
+		int sent = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var stA = p.settlements.get(a);
+			var ai = p.country(p.settlements.get(b).country);
+			return com.stasdoto.airdefense.nation.War.sendSquad(s.overworld(), p, ai, stA, 4).size();
+		});
+		ctx.waitTicks(260);
+		ctx.takeScreenshot("142_battle");
+		String fight = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var stA = p.settlements.get(a);
+			int ai = p.settlements.get(b).country;
+			int enemies = s.overworld().getEntitiesOfClass(com.stasdoto.airdefense.nation.SoldierEntity.class,
+					new net.minecraft.world.phys.AABB(x - 120, g - 10, -120, x + 120, g + 30, 120), e -> e.isAlive() && e.country() == ai).size();
+			return enemies + " enemies, " + com.stasdoto.airdefense.nation.Nations.guards(s.overworld(), stA).size() + " guards";
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT squad: sent {}, after the fight {}", sent, fight);
+
+		// Nobody defends A: a second squad takes it.
+		server.runOnServer(s -> {
+			var l = s.overworld();
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var stA = p.settlements.get(a);
+			for (var gd : com.stasdoto.airdefense.nation.Nations.guards(l, stA)) {
+				gd.discard();
+			}
+			var ai = p.country(p.settlements.get(b).country);
+			com.stasdoto.airdefense.nation.War.sendSquad(l, p, ai, stA, 4);
+		});
+		camera(server, x - 170.5, g + 20, 0.5, -90, 10);
+		int took = waitUntil(ctx, () -> server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			return p.settlements.get(a).country == p.settlements.get(b).country;
+		}), 2400);
+		camera(server, x + 10.5, g + 8, 14.5, 150, 25);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("143_village_lost");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT ai_capture: village A taken after {} ticks (captures {})", took,
+				com.stasdoto.airdefense.nation.War.aiCaptures);
+
+		// Peace: they want emeralds (they are winning); paid (creative: free).
+		server.runCommand("gamemode creative @a");
+		camera(server, bx + 0.5, g, 9.5, 180, 0);
+		ctx.waitTicks(10);
+		ecoScreen(ctx, server, b, com.stasdoto.airdefense.client.nation.SettlementScreen.OVERVIEW);
+		ecoAct(ctx, com.stasdoto.airdefense.nation.NationActionPayload.PEACE, 0);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("144_peace_price");
+		int price = ctx.computeOnClient(mc -> mc.gui.screen() instanceof com.stasdoto.airdefense.client.nation.SettlementScreen sc ? sc.info().tribute() : -1);
+		ecoAct(ctx, com.stasdoto.airdefense.nation.NationActionPayload.TRIBUTE, 0);
+		ctx.waitTicks(20);
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		boolean still = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var mine = p.countryOwnedBy(s.getPlayerList().getPlayers().getFirst().getUUID());
+			return mine != null && mine.atWarWith(p.settlements.get(b).country);
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT peace: price {} -> still at war {} (peaces {})", price, still, com.stasdoto.airdefense.nation.War.peaces);
+		server.runCommand("kill @e[type=airdefense:soldier,distance=..10000]");
+		server.runCommand("clear @a");
 		server.runCommand("gamemode spectator @a");
 	}
 
