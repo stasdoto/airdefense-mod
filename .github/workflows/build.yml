@@ -70,7 +70,7 @@ jobs:
           ./gradlew exportDevkit --no-configuration-cache -q || true
           mkdir -p /tmp/out
           ls build/devkit/cp > /tmp/out/devkit-cp.txt
-          java .github/devkit/Stubber.java /tmp/out/stubs $(find build/devkit/cp -maxdepth 1 -name '*.jar') 2>&1 | tail -40 | tee /tmp/out/stubber-log.txt
+          java .github/tools/Stubber.java /tmp/out/stubs $(find build/devkit/cp -maxdepth 1 -name '*.jar') 2>&1 | tail -40 | tee /tmp/out/stubber-log.txt
           du -sh /tmp/out/stubs
       - name: in-game test
         if: ${{ inputs.gametest }}
