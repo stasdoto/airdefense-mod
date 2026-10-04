@@ -63,16 +63,19 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: "1"
           MESA_GL_VERSION_OVERRIDE: "4.6"
           SDL_AUDIODRIVER: dummy
+          SDL_VIDEODRIVER: x11
           ALSOFT_DRIVERS: "null"
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb mesa-utils libgl1-mesa-dri > /dev/null
-          timeout 40m xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClientGameTest --stacktrace 2>&1 | tail -400 > gametest-log.txt || true
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb mesa-utils libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-vulkan-drivers > /dev/null
+          xvfb-run -a -s "-screen 0 1280x720x24+32 +extension GLX +render -noreset" glxinfo -B 2>&1 | head -20 > glxinfo.txt || true
+          cat glxinfo.txt
+          timeout 30m xvfb-run -a -s "-screen 0 1280x720x24+32 +extension GLX +render -noreset" ./gradlew runClientGameTest --stacktrace 2>&1 | tail -400 > gametest-log.txt || true
           mkdir -p /tmp/out/screens
           find . -path ./.gradle -prune -o -name '*.png' -path '*screenshots*' -print -exec cp {} /tmp/out/screens/ \;
           find . -path ./.gradle -prune -o -name 'latest.log' -path '*logs*' -print | head -3
           LOG=$(find . -path ./.gradle -prune -o -name 'latest.log' -path '*logs*' -print | head -1)
           [ -n "$LOG" ] && cp "$LOG" /tmp/out/game-latest.log || true
-          cp gametest-log.txt /tmp/out/ || true
+          cp gametest-log.txt glxinfo.txt /tmp/out/ || true
       - name: publish results to ci-out branch
         if: always()
         run: |
