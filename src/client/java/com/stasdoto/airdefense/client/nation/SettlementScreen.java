@@ -326,6 +326,13 @@ public class SettlementScreen extends Screen {
 				}
 				g.text(font, Component.translatable("screen.airdefense.village.summary2", buildings, eco.births()), x, y, C_DIM);
 				y += 11;
+				if (eco.birthEvery() > 0) {
+					int min = Math.max(1, Math.round(eco.birthEvery() / 60f));
+					g.text(font, Component.translatable("screen.airdefense.village.births", min), x, y, C_OK);
+				} else {
+					g.text(font, Component.translatable("screen.airdefense.village.no_births"), x, y, C_BAD);
+				}
+				y += 11;
 			}
 		}
 		// Respect: a bar from -100 to +100 with the threshold for the charter.

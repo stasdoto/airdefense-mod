@@ -342,5 +342,11 @@
   "screen.airdefense.village.making": "Making: %s - %s%%",
   "screen.airdefense.village.order_it": "Order",
   "screen.airdefense.village.seconds": "%s s",
-  "screen.airdefense.map.manage": "Manage village"
+  "screen.airdefense.map.manage": "Manage village",
+  "nation.airdefense.eco.full_up": "This villager will not take any more food",
+  "nation.airdefense.eco.fed": "Fed: %s / %s (well-fed villagers have children)",
+  "nation.airdefense.eco.fed_ready": "Well fed (%s / %s) and ready to have a child - a free bed is needed",
+  "screen.airdefense.village.births": "A child is born about every %s min",
+  "screen.airdefense.village.no_births": "No children: no free beds - build houses",
+  "nation.airdefense.eco.born": "A child was born in %s"
 }

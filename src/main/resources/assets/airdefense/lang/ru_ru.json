@@ -342,5 +342,11 @@
   "screen.airdefense.village.making": "Делается: %s — %s%%",
   "screen.airdefense.village.order_it": "Заказать",
   "screen.airdefense.village.seconds": "%s с",
-  "screen.airdefense.map.manage": "Управление деревней"
+  "screen.airdefense.map.manage": "Управление деревней",
+  "nation.airdefense.eco.full_up": "Житель больше не берёт еду",
+  "nation.airdefense.eco.fed": "Житель накормлен: сытость %s / %s (сытые жители заводят детей)",
+  "nation.airdefense.eco.fed_ready": "Житель сыт (%s / %s) и готов завести ребёнка — нужна свободная кровать",
+  "screen.airdefense.village.births": "Дети рождаются примерно раз в %s мин",
+  "screen.airdefense.village.no_births": "Детей не будет: нет свободных кроватей — стройте дома",
+  "nation.airdefense.eco.born": "В деревне %s родился ребёнок"
 }

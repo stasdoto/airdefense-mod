@@ -70,6 +70,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("economy")) {
 				economy(ctx, server);
 			}
+			if (scene("breeding")) {
+				breeding(ctx, server);
+			}
 			if (scene("strike")) {
 				unopposedIskander(ctx, server);
 				effectsCloseup(ctx, server, false);
@@ -1453,6 +1456,87 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		AirDefense.LOGGER.info("[airdefense-test] RESULT home: workers left {}; villagers before [{}] after [{}]", left, before, after);
 		server.runCommand("kill @e[type=airdefense:soldier,distance=..10000]");
 		server.runCommand("kill @e[type=airdefense:gepard,distance=..10000]");
+		server.runCommand("clear @a");
+		server.runCommand("difficulty normal");
+		server.runCommand("gamemode spectator @a");
+	}
+
+	private void breeding(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 34000;
+		int g = ground;
+		server.runCommand("difficulty peaceful");
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 1000");
+		camera(server, x + 0.5, g + 6, 14.5, 180, 25);
+		ctx.waitTicks(40);
+		village(server, x, 0, new String[]{"none", "farmer", "none", "librarian", "none"});
+		// Four free beds by the square.
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			for (int i = 0; i < 4; i++) {
+				BlockPos foot = new BlockPos(x - 3 + i * 2, g, 8);
+				var bed = Blocks.BED.pick(net.minecraft.world.item.DyeColor.RED).defaultBlockState()
+						.setValue(net.minecraft.world.level.block.BedBlock.FACING, net.minecraft.core.Direction.SOUTH);
+				l.setBlock(foot, bed.setValue(net.minecraft.world.level.block.BedBlock.PART, net.minecraft.world.level.block.state.properties.BedPart.FOOT), Block.UPDATE_ALL);
+				l.setBlock(foot.south(), bed.setValue(net.minecraft.world.level.block.BedBlock.PART, net.minecraft.world.level.block.state.properties.BedPart.HEAD), Block.UPDATE_ALL);
+			}
+		});
+		waitUntil(ctx, () -> settlementAt(server, x, 0) >= 0, 400);
+		int id = settlementAt(server, x, 0);
+		server.runCommand("gamemode survival @a");
+		server.runCommand("clear @a");
+		server.runCommand("give @a minecraft:bread 16");
+		camera(server, x + 0.5, g, 6.5, 180, 0);
+		ctx.waitTicks(5);
+		server.runOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			com.stasdoto.airdefense.nation.Nations.takeOver(s.overworld(), s.getPlayerList().getPlayers().getFirst(), p.settlements.get(id));
+		});
+		ctx.waitTicks(5);
+		// Feeding a villager bread from the hand.
+		int fed0 = com.stasdoto.airdefense.nation.Economy.fed;
+		for (int attempt = 0; attempt < 6 && com.stasdoto.airdefense.nation.Economy.fed - fed0 < 3; attempt++) {
+			Vec3 v = server.computeOnServer(s -> {
+				var list = s.overworld().getEntitiesOfClass(net.minecraft.world.entity.npc.villager.Villager.class,
+						new net.minecraft.world.phys.AABB(x - 12, g - 2, -12, x + 12, g + 4, 12), vv -> !vv.isBaby());
+				return list.isEmpty() ? Vec3.ZERO : list.getFirst().getEyePosition();
+			});
+			server.runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %d %.1f", v.x, g, v.z + 2.2));
+			ctx.waitTicks(3);
+			aimAt(ctx, v.add(0, -0.3, 0));
+			ctx.waitTicks(2);
+			ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT);
+			ctx.waitTicks(4);
+			if (ctx.computeOnClient(mc -> mc.gui.screen() != null)) {
+				ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+				ctx.waitTicks(3);
+			}
+		}
+		ctx.takeScreenshot("120_feeding");
+		int bread = server.computeOnServer(s -> s.getPlayerList().getPlayers().getFirst().getInventory().countItem(net.minecraft.world.item.Items.BREAD));
+		AirDefense.LOGGER.info("[airdefense-test] RESULT feeding: fed {} times, bread left {}", com.stasdoto.airdefense.nation.Economy.fed - fed0, bread);
+		// A child born by the square (no hospital needed in your own village), growing up fast.
+		int every = server.computeOnServer(s -> com.stasdoto.airdefense.nation.Economy.birthEvery(s.overworld(),
+				com.stasdoto.airdefense.nation.Politics.get(s), com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id)));
+		boolean born = server.computeOnServer(s -> com.stasdoto.airdefense.nation.Economy.birth(s.overworld(),
+				com.stasdoto.airdefense.nation.Politics.get(s), com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id)));
+		int[] age0 = server.computeOnServer(s -> {
+			var list = s.overworld().getEntitiesOfClass(net.minecraft.world.entity.npc.villager.Villager.class,
+					new net.minecraft.world.phys.AABB(x - 20, g - 2, -20, x + 20, g + 4, 20), vv -> vv.isBaby());
+			return list.isEmpty() ? new int[]{0, 0} : new int[]{list.getFirst().getId(), list.getFirst().getAge()};
+		});
+		camera(server, x + 4.5, g + 2, 4.5, 135, 15);
+		ctx.waitTicks(400);
+		int age1 = server.computeOnServer(s -> s.overworld().getEntity(age0[0]) instanceof net.minecraft.world.entity.npc.villager.Villager v ? v.getAge() : 0);
+		ctx.takeScreenshot("121_child");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT births: one every {} s, born {}, child grew {} ticks in 400", every, born, age1 - age0[1]);
+		server.runCommand("gamemode creative @a");
+		camera(server, x + 0.5, g, 6.5, 180, 0);
+		ctx.waitTicks(5);
+		ecoScreen(ctx, server, id, com.stasdoto.airdefense.client.nation.SettlementScreen.OVERVIEW);
+		ctx.waitTicks(25);
+		ctx.takeScreenshot("122_births_line");
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
 		server.runCommand("clear @a");
 		server.runCommand("difficulty normal");
 		server.runCommand("gamemode spectator @a");

@@ -70,6 +70,7 @@ public final class Economy {
 	public static int born;
 	public static int vehiclesMade;
 	public static int hired;
+	public static int fed;
 
 	private static final Map<Integer, List<Blueprints.Placement>> PLANS = new HashMap<>();
 	private static final Map<Integer, Double> CREDIT = new HashMap<>();
@@ -99,9 +100,14 @@ public final class Economy {
 			if (t % 40 == 23 && e.count(BuildingType.BARRACKS) > 0) {
 				barracksHeal(level, s);
 			}
-			if (t % 200 == 117 && e.count(BuildingType.HOSPITAL) > 0 && level.isLoaded(s.center)
-					&& level.getRandom().nextFloat() < Math.min(0.5f, 0.12f * e.count(BuildingType.HOSPITAL))) {
-				birth(level, p, s);
+			if (t % 200 == 117 && level.isLoaded(s.center)) {
+				float chance = birthChance(p, s);
+				if (chance > 0 && level.getRandom().nextFloat() < chance) {
+					birth(level, p, s);
+				}
+				if (owned(p, s)) {
+					growUp(level, s);
+				}
 			}
 		}
 	}
@@ -864,10 +870,99 @@ public final class Economy {
 				freeOnly ? PoiManager.Occupancy.HAS_SPACE : PoiManager.Occupancy.ANY);
 	}
 
-	/** A baby is born in the maternity hospital, if there is a free bed for it and grown-ups to look after it. */
+	/** Is the village a player's (his villages have children more easily, and they grow up faster)? */
+	static boolean owned(Politics p, Settlement s) {
+		Country c = p.country(s.country);
+		return c != null && c.owner != null;
+	}
+
+	/**
+	 * Chance of a birth every 10 seconds: in a player's village about one child in 3-4 minutes while there are free
+	 * beds (no food or fuss needed), every maternity hospital adds one in about 80 seconds.
+	 */
+	static float birthChance(Politics p, Settlement s) {
+		int hospitals = s.eco.count(BuildingType.HOSPITAL);
+		float chance = (owned(p, s) ? 0.045f : 0f) + 0.12f * hospitals;
+		return Math.min(0.6f, chance);
+	}
+
+	/** About how many seconds between births (0 = none: no free beds or too few grown-ups). */
+	public static int birthEvery(ServerLevel level, Politics p, Settlement s) {
+		float chance = birthChance(p, s);
+		if (chance <= 0 || beds(level, s, true) <= babies(level, s) || adults(level, s) < 2) {
+			return 0;
+		}
+		return Math.round(10 / chance);
+	}
+
+	static int babies(ServerLevel level, Settlement s) {
+		int n = 0;
+		for (Villager v : Nations.villagers(level, s)) {
+			if (v.isBaby()) {
+				n++;
+			}
+		}
+		return n;
+	}
+
+	static int adults(ServerLevel level, Settlement s) {
+		int n = workers(level, s).size();
+		for (Villager v : Nations.villagers(level, s)) {
+			if (!v.isBaby()) {
+				n++;
+			}
+		}
+		return n;
+	}
+
+	/** Children in a player's village grow up four times as fast (in about five minutes). */
+	public static void growUp(ServerLevel level, Settlement s) {
+		for (Villager v : Nations.villagers(level, s)) {
+			if (v.isBaby()) {
+				v.ageUp(30);
+			}
+		}
+	}
+
+	/** Food a villager takes from your hand (and the food points it is worth to him). */
+	public static int foodPoints(ItemStack stack) {
+		if (stack.is(Items.BREAD)) {
+			return 4;
+		}
+		return stack.is(Items.CARROT) || stack.is(Items.POTATO) || stack.is(Items.BEETROOT) ? 1 : 0;
+	}
+
+	/** The player feeds a villager: well-fed villagers are ready to have children (the game's own breeding). */
+	public static void feed(ServerLevel level, ServerPlayer player, Villager v, ItemStack stack) {
+		int points = foodPoints(stack);
+		if (points <= 0 || v.isBaby()) {
+			return;
+		}
+		ItemStack one = stack.copyWithCount(1);
+		if (!v.getInventory().canAddItem(one)) {
+			player.sendOverlayMessage(Component.translatable("nation.airdefense.eco.full_up"));
+			return;
+		}
+		v.getInventory().addItem(one);
+		if (!player.getAbilities().instabuild) {
+			stack.shrink(1);
+		}
+		int have = 0;
+		for (int i = 0; i < v.getInventory().getContainerSize(); i++) {
+			ItemStack it = v.getInventory().getItem(i);
+			have += foodPoints(it) * it.getCount();
+		}
+		level.sendParticles(ParticleTypes.HEART, v.getX(), v.getY() + 2.0, v.getZ(), 3, 0.3, 0.2, 0.3, 0.02);
+		level.playSound(null, v.blockPosition(), SoundEvents.GENERIC_EAT.value(), SoundSource.NEUTRAL, 0.8f, 1.1f);
+		player.sendOverlayMessage(Component.translatable(have >= 12 ? "nation.airdefense.eco.fed_ready" : "nation.airdefense.eco.fed",
+				Math.min(have, 12), 12));
+		fed++;
+	}
+
+	/** A baby is born (in the maternity hospital, or by the village square), if there is a free bed and grown-ups to look after it. */
 	public static boolean birth(ServerLevel level, Politics p, Settlement s) {
 		Building hospital = s.eco.first(BuildingType.HOSPITAL);
-		if (hospital == null || !level.isLoaded(hospital.middle())) {
+		if (hospital != null && !level.isLoaded(hospital.middle()) || !level.isLoaded(s.flag)) {
 			return false;
 		}
 		List<Villager> villagers = Nations.villagers(level, s);
@@ -887,7 +982,14 @@ public final class Economy {
 		if (baby == null) {
 			return false;
 		}
-		BlockPos at = hospital.at(0, 1, 2);
+		BlockPos at;
+		if (hospital != null) {
+			at = hospital.at(0, 1, 2);
+		} else {
+			int x = s.flag.getX() + level.getRandom().nextInt(5) - 2;
+			int z = s.flag.getZ() + level.getRandom().nextInt(5) - 2;
+			at = new BlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z);
+		}
 		baby.snapTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, level.getRandom().nextFloat() * 360f, 0);
 		baby.setAge(-24000);
 		level.addFreshEntity(baby);
@@ -896,6 +998,11 @@ public final class Economy {
 		s.eco.births++;
 		born++;
 		p.setDirty();
+		Country c = p.country(s.country);
+		if (c != null && c.owner != null && level.getServer().getPlayerList().getPlayer(c.owner) instanceof ServerPlayer owner
+				&& owner.distanceToSqr(Vec3.atCenterOf(at)) < 96 * 96) {
+			owner.sendOverlayMessage(Component.translatable("nation.airdefense.eco.born", s.name));
+		}
 		return true;
 	}
 

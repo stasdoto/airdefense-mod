@@ -342,5 +342,11 @@
   "screen.airdefense.village.making": "Робиться: %s — %s%%",
   "screen.airdefense.village.order_it": "Замовити",
   "screen.airdefense.village.seconds": "%s с",
-  "screen.airdefense.map.manage": "Керування селом"
+  "screen.airdefense.map.manage": "Керування селом",
+  "nation.airdefense.eco.full_up": "Мешканець більше не бере їжу",
+  "nation.airdefense.eco.fed": "Мешканця нагодовано: ситість %s / %s (ситі мешканці заводять дітей)",
+  "nation.airdefense.eco.fed_ready": "Мешканець ситий (%s / %s) і готовий завести дитину — потрібне вільне ліжко",
+  "screen.airdefense.village.births": "Діти народжуються приблизно раз на %s хв",
+  "screen.airdefense.village.no_births": "Дітей не буде: немає вільних ліжок — будуйте будинки",
+  "nation.airdefense.eco.born": "У селі %s народилася дитина"
 }

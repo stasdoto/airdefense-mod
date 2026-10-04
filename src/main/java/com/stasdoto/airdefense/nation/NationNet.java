@@ -29,6 +29,13 @@ public final class NationNet {
 		ServerPlayNetworking.registerGlobalReceiver(NationActionPayload.TYPE, (payload, context) -> handle(context.player(), payload));
 		// Shift + right click on a villager: the village's affairs (trading is a plain right click).
 		UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
+			if (entity instanceof Villager villager && !player.isShiftKeyDown() && !player.isSpectator()
+					&& Economy.foodPoints(player.getItemInHand(hand)) > 0) {
+				if (player instanceof ServerPlayer sp && level instanceof ServerLevel sl) {
+					Economy.feed(sl, sp, villager, player.getItemInHand(hand));
+				}
+				return InteractionResult.SUCCESS;
+			}
 			if (!(entity instanceof Villager) || !player.isShiftKeyDown() || player.isSpectator()) {
 				return InteractionResult.PASS;
 			}
@@ -162,7 +169,8 @@ public final class NationNet {
 		}
 		ServerPlayNetworking.send(player, new VillageEconomyPayload(s.id, e.stock[0], e.stock[1], e.stock[2], e.cap(),
 				player.getAbilities().instabuild, jobs, Economy.free(level, s).size(), Economy.beds(level, s, false), Economy.beds(level, s, true),
-				e.births, built, queue, builders, e.count(BuildingType.HANGAR) > 0, hangar, Economy.hangarPercent(s)));
+				e.births, built, queue, builders, e.count(BuildingType.HANGAR) > 0, hangar, Economy.hangarPercent(s),
+				Economy.birthEvery(level, Politics.get(level.getServer()), s)));
 	}
 
 	/** Villages within 2000 blocks and the soldiers that are loaded within 700. */
