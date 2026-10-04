@@ -170,5 +170,9 @@
   "screen.airdefense.factory.take": "Take everything from stock",
   "screen.airdefense.factory.queue": "Queue: %s/%s",
   "screen.airdefense.factory.stock": "Stock:",
-  "screen.airdefense.factory.supply": "Vehicles within %s blocks restock from here by themselves"
+  "screen.airdefense.factory.supply": "Vehicles within %s blocks restock from here by themselves",
+  "subtitles.airdefense.crack": "A round cracks past",
+  "subtitles.airdefense.engine": "Engine running",
+  "subtitles.airdefense.hydraulics": "Hydraulics whine",
+  "subtitles.airdefense.turret": "Turret turning"
 }

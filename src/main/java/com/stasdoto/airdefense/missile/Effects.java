@@ -120,14 +120,24 @@ public final class Effects {
 		shockWave(level, source, at, power * 3.0, power * 0.8, 1.2);
 	}
 
-	/** Launch blast: a smoke cloud rolling out around the launcher. */
+	/** Launch blast: a smoke cloud rolling out around the launcher, and the roar (each client hears it late by distance). */
 	public static void launchBlast(ServerLevel level, Vec3 at, MissileType type) {
 		float size = switch (type.kind) {
 			case BALLISTIC -> 3.0f;
 			case ROCKET, CRUISE -> 2.0f;
 			default -> type == MissileType.STINGER ? 0.5f : 1.3f;
 		};
-		Fx.send(level, FxPayload.LAUNCH, at, size, Vec3.ZERO);
+		int sound = switch (type.kind) {
+			case BALLISTIC -> FxPayload.LAUNCH_SOUND_HEAVY;
+			case ROCKET -> FxPayload.LAUNCH_SOUND_MLRS;
+			default -> FxPayload.LAUNCH_SOUND_LIGHT;
+		};
+		Fx.send(level, FxPayload.LAUNCH, at, size, new Vec3(sound, 0, 0));
+	}
+
+	/** The sound of a gun burst at the muzzle (heard late and duller far away). */
+	public static void gunBurst(ServerLevel level, Vec3 muzzle) {
+		Fx.send(level, FxPayload.GUN, muzzle, 1.0f, Vec3.ZERO);
 	}
 
 	/** Old one-block Gepard (only kept for worlds from before vehicles). */

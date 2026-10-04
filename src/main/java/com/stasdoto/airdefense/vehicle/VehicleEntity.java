@@ -963,7 +963,6 @@ public class VehicleEntity extends LivingEntity {
 		setLoadedMask(getLoadedMask() & ~(1 << rail));
 		setAmmo(Math.max(0, getAmmo() - 1));
 		Effects.launchBlast(level, from.subtract(dir.scale(2.5)), type.missile);
-		level.playSound(null, from.x, from.y, from.z, type.sound, SoundSource.BLOCKS, 4.0f, 0.95f + r.nextFloat() * 0.1f);
 	}
 
 	private void keepLoaded(ServerLevel level) {
@@ -1125,8 +1124,6 @@ public class VehicleEntity extends LivingEntity {
 		if ((fired + 1) % perRail == 0) {
 			setLoadedMask(getLoadedMask() & ~(1 << rail));
 		}
-		RandomSource r = level.getRandom();
-		level.playSound(null, from.x, from.y, from.z, ModSounds.LAUNCH_LIGHT, SoundSource.BLOCKS, 3.0f, 0.95f + r.nextFloat() * 0.15f);
 		level.playSound(null, from.x, from.y, from.z, ModSounds.RADAR_LOCK, SoundSource.BLOCKS, 1.0f, 1.0f);
 	}
 
@@ -1163,8 +1160,7 @@ public class VehicleEntity extends LivingEntity {
 		if (getMode() != MODE_AUTO || fireTimer > 0 || getAmmo() <= 0 || !onTarget) {
 			return;
 		}
-		RandomSource r = level.getRandom();
-		level.playSound(null, muzzle.x, muzzle.y, muzzle.z, ModSounds.GEPARD_BURST, SoundSource.BLOCKS, 3.0f, 0.95f + r.nextFloat() * 0.1f);
+		Effects.gunBurst(level, muzzle);
 		burstLeft = 6;
 		fireTimer = type.interval;
 		setAmmo(getAmmo() - 1);
@@ -1214,15 +1210,45 @@ public class VehicleEntity extends LivingEntity {
 			}
 			return;
 		}
-		if (g.turret() != null) {
-			setTurretTarget(Mth.wrapDegrees(gunner.getYRot() - getYRot()));
-		}
 		if (gun) {
-			setElevationTarget(Mth.clamp(-gunner.getXRot(), -5, 85));
+			// The guns sit a couple of metres from the gunner's eye: pointed parallel to his sight they would miss
+			// everything close. So they converge where he looks - at the distance of the threat nearest the middle of
+			// the sight, or 60 blocks out when there is none.
+			Vec3 eye = gunner.getEyePosition();
+			Vec3 look = gunner.getLookAngle();
+			MissileEntity seen = sightThreat(eye, look, type.range * 1.3, 8);
+			Vec3 point = eye.add(look.scale(seen != null ? seen.position().distanceTo(eye) : 60));
+			Vec3 muzzle = position().add(0, 2.3, 0);
+			double h = Math.sqrt(Mth.square(point.x - getX()) + Mth.square(point.z - getZ()));
+			setElevationTarget((float) Mth.clamp(Math.toDegrees(Math.atan2(point.y - muzzle.y, h)), -5, 85));
+			setTurretTarget(relativeBearing(point));
 			if (burstLeft > 0) {
 				fireManualRounds(level, type);
 			}
+		} else if (g.turret() != null) {
+			setTurretTarget(Mth.wrapDegrees(gunner.getYRot() - getYRot()));
 		}
+	}
+
+	/** The threat closest to the line of sight from {@code eye} along {@code look}, within {@code coneDeg}. */
+	@Nullable
+	private MissileEntity sightThreat(Vec3 eye, Vec3 look, double range, double coneDeg) {
+		MissileEntity best = null;
+		double bestCos = Math.cos(Math.toRadians(coneDeg));
+		for (MissileEntity m : level().getEntitiesOfClass(MissileEntity.class, new AABB(eye, eye).inflate(range),
+				m -> m.isAlive() && m.getMissileType().threat)) {
+			Vec3 to = m.position().subtract(eye);
+			double d = to.length();
+			if (d > range || d < 2) {
+				continue;
+			}
+			double c = to.scale(1 / d).dot(look);
+			if (c > bestCos) {
+				bestCos = c;
+				best = m;
+			}
+		}
+		return best;
 	}
 
 	/** Fire button from the gunner's seat: a burst along the barrels, or an interceptor at the threat in the sight. */
@@ -1236,9 +1262,7 @@ public class VehicleEntity extends LivingEntity {
 			return;
 		}
 		if (type.interceptor == null) {
-			RandomSource r = level.getRandom();
-			Vec3 muzzle = railWorld(0);
-			level.playSound(null, muzzle.x, muzzle.y, muzzle.z, ModSounds.GEPARD_BURST, SoundSource.BLOCKS, 3.0f, 0.95f + r.nextFloat() * 0.1f);
+			Effects.gunBurst(level, railWorld(0));
 			burstLeft = 6;
 			fireRounds(type);
 			fireManualRounds(level, type);

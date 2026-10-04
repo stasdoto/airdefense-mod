@@ -23,6 +23,25 @@ public final class ModSounds {
 	public static final SoundEvent RADAR_LOCK = register("radar_lock", 48);
 	public static final SoundEvent SIREN = register("siren", 220);
 	public static final SoundEvent DESIGNATE = register("designate", 16);
+	// Stage 6 ("Squad-style"): distance layers picked by the client, see client.fx.SquadAudio.
+	public static final SoundEvent EXPLOSION_NEAR = register("explosion_near", 128);
+	public static final SoundEvent EXPLOSION_MID = register("explosion_mid", 400);
+	public static final SoundEvent EXPLOSION_DISTANT = register("explosion_distant", 1400);
+	public static final SoundEvent AIRBURST_NEAR = register("airburst_near", 128);
+	public static final SoundEvent AIRBURST_FAR = register("airburst_far", 1400);
+	public static final SoundEvent GUN_NEAR = register("gun_near", 96);
+	public static final SoundEvent GUN_FAR = register("gun_far", 700);
+	public static final SoundEvent CRACK = register("crack", 16);
+	public static final SoundEvent LAUNCH_HEAVY_NEAR = register("launch_heavy_near", 128);
+	public static final SoundEvent LAUNCH_HEAVY_FAR = register("launch_heavy_far", 1000);
+	public static final SoundEvent LAUNCH_LIGHT_NEAR = register("launch_light_near", 96);
+	public static final SoundEvent LAUNCH_LIGHT_FAR = register("launch_light_far", 600);
+	public static final SoundEvent LAUNCH_MLRS_NEAR = register("launch_mlrs_near", 96);
+	public static final SoundEvent LAUNCH_MLRS_FAR = register("launch_mlrs_far", 800);
+	public static final SoundEvent ENGINE_TRUCK = register("engine_truck", 32);
+	public static final SoundEvent ENGINE_TRACKED = register("engine_tracked", 40);
+	public static final SoundEvent HYDRAULICS = register("hydraulics", 20);
+	public static final SoundEvent TURRET = register("turret", 20);
 	/** Handed to vanilla explosions: the client plays the real explosion sound itself, delayed by distance. */
 	public static final SoundEvent SILENT = register("silent", 16);
 

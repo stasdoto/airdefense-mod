@@ -170,5 +170,9 @@
   "screen.airdefense.factory.take": "Забрать всё со склада",
   "screen.airdefense.factory.queue": "Очередь: %s/%s",
   "screen.airdefense.factory.stock": "Склад:",
-  "screen.airdefense.factory.supply": "Техника в радиусе %s блоков сама пополняет боезапас со склада"
+  "screen.airdefense.factory.supply": "Техника в радиусе %s блоков сама пополняет боезапас со склада",
+  "subtitles.airdefense.crack": "Снаряд щёлкнул рядом",
+  "subtitles.airdefense.engine": "Работает двигатель",
+  "subtitles.airdefense.hydraulics": "Гудит гидравлика",
+  "subtitles.airdefense.turret": "Поворачивается башня"
 }

@@ -132,5 +132,215 @@
         "attenuation_distance": 16
       }
     ]
+  },
+  "explosion_near": {
+    "sounds": [
+      {
+        "name": "airdefense:explosion_near_0",
+        "attenuation_distance": 128
+      },
+      {
+        "name": "airdefense:explosion_near_1",
+        "attenuation_distance": 128
+      },
+      {
+        "name": "airdefense:explosion_near_2",
+        "attenuation_distance": 128
+      }
+    ],
+    "subtitle": "subtitles.airdefense.explosion"
+  },
+  "explosion_mid": {
+    "sounds": [
+      {
+        "name": "airdefense:explosion_mid_0",
+        "attenuation_distance": 400
+      },
+      {
+        "name": "airdefense:explosion_mid_1",
+        "attenuation_distance": 400
+      },
+      {
+        "name": "airdefense:explosion_mid_2",
+        "attenuation_distance": 400
+      }
+    ],
+    "subtitle": "subtitles.airdefense.explosion"
+  },
+  "explosion_distant": {
+    "sounds": [
+      {
+        "name": "airdefense:explosion_far_0",
+        "attenuation_distance": 1400
+      },
+      {
+        "name": "airdefense:explosion_far_1",
+        "attenuation_distance": 1400
+      },
+      {
+        "name": "airdefense:explosion_far_2",
+        "attenuation_distance": 1400
+      }
+    ],
+    "subtitle": "subtitles.airdefense.far"
+  },
+  "airburst_near": {
+    "sounds": [
+      {
+        "name": "airdefense:airburst_near_0",
+        "attenuation_distance": 128
+      },
+      {
+        "name": "airdefense:airburst_near_1",
+        "attenuation_distance": 128
+      }
+    ],
+    "subtitle": "subtitles.airdefense.intercept"
+  },
+  "airburst_far": {
+    "sounds": [
+      {
+        "name": "airdefense:airburst_far_0",
+        "attenuation_distance": 1400
+      },
+      {
+        "name": "airdefense:airburst_far_1",
+        "attenuation_distance": 1400
+      }
+    ],
+    "subtitle": "subtitles.airdefense.far"
+  },
+  "gun_near": {
+    "sounds": [
+      {
+        "name": "airdefense:gun_near_0",
+        "attenuation_distance": 96
+      },
+      {
+        "name": "airdefense:gun_near_1",
+        "attenuation_distance": 96
+      }
+    ],
+    "subtitle": "subtitles.airdefense.gun"
+  },
+  "gun_far": {
+    "sounds": [
+      {
+        "name": "airdefense:gun_far_0",
+        "attenuation_distance": 700
+      },
+      {
+        "name": "airdefense:gun_far_1",
+        "attenuation_distance": 700
+      }
+    ],
+    "subtitle": "subtitles.airdefense.gun"
+  },
+  "crack": {
+    "sounds": [
+      {
+        "name": "airdefense:crack_0",
+        "attenuation_distance": 16
+      },
+      {
+        "name": "airdefense:crack_1",
+        "attenuation_distance": 16
+      },
+      {
+        "name": "airdefense:crack_2",
+        "attenuation_distance": 16
+      }
+    ],
+    "subtitle": "subtitles.airdefense.crack"
+  },
+  "launch_heavy_near": {
+    "sounds": [
+      {
+        "name": "airdefense:launch_heavy_near",
+        "attenuation_distance": 128
+      }
+    ],
+    "subtitle": "subtitles.airdefense.launch"
+  },
+  "launch_heavy_far": {
+    "sounds": [
+      {
+        "name": "airdefense:launch_heavy_far",
+        "attenuation_distance": 1000
+      }
+    ],
+    "subtitle": "subtitles.airdefense.launch"
+  },
+  "launch_light_near": {
+    "sounds": [
+      {
+        "name": "airdefense:launch_light_near",
+        "attenuation_distance": 96
+      }
+    ],
+    "subtitle": "subtitles.airdefense.launch"
+  },
+  "launch_light_far": {
+    "sounds": [
+      {
+        "name": "airdefense:launch_light_far",
+        "attenuation_distance": 600
+      }
+    ],
+    "subtitle": "subtitles.airdefense.launch"
+  },
+  "launch_mlrs_near": {
+    "sounds": [
+      {
+        "name": "airdefense:launch_mlrs_near",
+        "attenuation_distance": 96
+      }
+    ],
+    "subtitle": "subtitles.airdefense.launch"
+  },
+  "launch_mlrs_far": {
+    "sounds": [
+      {
+        "name": "airdefense:launch_mlrs_far",
+        "attenuation_distance": 800
+      }
+    ],
+    "subtitle": "subtitles.airdefense.launch"
+  },
+  "engine_truck": {
+    "sounds": [
+      {
+        "name": "airdefense:engine_truck",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.airdefense.engine"
+  },
+  "engine_tracked": {
+    "sounds": [
+      {
+        "name": "airdefense:engine_tracked",
+        "attenuation_distance": 40
+      }
+    ],
+    "subtitle": "subtitles.airdefense.engine"
+  },
+  "hydraulics": {
+    "sounds": [
+      {
+        "name": "airdefense:hydraulics",
+        "attenuation_distance": 20
+      }
+    ],
+    "subtitle": "subtitles.airdefense.hydraulics"
+  },
+  "turret": {
+    "sounds": [
+      {
+        "name": "airdefense:turret",
+        "attenuation_distance": 20
+      }
+    ],
+    "subtitle": "subtitles.airdefense.turret"
   }
 }

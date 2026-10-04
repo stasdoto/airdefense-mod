@@ -48,6 +48,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			drive(ctx, server);
 			tabletMap(ctx, server);
 			factory(ctx, server);
+			sounds(ctx, server);
 			unopposedIskander(ctx, server);
 			effectsCloseup(ctx, server, false);
 			server.runCommand("time set 14500");
@@ -649,6 +650,50 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	private static int factoryPercent(TestServerContext server, BlockPos ctrl) {
 		return server.computeOnServer(s -> s.overworld().getBlockEntity(ctrl)
 				instanceof com.stasdoto.airdefense.factory.FactoryBlockEntity f ? f.buildPercent() : -1);
+	}
+
+	/** Stage 6: the right sound layer for each distance, the crack of a round passing close, vehicle engine loops. */
+	private void sounds(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 21000;
+		int g = ground;
+		server.runCommand("gamemode creative @a");
+		camera(server, x, g, 0, 180, 0);
+		ctx.waitTicks(40);
+		StringBuilder layers = new StringBuilder();
+		for (int d : new int[]{40, 150, 450}) {
+			int[] before = com.stasdoto.airdefense.client.fx.SquadAudio.PLAYED.clone();
+			server.runOnServer(s -> com.stasdoto.airdefense.missile.Effects.groundImpact(s.overworld(), null, new Vec3(x + 0.5, g, -d),
+					com.stasdoto.airdefense.missile.MissileType.GMLRS));
+			ctx.waitTicks(15);
+			int[] now = com.stasdoto.airdefense.client.fx.SquadAudio.PLAYED;
+			layers.append(d).append(": near ").append(now[0] - before[0]).append(" mid ").append(now[1] - before[1])
+					.append(" far ").append(now[2] - before[2]).append("; ");
+		}
+		int cracks = com.stasdoto.airdefense.client.fx.SquadAudio.CRACKS;
+		server.runOnServer(s -> {
+			for (int i = 0; i < 4; i++) {
+				com.stasdoto.airdefense.missile.Effects.tracer(s.overworld(), new Vec3(x + 0.5, g + 3, 70), new Vec3(x + 1.5, g + 2.5, -70), 8f);
+			}
+		});
+		ctx.waitTicks(25);
+		cracks = com.stasdoto.airdefense.client.fx.SquadAudio.CRACKS - cracks;
+		int himars = spawnVehicle(server, VehicleType.HIMARS, x + 4, 6, 180);
+		ctx.waitTicks(5);
+		server.runOnServer(s -> {
+			ServerPlayer p = s.getPlayerList().getPlayers().getFirst();
+			if (s.overworld().getEntity(himars) instanceof VehicleEntity v) {
+				p.startRiding(v);
+				v.raiseLauncher();
+			}
+		});
+		ctx.waitTicks(30);
+		int loops = ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.vehicle.VehicleSounds.playing());
+		AirDefense.LOGGER.info("[airdefense-test] RESULT sounds: layers by distance [{}] cracks={} vehicleLoops={}", layers, cracks, loops);
+		server.runOnServer(s -> {
+			s.getPlayerList().getPlayers().getFirst().stopRiding();
+			forVehicles(s.overworld(), List.of(himars), Entity::discard);
+		});
+		server.runCommand("gamemode spectator @a");
 	}
 
 	// --- helpers -----------------------------------------------------------------------------------

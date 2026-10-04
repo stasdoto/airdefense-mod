@@ -42,6 +42,7 @@ public final class VehicleClient {
 		}
 		VehicleEntity.stowRequester = v -> send(v, VehicleEntity.ACTION_STOW_FOR_MARCH);
 		ClientTickEvents.START_CLIENT_TICK.register(VehicleClient::tick);
+		ClientTickEvents.END_CLIENT_TICK.register(VehicleSounds::tick);
 		HudElementRegistry.addLast(AirDefense.id("vehicle_hud"), VehicleClient::hud);
 		// Vanilla draws the mount's hearts over the hotbar; a vehicle has armour (shown in our panel), not hearts.
 		HudElementRegistry.replaceElement(VanillaHudElements.MOUNT_HEALTH, original -> (g, delta) -> {

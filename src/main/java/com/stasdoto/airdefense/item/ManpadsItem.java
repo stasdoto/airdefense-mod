@@ -77,7 +77,6 @@ public class ManpadsItem extends Item {
 		MissileEntity.launchInterceptor(serverLevel, MissileType.STINGER, from, look, target);
 		Effects.launchBlast(serverLevel, eye.subtract(look.scale(1.5)), MissileType.STINGER);
 		level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.RADAR_LOCK, SoundSource.PLAYERS, 1.0f, 1.3f);
-		level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.LAUNCH_LIGHT, SoundSource.PLAYERS, 2.0f, 1.3f);
 		player.getCooldowns().addCooldown(stack, COOLDOWN);
 		player.sendOverlayMessage(Component.translatable("message.airdefense.lock", target.getDisplayStack().getHoverName(), (int) target.distanceTo(player)));
 		return InteractionResult.SUCCESS;

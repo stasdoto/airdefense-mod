@@ -170,5 +170,9 @@
   "screen.airdefense.factory.take": "Забрати все зі складу",
   "screen.airdefense.factory.queue": "Черга: %s/%s",
   "screen.airdefense.factory.stock": "Склад:",
-  "screen.airdefense.factory.supply": "Техніка в радіусі %s блоків сама поповнює боєзапас зі складу"
+  "screen.airdefense.factory.supply": "Техніка в радіусі %s блоків сама поповнює боєзапас зі складу",
+  "subtitles.airdefense.crack": "Снаряд клацнув поруч",
+  "subtitles.airdefense.engine": "Працює двигун",
+  "subtitles.airdefense.hydraulics": "Гуде гідравліка",
+  "subtitles.airdefense.turret": "Повертається башта"
 }

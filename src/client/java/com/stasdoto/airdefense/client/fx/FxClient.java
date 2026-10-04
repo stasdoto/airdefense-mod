@@ -238,7 +238,15 @@ public final class FxClient {
 			case FxPayload.GROUND_IMPACT -> groundImpact(mc, level, at, p.power());
 			case FxPayload.AIR_BURST_THREAT -> airBurst(mc, level, at, p.power(), true);
 			case FxPayload.AIR_BURST_INTERCEPTOR -> airBurst(mc, level, at, p.power(), false);
-			case FxPayload.LAUNCH -> launch(mc, level, at, p.power());
+			case FxPayload.LAUNCH -> {
+				launch(mc, level, at, p.power());
+				int sound = (int) p.ax();
+				if (sound != FxPayload.LAUNCH_SOUND_NONE) {
+					SquadAudio.play(at, sound == FxPayload.LAUNCH_SOUND_HEAVY ? SquadAudio.Kind.LAUNCH_HEAVY
+							: sound == FxPayload.LAUNCH_SOUND_MLRS ? SquadAudio.Kind.LAUNCH_MLRS : SquadAudio.Kind.LAUNCH_LIGHT, Math.max(0.4f, p.power() / 2));
+				}
+			}
+			case FxPayload.GUN -> SquadAudio.play(at, SquadAudio.Kind.GUN, 1f);
 			case FxPayload.TRACER -> {
 				Vec3 end = new Vec3(p.ax(), p.ay(), p.az());
 				Vec3 d = end.subtract(at);
@@ -248,6 +256,7 @@ public final class FxClient {
 				FxParticle t = tracer(level, at.x, at.y, at.z, v.x, v.y, v.z);
 				t.setLifetime(Math.max(1, (int) (dist / speed)));
 				mc.particleEngine.add(t);
+				SquadAudio.bulletPass(at, end, speed);
 			}
 			default -> {
 			}
@@ -358,8 +367,7 @@ public final class FxClient {
 		int delay = (int) (dist / SOUND_BLOCKS_PER_TICK);
 		float shake = (float) Math.min(3.0, power * 4.5 / (dist + 10));
 		after(delay, () -> CameraShake.add(shake));
-		sound(level, at, delay, power >= 6 ? ModSounds.EXPLOSION_HUGE : ModSounds.EXPLOSION_BIG, 4f, 0.9f + r.nextFloat() * 0.15f);
-		sound(level, at, delay, ModSounds.EXPLOSION_FAR, 6f, 0.85f + r.nextFloat() * 0.15f);
+		SquadAudio.play(at, SquadAudio.Kind.EXPLOSION, power / 6f);
 	}
 
 	private static void airBurst(Minecraft mc, ClientLevel level, Vec3 at, float size, boolean threat) {
@@ -406,10 +414,7 @@ public final class FxClient {
 		double dist = mc.player.position().distanceTo(at);
 		int delay = (int) (dist / SOUND_BLOCKS_PER_TICK);
 		after(delay, () -> CameraShake.add((float) Math.min(1.5, size * 2.0 / (dist + 10))));
-		sound(level, at, delay, ModSounds.EXPLOSION_AIR, 3.5f, 0.95f + r.nextFloat() * 0.15f);
-		if (threat) {
-			sound(level, at, delay, ModSounds.EXPLOSION_FAR, 5f, 1.0f + r.nextFloat() * 0.1f);
-		}
+		SquadAudio.play(at, SquadAudio.Kind.AIRBURST, threat ? Math.max(1f, size / 3f) : 0.6f);
 	}
 
 	private static void launch(Minecraft mc, ClientLevel level, Vec3 at, float size) {
