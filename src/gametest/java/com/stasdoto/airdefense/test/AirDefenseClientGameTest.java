@@ -410,15 +410,17 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(2);
 		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
 		ctx.waitTicks(5);
-		// Zoom out twice (the target is 300 blocks north), then click the target.
+		// Zoom out twice with the wheel (the target is 220 blocks away), bring both into view, then click the target.
 		ctx.getInput().scroll(-1);
 		ctx.waitTicks(2);
 		ctx.getInput().scroll(-1);
 		ctx.waitTicks(5);
 		double[] t = ctx.computeOnClient(mc -> {
 			var s = (com.stasdoto.airdefense.client.map.TacticalMapScreen) mc.gui.screen();
-			return new double[]{s.toScreenX(x + 6.5), s.toScreenY(-290.5)};
+			s.centerOn(x, 120, 4);
+			return new double[]{s.toScreenX(x + 6.5), s.toScreenY(230.5)};
 		});
+		AirDefense.LOGGER.info("[airdefense-test] target on the map at gui {},{}", (int) t[0], (int) t[1]);
 		ctx.getInput().setCursorPos(t[0] * scale + 1, t[1] * scale + 1);
 		ctx.waitTicks(2);
 		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);

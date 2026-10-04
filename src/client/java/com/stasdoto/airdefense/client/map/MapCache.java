@@ -241,7 +241,8 @@ public final class MapCache {
 
 	/** Height of the top block that shows on a map (skips glass, air and other invisible blocks). */
 	private static int surfaceY(ClientLevel level, LevelChunk chunk, int x, int z, BlockPos.MutableBlockPos m, int minY) {
-		int y = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1;
+		// (A chunk's getHeight is the top block itself, unlike the level's, which is the first air above it.)
+		int y = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
 		int bx = chunk.getPos().getMinBlockX() + x;
 		int bz = chunk.getPos().getMinBlockZ() + z;
 		for (int i = 0; i < 24 && y > minY; i++, y--) {

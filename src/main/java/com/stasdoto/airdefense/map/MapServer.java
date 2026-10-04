@@ -82,8 +82,9 @@ public final class MapServer {
 		if (y != MapActionPayload.Y_UNKNOWN) {
 			return new BlockPos(x, y, z);
 		}
+		// The chunk's height is the top block itself (the level's would be the air above it).
 		int top = level.getChunk(x >> 4, z >> 4).getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x & 15, z & 15);
-		return new BlockPos(x, Math.max(level.getMinY(), top - 1), z);
+		return new BlockPos(x, Math.max(level.getMinY(), top), z);
 	}
 
 	public static MapStatusPayload status(ServerLevel level, ServerPlayer player) {
