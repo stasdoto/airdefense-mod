@@ -1,0 +1,51 @@
+name: build
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      devkit:
+        description: "Also export the compile classpath + JDK for local checks"
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: gradle/actions/wrapper-validation@v6
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - run: chmod +x ./gradlew
+      - name: build
+        run: ./gradlew build --stacktrace 2>&1 | tee build-log.txt; exit ${PIPESTATUS[0]}
+      - name: upload log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-log
+          path: build-log.txt
+          retention-days: 3
+      - name: upload mod jar
+        uses: actions/upload-artifact@v7
+        with:
+          name: mod-jar
+          path: build/libs/
+      - name: export devkit
+        if: ${{ inputs.devkit }}
+        run: |
+          ./gradlew exportDevkit genSources --no-configuration-cache
+          mkdir -p devkit
+          cp -r build/devkit/cp devkit/cp
+          find ~/.gradle/caches/fabric-loom -name '*sources*.jar' -exec cp {} devkit/ \; || true
+          tar -C "$JAVA_HOME/.." -czf devkit/jdk.tar.gz "$(basename "$JAVA_HOME")"
+          ls -la devkit devkit/cp | head -100
+      - name: upload devkit
+        if: ${{ inputs.devkit }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: devkit
+          path: devkit/
+          retention-days: 2

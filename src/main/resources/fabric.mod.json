@@ -1,0 +1,21 @@
+{
+	"schemaVersion": 1,
+	"id": "airdefense",
+	"version": "${version}",
+	"name": "Stasdoto Air Defense",
+	"description": "Ракетные комплексы и ПВО: Искандер, крылатые ракеты, Шахеды, HIMARS, Patriot, IRIS-T, NASAMS, Гепард и ПЗРК.",
+	"authors": ["Stasdoto"],
+	"license": "All-Rights-Reserved",
+	"icon": "assets/airdefense/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": ["com.stasdoto.airdefense.AirDefense"],
+		"client": ["com.stasdoto.airdefense.client.AirDefenseClient"]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
