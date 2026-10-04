@@ -5,7 +5,9 @@ import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
@@ -127,12 +129,14 @@ public final class Effects {
 			}
 			double f = strength * (1 - dist / outer);
 			Vec3 push = d.scale(1 / dist).scale(f).add(0, f * 0.35, 0);
-			e.setDeltaMovement(e.getDeltaMovement().add(push));
-			e.hurtMarked = true;
+			e.push(push.x, push.y, push.z);
+			if (e instanceof ServerPlayer player) {
+				player.connection.send(new ClientboundSetEntityMotionPacket(player));
+			}
 		}
 	}
 
-	static void send(ServerLevel level, ParticleOptions particle, Vec3 at, int count, double spread, double speed) {
+	public static void send(ServerLevel level, ParticleOptions particle, Vec3 at, int count, double spread, double speed) {
 		level.sendParticles(particle, true, true, at.x, at.y, at.z, count, spread, spread, spread, speed);
 	}
 }

@@ -1,6 +1,5 @@
 package com.stasdoto.airdefense.launcher;
 
-import com.mojang.serialization.MapCodec;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
@@ -38,18 +37,11 @@ public class LauncherBlock extends BaseEntityBlock {
 	private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 12, 16);
 
 	public final LauncherType type;
-	private final MapCodec<LauncherBlock> codec;
 
 	public LauncherBlock(LauncherType type, Properties properties) {
 		super(properties);
 		this.type = type;
-		this.codec = simpleCodec(p -> new LauncherBlock(type, p));
 		registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(POWERED, false));
-	}
-
-	@Override
-	protected MapCodec<? extends BaseEntityBlock> codec() {
-		return codec;
 	}
 
 	@Override

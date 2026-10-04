@@ -1,6 +1,5 @@
 package com.stasdoto.airdefense.defense;
 
-import com.mojang.serialization.MapCodec;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
@@ -31,18 +30,11 @@ public class DefenseBlock extends BaseEntityBlock {
 	private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 12, 16);
 
 	public final DefenseType type;
-	private final MapCodec<DefenseBlock> codec;
 
 	public DefenseBlock(DefenseType type, Properties properties) {
 		super(properties);
 		this.type = type;
-		this.codec = simpleCodec(p -> new DefenseBlock(type, p));
 		registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
-	}
-
-	@Override
-	protected MapCodec<? extends BaseEntityBlock> codec() {
-		return codec;
 	}
 
 	@Override
