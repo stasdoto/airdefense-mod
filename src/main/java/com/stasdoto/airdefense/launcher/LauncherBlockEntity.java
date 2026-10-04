@@ -39,6 +39,11 @@ public class LauncherBlockEntity extends BlockEntity {
 	}
 
 	public static void serverTick(Level level, BlockPos pos, BlockState state, LauncherBlockEntity be) {
+		if (level instanceof ServerLevel serverLevel) {
+			com.stasdoto.airdefense.vehicle.VehicleType vt = com.stasdoto.airdefense.vehicle.VehicleType.valueOf(be.type().name());
+			com.stasdoto.airdefense.vehicle.VehicleEntity.replaceBlock(serverLevel, pos, vt, state.getValue(LauncherBlock.FACING));
+			return;
+		}
 		if (be.salvoLeft > 0 && level instanceof ServerLevel serverLevel && level.getGameTime() % 10 == 0) {
 			be.keepLoaded(serverLevel);
 		}

@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "airdefense:block/nasams"
+    "model": "airdefense:item/nasams"
   }
 }

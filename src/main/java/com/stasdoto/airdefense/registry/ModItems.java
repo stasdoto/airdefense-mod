@@ -17,10 +17,22 @@ import com.stasdoto.airdefense.AirDefense;
 import com.stasdoto.airdefense.item.DesignatorItem;
 import com.stasdoto.airdefense.item.ManpadsItem;
 import com.stasdoto.airdefense.missile.MissileType;
+import com.stasdoto.airdefense.vehicle.VehicleItem;
+import com.stasdoto.airdefense.vehicle.VehicleType;
 
 public final class ModItems {
 	public static final Item DESIGNATOR = register("designator", DesignatorItem::new, new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
 	public static final Item MANPADS = register("manpads", ManpadsItem::new, new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
+
+	// Vehicles (the item ids are the ones the old one-block launchers had, so old inventories and recipes carry over).
+	public static final Item ISKANDER = vehicle("iskander_launcher", VehicleType.ISKANDER);
+	public static final Item KALIBR = vehicle("kalibr_launcher", VehicleType.KALIBR);
+	public static final Item SHAHED = vehicle("shahed_launcher", VehicleType.SHAHED);
+	public static final Item HIMARS = vehicle("himars", VehicleType.HIMARS);
+	public static final Item PATRIOT = vehicle("patriot", VehicleType.PATRIOT);
+	public static final Item IRIS_T = vehicle("iris_t", VehicleType.IRIS_T);
+	public static final Item NASAMS = vehicle("nasams", VehicleType.NASAMS);
+	public static final Item GEPARD = vehicle("gepard", VehicleType.GEPARD);
 
 	// Missile items: what the flying entities look like (their 3D model), also usable as decoration in item frames.
 	public static final Item ISKANDER_MISSILE = missile(MissileType.ISKANDER);
@@ -38,14 +50,14 @@ public final class ModItems {
 			.title(Component.translatable("itemGroup.airdefense"))
 			.displayItems((params, output) -> {
 				output.accept(DESIGNATOR);
-				output.accept(ModBlocks.ISKANDER_LAUNCHER);
-				output.accept(ModBlocks.KALIBR_LAUNCHER);
-				output.accept(ModBlocks.SHAHED_LAUNCHER);
-				output.accept(ModBlocks.HIMARS);
-				output.accept(ModBlocks.PATRIOT);
-				output.accept(ModBlocks.IRIS_T);
-				output.accept(ModBlocks.NASAMS);
-				output.accept(ModBlocks.GEPARD);
+				output.accept(ISKANDER);
+				output.accept(KALIBR);
+				output.accept(SHAHED);
+				output.accept(HIMARS);
+				output.accept(PATRIOT);
+				output.accept(IRIS_T);
+				output.accept(NASAMS);
+				output.accept(GEPARD);
 				output.accept(MANPADS);
 				output.accept(ISKANDER_MISSILE);
 				output.accept(KALIBR_MISSILE);
@@ -59,6 +71,10 @@ public final class ModItems {
 			.build();
 
 	private ModItems() {
+	}
+
+	private static Item vehicle(String name, VehicleType type) {
+		return register(name, p -> new VehicleItem(type, p), new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
 	}
 
 	private static Item missile(MissileType type) {

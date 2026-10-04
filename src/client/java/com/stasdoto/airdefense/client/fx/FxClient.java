@@ -33,6 +33,8 @@ public final class FxClient {
 	private static final Map<SimpleParticleType, SpriteSet> SPRITES = new HashMap<>();
 	private static final List<Scheduled> SCHEDULED = new ArrayList<>();
 	private static final double SOUND_BLOCKS_PER_TICK = 17.0;
+	/** Debug counter read by the in-game test. */
+	public static int FLAMES_SPAWNED;
 
 	private FxClient() {
 	}
@@ -201,8 +203,8 @@ public final class FxClient {
 
 	/** Dust rolled along the ground by the blast wave. */
 	static FxParticle dust(ClientLevel l, double x, double y, double z, double vx, double vy, double vz, float scale) {
-		return base(ModParticles.DUST, l, x, y, z, vx, vy, vz).life(110, 180).size(1.0f * scale, 4.8f * scale).grow(30)
-				.alpha(0.8f, 3, 0.4f).color(0.52f, 0.45f, 0.35f, 0.64f, 0.6f, 0.54f)
+		return base(ModParticles.DUST, l, x, y, z, vx, vy, vz).life(90, 150).size(1.0f * scale, 4.8f * scale).grow(30)
+				.alpha(0.62f, 3, 0.35f).color(0.52f, 0.45f, 0.35f, 0.64f, 0.6f, 0.54f)
 				.drag(0.88f).rise(0.0008f).windy();
 	}
 
@@ -269,8 +271,8 @@ public final class FxClient {
 		var pe = mc.particleEngine;
 
 		// 1. Flash and white-hot core.
-		pe.add(flash(level, at.x, at.y + 1 + power * 0.4, at.z, power * 1.8f));
-		pe.add(glow(level, at.x, at.y + 1.5, at.z, power * 2.6f, 26));
+		pe.add(flash(level, at.x, at.y + 1 + power * 0.5, at.z, power * 1.6f));
+		pe.add(glow(level, at.x, at.y + power * 1.1, at.z, power * 1.1f, 24));
 		for (int i = 0; i < 3; i++) {
 			pe.add(fireball(level, at.x, at.y + 1 + power * 0.2, at.z, 0, 0.05, 0, power * 0.55f));
 		}
@@ -337,7 +339,12 @@ public final class FxClient {
 				if (Math.abs(fy - at.y) > power) {
 					fy = at.y;
 				}
-				pe.add(flame(level, fx, fy, fz, 0.5f + r.nextFloat() * 0.5f));
+				float fs = 0.9f + r.nextFloat() * 0.9f;
+				pe.add(flame(level, fx, fy, fz, fs));
+				FLAMES_SPAWNED++;
+				if (r.nextInt(2) == 0) {
+					pe.add(glow(level, fx, fy + fs, fz, fs * 2.2f, 30));
+				}
 				if (r.nextInt(2) == 0) {
 					pe.add(ember(level, fx, fy + 0.6, fz, 0, 0.05, 0));
 				}
@@ -392,7 +399,7 @@ public final class FxClient {
 				Vec3 d = randomDir(r, -1);
 				double sp = 0.15 + r.nextDouble() * 0.3;
 				FxParticle wreck = spark(level, at.x, at.y, at.z, d.x * sp, d.y * sp + 0.2, d.z * sp);
-				wreck.size(0.45f, 0.3f).life(120, 200).falls(0.02f).smokeTrail(ModParticles.SMOKE_BIG, 2);
+				wreck.size(0.45f, 0.3f).life(120, 200).falls(0.02f).smokeTrail(ModParticles.TRAIL_DARK, 2);
 				pe.add(wreck);
 			}
 		}

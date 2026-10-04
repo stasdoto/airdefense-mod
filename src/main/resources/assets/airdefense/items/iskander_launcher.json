@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "airdefense:block/iskander_launcher"
+    "model": "airdefense:item/iskander_launcher"
   }
 }

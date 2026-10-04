@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "airdefense:block/iris_t"
+    "model": "airdefense:item/iris_t"
   }
 }

@@ -43,6 +43,11 @@ public class DefenseBlockEntity extends BlockEntity {
 		if (!(level instanceof ServerLevel serverLevel)) {
 			return;
 		}
+		if (true) {
+			com.stasdoto.airdefense.vehicle.VehicleType vt = com.stasdoto.airdefense.vehicle.VehicleType.valueOf(be.type().name());
+			com.stasdoto.airdefense.vehicle.VehicleEntity.replaceBlock(serverLevel, pos, vt, state.getValue(DefenseBlock.FACING));
+			return;
+		}
 		DefenseType type = be.type();
 		if (be.ammo < 0) {
 			be.ammo = type.magazine;

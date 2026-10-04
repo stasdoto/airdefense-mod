@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "airdefense:block/shahed_launcher"
+    "model": "airdefense:item/shahed_launcher"
   }
 }

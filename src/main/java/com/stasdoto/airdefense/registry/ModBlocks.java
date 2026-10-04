@@ -6,8 +6,6 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.references.BlockItemId;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -42,10 +40,9 @@ public final class ModBlocks {
 				.sound(SoundType.METAL)
 				.noOcclusion()
 				.setId(ids.block());
-		Block block = Registry.register(BuiltInRegistries.BLOCK, ids.block(), factory.apply(props));
-		Registry.register(BuiltInRegistries.ITEM, ids.item(),
-				new BlockItem(block, new Item.Properties().useBlockDescriptionPrefix().setId(ids.item())));
-		return block;
+		// Old one-block launchers: kept so existing worlds load; each turns into a real vehicle on its first tick.
+		// Their item ids now belong to the vehicle items (see ModItems).
+		return Registry.register(BuiltInRegistries.BLOCK, ids.block(), factory.apply(props));
 	}
 
 	public static void init() {

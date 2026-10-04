@@ -112,6 +112,13 @@ public final class Effects {
 		shockWave(level, source, at, size * 2.5, 0, 0.6);
 	}
 
+	/** A vehicle blows up: fuel, ammunition, flying wreckage. */
+	public static void vehicleDestroyed(ServerLevel level, Entity source, Vec3 at, float power) {
+		explode(level, source, at, power, true, Level.ExplosionInteraction.TNT);
+		Fx.send(level, FxPayload.GROUND_IMPACT, at, power, new Vec3(0, 1, 0));
+		shockWave(level, source, at, power * 3.0, power * 0.8, 1.2);
+	}
+
 	/** Launch blast: a smoke cloud rolling out around the launcher. */
 	public static void launchBlast(ServerLevel level, Vec3 at, MissileType type) {
 		float size = switch (type.kind) {

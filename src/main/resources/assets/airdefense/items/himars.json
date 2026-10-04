@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "airdefense:block/himars"
+    "model": "airdefense:item/himars"
   }
 }

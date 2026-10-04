@@ -82,6 +82,15 @@ public class MissileEntity extends Entity {
 
 	/** Launches an attacking missile/rocket/drone from {@code pos} towards {@code target}. */
 	public static MissileEntity launchStrike(ServerLevel level, MissileType type, Vec3 pos, Vec3 target, Vec3 forward) {
+		return launchStrike(level, type, pos, target, forward, null);
+	}
+
+	/**
+	 * Same, leaving the launcher along {@code railDir} (the direction its tube or rail points): cruise missiles and
+	 * drones boost out along the rail and then turn towards the target.
+	 */
+	public static MissileEntity launchStrike(ServerLevel level, MissileType type, Vec3 pos, Vec3 target, Vec3 forward,
+			@org.jetbrains.annotations.Nullable Vec3 railDir) {
 		MissileEntity m = new MissileEntity(ModEntities.MISSILE, level);
 		m.setMissileType(type);
 		m.setPos(pos);
@@ -120,6 +129,9 @@ public class MissileEntity extends Entity {
 				m.speed = 0.7;
 			}
 			case INTERCEPTOR -> throw new IllegalArgumentException("use launchInterceptor");
+		}
+		if (railDir != null && (type.kind == MissileType.Kind.CRUISE || type.kind == MissileType.Kind.DRONE)) {
+			m.launchDir = railDir.normalize();
 		}
 		m.lastVel = m.launchDir.scale(m.speed);
 		m.updateRotation(m.launchDir);

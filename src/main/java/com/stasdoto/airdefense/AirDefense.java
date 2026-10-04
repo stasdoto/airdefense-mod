@@ -14,6 +14,7 @@ import com.stasdoto.airdefense.registry.ModEntities;
 import com.stasdoto.airdefense.registry.ModItems;
 import com.stasdoto.airdefense.registry.ModParticles;
 import com.stasdoto.airdefense.registry.ModSounds;
+import com.stasdoto.airdefense.vehicle.VehicleActionPayload;
 
 public class AirDefense implements ModInitializer {
 	public static final String MOD_ID = "airdefense";
@@ -24,6 +25,7 @@ public class AirDefense implements ModInitializer {
 		ModSounds.init();
 		ModParticles.init();
 		PayloadTypeRegistry.clientboundPlay().register(FxPayload.TYPE, FxPayload.CODEC);
+		VehicleActionPayload.register();
 		ModEntities.init();
 		ModBlocks.init();
 		ModBlockEntities.init();
