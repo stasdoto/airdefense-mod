@@ -5,8 +5,6 @@ import java.util.List;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
@@ -27,8 +25,6 @@ import com.stasdoto.airdefense.registry.ModSounds;
 
 /** The radar + fire control: finds incoming threats, keeps the siren going and fires at them. */
 public class DefenseBlockEntity extends BlockEntity {
-	private static final DustParticleOptions TRACER = new DustParticleOptions(0xFFFFA030, 1.3f);
-
 	private boolean enabled = true;
 	private int ammo = -1;
 	private int reloadTimer;
@@ -149,25 +145,11 @@ public class DefenseBlockEntity extends BlockEntity {
 		for (int round = 0; round < 6; round++) {
 			boolean hit = r.nextDouble() < baseChance;
 			Vec3 end = hit ? aim : aim.add(r.nextGaussian() * 2.5, r.nextGaussian() * 2.5, r.nextGaussian() * 2.5);
-			tracer(level, muzzle, end, r);
+			Effects.tracer(level, muzzle.add(r.nextGaussian() * 0.2, 0, r.nextGaussian() * 0.2), end);
 			if (hit && target.isAlive()) {
 				target.hurtServer(level, level.damageSources().generic(), 1.5f);
 			}
 		}
-		Effects.send(level, ParticleTypes.FLAME, muzzle, 4, 0.2, 0.05);
-		Effects.send(level, ParticleTypes.SMOKE, muzzle, 6, 0.3, 0.02);
-	}
-
-	private static void tracer(ServerLevel level, Vec3 from, Vec3 to, RandomSource r) {
-		Vec3 d = to.subtract(from);
-		double len = d.length();
-		int points = (int) Math.min(40, len / 2.5);
-		double offset = r.nextDouble();
-		for (int i = 1; i <= points; i++) {
-			Vec3 p = from.add(d.scale((i - offset) / points));
-			level.sendParticles(TRACER, true, true, p.x, p.y, p.z, 1, 0, 0, 0, 0);
-		}
-		level.sendParticles(ParticleTypes.SMOKE, true, true, to.x, to.y, to.z, 2, 0.3, 0.3, 0.3, 0.01);
 	}
 
 	public void toggle() {

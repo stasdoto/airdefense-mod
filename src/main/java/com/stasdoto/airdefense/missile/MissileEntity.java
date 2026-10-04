@@ -5,7 +5,6 @@ import java.util.List;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -36,6 +35,7 @@ import net.minecraft.world.phys.Vec3;
 
 import com.stasdoto.airdefense.AirDefense;
 import com.stasdoto.airdefense.registry.ModEntities;
+import com.stasdoto.airdefense.registry.ModParticles;
 
 /**
  * One entity class for every missile, rocket, drone and interceptor. The {@link MissileType} decides how it flies.
@@ -322,8 +322,8 @@ public class MissileEntity extends Entity {
 		double d = Math.sqrt(Mth.square(target.x - from.x) + Mth.square(target.z - from.z));
 		MissileType type = getMissileType();
 		arcApex = type.kind == MissileType.Kind.BALLISTIC
-				? Mth.clamp(d * 0.45, 45, 280)
-				: Mth.clamp(d * 0.28, 22, 170);
+				? Mth.clamp(d * 0.6, 90, 450)
+				: Mth.clamp(d * 0.35, 30, 220);
 	}
 
 	private Vec3 arcPoint(double s) {
@@ -362,7 +362,7 @@ public class MissileEntity extends Entity {
 			// Overshoot slightly so the block ray-cast definitely finds the ground at the aim point.
 			v = v.add(v.normalize().scale(2.0));
 		}
-		setMotor(type.kind == MissileType.Kind.ROCKET ? arcS < 0.25 : arcS < 0.35);
+		setMotor(type.kind == MissileType.Kind.ROCKET ? arcS < 0.25 : arcS < 0.5);
 		return v;
 	}
 
@@ -594,66 +594,51 @@ public class MissileEntity extends Entity {
 			dir = new Vec3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
 		}
 		Vec3 nozzle = cur.subtract(dir.scale(1.5 * type.renderScale));
-		int steps = Math.max(1, (int) Math.ceil(len / 0.6));
 		boolean motor = isMotorOn();
+		boolean boosting = tickCount < 30;
 
+		// Contrail: one soft puff every ~0.5 block, they grow and merge into a continuous trail that hangs in the sky.
+		double spacing = 0.5;
+		int steps = Math.max(1, (int) Math.ceil(len / spacing));
 		switch (type.trail) {
-			case HEAVY -> {
+			case HEAVY, WHITE, MEDIUM -> {
 				if (motor) {
+					var smoke = type.trail == MissileType.Trail.MEDIUM ? ModParticles.TRAIL_DARK : ModParticles.TRAIL;
 					for (int i = 0; i < steps; i++) {
 						Vec3 p = nozzle.subtract(seg.scale((double) i / steps));
-						particle(level, ParticleTypes.FLAME, p, dir.scale(-0.25), 0.2);
-						particle(level, ParticleTypes.FLAME, p, dir.scale(-0.35), 0.2);
-						particle(level, ParticleTypes.LARGE_SMOKE, p, dir.scale(-0.05), 0.35);
-						particle(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, p, Vec3.ZERO, 0.4);
+						particle(level, smoke, p, dir.scale(-0.04), 0.12);
 					}
-				} else if (tickCount % 2 == 0) {
-					particle(level, ParticleTypes.SMOKE, nozzle, Vec3.ZERO, 0.1);
-				}
-			}
-			case MEDIUM -> {
-				if (motor) {
-					for (int i = 0; i < steps; i++) {
-						Vec3 p = nozzle.subtract(seg.scale((double) i / steps));
-						particle(level, ParticleTypes.FLAME, p, dir.scale(-0.2), 0.1);
-						particle(level, ParticleTypes.LARGE_SMOKE, p, Vec3.ZERO, 0.15);
-						if (i % 3 == 0) {
-							particle(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, p, Vec3.ZERO, 0.2);
-						}
-					}
-				} else {
-					particle(level, ParticleTypes.SMOKE, nozzle, Vec3.ZERO, 0.05);
-				}
-			}
-			case WHITE -> {
-				if (motor) {
-					particle(level, ParticleTypes.FLAME, nozzle, dir.scale(-0.3), 0.05);
-					for (int i = 0; i < steps; i++) {
-						Vec3 p = nozzle.subtract(seg.scale((double) i / steps));
-						particle(level, ParticleTypes.CLOUD, p, Vec3.ZERO, 0.1);
-						particle(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, p, Vec3.ZERO, 0.15);
-					}
+					exhaust(level, nozzle, dir, type.trail == MissileType.Trail.HEAVY ? 3 : 2);
 				}
 			}
 			case JET -> {
-				particle(level, ParticleTypes.SMALL_FLAME, nozzle, dir.scale(-0.1), 0.02);
-				if (tickCount % 2 == 0) {
-					particle(level, ParticleTypes.SMOKE, nozzle, Vec3.ZERO, 0.05);
-				}
-				if (motor && tickCount < 30) {
+				if (motor && boosting) {
 					for (int i = 0; i < steps; i++) {
-						particle(level, ParticleTypes.LARGE_SMOKE, nozzle.subtract(seg.scale((double) i / steps)), Vec3.ZERO, 0.2);
+						particle(level, ModParticles.TRAIL_DARK, nozzle.subtract(seg.scale((double) i / steps)), Vec3.ZERO, 0.1);
+					}
+					exhaust(level, nozzle, dir, 2);
+				} else {
+					// Turbojet: almost invisible, just a faint hot glow and a thin haze.
+					exhaust(level, nozzle, dir, 1);
+					if (tickCount % 3 == 0) {
+						particle(level, ModParticles.DEBRIS_SMOKE, nozzle, Vec3.ZERO, 0.05);
 					}
 				}
 			}
 			case NONE -> {
-				if (motor && tickCount < 25) {
-					particle(level, ParticleTypes.FLAME, nozzle, dir.scale(-0.2), 0.05);
-					particle(level, ParticleTypes.LARGE_SMOKE, nozzle, Vec3.ZERO, 0.1);
-				} else if (tickCount % 6 == 0) {
-					particle(level, ParticleTypes.SMOKE, nozzle, Vec3.ZERO, 0.02);
+				if (motor && boosting) {
+					for (int i = 0; i < steps; i++) {
+						particle(level, ModParticles.TRAIL_DARK, nozzle.subtract(seg.scale((double) i / steps)), Vec3.ZERO, 0.1);
+					}
+					exhaust(level, nozzle, dir, 2);
 				}
 			}
+		}
+	}
+
+	private void exhaust(Level level, Vec3 nozzle, Vec3 dir, int count) {
+		for (int i = 0; i < count; i++) {
+			particle(level, ModParticles.EXHAUST, nozzle.subtract(dir.scale(i * 0.35)), dir.scale(-0.15), 0.05);
 		}
 	}
 

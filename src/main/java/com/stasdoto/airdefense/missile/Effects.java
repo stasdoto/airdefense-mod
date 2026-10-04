@@ -1,15 +1,14 @@
 package com.stasdoto.airdefense.missile;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.BlockParticleOption;
-import net.minecraft.core.particles.ColorParticleOption;
-import net.minecraft.core.particles.ParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.Holder;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
+import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.level.Level;
@@ -17,9 +16,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
+import com.stasdoto.airdefense.fx.Fx;
+import com.stasdoto.airdefense.fx.FxPayload;
+import com.stasdoto.airdefense.registry.ModParticles;
 import com.stasdoto.airdefense.registry.ModSounds;
 
-/** Explosions: crater, flying debris, fireball, smoke column, shock wave and sound that carries far. */
+/**
+ * Explosions: crater, flying debris, shock wave and sound that carries far. The visuals (fireball, smoke column,
+ * dust ring, burning fragments) are drawn by each client from one {@link FxPayload} message.
+ */
 public final class Effects {
 	private Effects() {
 	}
@@ -28,7 +33,6 @@ public final class Effects {
 	public static void groundImpact(ServerLevel level, Entity source, Vec3 at, MissileType type) {
 		RandomSource r = level.getRandom();
 		float power = type.power;
-		BlockState ground = level.getBlockState(BlockPos.containing(at.x, at.y - 0.5, at.z));
 
 		// Debris thrown out of the crater before the blast removes the blocks.
 		int wanted = (int) (power * 2.2f);
@@ -56,29 +60,10 @@ public final class Effects {
 			spawned++;
 		}
 
-		level.explode(source, at.x, at.y, at.z, power, type.fire, Level.ExplosionInteraction.TNT);
-
-		double radius = power * 0.9;
-		// Flash and fireball.
-		send(level, ColorParticleOption.create(ParticleTypes.FLASH, 0xFFFFD27A), at, 3, radius * 0.3, 0);
-		send(level, ParticleTypes.EXPLOSION_EMITTER, at, (int) Math.max(2, power / 2), radius * 0.4, 0);
-		send(level, ParticleTypes.EXPLOSION, at, (int) (power * 6), radius * 0.6, 0.1);
-		send(level, ParticleTypes.FLAME, at.add(0, 1, 0), (int) (power * 30), radius * 0.35, 0.35);
-		send(level, ParticleTypes.LAVA, at, (int) (power * 8), radius * 0.3, 0.6);
-		// Dirt/stone thrown up.
-		if (!ground.isAir()) {
-			send(level, new BlockParticleOption(ParticleTypes.BLOCK, ground), at, (int) (power * 40), radius * 0.4, 0.6);
-			send(level, new BlockParticleOption(ParticleTypes.DUST_PILLAR, ground), at, (int) (power * 12), radius * 0.5, 0.4);
-		}
-		// Smoke: a wide low cloud plus a tall column that hangs in the air for a long time.
-		send(level, ParticleTypes.LARGE_SMOKE, at.add(0, 1, 0), (int) (power * 45), radius * 0.7, 0.15);
-		send(level, ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, at.add(0, 1, 0), (int) (power * 10), radius * 0.35, 0.05);
-		send(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, at.add(0, 2, 0), (int) (power * 14), radius * 0.6, 0.04);
-
+		explode(level, source, at, power, type.fire, Level.ExplosionInteraction.TNT,
+				power >= 6 ? ModSounds.EXPLOSION_HUGE : ModSounds.EXPLOSION_BIG);
+		Fx.send(level, FxPayload.GROUND_IMPACT, at, power, new Vec3(0, 1, 0));
 		shockWave(level, source, at, power * 3.5, power * 1.1, 1.4);
-
-		level.playSound(null, at.x, at.y, at.z, power >= 6 ? ModSounds.EXPLOSION_HUGE : ModSounds.EXPLOSION_BIG,
-				SoundSource.BLOCKS, power >= 6 ? 4.0f : 3.0f, 0.9f + r.nextFloat() * 0.2f);
 		level.playSound(null, at.x, at.y, at.z, ModSounds.EXPLOSION_FAR, SoundSource.BLOCKS, 6.0f, 0.85f + r.nextFloat() * 0.15f);
 	}
 
@@ -87,33 +72,35 @@ public final class Effects {
 		RandomSource r = level.getRandom();
 		// A shot-down attack missile still detonates its own warhead, so it is much bigger than an interceptor.
 		float size = type.threat ? Math.max(2.5f, type.power * 0.6f) : type.power;
-
-		send(level, ColorParticleOption.create(ParticleTypes.FLASH, 0xFFFFE6A8), at, 2, 0.5, 0);
-		send(level, ParticleTypes.EXPLOSION_EMITTER, at, type.threat ? 2 : 1, size * 0.2, 0);
-		send(level, ParticleTypes.EXPLOSION, at, (int) (size * 6), size * 0.6, 0.1);
-		send(level, ParticleTypes.FLAME, at, (int) (size * 18), size * 0.3, 0.3);
-		// Burning fragments falling down.
-		send(level, ParticleTypes.LAVA, at, (int) (size * 10), size * 0.4, 0.5);
-		send(level, ParticleTypes.LARGE_SMOKE, at, (int) (size * 25), size * 0.6, 0.08);
-		send(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, at, (int) (size * 10), size * 0.5, 0.02);
-
 		// Fragmentation hurts what's close, but an air burst does not dig into the ground.
-		level.explode(source, at.x, at.y, at.z, Math.min(size, 3.0f), false, Level.ExplosionInteraction.NONE);
+		explode(level, source, at, Math.min(size, 3.0f), false, Level.ExplosionInteraction.NONE, ModSounds.EXPLOSION_AIR);
+		Fx.send(level, type.threat ? FxPayload.AIR_BURST_THREAT : FxPayload.AIR_BURST_INTERCEPTOR, at, size, Vec3.ZERO);
 		shockWave(level, source, at, size * 2.5, 0, 0.6);
-
-		level.playSound(null, at.x, at.y, at.z, ModSounds.EXPLOSION_AIR, SoundSource.BLOCKS, 3.5f, 0.95f + r.nextFloat() * 0.15f);
 		if (type.threat) {
-			level.playSound(null, at.x, at.y, at.z, ModSounds.EXPLOSION_FAR, SoundSource.BLOCKS, 5.0f, 1.0f);
+			level.playSound(null, at.x, at.y, at.z, ModSounds.EXPLOSION_FAR, SoundSource.BLOCKS, 5.0f, 1.0f + r.nextFloat() * 0.1f);
 		}
 	}
 
-	/** Launch blast: smoke and flame around the launcher. */
+	/** Launch blast: a smoke cloud rolling out around the launcher. */
 	public static void launchBlast(ServerLevel level, Vec3 at, MissileType type) {
-		double s = type.kind == MissileType.Kind.BALLISTIC ? 1.6 : 1.0;
-		send(level, ParticleTypes.FLAME, at, (int) (25 * s), 0.6 * s, 0.12);
-		send(level, ParticleTypes.LARGE_SMOKE, at, (int) (40 * s), 1.4 * s, 0.08);
-		send(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, at, (int) (18 * s), 1.6 * s, 0.03);
-		send(level, ParticleTypes.CLOUD, at, (int) (20 * s), 1.8 * s, 0.12);
+		float size = switch (type.kind) {
+			case BALLISTIC -> 3.0f;
+			case ROCKET, CRUISE -> 2.0f;
+			default -> type == MissileType.STINGER ? 0.5f : 1.3f;
+		};
+		Fx.send(level, FxPayload.LAUNCH, at, size, Vec3.ZERO);
+	}
+
+	/** One glowing tracer round from {@code from} to {@code to} (Gepard). */
+	public static void tracer(ServerLevel level, Vec3 from, Vec3 to) {
+		Fx.send(level, FxPayload.TRACER, from, 0, to);
+	}
+
+	/** A real explosion (damage, blocks, knockback) without Minecraft's own pixel puffs: our flash replaces them. */
+	private static void explode(ServerLevel level, Entity source, Vec3 at, float power, boolean fire,
+			Level.ExplosionInteraction interaction, SoundEvent sound) {
+		level.explode(source, null, null, at.x, at.y, at.z, power, fire, interaction,
+				ModParticles.FLASH, ModParticles.FLASH, WeightedList.of(), Holder.direct(sound));
 	}
 
 	private static void shockWave(ServerLevel level, Entity source, Vec3 at, double outer, double inner, double strength) {
@@ -134,9 +121,5 @@ public final class Effects {
 				player.connection.send(new ClientboundSetEntityMotionPacket(player));
 			}
 		}
-	}
-
-	public static void send(ServerLevel level, ParticleOptions particle, Vec3 at, int count, double spread, double speed) {
-		level.sendParticles(particle, true, true, at.x, at.y, at.z, count, spread, spread, spread, speed);
 	}
 }

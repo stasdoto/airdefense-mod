@@ -45,7 +45,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			unopposedIskander(ctx, server);
 			patriotVsIskander(ctx, server);
 			droneSwarm(ctx, server);
+			server.runCommand("time set 13800");
 			himarsVsNasams(ctx, server);
+			server.runCommand("time set 1000");
 			cruiseVsIrisT(ctx, server);
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
