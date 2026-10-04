@@ -497,18 +497,28 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		int[] before = counters();
 		strike(server, launcher, target);
 		boolean gun = adType == VehicleType.GEPARD;
-		ctx.getInput().holdMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
-		for (int i = 0; i < 520; i++) {
-			float[] look = ctx.computeOnClient(mc -> aimAtThreat(mc, gun ? 75 : 150, gun));
+		boolean holding = false;
+		for (int i = 0; i < 640; i++) {
+			// A gunner keeps the sight on the nearest threat and holds the trigger only while one is in reach.
+			float[] look = ctx.computeOnClient(mc -> aimAtThreat(mc, gun ? 62 : 135, gun));
 			if (look != null) {
 				ctx.getInput().lookAt(look[0], look[1]);
+			}
+			if (look != null && !holding) {
+				ctx.getInput().holdMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
+				holding = true;
+			} else if (look == null && holding) {
+				ctx.getInput().releaseMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
+				holding = false;
 			}
 			ctx.waitTick();
 			if (i == 300 || i == 360 || i == 420) {
 				ctx.takeScreenshot("7" + (gun ? "0" : "5") + "_" + scene + "_" + i);
 			}
 		}
-		ctx.getInput().releaseMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
+		if (holding) {
+			ctx.getInput().releaseMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
+		}
 		ctx.waitTicks(60);
 		report(scene, before);
 		server.runOnServer(s -> {

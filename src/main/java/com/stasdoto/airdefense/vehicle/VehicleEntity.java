@@ -191,6 +191,8 @@ public class VehicleEntity extends LivingEntity {
 		v.setAmmo(type.magazine());
 		v.fold();
 		level.addFreshEntity(v);
+		// From the first moment on, its ground stays loaded (even if the player walks off right away).
+		level.getChunkSource().addTicketWithRadius(ModTickets.VEHICLE, ChunkPos.containing(v.blockPosition()), 2);
 		return v;
 	}
 
@@ -696,7 +698,7 @@ public class VehicleEntity extends LivingEntity {
 		if (marchTicks > 0) {
 			marchTicks--;
 		}
-		if ((tickCount + getId()) % 20 == 0) {
+		if (tickCount <= 1 || (tickCount + getId()) % 20 == 0) {
 			// Keeps its own ground loaded and running: visible and controllable on the tablet map from anywhere,
 			// air defence keeps guarding while the player is far away.
 			level.getChunkSource().addTicketWithRadius(ModTickets.VEHICLE, ChunkPos.containing(blockPosition()), 2);
