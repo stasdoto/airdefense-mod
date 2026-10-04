@@ -70,7 +70,14 @@ public class WorkerEntity extends PathfinderMob {
 	private static final EntityDataAccessor<Integer> DATA_LOOK = SynchedEntityData.defineId(WorkerEntity.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<String> DATA_OUTFIT = SynchedEntityData.defineId(WorkerEntity.class, EntityDataSerializers.STRING);
 
+	/** Debug counters read by the automated test: trips started, work done, loads delivered. */
+	public static int trips;
+	public static int works;
+	public static int deliveries;
+
 	private int home = -1;
+	/** Debug: what he is doing (for the test log). */
+	public String debug = "";
 	/** The villager he was, kept whole (trades, experience, gossip, his bed and workplace). */
 	@Nullable
 	private CompoundTag villager;
@@ -419,7 +426,9 @@ public class WorkerEntity extends PathfinderMob {
 		private void gather(ServerLevel level, Settlement s) {
 			switch (state) {
 				case FIND -> {
+					trips++;
 					spot = Economy.workSpot(level, s, w.job(), w.getRandom());
+					w.debug = "go " + (spot == null ? "-" : spot.toShortString());
 					spotState = spot == null ? Blocks.AIR.defaultBlockState() : level.getBlockState(spot);
 					state = GO;
 					timer = 0;
@@ -435,6 +444,8 @@ public class WorkerEntity extends PathfinderMob {
 					if (w.distanceToSqr(to) < 3.2 * 3.2) {
 						w.getNavigation().stop();
 						state = WORK;
+						works++;
+						w.debug = "work " + spot.toShortString();
 						timer = 140 + w.getRandom().nextInt(80);
 						return;
 					}
@@ -476,6 +487,8 @@ public class WorkerEntity extends PathfinderMob {
 					if (w.distanceToSqr(to) < 3.5 * 3.5 || timer > 1200) {
 						w.getNavigation().stop();
 						Economy.deposit(level, s, w.job(), w.carry);
+						deliveries++;
+						w.debug = "delivered";
 						w.carry = 0;
 						w.setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
 						w.swing(InteractionHand.OFF_HAND, SwingAnimation.DEFAULT, false);

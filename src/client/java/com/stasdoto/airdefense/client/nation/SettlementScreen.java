@@ -417,7 +417,7 @@ public class SettlementScreen extends Screen {
 				name = Component.translatable("screen.airdefense.village.built_count", name, n);
 			}
 			g.text(font, name, x, y + 3, C_TEXT);
-			if (t == BuildingType.ROADS) {
+			if (t == BuildingType.ROADS && !eco.free()) {
 				small(g, Component.translatable("screen.airdefense.village.roads_cost").getString(), x0 + 128, y + 4, C_DIM);
 			} else {
 				cost(g, x0 + 128, y + 1, t.wood, t.stone, t.iron);

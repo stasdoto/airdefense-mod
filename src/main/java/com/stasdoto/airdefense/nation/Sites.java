@@ -1,7 +1,9 @@
 package com.stasdoto.airdefense.nation;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -13,6 +15,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
+import com.stasdoto.airdefense.AirDefense;
 import com.stasdoto.airdefense.factory.FactoryBlueprint;
 
 /**
@@ -20,17 +23,28 @@ import com.stasdoto.airdefense.factory.FactoryBlueprint;
  * fields, paths or water on it, nothing anybody built), with its door looking towards the village square.
  */
 public final class Sites {
+	/** Debug: why the last search failed (for the log and the tests). */
+	public static String lastReport = "";
+
 	private Sites() {
+	}
+
+	/** What we know about one column of the ground (worked out once per search). */
+	private record Column(int ground, boolean natural, int clear) {
 	}
 
 	/** A place for the building, or null if the village has no room for it. */
 	@Nullable
 	public static Building find(ServerLevel level, Politics p, Settlement s, BuildingType type, int id, boolean free) {
+		long t0 = System.nanoTime();
+		Map<Long, Column> columns = new HashMap<>();
+		int[] reasons = new int[5];
 		BlockPos c = s.center;
 		int start = 9 + Math.max(type.width, type.depth) / 2;
 		int end = Settlement.RADIUS + 8;
 		// Start each ring at an angle of its own for this village, so buildings spread around the square.
 		double phase = (s.id * 2.3999632) % (Math.PI * 2);
+		int tried = 0;
 		for (int r = start; r <= end; r += 2) {
 			int steps = Math.max(8, (int) (Math.PI * 2 * r / 5));
 			for (int i = 0; i < steps; i++) {
@@ -40,17 +54,24 @@ public final class Sites {
 				int dx = x - c.getX();
 				int dz = z - c.getZ();
 				Direction facing = Math.abs(dx) >= Math.abs(dz) ? (dx > 0 ? Direction.EAST : Direction.WEST) : (dz > 0 ? Direction.SOUTH : Direction.NORTH);
-				Building b = check(level, p, s, type, id, new BlockPos(x, c.getY(), z), facing, free);
+				tried++;
+				Building b = check(level, p, type, id, new BlockPos(x, c.getY(), z), facing, free, columns, reasons);
 				if (b != null) {
+					lastReport = String.format("%s: found after %d tries, %d ms", type.id, tried, (System.nanoTime() - t0) / 1_000_000);
+					AirDefense.LOGGER.info("[airdefense] site {}", lastReport);
 					return b;
 				}
 			}
 		}
+		lastReport = String.format("%s: none in %d tries, %d ms (overlap %d, unloaded %d, slope %d, ground %d, blocked %d)", type.id, tried,
+				(System.nanoTime() - t0) / 1_000_000, reasons[0], reasons[1], reasons[2], reasons[3], reasons[4]);
+		AirDefense.LOGGER.info("[airdefense] site {}", lastReport);
 		return null;
 	}
 
 	@Nullable
-	private static Building check(ServerLevel level, Politics p, Settlement s, BuildingType type, int id, BlockPos at, Direction facing, boolean free) {
+	private static Building check(ServerLevel level, Politics p, BuildingType type, int id, BlockPos at, Direction facing, boolean free,
+			Map<Long, Column> columns, int[] reasons) {
 		Building probe = new Building(id, type, at, facing, free);
 		int hw = type.halfWidth();
 		int front = type == BuildingType.FACTORY ? 4 : 2;
@@ -69,6 +90,7 @@ public final class Sites {
 					for (int lz = -front - 2; lz <= depth + 1; lz += 2) {
 						BlockPos q = probe.at(lx, 0, lz);
 						if (b.covers(q.getX(), q.getZ(), 2)) {
+							reasons[0]++;
 							return null;
 						}
 					}
@@ -80,48 +102,77 @@ public final class Sites {
 		int max = Integer.MIN_VALUE;
 		long sum = 0;
 		int n = 0;
-		int[][] ground = new int[2 * hw + 3][depth + front + 2];
+		Column[][] cols = new Column[2 * hw + 3][depth + front + 1];
 		for (int lx = -hw - 1; lx <= hw + 1; lx++) {
 			for (int lz = -front; lz <= depth; lz++) {
 				BlockPos q = probe.at(lx, 0, lz);
-				if (!level.isLoaded(q)) {
+				Column col = column(level, q.getX(), q.getZ(), columns);
+				if (col == null) {
+					reasons[1]++;
 					return null;
 				}
-				int gy = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, q.getX(), q.getZ()) - 1;
-				ground[lx + hw + 1][lz + front] = gy;
+				cols[lx + hw + 1][lz + front] = col;
 				if (lz >= 0) {
-					min = Math.min(min, gy);
-					max = Math.max(max, gy);
-					sum += gy;
+					min = Math.min(min, col.ground);
+					max = Math.max(max, col.ground);
+					sum += col.ground;
 					n++;
 				}
 			}
 		}
 		if (max - min > 3) {
+			reasons[2]++;
 			return null;
 		}
 		int floor = (int) Math.round((double) sum / n);
 		for (int lx = -hw - 1; lx <= hw + 1; lx++) {
 			for (int lz = -front; lz <= depth; lz++) {
-				int gy = ground[lx + hw + 1][lz + front];
-				if (lz < 0 && Math.abs(gy - floor) > 2) {
+				Column col = cols[lx + hw + 1][lz + front];
+				if (lz < 0 && Math.abs(col.ground - floor) > 2) {
+					reasons[2]++;
 					return null;
 				}
-				BlockPos q = probe.at(lx, 0, lz);
-				BlockState top = level.getBlockState(new BlockPos(q.getX(), gy, q.getZ()));
-				if (!naturalGround(top) || !level.getFluidState(new BlockPos(q.getX(), gy + 1, q.getZ())).isEmpty()) {
+				if (!col.natural) {
+					reasons[3]++;
 					return null;
 				}
-				for (int y = gy + 1; y <= floor + height; y++) {
-					BlockPos b = new BlockPos(q.getX(), y, q.getZ());
-					BlockState st = level.getBlockState(b);
-					if (!clearable(level, b, st)) {
-						return null;
-					}
+				if (col.ground + col.clear < floor + height) {
+					reasons[4]++;
+					return null;
 				}
 			}
 		}
 		return new Building(id, type, new BlockPos(at.getX(), floor, at.getZ()), facing, free);
+	}
+
+	/** The ground of one column: how high, whether it is natural, and how many free (or clearable) blocks are above it. */
+	@Nullable
+	private static Column column(ServerLevel level, int x, int z, Map<Long, Column> cache) {
+		long key = BlockPos.asLong(x, 0, z);
+		Column col = cache.get(key);
+		if (col != null || cache.containsKey(key)) {
+			return col;
+		}
+		BlockPos probe = new BlockPos(x, 64, z);
+		if (!level.isLoaded(probe)) {
+			cache.put(key, null);
+			return null;
+		}
+		int gy = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+		BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos(x, gy, z);
+		BlockState top = level.getBlockState(m);
+		boolean natural = naturalGround(top) && level.getFluidState(m.setY(gy + 1)).isEmpty();
+		int clear = 0;
+		for (int y = gy + 1; y <= gy + 32; y++) {
+			m.setY(y);
+			if (!clearable(level, m, level.getBlockState(m))) {
+				break;
+			}
+			clear++;
+		}
+		col = new Column(gy, natural, clear);
+		cache.put(key, col);
+		return col;
 	}
 
 	/** Ground the village may build on: soil, sand, rock - not paths, fields or anything laid by hand. */
@@ -129,17 +180,18 @@ public final class Sites {
 		if (s.is(Blocks.DIRT_PATH) || s.is(Blocks.FARMLAND) || s.hasBlockEntity()) {
 			return false;
 		}
-		return s.is(BlockTags.DIRT) || s.is(BlockTags.SAND) || s.is(BlockTags.BASE_STONE_OVERWORLD) || s.is(BlockTags.TERRACOTTA)
+		return s.is(BlockTags.SUBSTRATE_OVERWORLD) || s.is(BlockTags.SAND) || s.is(BlockTags.BASE_STONE_OVERWORLD) || s.is(BlockTags.TERRACOTTA)
 				|| s.is(Blocks.GRAVEL) || s.is(Blocks.SNOW_BLOCK) || s.is(Blocks.CLAY) || s.is(Blocks.SANDSTONE) || s.is(Blocks.RED_SANDSTONE)
-				|| s.is(Blocks.PACKED_ICE) || s.is(Blocks.MUD);
+				|| s.is(Blocks.PACKED_ICE) || s.is(Blocks.MUD) || s.is(Blocks.GRASS_BLOCK) || s.is(Blocks.DIRT) || s.is(Blocks.PODZOL)
+				|| s.is(Blocks.COARSE_DIRT) || s.is(Blocks.MYCELIUM);
 	}
 
 	/** What may stand where the building goes: air, grass and flowers, snow, and trees (not timber anybody built with). */
 	static boolean clearable(ServerLevel level, BlockPos pos, BlockState s) {
-		if (s.isAir() || s.hasBlockEntity()) {
-			return s.isAir();
+		if (s.isAir()) {
+			return true;
 		}
-		if (!s.getFluidState().isEmpty()) {
+		if (s.hasBlockEntity() || !s.getFluidState().isEmpty()) {
 			return false;
 		}
 		if (s.canBeReplaced() || s.is(BlockTags.LEAVES) || s.is(BlockTags.FLOWERS) || s.is(BlockTags.SAPLINGS) || s.is(BlockTags.REPLACEABLE_BY_TREES)

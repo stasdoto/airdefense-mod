@@ -1285,9 +1285,10 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.takeScreenshot("110c_build_tab");
 		AirDefense.LOGGER.info("[airdefense-test] RESULT house_paid: wood {} -> {}, stone {} -> {}", stock[0], paid[0], stock[1], paid[1]);
 		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		AirDefense.LOGGER.info("[airdefense-test] site search: {}", com.stasdoto.airdefense.nation.Sites.lastReport);
 		BlockPos house = server.computeOnServer(s -> {
 			var st = com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id);
-			return st.eco.buildings.isEmpty() ? BlockPos.ZERO : st.eco.buildings.getFirst().middle();
+			return st.eco.buildings.isEmpty() ? st.center : st.eco.buildings.getFirst().middle();
 		});
 		server.runCommand("gamemode spectator @a");
 		camera(server, house.getX() + 10.5, g + 7, house.getZ() + 10.5, 135, 22);
@@ -1307,6 +1308,16 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.takeScreenshot("112_small_house");
 		AirDefense.LOGGER.info("[airdefense-test] RESULT small_house: {}% after {} ticks, delivered {}", buildingPercent(server, id, 0), t0,
 				com.stasdoto.airdefense.nation.Economy.delivered);
+		String states = server.computeOnServer(s -> {
+			StringBuilder sb = new StringBuilder();
+			for (var w : com.stasdoto.airdefense.nation.Economy.workers(s.overworld(), com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(id))) {
+				sb.append(w.job()).append(':').append(w.debug).append(" at ").append(w.blockPosition().getX() - x).append(',')
+						.append(w.blockPosition().getZ()).append("; ");
+			}
+			return sb.toString();
+		});
+		AirDefense.LOGGER.info("[airdefense-test] workers: trips {} works {} deliveries {} | {}", com.stasdoto.airdefense.nation.WorkerEntity.trips,
+				com.stasdoto.airdefense.nation.WorkerEntity.works, com.stasdoto.airdefense.nation.WorkerEntity.deliveries, states);
 		// The gatherers at work.
 		camera(server, x - 22.5, g + 6, -24.5, 160, 20);
 		ctx.waitTicks(30);
