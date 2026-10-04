@@ -1533,6 +1533,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runCommand("give @a minecraft:bread 16");
 		camera(server, x + 0.5, g, 6.5, 180, 0);
 		ctx.waitTicks(5);
+		// The bread is in the first slot: hold it (earlier scenes may have left another slot selected).
+		selectSlot(ctx, 0);
 		server.runOnServer(s -> {
 			var p = com.stasdoto.airdefense.nation.Politics.get(s);
 			com.stasdoto.airdefense.nation.Nations.takeOver(s.overworld(), s.getPlayerList().getPlayers().getFirst(), p.settlements.get(id));
