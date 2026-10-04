@@ -34,7 +34,9 @@ public class HumanVillagerRenderer extends HumanoidMobRenderer<Villager, AvatarR
 		VillagerData d = v.getVillagerData();
 		String profession = d.profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("none");
 		String type = d.type().unwrapKey().map(k -> k.identifier().getPath()).orElse("plains");
-		s.setData(SoldierRenderer.SKIN, SkinBaker.villager(Nations.lookOf(v.getUUID()), profession, type));
+		Identifier skin = SkinBaker.villager(Nations.lookOf(v.getUUID()), profession, type);
+		s.setData(SoldierRenderer.SKIN, skin);
+		s.skin = SkinBaker.skin(skin);
 	}
 
 	@Override

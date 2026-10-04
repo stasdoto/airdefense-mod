@@ -21,6 +21,7 @@ import com.stasdoto.airdefense.nation.SoldierEntity;
  */
 public final class SkinBaker {
 	private static final Map<Long, Identifier> CACHE = new HashMap<>();
+	private static final Map<Identifier, net.minecraft.world.entity.player.PlayerSkin> SKINS = new HashMap<>();
 
 	/** From very light to very dark, in roughly even steps. */
 	static final int[] SKIN = {0xFFF6DCC8, 0xFFEFC9AE, 0xFFE3B595, 0xFFD5A07E, 0xFFC48A66, 0xFFAE7451, 0xFF955F3E, 0xFF7B4A2E,
@@ -54,6 +55,18 @@ public final class SkinBaker {
 			Person p = Person.of(look);
 			paintPerson(img, p);
 			villagerClothes(img, p, profession, type, look);
+		});
+	}
+
+	/**
+	 * The texture as a player skin: the player model draws its body from the render state's skin, so the people's
+	 * render states carry this one (otherwise they would all look like the default player).
+	 */
+	public static net.minecraft.world.entity.player.PlayerSkin skin(Identifier texture) {
+		return SKINS.computeIfAbsent(texture, id -> {
+			net.minecraft.core.ClientAsset.ResourceTexture body = new net.minecraft.core.ClientAsset.ResourceTexture(id, id);
+			return net.minecraft.world.entity.player.PlayerSkin.insecure(body, null, null,
+					net.minecraft.world.entity.player.PlayerModelType.WIDE);
 		});
 	}
 

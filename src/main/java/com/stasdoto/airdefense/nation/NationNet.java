@@ -91,6 +91,7 @@ public final class NationNet {
 		Politics p = Politics.get(level.getServer());
 		Country c = p.country(s.country);
 		boolean mine = c != null && player.getUUID().equals(c.owner);
+		s.population = Nations.villagers(level, s).size();
 		Component problem = Nations.charterProblem(level, p, s, player);
 		String elder = "";
 		if (s.elder != null && level.getEntity(s.elder) instanceof Villager v && v.getCustomName() != null) {

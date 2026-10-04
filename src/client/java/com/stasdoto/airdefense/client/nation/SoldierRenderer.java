@@ -33,7 +33,9 @@ public class SoldierRenderer extends HumanoidMobRenderer<SoldierEntity, AvatarRe
 	@Override
 	public void extractRenderState(SoldierEntity e, AvatarRenderState s, float partialTick) {
 		super.extractRenderState(e, s, partialTick);
-		s.setData(SKIN, SkinBaker.soldier(e.look(), e.role(), e.color()));
+		Identifier skin = SkinBaker.soldier(e.look(), e.role(), e.color());
+		s.setData(SKIN, skin);
+		s.skin = SkinBaker.skin(skin);
 	}
 
 	@Override

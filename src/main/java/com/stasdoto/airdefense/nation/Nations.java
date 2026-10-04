@@ -336,6 +336,7 @@ public final class Nations {
 
 	public static boolean buyCharter(ServerLevel level, ServerPlayer player, Settlement s) {
 		Politics p = Politics.get(level.getServer());
+		s.population = villagers(level, s).size();
 		Component problem = charterProblem(level, p, s, player);
 		if (problem != null) {
 			player.sendOverlayMessage(problem);
