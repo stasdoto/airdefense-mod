@@ -85,7 +85,7 @@ public class DefenseBlockEntity extends BlockEntity {
 		}
 		MissileEntity target = threats.stream()
 				.filter(m -> type == DefenseType.GEPARD || m.getEngagedBy() < type.shotsPerTarget(m.getMissileType().kind))
-				.filter(m -> m.getY() > level.getMinY() && !isAboutToLeave(m, radar, range))
+				.filter(m -> m.getY() > level.getMinY() && !isAboutToLeave(m, radar, range) && worthEngagingNow(m, radar, range))
 				.min(Comparator.comparingDouble((MissileEntity m) -> type.priority(m.getMissileType().kind) * 1e6 + m.distanceToSqr(radar)))
 				.orElse(null);
 		if (target == null) {
@@ -102,6 +102,18 @@ public class DefenseBlockEntity extends BlockEntity {
 			reloadTimer = type.reload;
 		}
 		setChanged();
+	}
+
+	/**
+	 * Ballistic missiles and rockets are engaged on the way down (terminal phase), like a real Patriot battery does,
+	 * unless they are already close. Everything else is engaged as soon as it is in range.
+	 */
+	private static boolean worthEngagingNow(MissileEntity m, Vec3 radar, double range) {
+		MissileType.Kind kind = m.getMissileType().kind;
+		if (kind != MissileType.Kind.BALLISTIC && kind != MissileType.Kind.ROCKET) {
+			return true;
+		}
+		return m.getFlightVelocity().y < 0 || m.distanceToSqr(radar) < range * range * 0.3;
 	}
 
 	/** A threat flying away from us and already far out is not worth an interceptor. */

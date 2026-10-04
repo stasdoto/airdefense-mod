@@ -462,9 +462,35 @@ public class MissileEntity extends Entity {
 			return null;
 		}
 
-		double dist = rel.length();
-		double tGo = dist / Math.max(speed, 0.5);
-		Vec3 aim = tp.add(tv.scale(Math.min(tGo, 80)));
+		// Collision course: the time t at which a straight flight at full speed meets the target's extrapolated path,
+		// i.e. |rel + tv*t| = s*t. Re-solved every tick, so it follows a curving or diving target.
+		double s = type.maxSpeed;
+		double a = tv.lengthSqr() - s * s;
+		double b = 2 * rel.dot(tv);
+		double c = rel.lengthSqr();
+		double tHit = -1;
+		if (Math.abs(a) < 1e-6) {
+			tHit = b < 0 ? -c / b : -1;
+		} else {
+			double disc = b * b - 4 * a * c;
+			if (disc >= 0) {
+				double sq = Math.sqrt(disc);
+				double t1 = (-b - sq) / (2 * a);
+				double t2 = (-b + sq) / (2 * a);
+				tHit = t1 > 0 && t2 > 0 ? Math.min(t1, t2) : Math.max(t1, t2);
+			}
+		}
+		if (tHit < 0) {
+			tHit = 0; // cannot catch it with a straight line: chase it directly
+		}
+		// Never aim below the ground: a diving target will hit the ground first, so lead it only until then.
+		if (tv.y < -1e-3) {
+			BlockPos below = BlockPos.containing(tp.x, tp.y, tp.z);
+			double groundY = level.hasChunkAt(below) ? level.getHeight(Heightmap.Types.MOTION_BLOCKING, below.getX(), below.getZ()) : tp.y - 60;
+			double tGround = (tp.y - groundY - 2) / -tv.y;
+			tHit = Math.min(tHit, Math.max(0, tGround * 0.7));
+		}
+		Vec3 aim = tp.add(tv.scale(Math.min(tHit, 120)));
 		target = aim;
 		return turnTowards(dir, aim.subtract(pos).normalize(), type.turnRate).scale(speed);
 	}

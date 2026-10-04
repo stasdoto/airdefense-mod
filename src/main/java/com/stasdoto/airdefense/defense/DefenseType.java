@@ -60,7 +60,7 @@ public enum DefenseType {
 	/** Gepard: chance that one round of a burst hits a target of this kind. */
 	public static double gunHitChance(MissileType.Kind kind) {
 		return switch (kind) {
-			case DRONE -> 0.3;
+			case DRONE -> 0.22;
 			case CRUISE -> 0.15;
 			case ROCKET -> 0.04;
 			default -> 0.012;
