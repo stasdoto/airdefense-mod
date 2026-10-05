@@ -109,6 +109,7 @@ jobs:
           cp build-log.txt /tmp/out/ 2>/dev/null || true
           cp probe.txt /tmp/out/ 2>/dev/null || true
           cp build/libs/*.jar /tmp/out/ 2>/dev/null || true
+          find ~/.gradle/caches/modules-2 -name 'fabric-api-*+*.jar' ! -name '*sources*' -path '*net.fabricmc.fabric-api/fabric-api/*' -exec cp {} /tmp/out/ \; 2>/dev/null || true
           rm -f /tmp/out/*-sources.jar
           echo "${{ github.sha }} ${{ steps.build.outcome }}" > /tmp/out/STATUS
           # Separate result branches, so a probe or a plain build never overwrites in-game test results.
