@@ -340,6 +340,9 @@ public class VehicleEntity extends LivingEntity {
 		if (vtype.isLauncher()) {
 			return vtype.rails() * 2;
 		}
+		if (vtype.defense == null) {
+			return 0;
+		}
 		return vtype.defense.magazine * (vtype.gunOnly() ? 3 : 2);
 	}
 

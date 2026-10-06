@@ -674,7 +674,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 			int mid = (gx0 + cx - 6) / 2;
 			int span = cx - 6 - gx0;
-			camera(server, mid + 0.5, g + 14 + span * 0.12, 18 + span * 0.62, 180, 18);
+			camera(server, mid + 0.5, g + 12 + span * 0.1, 14 + span * 0.42, 180, 16);
 			ctx.waitTicks(30);
 			long t0 = System.nanoTime();
 			int blocks = server.computeOnServer(s -> {
