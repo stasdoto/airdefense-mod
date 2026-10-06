@@ -32,7 +32,11 @@ public enum MissileType {
 	M9M33("amraam_missile", Kind.INTERCEPTOR, false, 3.6, 0.3, 1.8f, false, 2f, 1.35f, 3.5, 150, 0.27, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
 	M9M37("stinger_missile", Kind.INTERCEPTOR, false, 3.0, 0.3, 1.5f, false, 1f, 1.5f, 3.0, 140, 0.32, Trail.WHITE, null),
 	ASTER30("irist_missile", Kind.INTERCEPTOR, false, 5.4, 0.36, 2.5f, false, 2f, 2.0f, 3.2, 230, 0.26, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
-	M9M311("irist_missile", Kind.INTERCEPTOR, false, 4.2, 0.34, 1.8f, false, 2f, 1.0f, 3.5, 150, 0.3, Trail.WHITE, ModSounds.MISSILE_FLIGHT);
+	M9M311("irist_missile", Kind.INTERCEPTOR, false, 4.2, 0.34, 1.8f, false, 2f, 1.0f, 3.5, 150, 0.3, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
+	// Stage R6: aircraft weapons.
+	S8("rpg_round", Kind.DIRECT, false, 4.5, 0.4, 2.4f, false, 1f, 1.1f, 0, 140, 0.0, Trail.SMALL, null),
+	FAB250("kalibr_missile", Kind.DIRECT, false, 0, 0, 6.0f, false, 1f, 0.75f, 0, 600, 0.0, Trail.NONE, null),
+	AIM9("stinger_missile", Kind.INTERCEPTOR, false, 4.8, 0.4, 2.0f, false, 1f, 1.3f, 3.5, 200, 0.3, Trail.WHITE, ModSounds.MISSILE_FLIGHT);
 
 	public enum Kind { BALLISTIC, ROCKET, CRUISE, DRONE, INTERCEPTOR, DIRECT }
 
@@ -90,6 +94,7 @@ public enum MissileType {
 			case M9M338, M9M33 -> 0.07;
 			case M9M317, M48N6 -> 0.06;
 			case ASTER30 -> 0.04;
+			case AIM9 -> 0.08;
 			default -> 0;
 		};
 	}
@@ -147,6 +152,12 @@ public enum MissileType {
 				case ROCKET -> 0.65;
 				case CRUISE -> 0.82;
 				default -> 0.75;
+			};
+			case AIM9 -> switch (target) {
+				case BALLISTIC -> 0.05;
+				case ROCKET -> 0.3;
+				case CRUISE -> 0.8;
+				default -> 0.9;
 			};
 			case ASTER30 -> switch (target) {
 				case BALLISTIC -> 0.72;

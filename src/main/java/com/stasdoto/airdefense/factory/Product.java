@@ -39,7 +39,10 @@ public enum Product {
 	AMMO_127("ammo_127_box", 160, 10, cost(Items.COPPER_INGOT, 4, Items.GUNPOWDER, 3)),
 	// Stage R5: tank shells and autocannon rounds.
 	SHELL_TANK("tank_shell", 300, 1, 2, cost(Items.IRON_INGOT, 3, Items.GUNPOWDER, 3, Items.COPPER_INGOT, 1)),
-	AMMO_30("ammo_30_box", 200, 15, cost(Items.COPPER_INGOT, 5, Items.GUNPOWDER, 4, Items.IRON_NUGGET, 4));
+	AMMO_30("ammo_30_box", 200, 15, cost(Items.COPPER_INGOT, 5, Items.GUNPOWDER, 4, Items.IRON_NUGGET, 4)),
+	// Stage R6: aircraft rockets and bombs.
+	S8_ROCKETS("s8_rockets", 300, 8, cost(Items.IRON_INGOT, 4, Items.GUNPOWDER, 6, Items.COPPER_INGOT, 2)),
+	FAB250("fab250", 400, 1, cost(Items.IRON_INGOT, 10, Items.TNT, 4));
 
 	public record Cost(Item item, int count) {
 	}
@@ -90,7 +93,8 @@ public enum Product {
 			case AVENGER -> STINGER;
 			case T72, T90, LEOPARD2, ABRAMS -> SHELL_TANK;
 			case BMP2, BRADLEY, BTR82, BTR4, GYURZA -> AMMO_30;
-			case M113, MAXXPRO, KOZAK, RAPTOR, RHIB -> AMMO_127;
+			case M113, MAXXPRO, KOZAK, RAPTOR, RHIB, MI24 -> AMMO_127;
+			case KA52, SU25, F16 -> AMMO_30;
 			default -> null;
 		};
 	}

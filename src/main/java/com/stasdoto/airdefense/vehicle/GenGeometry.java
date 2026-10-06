@@ -234,4 +234,39 @@ public final class GenGeometry {
 			"turret", new float[]{0F, 0.2F, 1.8F}, "gun", new float[]{0F, 1.05F, 0F},
 			0F, 0F, new Rail[]{new Rail("barrel", 0F, 0F, 1.45F)}, null, new String[]{}, 9F,
 			1024, 128);
+
+	public static final Geometry MI8 = new Geometry("mi8", 24.3F, 2.5F, 4.8F, 0F, false,
+			new Seat[]{new Seat("driver", -0.45F, 2F, 5.3F), new Seat("gunner", 0.45F, 2F, 5.3F), new Seat("passenger", -0.6F, 1.2F, 2.5F), new Seat("passenger", 0.6F, 1.2F, 2.5F), new Seat("passenger", -0.6F, 1.2F, 0.5F), new Seat("passenger", 0.6F, 1.2F, 0.5F)},
+			new Wheel[]{new Wheel("gear_nose", 0.3F, false), new Wheel("gear_l", 0.4F, false), new Wheel("gear_r", 0.4F, false)},
+			null, new float[]{0F, 0F, 0F}, null, new float[]{0F, 0F, 0F},
+			0F, 0F, new Rail[]{}, "rotor", new String[]{}, 20F,
+			1024, 240);
+
+	public static final Geometry MI24 = new Geometry("mi24", 19.8F, 2F, 4.4F, 0F, false,
+			new Seat[]{new Seat("driver", 0F, 2.3F, 3.2F), new Seat("gunner", 0F, 1.5F, 5.3F)},
+			new Wheel[]{new Wheel("gear_nose", 0.3F, false), new Wheel("gear_l", 0.38F, false), new Wheel("gear_r", 0.38F, false)},
+			null, new float[]{0F, 0F, 0F}, null, new float[]{0F, 0F, 0F},
+			0F, 0F, new Rail[]{}, "rotor", new String[]{}, 18F,
+			1024, 192);
+
+	public static final Geometry KA52 = new Geometry("ka52", 15.9F, 2.2F, 4.65F, 0F, false,
+			new Seat[]{new Seat("driver", -0.4F, 1.8F, 3.2F), new Seat("gunner", 0.4F, 1.8F, 3.2F)},
+			new Wheel[]{new Wheel("gear_nose", 0.3F, false), new Wheel("gear_l", 0.38F, false), new Wheel("gear_r", 0.38F, false)},
+			null, new float[]{0F, 0F, 0F}, null, new float[]{0F, 0F, 0F},
+			0F, 0F, new Rail[]{}, "rotor", new String[]{}, 16F,
+			1024, 160);
+
+	public static final Geometry SU25 = new Geometry("su25", 14.4F, 2.6F, 4.9F, 0F, false,
+			new Seat[]{new Seat("driver", 0F, 2.2F, 3.5F)},
+			new Wheel[]{new Wheel("gear_nose", 0.3F, false), new Wheel("gear_l", 0.42F, false), new Wheel("gear_r", 0.42F, false)},
+			null, new float[]{0F, 0F, 0F}, null, new float[]{0F, 0F, 0F},
+			0F, 0F, new Rail[]{}, null, new String[]{}, 18F,
+			1024, 192);
+
+	public static final Geometry F16 = new Geometry("f16", 15.5F, 2.4F, 4.7F, 0F, false,
+			new Seat[]{new Seat("driver", 0F, 2.1F, 3.6F)},
+			new Wheel[]{new Wheel("gear_nose", 0.25F, false), new Wheel("gear_l", 0.35F, false), new Wheel("gear_r", 0.35F, false)},
+			null, new float[]{0F, 0F, 0F}, null, new float[]{0F, 0F, 0F},
+			0F, 0F, new Rail[]{}, null, new String[]{}, 18F,
+			1024, 160);
 }

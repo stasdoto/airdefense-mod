@@ -89,6 +89,14 @@ public final class ModItems {
 	public static final Item GYURZA = vehicle("gyurza", VehicleType.GYURZA);
 	public static final Item RAPTOR = vehicle("raptor", VehicleType.RAPTOR);
 	public static final Item RHIB = vehicle("rhib", VehicleType.RHIB);
+	// Aircraft (stage R6).
+	public static final Item MI8 = vehicle("mi8", VehicleType.MI8);
+	public static final Item MI24 = vehicle("mi24", VehicleType.MI24);
+	public static final Item KA52 = vehicle("ka52", VehicleType.KA52);
+	public static final Item SU25 = vehicle("su25", VehicleType.SU25);
+	public static final Item F16 = vehicle("f16", VehicleType.F16);
+	public static final Item S8_ROCKETS = register("s8_rockets", Item::new, new Item.Properties().stacksTo(8));
+	public static final Item FAB250 = register("fab250", Item::new, new Item.Properties().stacksTo(4));
 	public static final Item TANK_SHELL = register("tank_shell", Item::new, new Item.Properties().stacksTo(8));
 	public static final Item AMMO_30_BOX = register("ammo_30_box", Item::new, new Item.Properties().stacksTo(16));
 	/** Petrol: 20 litres a can (right-click a vehicle to pour it in). */
@@ -184,6 +192,13 @@ public final class ModItems {
 				output.accept(GYURZA);
 				output.accept(RAPTOR);
 				output.accept(RHIB);
+				output.accept(MI8);
+				output.accept(MI24);
+				output.accept(KA52);
+				output.accept(SU25);
+				output.accept(F16);
+				output.accept(S8_ROCKETS);
+				output.accept(FAB250);
 				output.accept(TANK_SHELL);
 				output.accept(AMMO_30_BOX);
 				output.accept(JERRYCAN);

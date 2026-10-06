@@ -53,7 +53,16 @@ public enum VehicleType {
 	KOZAK("kozak", GenGeometry.KOZAK, Weapon.HMG_127, 0.75f, false, 200, 1.2f, 0.024f, 34, 0, 6.0f, 8.0f, 2.5f, 2.6f),
 	GYURZA("gyurza", GenGeometry.GYURZA, Weapon.AUTO_30, 0.7f, true, 300, 1.3f, 0.012f, 0, 1.6f, 4.0f, 5.0f, 4.8f, 3.5f),
 	RAPTOR("raptor", GenGeometry.RAPTOR, Weapon.HMG_145, 0.8f, true, 220, 1.6f, 0.016f, 0, 2.0f, 6.0f, 8.0f, 4.1f, 3.0f),
-	RHIB("rhib", GenGeometry.RHIB, Weapon.HMG_127, 1.0f, true, 90, 1.5f, 0.02f, 0, 2.6f, 6.0f, 10.0f, 2.6f, 1.2f);
+	RHIB("rhib", GenGeometry.RHIB, Weapon.HMG_127, 1.0f, true, 90, 1.5f, 0.02f, 0, 2.6f, 6.0f, 10.0f, 2.6f, 1.2f),
+	// Aircraft (stage R6): turn = degrees per tick.
+	MI8("mi8", GenGeometry.MI8, 1, null, Ordnance.S8, 0.8f, 300, 1.8f, 0.03f, 2.5f, 3.0f, 3.4f),
+	MI24("mi24", GenGeometry.MI24, 1, Weapon.HMG_127, Ordnance.S8, 0.65f, 380, 2.1f, 0.035f, 3.0f, 2.6f, 3.4f),
+	KA52("ka52", GenGeometry.KA52, 1, Weapon.AUTO_30, Ordnance.S8, 0.65f, 360, 2.2f, 0.035f, 3.2f, 2.6f, 3.4f),
+	SU25("su25", GenGeometry.SU25, 2, Weapon.AUTO_30, Ordnance.FAB250, 0.6f, 420, 3.6f, 0.03f, 2.4f, 3.0f, 3.0f),
+	F16("f16", GenGeometry.F16, 2, Weapon.AUTO_25, Ordnance.AIM9, 0.75f, 380, 4.2f, 0.035f, 3.0f, 3.0f, 3.0f);
+
+	public static final int HELI = 1;
+	public static final int PLANE = 2;
 
 	public final String id;
 	public final VehicleGeometry.Geometry geometry;
@@ -70,6 +79,10 @@ public enum VehicleType {
 	public final float armor;
 	/** Floats and drives on water. */
 	public final boolean boat;
+	/** 0 = on the ground, {@link #HELI} or {@link #PLANE}. */
+	public final int air;
+	@Nullable
+	public final Ordnance ordnance;
 	public final float maxHealth;
 	public final float maxSpeed;
 	public final float accel;
@@ -93,6 +106,8 @@ public enum VehicleType {
 		this.weapon = null;
 		this.armor = 1.0f;
 		this.boat = false;
+		this.air = 0;
+		this.ordnance = null;
 		this.maxHealth = maxHealth;
 		this.maxSpeed = maxSpeed;
 		this.accel = accel;
@@ -115,6 +130,8 @@ public enum VehicleType {
 		this.weapon = null;
 		this.armor = 1.0f;
 		this.boat = false;
+		this.air = 0;
+		this.ordnance = null;
 		this.maxHealth = maxHealth;
 		this.maxSpeed = maxSpeed;
 		this.accel = accel;
@@ -137,6 +154,8 @@ public enum VehicleType {
 		this.weapon = weapon;
 		this.armor = armor;
 		this.boat = boat;
+		this.air = 0;
+		this.ordnance = null;
 		this.maxHealth = maxHealth;
 		this.maxSpeed = maxSpeed;
 		this.accel = accel;
@@ -148,12 +167,43 @@ public enum VehicleType {
 		this.boxHeight = boxHeight;
 	}
 
+	/** A helicopter or a plane. */
+	VehicleType(String id, VehicleGeometry.Geometry geometry, int air, @Nullable Weapon weapon, Ordnance ordnance, float armor, float maxHealth,
+			float maxSpeed, float accel, float turn, float boxWidth, float boxHeight) {
+		this.id = id;
+		this.geometry = geometry;
+		this.launcher = null;
+		this.defense = null;
+		this.radar = null;
+		this.weapon = weapon;
+		this.armor = armor;
+		this.boat = false;
+		this.air = air;
+		this.ordnance = ordnance;
+		this.maxHealth = maxHealth;
+		this.maxSpeed = maxSpeed;
+		this.accel = accel;
+		this.maxSteer = 0;
+		this.pivotTurn = turn;
+		this.elevationRate = 0;
+		this.turretRate = 0;
+		this.boxWidth = boxWidth;
+		this.boxHeight = boxHeight;
+	}
+
+	public boolean isAir() {
+		return air != 0;
+	}
+
 	public boolean isArmed() {
 		return weapon != null;
 	}
 
 	/** Fuel tank in litres. */
 	public int fuelCapacity() {
+		if (air != 0) {
+			return 1500;
+		}
 		if (boat) {
 			return 800;
 		}

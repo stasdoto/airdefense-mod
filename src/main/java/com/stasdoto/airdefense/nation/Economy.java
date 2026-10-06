@@ -800,6 +800,10 @@ public final class Economy {
 			case GYURZA -> new int[]{40, 30, 150, 90};
 			case T72, T90 -> new int[]{30, 60, 200, 120};
 			case LEOPARD2, ABRAMS -> new int[]{30, 70, 230, 130};
+			case MI8 -> new int[]{30, 20, 140, 90};
+			case MI24, KA52 -> new int[]{30, 30, 180, 110};
+			case SU25 -> new int[]{40, 40, 220, 130};
+			case F16 -> new int[]{40, 40, 240, 140};
 		};
 	}
 

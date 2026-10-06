@@ -81,6 +81,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("armor")) {
 				armor(ctx, server);
 			}
+			if (scene("air")) {
+				aircraft(ctx, server);
+			}
 			if (scene("drive")) {
 				drive(ctx, server);
 			}
@@ -430,7 +433,16 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			int bx = x - 30 + i * 28;
 			ids.add(server.computeOnServer(s -> VehicleEntity.spawn(s.overworld(), b, new Vec3(bx + 0.5, ground - 0.1, -42.5), 90).getId()));
 		}
-		ctx.waitTicks(60);
+		for (int k = 0; k < 6; k++) {
+			ctx.waitTicks(10);
+			String info = server.computeOnServer(s -> {
+				Entity b = s.overworld().getEntity(ids.get(land.length));
+				BlockPos p = b.blockPosition();
+				return String.format(java.util.Locale.ROOT, "y=%.2f below=%s at=%s vy=%.3f", b.getY(), s.overworld().getBlockState(p.below()).getBlock(),
+						s.overworld().getBlockState(p).getBlock(), b.getDeltaMovement().y);
+			});
+			AirDefense.LOGGER.info("[airdefense-test] boat {}", info);
+		}
 		ctx.takeScreenshot("a0_armor_lineup");
 		camera(server, x - 56, ground + 7, 30, -125, 12);
 		ctx.waitTicks(15);
@@ -492,6 +504,90 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
 		server.runCommand("gamemode spectator @a");
 		server.runOnServer(s -> forVehicles(s.overworld(), List.of(tank, btr), Entity::discard));
+	}
+
+	/** Stage R6: helicopters and planes on the ground, then a Mi-24 flown up and firing rockets, and a Su-25 taking off. */
+	private void aircraft(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 41000;
+		VehicleType[] air = {VehicleType.MI8, VehicleType.MI24, VehicleType.KA52, VehicleType.SU25, VehicleType.F16};
+		camera(server, x, ground + 12, 50, 180, 18);
+		ctx.waitTicks(40);
+		List<Integer> ids = new ArrayList<>();
+		for (int i = 0; i < air.length; i++) {
+			ids.add(spawnVehicle(server, air[i], x - 44 + i * 22, 0, 200));
+		}
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("b0_aircraft");
+		camera(server, x - 60, ground + 8, 30, -125, 12);
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("b1_aircraft_side");
+		server.runOnServer(s -> forVehicles(s.overworld(), ids, Entity::discard));
+
+		// Mi-24: climb, fly forward, fire rockets.
+		int hx = x + 2000;
+		camera(server, hx, ground + 2, -10, 0, 0);
+		ctx.waitTicks(40);
+		int heli = spawnVehicle(server, VehicleType.MI24, hx, 0, 0);
+		server.runCommand("gamemode creative @a");
+		server.runOnServer(s -> {
+			if (s.overworld().getEntity(heli) instanceof VehicleEntity v) {
+				s.getPlayerList().getPlayers().getFirst().startRiding(v);
+			}
+		});
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_BACK));
+		ctx.waitTicks(150);
+		ctx.getInput().holdKey(o -> o.keyJump);
+		ctx.waitTicks(80);
+		ctx.getInput().releaseKey(o -> o.keyJump);
+		ctx.getInput().holdKey(o -> o.keyUp);
+		ctx.waitTicks(60);
+		ctx.takeScreenshot("b2_mi24_flying");
+		ctx.getInput().releaseKey(o -> o.keyUp);
+		double alt = server.computeOnServer(s -> s.overworld().getEntity(heli).getY() - ground);
+		int ord0 = server.computeOnServer(s -> s.overworld().getEntity(heli) instanceof VehicleEntity v ? v.getOrdnance() : -1);
+		ctx.getInput().lookAt(0, 25);
+		ctx.waitTicks(10);
+		ctx.getInput().pressKey(o -> com.stasdoto.airdefense.client.vehicle.VehicleClient.DEPLOY);
+		ctx.waitTicks(6);
+		ctx.takeScreenshot("b3_mi24_rockets");
+		ctx.waitTicks(40);
+		int ord1 = server.computeOnServer(s -> s.overworld().getEntity(heli) instanceof VehicleEntity v ? v.getOrdnance() : -1);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT heli: altitude {} rockets {} -> {}", String.format(java.util.Locale.ROOT, "%.1f", alt), ord0, ord1);
+		ctx.getInput().holdKey(o -> o.keyShift);
+		ctx.waitTicks(5);
+		ctx.getInput().releaseKey(o -> o.keyShift);
+
+		// Su-25: full throttle down the field, nose up, take off.
+		int px = x + 4000;
+		camera(server, px, ground + 2, -10, 0, 0);
+		ctx.waitTicks(40);
+		int plane = spawnVehicle(server, VehicleType.SU25, px, 0, 0);
+		server.runOnServer(s -> {
+			if (s.overworld().getEntity(plane) instanceof VehicleEntity v) {
+				s.getPlayerList().getPlayers().getFirst().startRiding(v);
+			}
+		});
+		ctx.waitTicks(20);
+		ctx.getInput().lookAt(0, 0);
+		ctx.getInput().holdKey(o -> o.keyUp);
+		ctx.waitTicks(160);
+		ctx.getInput().lookAt(0, -20);
+		ctx.waitTicks(100);
+		ctx.takeScreenshot("b4_su25_takeoff");
+		ctx.getInput().lookAt(0, 0);
+		ctx.waitTicks(60);
+		ctx.takeScreenshot("b5_su25_flying");
+		double palt = server.computeOnServer(s -> s.overworld().getEntity(plane).getY() - ground);
+		double pdist = server.computeOnServer(s -> s.overworld().getEntity(plane).position().distanceTo(new Vec3(px + 0.5, ground, 0.5)));
+		ctx.getInput().releaseKey(o -> o.keyUp);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT plane: altitude {} distance {}", String.format(java.util.Locale.ROOT, "%.1f", palt),
+				String.format(java.util.Locale.ROOT, "%.1f", pdist));
+		ctx.getInput().holdKey(o -> o.keyShift);
+		ctx.waitTicks(5);
+		ctx.getInput().releaseKey(o -> o.keyShift);
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
+		server.runCommand("gamemode spectator @a");
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(heli, plane), Entity::discard));
 	}
 
 	private void drive(ClientGameTestContext ctx, TestServerContext server) {

@@ -76,7 +76,8 @@ public final class VehicleClient {
 			return;
 		}
 		v.setClientInput(v.isDriver(player) ? player.input.keyPresses : Input.EMPTY);
-		boolean armedShooter = v.getVehicleType().isArmed() && v.shooter() == player;
+		VehicleType vt = v.getVehicleType();
+		boolean armedShooter = vt.isAir() ? v.isDriver(player) : vt.isArmed() && v.shooter() == player;
 		if (GunnerHud.isManualGunner(player, v) || armedShooter) {
 			// Manual mode: the left button is the trigger (and must not hit the vehicle or break blocks).
 			boolean click = false;
@@ -113,7 +114,15 @@ public final class VehicleClient {
 		int hp = (int) Math.ceil(v.getHealth() / v.getMaxHealth() * 100);
 		Component l1 = Component.translatable("hud.airdefense.vehicle.line1", v.getType().getDescription(), hp, kmh);
 		Component l2;
-		if (type.isArmed()) {
+		if (type.isAir()) {
+			int ground = mc.level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, v.getBlockX(), v.getBlockZ());
+			Component weapons = Component.translatable("hud.airdefense.vehicle.ordnance." + type.ordnance.name().toLowerCase(java.util.Locale.ROOT), v.getOrdnance());
+			if (type.weapon != null) {
+				weapons = Component.translatable("hud.airdefense.vehicle.gun_and", type.weapon.caliber, Math.max(0, v.getAmmo()), weapons);
+			}
+			l2 = Component.translatable(type.air == VehicleType.PLANE ? "hud.airdefense.vehicle.plane" : "hud.airdefense.vehicle.heli",
+					Math.max(0, (int) (v.getY() - ground)), (int) (v.throttle * 100), weapons);
+		} else if (type.isArmed()) {
 			l2 = Component.translatable("hud.airdefense.vehicle.weapon", type.weapon.caliber, Math.max(0, v.getAmmo()));
 		} else if (type.isRadar()) {
 			l2 = Component.translatable(v.getMode() == VehicleEntity.MODE_OFF ? "hud.airdefense.vehicle.radar_off"
@@ -136,7 +145,9 @@ public final class VehicleClient {
 			l2 = Component.empty().append(l2).append(Component.translatable(v.outOfFuel() ? "hud.airdefense.vehicle.fuel_empty"
 					: "hud.airdefense.vehicle.fuel", (int) v.getFuel(), type.fuelCapacity()));
 		}
-		String keys = type.isArmed() && v.shooter() == player ? (driver ? "hud.airdefense.vehicle.keys_armed_driver" : "hud.airdefense.vehicle.keys_armed")
+		String keys = type.isAir() ? (driver ? (type.air == VehicleType.PLANE ? "hud.airdefense.vehicle.keys_plane" : "hud.airdefense.vehicle.keys_heli")
+				: "hud.airdefense.vehicle.keys_passenger")
+				: type.isArmed() && v.shooter() == player ? (driver ? "hud.airdefense.vehicle.keys_armed_driver" : "hud.airdefense.vehicle.keys_armed")
 				: driver ? "hud.airdefense.vehicle.keys_driver"
 				: GunnerHud.isManualGunner(player, v) ? "hud.airdefense.vehicle.keys_manual" : "hud.airdefense.vehicle.keys_gunner";
 		Component l3 = Component.translatable(keys, DEPLOY.getTranslatedKeyMessage(), MODE.getTranslatedKeyMessage(), SEAT.getTranslatedKeyMessage());
@@ -149,7 +160,7 @@ public final class VehicleClient {
 		g.text(font, l2, x, y + 10, 0xFFE0E0E0);
 		g.text(font, l3, x, y + 20, 0xFFA0A0A0);
 		GunnerHud.draw(g, delta, v, player);
-		if (type.isArmed() && v.shooter() == player) {
+		if (type.isArmed() && v.shooter() == player || type.isAir() && driver) {
 			// Where the gun points: a ring in the middle of the screen.
 			int cx = mc.getWindow().getGuiScaledWidth() / 2;
 			int cy = mc.getWindow().getGuiScaledHeight() / 2;

@@ -208,6 +208,9 @@ public class VehicleEntity extends LivingEntity {
 		if (type.isArmed()) {
 			v.setMode(MODE_AUTO);
 		}
+		if (type.ordnance != null) {
+			v.entityData.set(DATA_ORDNANCE, type.ordnance.count);
+		}
 		v.fold();
 		level.addFreshEntity(v);
 		// From the first moment on, its ground stays loaded (even if the player walks off right away).
@@ -234,6 +237,7 @@ public class VehicleEntity extends LivingEntity {
 		builder.define(DATA_AMMO, -1);
 		builder.define(DATA_RESERVE, -1);
 		builder.define(DATA_FUEL, -1f);
+		builder.define(DATA_ORDNANCE, 0);
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -544,6 +548,21 @@ public class VehicleEntity extends LivingEntity {
 			return InteractionResult.SUCCESS;
 		}
 		com.stasdoto.airdefense.factory.Product product = com.stasdoto.airdefense.factory.Product.forItem(stack.getItem());
+		if (product != null && vtype.ordnance != null && product.itemId.equals(vtype.ordnance.itemId)) {
+			if (!level().isClientSide()) {
+				int space = vtype.ordnance.count - getOrdnance();
+				int items = Math.min(stack.getCount(), (space + product.units - 1) / product.units);
+				if (items > 0) {
+					addOrdnance(items * product.units);
+					if (!player.getAbilities().instabuild) {
+						stack.shrink(items);
+					}
+					level().playSound(null, getX(), getY(), getZ(), net.minecraft.sounds.SoundEvents.ARMOR_EQUIP_IRON.value(), SoundSource.NEUTRAL, 1.0f, 0.8f);
+				}
+				player.sendOverlayMessage(Component.translatable("message.airdefense.vehicle.ordnance", getOrdnance(), vtype.ordnance.count));
+			}
+			return InteractionResult.SUCCESS;
+		}
 		if (product != null && product == com.stasdoto.airdefense.factory.Product.forVehicle(vtype)) {
 			if (!level().isClientSide()) {
 				loadByHand(player, stack, product);
@@ -752,6 +771,10 @@ public class VehicleEntity extends LivingEntity {
 	@Override
 	public void travel(Vec3 ignored) {
 		Input in = level().isClientSide() ? clientInput : Input.EMPTY;
+		if (vtype.isAir()) {
+			travelAir(in);
+			return;
+		}
 		boolean wantsToMove = in.forward() || in.backward() || in.left() || in.right();
 		if (!canDrive()) {
 			if (wantsToMove && level().isClientSide() && stowRequestCooldown-- <= 0) {
@@ -826,6 +849,91 @@ public class VehicleEntity extends LivingEntity {
 		}
 	}
 
+	// ------------------------------------------------------------------------------------------------
+	// Flying (arcade): helicopters hover and climb with Space, sink with Ctrl; planes go where the pilot looks.
+
+	/** Engine power 0..1 (spools up with a pilot in the seat), plane throttle 0..1. */
+	public float engine;
+	public float throttle;
+
+	private void travelAir(Input in) {
+		Player pilot = getDriver();
+		boolean piloted = pilot != null && !outOfFuel();
+		engine = Mth.approach(engine, piloted ? 1 : 0, vtype.air == VehicleType.HELI ? 0.008f : 0.02f);
+		Vec3 v = getDeltaMovement();
+		float turn = in.left() ? -1 : in.right() ? 1 : 0;
+		if (vtype.air == VehicleType.HELI) {
+			float fwd = in.forward() ? 1 : in.backward() ? -0.5f : 0;
+			if (!onGround() || engine > 0.9f) {
+				setYRot(getYRot() + turn * vtype.pivotTurn * engine);
+			}
+			Vec3 f = forward();
+			double tx = f.x * fwd * vtype.maxSpeed * engine;
+			double tz = f.z * fwd * vtype.maxSpeed * engine;
+			double vx = v.x + (tx - v.x) * 0.04;
+			double vz = v.z + (tz - v.z) * 0.04;
+			double vy;
+			if (engine < 0.75f) {
+				// No lift: it comes down (rotor still turning, so not like a stone).
+				vy = Math.max(v.y - 0.035, -0.7);
+			} else {
+				double climb = in.jump() ? 0.3 : in.sprint() ? -0.3 : 0;
+				vy = v.y + (climb - v.y) * 0.1;
+			}
+			if (onGround()) {
+				vx *= 0.6;
+				vz *= 0.6;
+				if (vy < 0) {
+					vy = -0.04;
+				}
+			}
+			Vec3 motion = new Vec3(vx, vy, vz);
+			setDeltaMovement(motion);
+			move(MoverType.SELF, motion);
+			speed = (float) Math.hypot(vx, vz);
+		} else {
+			if (piloted && in.forward()) {
+				throttle = Math.min(1, throttle + 0.01f);
+			}
+			if (in.backward() || !piloted) {
+				throttle = Math.max(0, throttle - 0.015f);
+			}
+			double sp = v.length();
+			double target = throttle * vtype.maxSpeed * engine;
+			sp += Mth.clamp(target - sp, -0.03, vtype.accel);
+			if (onGround() && throttle < 0.05f) {
+				sp *= 0.95;
+			}
+			float rate = vtype.pivotTurn * (float) Mth.clamp(sp / 1.5, 0.15, 1.0);
+			float wantYaw = pilot != null ? pilot.getYRot() + turn * 25 : getYRot();
+			float wantPitch = pilot != null ? Mth.clamp(pilot.getXRot(), -40, 40) : 15;
+			double takeoff = vtype.maxSpeed * 0.4;
+			boolean airborne = !onGround();
+			if (!airborne && sp < takeoff) {
+				wantPitch = 0;
+			}
+			if (airborne || sp > 0.2) {
+				setYRot(getYRot() + Mth.clamp(Mth.wrapDegrees(wantYaw - getYRot()), -rate, rate));
+			}
+			float pitch = getXRot() + Mth.clamp(wantPitch - getXRot(), -rate * 0.8f, rate * 0.8f);
+			if (!airborne && pitch > 0) {
+				pitch = 0;
+			}
+			setXRot(pitch);
+			Vec3 motion = Vec3.directionFromRotation(pitch, getYRot()).scale(sp);
+			if (airborne && sp < takeoff * 0.8) {
+				// Too slow to fly: it sinks.
+				motion = motion.add(0, -0.1 - (takeoff * 0.8 - sp) * 0.4, 0);
+			} else if (!airborne) {
+				motion = new Vec3(motion.x, Math.max(motion.y, -0.04), motion.z);
+			}
+			setDeltaMovement(motion);
+			move(MoverType.SELF, motion);
+			speed = (float) sp;
+		}
+		yBodyRot = yHeadRot = getYRot();
+	}
+
 	/** Boats: water right under the waterline. */
 	public boolean onWater() {
 		BlockPos below = BlockPos.containing(getX(), getY() - 0.3, getZ());
@@ -839,12 +947,11 @@ public class VehicleEntity extends LivingEntity {
 	}
 
 	/** Burns fuel while it drives (where the vehicle is simulated; the server keeps the count). */
-	private void burnFuel() {
+	private void burnFuel(double moved) {
 		if (infiniteFuel() || level().isClientSide()) {
 			return;
 		}
-		double moved = Math.sqrt(Mth.square(getX() - xo) + Mth.square(getZ() - zo));
-		if (moved < 0.01) {
+		if (moved < 0.01 || moved > 10) {
 			return;
 		}
 		// A full tank lasts twenty minutes at full speed.
@@ -924,8 +1031,8 @@ public class VehicleEntity extends LivingEntity {
 	}
 
 	private void serverLogic(ServerLevel level) {
-		burnFuel();
 		Vec3 pos = position();
+		burnFuel(Math.sqrt(Mth.square(pos.x - lastServerPos.x) + Mth.square(pos.z - lastServerPos.z)));
 		// Only driving counts as moving: a hop from a nearby blast or settling on the ground does not.
 		double moved = Mth.square(pos.x - lastServerPos.x) + Mth.square(pos.z - lastServerPos.z);
 		if (moved < 0.0025) {
@@ -946,6 +1053,8 @@ public class VehicleEntity extends LivingEntity {
 			tickLauncher(level);
 		} else if (vtype.isRadar()) {
 			tickRadar(level);
+		} else if (vtype.isAir()) {
+			tickAir(level);
 		} else if (vtype.isArmed()) {
 			tickArmed(level);
 		} else {
@@ -1016,7 +1125,7 @@ public class VehicleEntity extends LivingEntity {
 
 	/** Trigger from the shooter's seat. */
 	public void armedFire(Player player) {
-		if (player != shooter() || !(level() instanceof ServerLevel level) || gunCooldown > 0 || roundsLeft > 0) {
+		if (player != (vtype.isAir() ? getDriver() : shooter()) || !(level() instanceof ServerLevel level) || gunCooldown > 0 || roundsLeft > 0) {
 			return;
 		}
 		Weapon w = vtype.weapon;
@@ -1035,14 +1144,157 @@ public class VehicleEntity extends LivingEntity {
 		}
 	}
 
+	// --- Aircraft weapons ---
+
+	private static final EntityDataAccessor<Integer> DATA_ORDNANCE = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+	private int ordnanceLeft;
+	private int ordnanceTimer;
+	private int ordnanceCooldown;
+	private int ordnanceIndex;
+
+	public int getOrdnance() {
+		return entityData.get(DATA_ORDNANCE);
+	}
+
+	public void addOrdnance(int n) {
+		if (vtype.ordnance != null) {
+			entityData.set(DATA_ORDNANCE, Math.min(vtype.ordnance.count, getOrdnance() + n));
+		}
+	}
+
+	/** Where the aircraft's gun and rockets point: helicopters where the pilot looks, planes straight ahead. */
+	private Vec3 aimDirection() {
+		Player p = getDriver();
+		if (vtype.air == VehicleType.HELI && p != null) {
+			return p.getLookAngle();
+		}
+		return Vec3.directionFromRotation(getXRot(), getYRot());
+	}
+
+	private Vec3 nose() {
+		return position().add(0, vtype.geometry.height() * 0.4, 0).add(Vec3.directionFromRotation(getXRot(), getYRot()).scale(vtype.geometry.length() / 2 + 0.5));
+	}
+
+	private void tickAir(ServerLevel level) {
+		setState(getDriver() != null ? DEPLOYED : STOWED);
+		if (gunCooldown > 0) {
+			gunCooldown--;
+		}
+		if (ordnanceCooldown > 0) {
+			ordnanceCooldown--;
+		}
+		if (vtype.weapon != null && getAmmo() <= 0 && (isUnlimited() || getReserve() > 0) && ++ammoReload >= 200) {
+			ammoReload = 0;
+			setAmmo(takeReserve(vtype.weapon.magazine));
+		}
+		if (roundsLeft > 0 && --roundTimer <= 0 && vtype.weapon != null) {
+			fireRound(level, vtype.weapon);
+			roundsLeft--;
+			roundTimer = 3;
+		}
+		if (ordnanceLeft > 0 && --ordnanceTimer <= 0) {
+			releaseOne(level);
+			ordnanceLeft--;
+			ordnanceTimer = vtype.ordnance.interval;
+		}
+		for (Iterator<Round> it = rounds.iterator(); it.hasNext(); ) {
+			Round r = it.next();
+			if (--r.ticks[0] <= 0) {
+				it.remove();
+				impact(level, r);
+			}
+		}
+	}
+
+	/** R in the pilot's seat (or the left button when there is no gun): rockets, a bomb, a missile. */
+	public void releaseOrdnance(Player player) {
+		Ordnance o = vtype.ordnance;
+		if (o == null || player != getDriver() || ordnanceCooldown > 0 || ordnanceLeft > 0 || !(level() instanceof ServerLevel level)) {
+			return;
+		}
+		if (getOrdnance() <= 0 && !isUnlimited()) {
+			player.sendOverlayMessage(Component.translatable("message.airdefense.vehicle.empty"));
+			ordnanceCooldown = 20;
+			return;
+		}
+		if (o == Ordnance.AIM9 && airTarget(player) == null) {
+			player.sendOverlayMessage(Component.translatable("message.airdefense.no_lock"));
+			ordnanceCooldown = 10;
+			return;
+		}
+		ordnanceLeft = isUnlimited() ? o.salvo : Math.min(o.salvo, getOrdnance());
+		ordnanceTimer = 0;
+		ordnanceCooldown = o.cooldown;
+		releaseOne(level);
+		ordnanceLeft--;
+		ordnanceTimer = o.interval;
+	}
+
+	/** The drone or missile nearest the middle of the pilot's view (within 15 degrees, 300 blocks). */
+	@Nullable
+	private MissileEntity airTarget(Player p) {
+		Vec3 eye = p.getEyePosition();
+		Vec3 look = p.getLookAngle();
+		MissileEntity best = null;
+		double bestCos = Math.cos(Math.toRadians(15));
+		for (MissileEntity m : level().getEntitiesOfClass(MissileEntity.class, new AABB(eye, eye).inflate(300), m -> m.isAlive() && m.getMissileType().threat)) {
+			Vec3 to = m.position().subtract(eye);
+			double d = to.length();
+			if (d < 5 || d > 300) {
+				continue;
+			}
+			double c = to.scale(1 / d).dot(look);
+			if (c > bestCos) {
+				bestCos = c;
+				best = m;
+			}
+		}
+		return best;
+	}
+
+	private void releaseOne(ServerLevel level) {
+		Ordnance o = vtype.ordnance;
+		if (o == null) {
+			return;
+		}
+		if (!isUnlimited()) {
+			if (getOrdnance() <= 0) {
+				ordnanceLeft = 0;
+				return;
+			}
+			entityData.set(DATA_ORDNANCE, getOrdnance() - 1);
+		}
+		Player p = getDriver();
+		Vec3 side = right().scale((ordnanceIndex++ % 2 == 0 ? 1 : -1) * (vtype.geometry.width() / 2 + 1.0));
+		switch (o) {
+			case S8 -> {
+				Vec3 dir = aimDirection();
+				Vec3 from = position().add(0, vtype.geometry.height() * 0.4, 0).add(side).add(dir.scale(vtype.geometry.length() / 2));
+				MissileEntity.launchWithVelocity(level, o.missile, from, dir.scale(2.0).add(getDeltaMovement()), p, this);
+				Effects.launchBlast(level, from, o.missile);
+			}
+			case FAB250 -> {
+				Vec3 from = position().add(side.scale(0.5)).add(0, -0.3, 0);
+				MissileEntity.launchWithVelocity(level, o.missile, from, getDeltaMovement().add(0, -0.1, 0), p, this);
+			}
+			case AIM9 -> {
+				MissileEntity target = p != null ? airTarget(p) : null;
+				Vec3 dir = Vec3.directionFromRotation(getXRot(), getYRot());
+				Vec3 from = position().add(0, vtype.geometry.height() * 0.4, 0).add(side).add(dir.scale(2));
+				MissileEntity.launchInterceptor(level, o.missile, from, dir, target);
+				level.playSound(null, from.x, from.y, from.z, ModSounds.RADAR_LOCK, SoundSource.PLAYERS, 1.0f, 1.2f);
+			}
+		}
+	}
+
 	private void fireRound(ServerLevel level, Weapon w) {
 		if (getAmmo() <= 0) {
 			roundsLeft = 0;
 			return;
 		}
 		setAmmo(getAmmo() - 1);
-		Vec3 muzzle = railWorld(0);
-		Vec3 dir = railDirection(0);
+		Vec3 muzzle = vtype.isAir() ? nose() : railWorld(0);
+		Vec3 dir = vtype.isAir() ? aimDirection() : railDirection(0);
 		RandomSource r = level.getRandom();
 		double spread = w.cannon() ? 0.002 : 0.008;
 		dir = dir.add(r.nextGaussian() * spread, r.nextGaussian() * spread, r.nextGaussian() * spread).normalize();
@@ -1065,7 +1317,7 @@ public class VehicleEntity extends LivingEntity {
 		double dist = end.distanceTo(muzzle);
 		rounds.add(new Round(end, hit, w, new int[]{Math.max(1, (int) Math.round(dist / w.speed))}));
 		Effects.tracer(level, muzzle, end, (float) w.speed);
-		if (w.cannon()) {
+		if (w.cannon() && !vtype.isAir()) {
 			com.stasdoto.airdefense.fx.Fx.send(level, com.stasdoto.airdefense.fx.FxPayload.LAUNCH, muzzle.add(dir.scale(0.5)), 1.4f,
 					new Vec3(com.stasdoto.airdefense.fx.FxPayload.LAUNCH_SOUND_HEAVY, 0, 0));
 			// The recoil rocks the vehicle back a little.
@@ -1736,7 +1988,9 @@ public class VehicleEntity extends LivingEntity {
 		}
 		switch (action) {
 			case ACTION_FIRE -> {
-				if (vtype.isArmed()) {
+				if (vtype.isAir() && vtype.weapon == null) {
+					releaseOrdnance(player);
+				} else if (vtype.isArmed()) {
 					armedFire(player);
 				} else {
 					manualFire(player);
@@ -1760,6 +2014,10 @@ public class VehicleEntity extends LivingEntity {
 				}
 			}
 			case ACTION_DEPLOY -> {
+				if (vtype.isAir()) {
+					releaseOrdnance(player);
+					return;
+				}
 				if (vtype.isLauncher()) {
 					if (strikePending || salvoLeft > 0) {
 						return;
@@ -1911,7 +2169,11 @@ public class VehicleEntity extends LivingEntity {
 		if (vtype.tracked()) {
 			steerVis = 0;
 		}
-		if (getState() == DEPLOYED && vtype.geometry.spinner() != null) {
+		if (vtype.air == VehicleType.HELI) {
+			// The rotor: spins up with a pilot aboard.
+			engine = Mth.approach(engine, getControllingPassenger() != null ? 1 : 0, 0.008f);
+			radarSpin += 0.9f * engine;
+		} else if (getState() == DEPLOYED && vtype.geometry.spinner() != null) {
 			radarSpin += vtype.isRadar() ? vtype.radar.spin : 0.25f;
 		} else if (vtype.isRadar()) {
 			// Switched off: the antenna turns back to face forward for the march.
@@ -1930,6 +2192,21 @@ public class VehicleEntity extends LivingEntity {
 
 	private void updateTilt() {
 		VehicleGeometry.Geometry g = vtype.geometry;
+		if (vtype.isAir()) {
+			float yawDelta = Mth.wrapDegrees(getYRot() - yRotO);
+			if (vtype.air == VehicleType.PLANE) {
+				tiltPitch += (-getXRot() - tiltPitch) * 0.5f;
+				tiltRoll += (Mth.clamp(-yawDelta * 12, -60, 60) - tiltRoll) * 0.15f;
+			} else {
+				Vec3 d = new Vec3(getX() - xo, 0, getZ() - zo);
+				double along = d.dot(forward());
+				double sideways = d.dot(right());
+				tiltPitch += ((float) (-along / vtype.maxSpeed * 14) - tiltPitch) * 0.1f;
+				tiltRoll += ((float) (-sideways / vtype.maxSpeed * 14 - yawDelta * 3) - tiltRoll) * 0.1f;
+			}
+			lift = 0;
+			return;
+		}
 		if (vtype.boat) {
 			// Rocking on the waves, the bow up when it speeds.
 			float t = (tickCount + getId() * 7) * 0.08f;
@@ -2112,6 +2389,7 @@ public class VehicleEntity extends LivingEntity {
 		output.putBoolean("vehicle_reload_pending", reloadPending);
 		output.putInt("vehicle_reserve", entityData.get(DATA_RESERVE));
 		output.putFloat("vehicle_fuel", entityData.get(DATA_FUEL));
+		output.putInt("vehicle_ordnance", getOrdnance());
 	}
 
 	@Override
@@ -2126,6 +2404,7 @@ public class VehicleEntity extends LivingEntity {
 		// Vehicles from before stage 5 have no reserve entry: they keep reloading for free, as they always did.
 		setReserve(input.getIntOr("vehicle_reserve", -1));
 		entityData.set(DATA_FUEL, input.getFloatOr("vehicle_fuel", -1f));
+		entityData.set(DATA_ORDNANCE, input.getIntOr("vehicle_ordnance", vtype.ordnance != null ? vtype.ordnance.count : 0));
 		fold();
 	}
 }

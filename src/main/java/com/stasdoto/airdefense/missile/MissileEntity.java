@@ -88,6 +88,9 @@ public class MissileEntity extends Entity {
 	private Entity owner;
 	@org.jetbrains.annotations.Nullable
 	private Entity directHit;
+	/** Never hits this one (the aircraft that fired it). */
+	@org.jetbrains.annotations.Nullable
+	private Entity ignore;
 
 	public MissileEntity(EntityType<? extends MissileEntity> type, Level level) {
 		super(type, level);
@@ -185,6 +188,27 @@ public class MissileEntity extends Entity {
 		level.addFreshEntity(m);
 		MissileStats.INTERCEPTORS_LAUNCHED.incrementAndGet();
 		MissileStats.log("interceptor {} from {} at {}", type, fmt(pos), target == null ? "-" : target.getMissileType() + "@" + fmt(target.position()));
+		return m;
+	}
+
+	/** Drops a bomb (or fires a rocket) with this starting velocity; never hits {@code ignore} (the aircraft). */
+	public static MissileEntity launchWithVelocity(ServerLevel level, MissileType type, Vec3 pos, Vec3 vel, @org.jetbrains.annotations.Nullable Entity owner,
+			@org.jetbrains.annotations.Nullable Entity ignore) {
+		MissileEntity m = new MissileEntity(ModEntities.MISSILE, level);
+		m.setMissileType(type);
+		m.setPos(pos);
+		m.launchPos = pos;
+		m.launchDir = vel.lengthSqr() > 1e-6 ? vel.normalize() : new Vec3(0, -1, 0);
+		m.target = pos.add(m.launchDir.scale(200));
+		m.health = type.health;
+		m.speed = vel.length();
+		m.owner = owner;
+		m.ignore = ignore;
+		m.lastVel = vel;
+		m.updateRotation(m.launchDir);
+		m.setMotor(type != MissileType.FAB250);
+		level.addFreshEntity(m);
+		MissileStats.ROCKETS_FIRED.incrementAndGet();
 		return m;
 	}
 
@@ -389,7 +413,8 @@ public class MissileEntity extends Entity {
 			if (type.threat || direct) {
 				EntityHitResult entityHit = ProjectileUtil.getEntityHitResult(level, this, from, to,
 						getBoundingBox().expandTowards(vel).inflate(1.0),
-						e -> e instanceof LivingEntity && e.isAlive() && !e.isSpectator() && (e != owner || life > 20)
+						e -> e instanceof LivingEntity && e.isAlive() && !e.isSpectator() && (e != owner || life > 20) && e != ignore
+								&& (ignore == null || !ignore.hasPassenger(e))
 								&& (owner == null || !owner.isPassengerOfSameVehicle(e)), direct ? 0.1f : 0.4f);
 				if (entityHit != null) {
 					directHit = entityHit.getEntity();
@@ -413,6 +438,11 @@ public class MissileEntity extends Entity {
 	// --- Unguided rockets (RPG): straight out of the tube, the sustainer burns ~1.5 s, then gravity takes over ---
 
 	private Vec3 directStep(MissileType type) {
+		if (type == MissileType.FAB250) {
+			// A bomb: falls, keeping the aircraft's speed.
+			setMotor(false);
+			return lastVel.add(0, -0.06, 0).scale(0.997);
+		}
 		boolean motor = life < 30;
 		setMotor(motor);
 		if (motor) {
@@ -767,6 +797,11 @@ public class MissileEntity extends Entity {
 			targetMissile.engagedBy = Math.max(0, targetMissile.engagedBy - 1);
 		}
 		discard();
+		if (type == MissileType.FAB250) {
+			MissileStats.ROCKET_IMPACTS.incrementAndGet();
+			Effects.groundImpact(level, this, at, type);
+			return;
+		}
 		if (type.kind == MissileType.Kind.DIRECT) {
 			MissileStats.ROCKET_IMPACTS.incrementAndGet();
 			MissileStats.log("{} {} at {} after {} ticks{}", type, inAir ? "self-destruct" : "IMPACT", fmt(at), life,
