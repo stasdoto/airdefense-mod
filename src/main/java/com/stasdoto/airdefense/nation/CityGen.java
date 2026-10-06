@@ -186,7 +186,8 @@ public final class CityGen {
 				}
 				for (int y = from; y < from + span; y++) {
 					BlockState st = chunk.getBlockState(pos.set(x, y, z));
-					if (st.is(BlockTags.LEAVES) || st.is(BlockTags.LOGS) || st.is(Blocks.VINE) || st.is(Blocks.BEE_NEST) || st.is(Blocks.SNOW)) {
+					if (st.is(BlockTags.LEAVES) || st.is(BlockTags.LOGS) || st.is(Blocks.VINE) || st.is(Blocks.BEE_NEST) || st.is(Blocks.SNOW)
+							|| st.is(Blocks.RED_MUSHROOM_BLOCK) || st.is(Blocks.BROWN_MUSHROOM_BLOCK) || st.is(Blocks.MUSHROOM_STEM)) {
 						chunk.setBlockState(pos, AIR, 0);
 					}
 				}
