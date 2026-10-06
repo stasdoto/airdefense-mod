@@ -82,6 +82,13 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				});
 				ctx.waitTicks(5);
 				ctx.takeScreenshot("000_guide_7");
+				ctx.runOnClient(mc -> {
+					if (mc.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.BookViewScreen b) {
+						b.setPage(14);
+					}
+				});
+				ctx.waitTicks(5);
+				ctx.takeScreenshot("000_guide_15");
 				ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
 				ctx.waitTicks(5);
 			}
