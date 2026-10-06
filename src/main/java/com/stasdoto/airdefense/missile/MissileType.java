@@ -12,8 +12,8 @@ import com.stasdoto.airdefense.registry.ModSounds;
 public enum MissileType {
 	//            kind                 threat maxSpd accel  power  fire   hp   scale prox  life  turn   trail             loop sound
 	ISKANDER("iskander_missile", Kind.BALLISTIC, true, 4.6, 0.07, 9.0f, false, 8f, 2.54f, 0, 3000, 0.0, Trail.HEAVY, null),
-	KALIBR("kalibr_missile", Kind.CRUISE, true, 1.9, 0.05, 6.5f, false, 4f, 2.11f, 0, 6000, 0.07, Trail.JET, ModSounds.CRUISE_FLIGHT),
-	SHAHED("shahed_drone", Kind.DRONE, true, 0.8, 0.03, 4.5f, true, 3f, 1.75f, 0, 9000, 0.05, Trail.NONE, ModSounds.DRONE_BUZZ),
+	KALIBR("kalibr_missile", Kind.CRUISE, true, 1.9, 0.05, 6.5f, false, 4f, 2.11f, 0, 6000, 0.07, Trail.JET, null),
+	SHAHED("shahed_drone", Kind.DRONE, true, 0.8, 0.03, 4.5f, true, 3f, 1.75f, 0, 9000, 0.05, Trail.NONE, null),
 	GMLRS("gmlrs_rocket", Kind.ROCKET, true, 3.8, 0.18, 4.5f, false, 3f, 1.37f, 0, 2400, 0.0, Trail.MEDIUM, ModSounds.MISSILE_FLIGHT),
 	PAC3("pac3_missile", Kind.INTERCEPTOR, false, 5.2, 0.35, 2.5f, false, 2f, 1.85f, 3.2, 220, 0.24, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
 	IRIST("irist_missile", Kind.INTERCEPTOR, false, 4.3, 0.32, 2.2f, false, 2f, 1.27f, 4.0, 190, 0.3, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
@@ -21,7 +21,7 @@ public enum MissileType {
 	STINGER("stinger_missile", Kind.INTERCEPTOR, false, 3.1, 0.3, 1.6f, false, 1f, 1.0f, 3.0, 150, 0.32, Trail.WHITE, null),
 	// Decoys: look like the real thing to a radar, carry no warhead (only a small charge).
 	ISKANDER_DECOY("stinger_missile", Kind.BALLISTIC, true, 4.0, 0.06, 0.5f, false, 1f, 1.5f, 0, 1200, 0.0, Trail.MEDIUM, null),
-	GERBERA("shahed_drone", Kind.DRONE, true, 0.82, 0.03, 0.7f, false, 1.5f, 1.7f, 0, 9000, 0.05, Trail.NONE, ModSounds.DRONE_BUZZ),
+	GERBERA("shahed_drone", Kind.DRONE, true, 0.82, 0.03, 0.7f, false, 1.5f, 1.7f, 0, 9000, 0.05, Trail.NONE, null),
 	// RPG-7 rocket grenade: unguided, straight out of the tube, the sustainer burns 1.5 s, then it drops; shaped charge.
 	RPG("rpg_round", Kind.DIRECT, false, 3.4, 0.25, 2.2f, false, 1f, 1.0f, 0, 90, 0.0, Trail.SMALL, null);
 

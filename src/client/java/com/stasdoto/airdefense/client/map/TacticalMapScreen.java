@@ -30,6 +30,7 @@ import com.stasdoto.airdefense.nation.SoldierEntity;
 import com.stasdoto.airdefense.map.MapActionPayload;
 import com.stasdoto.airdefense.map.MapStatusPayload;
 import com.stasdoto.airdefense.missile.MissileEntity;
+import com.stasdoto.airdefense.missile.MissileType;
 import com.stasdoto.airdefense.vehicle.VehicleEntity;
 import com.stasdoto.airdefense.vehicle.VehicleType;
 
@@ -90,6 +91,8 @@ public class TacticalMapScreen extends Screen {
 	private Button homeButton;
 	private Button dismissButton;
 	private Button manageButton;
+	private Button planButton;
+	private Button massButton;
 
 	public TacticalMapScreen() {
 		super(Component.translatable("screen.airdefense.map.title"));
@@ -127,6 +130,10 @@ public class TacticalMapScreen extends Screen {
 				.bounds(px0 + 4, my1 - 42, pw / 2 - 1, 20).build());
 		addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.to_radar"), b -> minecraft.gui.setScreen(new RadarScreen()))
 				.bounds(mx0 + font.width(title) + 8, 2, 70, 13).build());
+		massButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.mass_strike"), b -> massStrike())
+				.bounds(mx0 + font.width(title) + 82, 2, 110, 13).build());
+		planButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.plan"), b -> openPlan())
+				.bounds(px0 + 4 + pw / 2 + 1, my1 - 20, pw - pw / 2 - 1, 20).build());
 		meButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.me"), b -> follow = true)
 				.bounds(px0 + 4 + pw / 2 + 1, my1 - 42, pw - pw / 2 - 1, 20).build());
 		if (!initialised) {
@@ -328,15 +335,22 @@ public class TacticalMapScreen extends Screen {
 		homeButton.active = mine && v.soldiers() > 0;
 		clearButton.visible = !army;
 		meButton.visible = !army;
+		massButton.active = target != null;
 		if (army) {
 			fireButton.visible = false;
 			modeButton.visible = false;
+			planButton.visible = false;
 			return;
 		}
 		MapStatusPayload.Entry sel = selectedEntry();
 		boolean defense = sel != null && typeOf(sel).hasMode();
 		fireButton.visible = !defense;
 		fireButton.active = sel != null && typeOf(sel).isLauncher() && cannotFire(sel) == null;
+		boolean planable = sel != null && typeOf(sel).launcher != null && (typeOf(sel).launcher.missile.kind == MissileType.Kind.DRONE
+				|| typeOf(sel).launcher.missile.kind == MissileType.Kind.CRUISE);
+		int pw = PANEL_W - 8;
+		fireButton.setWidth(planable ? pw / 2 - 1 : pw);
+		planButton.visible = planable;
 		modeButton.visible = defense;
 		if (defense && typeOf(sel).isRadar()) {
 			modeButton.setMessage(Component.translatable(sel.mode() == VehicleEntity.MODE_OFF ? "screen.airdefense.map.radar_off" : "screen.airdefense.map.radar_on"));
@@ -360,6 +374,21 @@ public class TacticalMapScreen extends Screen {
 			return;
 		}
 		MapClient.send(new MapActionPayload(MapActionPayload.STRIKE, sel.id(), target.getX(), target.getY(), target.getZ()));
+	}
+
+	/** The flight task window for the selected drone or cruise missile launcher. */
+	private void openPlan() {
+		MapStatusPayload.Entry sel = selectedEntry();
+		if (sel != null) {
+			minecraft.gui.setScreen(new com.stasdoto.airdefense.client.drone.FlightScreen(sel, target));
+		}
+	}
+
+	/** Every launcher in reach fires everything at the marked target. */
+	private void massStrike() {
+		if (target != null) {
+			MapClient.send(new MapActionPayload(MapActionPayload.MASS_STRIKE, -1, target.getX(), target.getY(), target.getZ()));
+		}
 	}
 
 	private void toggleMode() {

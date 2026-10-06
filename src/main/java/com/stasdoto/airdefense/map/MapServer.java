@@ -74,6 +74,11 @@ public final class MapServer {
 				player.sendOverlayMessage(Component.translatable("message.airdefense.target_set", target.getX(), target.getY(), target.getZ(), dist));
 				level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.DESIGNATE, SoundSource.PLAYERS, 0.6f, 1.2f);
 			}
+			case MapActionPayload.MASS_STRIKE -> {
+				BlockPos target = ground(level, p.x(), p.y(), p.z());
+				DesignatorItem.setTarget(tablet, target);
+				com.stasdoto.airdefense.drone.DroneNet.massStrike(player, target);
+			}
 			case MapActionPayload.CLEAR_TARGET -> {
 				DesignatorItem.clearTarget(tablet);
 				player.sendOverlayMessage(Component.translatable("message.airdefense.target_cleared"));

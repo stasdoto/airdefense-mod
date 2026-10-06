@@ -139,6 +139,12 @@ public class VehicleEntity extends LivingEntity {
 	private int cooldown;
 	private int stowTimer;
 	private boolean reloadPending;
+	/** Flight task for the current salvo (drones, cruise missiles), and who watches through the first one's camera. */
+	@Nullable
+	private com.stasdoto.airdefense.drone.FlightPlan plan;
+	@Nullable
+	private java.util.UUID planViewer;
+	private int salvoIndex;
 
 	// Air defence state (server).
 	private int fireTimer;
@@ -853,6 +859,11 @@ public class VehicleEntity extends LivingEntity {
 	// Strike launchers
 
 	public boolean commandStrike(BlockPos target, @Nullable Player player) {
+		return commandStrike(target, player, null);
+	}
+
+	/** Launch with a flight task (height, speed, route, how many, camera) for drones and cruise missiles. */
+	public boolean commandStrike(BlockPos target, @Nullable Player player, @Nullable com.stasdoto.airdefense.drone.FlightPlan flightPlan) {
 		LauncherType type = vtype.launcher;
 		if (type == null || !isAlive()) {
 			return false;
@@ -884,6 +895,9 @@ public class VehicleEntity extends LivingEntity {
 		}
 		strikeTarget = target;
 		strikePending = true;
+		plan = flightPlan;
+		planViewer = flightPlan != null && flightPlan.camera() && player != null ? player.getUUID() : null;
+		salvoIndex = 0;
 		speed = 0;
 		setState(DEPLOYED);
 		if (player != null) {
@@ -902,7 +916,8 @@ public class VehicleEntity extends LivingEntity {
 			aimAt(strikeTarget);
 			if (strikePending && aimed()) {
 				strikePending = false;
-				salvoLeft = Math.min(type.salvo, Integer.bitCount(getLoadedMask()));
+				int want = plan != null && plan.count() > 0 ? plan.count() : type.salvo;
+				salvoLeft = Math.min(want, Integer.bitCount(getLoadedMask()));
 				salvoTimer = 0;
 			}
 			if (salvoLeft > 0 && --salvoTimer <= 0) {
@@ -992,7 +1007,20 @@ public class VehicleEntity extends LivingEntity {
 				strikeTarget.getZ() + 0.5 + r.nextGaussian() * type.spread);
 		// A Shahed salvo always has a few Gerbera decoys in it: cheap foam drones meant to soak up air defence.
 		MissileType missile = type.missile == MissileType.SHAHED && r.nextFloat() < 0.35f ? MissileType.GERBERA : type.missile;
-		MissileEntity.launchStrike(level, missile, from, aim, forward(), dir);
+		// The one the player watches is always a real Shahed.
+		boolean watched = plan != null && planViewer != null && salvoIndex == 0;
+		if (watched) {
+			missile = type.missile;
+		}
+		MissileEntity m = MissileEntity.launchStrike(level, missile, from, aim, forward(), dir);
+		MissileType.Kind kind = missile.kind;
+		if (plan != null && (kind == MissileType.Kind.DRONE || kind == MissileType.Kind.CRUISE)) {
+			m.applyPlan(plan, salvoIndex % 2 == 0);
+		}
+		if (watched && level.getServer().getPlayerList().getPlayer(planViewer) instanceof net.minecraft.server.level.ServerPlayer viewer) {
+			com.stasdoto.airdefense.drone.DroneCam.start(viewer, m);
+		}
+		salvoIndex++;
 		setLoadedMask(getLoadedMask() & ~(1 << rail));
 		setAmmo(Math.max(0, getAmmo() - 1));
 		Effects.launchBlast(level, from.subtract(dir.scale(2.5)), type.missile);

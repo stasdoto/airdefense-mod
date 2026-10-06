@@ -18,6 +18,7 @@ public class AirDefenseClient implements ClientModInitializer {
 		FxClient.init();
 		VehicleClient.init();
 		MapClient.init();
+		com.stasdoto.airdefense.client.drone.DroneClient.init();
 		FactoryClient.init();
 		GunClient.init();
 		NationClient.init();

@@ -66,6 +66,8 @@ public class RadarScreen extends Screen {
 	private int refresh;
 	private double centerX;
 	private double centerZ;
+	/** Labels placed on the scope this frame (so they don't pile up on each other). */
+	private final List<int[]> labels = new ArrayList<>();
 
 	public RadarScreen() {
 		super(Component.translatable("screen.airdefense.radar.title"));
@@ -200,6 +202,7 @@ public class RadarScreen extends Screen {
 	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
 		RadarPayload p = latest;
 		boolean working = p != null && !p.stations().isEmpty();
+		labels.clear();
 		drawScope(g, working);
 		if (working) {
 			drawStations(g, p);
@@ -338,7 +341,7 @@ public class RadarScreen extends Screen {
 			if (inScope(lx, ly)) {
 				line(g, lx - 3, ly - 3, lx + 3, ly + 3, C_HOSTILE, 0);
 				line(g, lx - 3, ly + 3, lx + 3, ly - 3, C_HOSTILE, 0);
-				small(g, Component.translatable("screen.airdefense.radar.launch").getString(), (int) lx + 5, (int) ly + 2, C_HOSTILE);
+				label(g, Component.translatable("screen.airdefense.radar.launch").getString(), (int) lx + 5, (int) ly + 2, C_HOSTILE);
 			}
 			// Where it is heading.
 			if (!c.decoy()) {
@@ -347,7 +350,7 @@ public class RadarScreen extends Screen {
 				line(g, x, y, tx, ty, 0x80FFD24A, 3);
 				if (inScope(tx, ty)) {
 					circle(g, tx, ty, 4, C_TARGET, 0);
-					small(g, Component.translatable("screen.airdefense.radar.target").getString(), (int) tx + 6, (int) ty - 3, C_TARGET);
+					label(g, Component.translatable("screen.airdefense.radar.target").getString(), (int) tx + 6, (int) ty - 3, C_TARGET);
 				}
 			}
 			if (!inScope(x, y)) {
@@ -364,8 +367,8 @@ public class RadarScreen extends Screen {
 			if (c.engaged() > 0) {
 				circle(g, x, y, 6, C_FRIEND, 0);
 			}
-			String label = name(c) + " " + Math.round(c.height()) + "m " + kmh(c) + "km/h";
-			small(g, label, (int) x + 6, (int) y - 9, color);
+			String text = name(c) + " " + Math.round(c.height()) + "m";
+			label(g, text, (int) x + 6, (int) y - 9, color);
 		}
 	}
 
@@ -484,6 +487,26 @@ public class RadarScreen extends Screen {
 			}
 			double a = Mth.TWO_PI * i / n;
 			dot(g, x + Math.cos(a) * r, y + Math.sin(a) * r, color);
+		}
+	}
+
+	/** A small label where it does not cover another one (tried a little above and below; left out if no room). */
+	private void label(GuiGraphicsExtractor g, String text, int x, int y, int color) {
+		int w = (int) (font.width(text) * 0.75f) + 1;
+		for (int dy : new int[]{0, -8, 8, -16, 16}) {
+			int yy = y + dy;
+			boolean free = true;
+			for (int[] r : labels) {
+				if (x < r[0] + r[2] && x + w > r[0] && yy < r[1] + 7 && yy + 7 > r[1]) {
+					free = false;
+					break;
+				}
+			}
+			if (free) {
+				labels.add(new int[]{x, yy, w});
+				small(g, text, x, yy, color);
+				return;
+			}
 		}
 	}
 

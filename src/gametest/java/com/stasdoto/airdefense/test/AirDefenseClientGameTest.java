@@ -19,6 +19,8 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 
 import com.stasdoto.airdefense.AirDefense;
+import com.stasdoto.airdefense.item.DesignatorItem;
+import net.minecraft.world.item.ItemStack;
 import com.stasdoto.airdefense.missile.MissileStats;
 import com.stasdoto.airdefense.vehicle.VehicleEntity;
 import com.stasdoto.airdefense.vehicle.VehicleType;
@@ -69,6 +71,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 			if (scene("radar")) {
 				radar(ctx, server);
+			}
+			if (scene("drones")) {
+				drones(ctx, server);
 			}
 			if (scene("drive")) {
 				drive(ctx, server);
@@ -228,6 +233,99 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(200);
 		server.runCommand("time set 1000");
 		report("radar_trml_iris_vs_shahed", before);
+		server.runCommand("clear @a");
+		server.runCommand("gamemode spectator @a");
+	}
+
+	/**
+	 * Stage R2: the flight task window and the drone's camera (launch with the camera on, watch, signal lost when it
+	 * hits), then a massed night raid on a defended spot: the radar raises the alert, the drones glow in the sky.
+	 */
+	private void drones(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 24000;
+		server.runCommand("gamemode creative @a");
+		camera(server, x + 0.5, ground + 1, -4, 0, 5);
+		ctx.waitTicks(40);
+		int shahed = spawnVehicle(server, VehicleType.SHAHED, x, 6, 0);
+		BlockPos target = new BlockPos(x + 20, ground, 250);
+		server.runCommand("clear @a");
+		server.runCommand("item replace entity @a hotbar.0 with airdefense:designator");
+		ctx.waitTicks(5);
+		selectSlot(ctx, 0);
+		server.runOnServer(s -> {
+			ItemStack tablet = DesignatorItem.held(s.getPlayerList().getPlayers().getFirst());
+			if (tablet != null) {
+				DesignatorItem.setTarget(tablet, target);
+			}
+		});
+		ctx.waitTicks(30);
+		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT);
+		ctx.waitForScreen(com.stasdoto.airdefense.client.map.TacticalMapScreen.class);
+		ctx.waitTicks(20);
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				m.select(shahed);
+			}
+		});
+		ctx.waitTicks(5);
+		boolean plan = ctx.tryClickScreenButton("Flight plan");
+		ctx.waitTicks(10);
+		boolean cam = ctx.tryClickScreenButton("Camera: off");
+		ctx.waitTicks(5);
+		ctx.takeScreenshot("80_flight_window");
+		int startedBefore = com.stasdoto.airdefense.drone.DroneCam.started;
+		boolean launch = ctx.tryClickScreenButton("Launch");
+		AirDefense.LOGGER.info("[airdefense-test] flight window buttons: plan {} camera {} launch {}", plan, cam, launch);
+		int waited = waitUntil(ctx, () -> com.stasdoto.airdefense.drone.DroneCam.started > startedBefore, 400);
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("81_drone_cam");
+		ctx.waitTicks(120);
+		ctx.takeScreenshot("82_drone_cam_later");
+		waitUntil(ctx, () -> ctx.computeOnClient(mc -> !(mc.getCameraEntity() instanceof com.stasdoto.airdefense.missile.MissileEntity)), 700);
+		ctx.waitTicks(4);
+		ctx.takeScreenshot("83_signal_lost");
+		ctx.waitTicks(30);
+		String mode = server.computeOnServer(s -> s.getPlayerList().getPlayers().getFirst().gameMode().getName());
+		double back = server.computeOnServer(s -> s.getPlayerList().getPlayers().getFirst().position().distanceTo(new Vec3(x + 0.5, ground + 1, -4)));
+		AirDefense.LOGGER.info("[airdefense-test] RESULT drone_cam: started after {} ticks, camera frames {}, mode after {}, back at origin within {} blocks",
+				waited, com.stasdoto.airdefense.client.drone.DroneClient.camFrames, mode, String.format(java.util.Locale.ROOT, "%.1f", back));
+		server.runOnServer(s -> {
+			if (s.overworld().getEntity(shahed) != null) {
+				s.overworld().getEntity(shahed).discard();
+			}
+		});
+
+		// A massed raid at night on a spot with a radar, an IRIS-T and a Gepard.
+		int z = 1200;
+		camera(server, x + 0.5, ground + 2, z, 180, -18);
+		ctx.waitTicks(40);
+		List<Integer> ids = new ArrayList<>();
+		ids.add(spawnVehicle(server, VehicleType.TRML4D, x + 14, z + 12, 180));
+		ids.add(spawnVehicle(server, VehicleType.IRIS_T, x - 14, z - 6, 180));
+		ids.add(spawnVehicle(server, VehicleType.GEPARD, x + 8, z - 14, 180));
+		server.runCommand("time set 15000");
+		ctx.waitTicks(100);
+		int[] before = counters();
+		int launchedBefore = com.stasdoto.airdefense.drone.Raids.launched;
+		int alertsBefore = com.stasdoto.airdefense.drone.Raids.alerts;
+		int loops = com.stasdoto.airdefense.client.drone.DroneClient.loopsStarted;
+		server.runOnServer(s -> com.stasdoto.airdefense.drone.Raids.start(s.overworld(), new Vec3(x + 0.5, ground, z + 0.5), -Math.PI / 2, 12, 1, 0, true));
+		ctx.waitTicks(260);
+		ctx.takeScreenshot("84_raid_sky");
+		waitUntil(ctx, () -> com.stasdoto.airdefense.drone.Raids.alerts > alertsBefore, 300);
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("85_raid_alert");
+		ctx.waitTicks(80);
+		ctx.takeScreenshot("86_raid_fight");
+		ctx.waitTicks(80);
+		ctx.takeScreenshot("87_raid_fight_later");
+		ctx.waitTicks(400);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT raid: launched {} alerts {} engine sounds {}",
+				com.stasdoto.airdefense.drone.Raids.launched - launchedBefore, com.stasdoto.airdefense.drone.Raids.alerts - alertsBefore,
+				com.stasdoto.airdefense.client.drone.DroneClient.loopsStarted - loops);
+		report("raid_12_shahed_1_kalibr", before);
+		server.runCommand("time set 1000");
+		server.runOnServer(s -> forVehicles(s.overworld(), ids, Entity::discard));
 		server.runCommand("clear @a");
 		server.runCommand("gamemode spectator @a");
 	}

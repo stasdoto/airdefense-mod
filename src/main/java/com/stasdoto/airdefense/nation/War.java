@@ -215,8 +215,36 @@ public final class War {
 				if (target != null) {
 					sendSquad(level, p, ai, target, 3 + r.nextInt(3));
 				}
+				// At night, now and then: a massed drone raid on one of his villages.
+				if (target != null && level.isDarkOutside() && r.nextInt(100) < 12
+						&& !com.stasdoto.airdefense.drone.Raids.activeNear(level, net.minecraft.world.phys.Vec3.atCenterOf(target.center), 200)) {
+					raid(level, p, ai, target, r);
+				}
 			}
 		}
+	}
+
+	/** A massed raid from the enemy's side: more drones the bigger the enemy country is. */
+	public static int raid(ServerLevel level, Politics p, Country ai, Settlement target, Random r) {
+		Settlement home = null;
+		double bestD = Double.MAX_VALUE;
+		for (Settlement o : p.settlementsOf(ai.id)) {
+			double d = o.center.distSqr(target.center);
+			if (d < bestD) {
+				bestD = d;
+				home = o;
+			}
+		}
+		double bearing = home != null ? Math.atan2(home.center.getZ() - target.center.getZ(), home.center.getX() - target.center.getX())
+				: r.nextDouble() * Math.PI * 2;
+		int size = p.settlementsOf(ai.id).size();
+		int drones = Math.min(24, 6 + size * 3 + r.nextInt(5));
+		Country victim = p.country(target.country);
+		if (victim != null) {
+			tell(level, victim, Component.translatable("nation.airdefense.war.raid", ai.name));
+		}
+		return com.stasdoto.airdefense.drone.Raids.start(level, net.minecraft.world.phys.Vec3.atBottomCenterOf(target.center), bearing, drones,
+				r.nextInt(3), size >= 4 ? 1 : 0, true);
 	}
 
 	/** The enemy's loaded village nearest to the attacker's own villages (within 900 blocks). */

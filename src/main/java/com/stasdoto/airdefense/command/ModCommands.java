@@ -37,6 +37,12 @@ public final class ModCommands {
 													pos.getX(), pos.getY(), pos.getZ(), dist), false);
 											return 1;
 										})))
+						.then(Commands.literal("raid")
+								.requires(src -> src.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))
+								.executes(ctx -> raid(ctx.getSource().getPlayerOrException(), 12))
+								.then(Commands.argument("drones", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, 60))
+										.executes(ctx -> raid(ctx.getSource().getPlayerOrException(),
+												com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "drones")))))
 						.then(Commands.literal("clear")
 								.executes(ctx -> {
 									ServerPlayer player = ctx.getSource().getPlayerOrException();
@@ -49,6 +55,12 @@ public final class ModCommands {
 									ctx.getSource().sendSuccess(() -> Component.translatable("message.airdefense.target_cleared"), false);
 									return 1;
 								}))));
+	}
+
+	private static int raid(ServerPlayer player, int drones) {
+		int n = com.stasdoto.airdefense.drone.Raids.onPlayer(player, drones, null);
+		player.sendSystemMessage(Component.translatable("message.airdefense.raid.started", n));
+		return 1;
 	}
 
 	private static ItemStack designator(ServerPlayer player) {

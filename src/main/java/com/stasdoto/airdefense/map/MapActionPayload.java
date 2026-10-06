@@ -17,6 +17,8 @@ public record MapActionPayload(int action, int vehicleId, int x, int y, int z) i
 	public static final int CLEAR_TARGET = 4;
 	/** The radar screen: the situation plus what the radars see. */
 	public static final int RADAR = 5;
+	/** Every launcher in reach fires everything at the tablet's target. */
+	public static final int MASS_STRIKE = 6;
 	/** Height of a map point the client does not know: the server looks it up. */
 	public static final int Y_UNKNOWN = Integer.MIN_VALUE;
 

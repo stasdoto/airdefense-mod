@@ -63,6 +63,12 @@ public class MissileEntity extends Entity {
 	// Cruise missiles and drones: altitude they are trying to hold, and their height above the ground on the way.
 	private double desiredY = Double.NaN;
 	private double cruiseAlt = -1;
+	// Flight plan (drones and cruise missiles launched with a flight task from the tablet).
+	private double speedFactor = 1.0;
+	private int maneuver = -1;
+	@org.jetbrains.annotations.Nullable
+	private Vec3 waypoint;
+	private double planDistance;
 	// Interceptors: what they are chasing; threats: how many interceptors chase them.
 	private MissileEntity targetMissile;
 	private int engagedBy;
@@ -265,6 +271,25 @@ public class MissileEntity extends Entity {
 	/** Cruise missiles and drones: fly at this height above the ground (instead of the type's usual height). */
 	public void setCruiseAltitude(double height) {
 		this.cruiseAlt = height;
+	}
+
+	/** Applies a flight task: height, speed, and how it flies (straight, weaving, round the flank, low at the end). */
+	public void applyPlan(com.stasdoto.airdefense.drone.FlightPlan plan, boolean leftFlank) {
+		cruiseAlt = plan.altitude();
+		speedFactor = plan.speedPercent() / 100.0;
+		maneuver = plan.maneuver();
+		planDistance = Math.sqrt(Mth.square(target.x - launchPos.x) + Mth.square(target.z - launchPos.z));
+		if (maneuver == com.stasdoto.airdefense.drone.FlightPlan.FLANK && planDistance > 60) {
+			double dx = (target.x - launchPos.x) / planDistance;
+			double dz = (target.z - launchPos.z) / planDistance;
+			double side = (leftFlank ? 1 : -1) * planDistance * 0.38;
+			waypoint = new Vec3(launchPos.x + (target.x - launchPos.x) * 0.55 - dz * side, target.y,
+					launchPos.z + (target.z - launchPos.z) * 0.55 + dx * side);
+		}
+	}
+
+	public int getManeuver() {
+		return maneuver;
 	}
 
 	/** See {@link #decoyRoll}: compared with a radar's discrimination to decide whether it is fooled by a decoy. */
@@ -498,17 +523,35 @@ public class MissileEntity extends Entity {
 		double hd = Math.sqrt(dx * dx + dz * dz);
 		double height = Math.max(0, pos.y - target.y);
 		double diveDistance = type.kind == MissileType.Kind.DRONE ? 10 + height * 0.7 : 16 + height * 0.9;
+		double top = type.maxSpeed * speedFactor;
 
-		if (phase == 2 || hd < diveDistance) {
+		if (phase == 2 || (waypoint == null && hd < diveDistance)) {
 			phase = 2;
-			speed = Math.min(type.maxSpeed * 1.35, speed + type.accel * 2);
+			speed = Math.min(top * 1.35, speed + type.accel * 2);
 			Vec3 desired = target.subtract(pos).normalize();
 			return turnTowards(currentDir(), desired, type.turnRate * 3).scale(speed);
 		}
+		if (waypoint != null) {
+			// Round the flank first.
+			double wx = waypoint.x - pos.x;
+			double wz = waypoint.z - pos.z;
+			if (wx * wx + wz * wz < 25 * 25) {
+				waypoint = null;
+			} else {
+				dx = wx;
+				dz = wz;
+			}
+		}
+		if (maneuver == com.stasdoto.airdefense.drone.FlightPlan.LOW && hd < planDistance * 0.55) {
+			// The last half low over the ground, under the radars.
+			cruiseAlt = com.stasdoto.airdefense.drone.FlightPlan.LOW_ALT;
+		}
 
-		speed = Math.min(type.maxSpeed, speed + type.accel);
+		speed = Math.min(top, speed + type.accel);
 		double desiredYaw = Math.atan2(dx, dz);
-		if (type.kind == MissileType.Kind.DRONE) {
+		if (maneuver == com.stasdoto.airdefense.drone.FlightPlan.WEAVE) {
+			desiredYaw += Math.sin(life * 0.05 + getId()) * 0.45;
+		} else if (maneuver < 0 && type.kind == MissileType.Kind.DRONE) {
 			desiredYaw += Math.sin(life * 0.045 + getId()) * 0.18;
 		}
 		Vec3 cur = currentDir();
@@ -681,6 +724,17 @@ public class MissileEntity extends Entity {
 		double a = Math.sin((1 - t) * angle) / s;
 		double b = Math.sin(t * angle) / s;
 		return from.scale(a).add(to.scale(b)).normalize();
+	}
+
+	/** The camera on the nose looks where it flies (the stored rotation is in the model's own convention). */
+	@Override
+	public float getViewYRot(float partialTick) {
+		return -Mth.rotLerp(partialTick, yRotO, getYRot());
+	}
+
+	@Override
+	public float getViewXRot(float partialTick) {
+		return -Mth.lerp(partialTick, xRotO, getXRot());
 	}
 
 	private void updateRotation(Vec3 v) {
