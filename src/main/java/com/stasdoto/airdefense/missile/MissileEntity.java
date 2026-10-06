@@ -60,8 +60,9 @@ public class MissileEntity extends Entity {
 	private Vec3 arcStart = Vec3.ZERO;
 	private double arcApex;
 	private double arcS;
-	// Cruise missiles and drones: altitude they are trying to hold.
+	// Cruise missiles and drones: altitude they are trying to hold, and their height above the ground on the way.
 	private double desiredY = Double.NaN;
+	private double cruiseAlt = -1;
 	// Interceptors: what they are chasing; threats: how many interceptors chase them.
 	private MissileEntity targetMissile;
 	private int engagedBy;
@@ -253,6 +254,19 @@ public class MissileEntity extends Entity {
 		return target;
 	}
 
+	public Vec3 getLaunchPos() {
+		return launchPos;
+	}
+
+	public int getLife() {
+		return life;
+	}
+
+	/** Cruise missiles and drones: fly at this height above the ground (instead of the type's usual height). */
+	public void setCruiseAltitude(double height) {
+		this.cruiseAlt = height;
+	}
+
 	/** See {@link #decoyRoll}: compared with a radar's discrimination to decide whether it is fooled by a decoy. */
 	public double decoyRoll() {
 		return decoyRoll;
@@ -392,7 +406,7 @@ public class MissileEntity extends Entity {
 		MissileType type = getMissileType();
 		arcApex = type.kind == MissileType.Kind.BALLISTIC
 				? Mth.clamp(d * 0.6, 90, 450)
-				: Mth.clamp(d * 0.35, 30, 220);
+				: Mth.clamp(d * 0.45, 45, 260);
 	}
 
 	private Vec3 arcPoint(double s) {
@@ -510,7 +524,7 @@ public class MissileEntity extends Entity {
 				}
 			}
 			if (ground > Double.NEGATIVE_INFINITY) {
-				desiredY = ground + type.cruiseAltitude();
+				desiredY = ground + (cruiseAlt > 0 ? cruiseAlt : type.cruiseAltitude());
 			}
 		}
 		double vy = Double.isNaN(desiredY) ? 0 : Mth.clamp((desiredY - pos.y) * 0.08, -0.35, 0.45);

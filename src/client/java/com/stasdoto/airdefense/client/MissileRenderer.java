@@ -9,18 +9,23 @@ import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.item.ItemModelResolver;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
 
+import com.stasdoto.airdefense.AirDefense;
 import com.stasdoto.airdefense.missile.MissileEntity;
+import com.stasdoto.airdefense.missile.MissileType;
 
 /**
  * Draws a missile using its item's 3D block-style model, pointed along its flight direction.
  * The item models are built nose-forward along +Z, centred on the origin.
  */
 public class MissileRenderer extends EntityRenderer<MissileEntity, MissileRenderState> {
+	private static final RenderType GLOW = RenderTypes.entityTranslucentEmissive(AirDefense.id("textures/misc/glow_dot.png"));
 	private final ItemModelResolver itemModelResolver;
 
 	public MissileRenderer(EntityRendererProvider.Context context) {
@@ -41,6 +46,20 @@ public class MissileRenderer extends EntityRenderer<MissileEntity, MissileRender
 		state.pitch = Mth.lerp(partialTick, entity.xRotO, entity.getXRot());
 		state.scale = entity.getMissileType().renderScale;
 		state.motor = entity.isMotorOn();
+		MissileType type = entity.getMissileType();
+		// Engines that burn glow: rockets while the motor runs, jets and drone engines (exhaust) all the way.
+		boolean burning = entity.isMotorOn() || type.kind == MissileType.Kind.CRUISE || type.kind == MissileType.Kind.DRONE;
+		if (!burning || type.kind == MissileType.Kind.DIRECT) {
+			state.glow = 0;
+		} else if (type.kind == MissileType.Kind.DRONE) {
+			state.glow = 0.75f;
+			state.glowBase = 0.25f;
+			state.glowColor = 0xFFC060;
+		} else {
+			state.glow = 1.0f;
+			state.glowBase = type.kind == MissileType.Kind.INTERCEPTOR ? 0.35f : 0.5f;
+			state.glowColor = 0xFFE9A0;
+		}
 		itemModelResolver.updateForNonLiving(state.item, entity.getDisplayStack(), ItemDisplayContext.NONE, entity);
 	}
 
@@ -64,6 +83,42 @@ public class MissileRenderer extends EntityRenderer<MissileEntity, MissileRender
 		poseStack.scale(state.scale, state.scale, state.scale);
 		state.item.submit(poseStack, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor);
 		poseStack.popPose();
+		if (state.glow > 0) {
+			glow(state, poseStack, collector, camera);
+		}
 		super.submit(state, poseStack, collector, camera);
+	}
+
+	/**
+	 * The burning engine seen from afar: a bright yellow point at the tail that keeps about the same size on screen
+	 * however far away it is, so a missile or a drone at night is a moving spark in the sky.
+	 */
+	private static void glow(MissileRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
+		double dist = Math.sqrt(state.distanceToCameraSq);
+		float size = (float) (state.glowBase + dist * 0.0055) * state.glow;
+		float yaw = state.yaw * Mth.DEG_TO_RAD;
+		float pitch = state.pitch * Mth.DEG_TO_RAD;
+		float back = 1.3f * state.scale;
+		poseStack.pushPose();
+		poseStack.translate(-Mth.sin(yaw) * Mth.cos(pitch) * back, state.boundingBoxHeight / 2 - Mth.sin(pitch) * back,
+				-Mth.cos(yaw) * Mth.cos(pitch) * back);
+		poseStack.mulPose(new Matrix4f().rotation(camera.orientation));
+		int color = state.glowColor;
+		int a = (int) (Mth.clamp(state.glow, 0, 1) * 255);
+		int r = (color >> 16) & 255;
+		int g = (color >> 8) & 255;
+		int b = color & 255;
+		collector.submitCustomGeometry(poseStack, GLOW, (pose, vc) -> {
+			// Both windings: seen from any side whatever the culling.
+			float[][] corners = {{size, -size, 1, 1}, {size, size, 1, 0}, {-size, size, 0, 0}, {-size, -size, 0, 1}};
+			for (int pass = 0; pass < 2; pass++) {
+				for (int i = 0; i < 4; i++) {
+					float[] c = corners[pass == 0 ? i : 3 - i];
+					vc.addVertex(pose, c[0], c[1], 0).setColor(r, g, b, a).setUv(c[2], c[3]).setOverlay(OverlayTexture.NO_OVERLAY)
+							.setLight(0xF000F0).setNormal(pose, 0, 0, 1);
+				}
+			}
+		});
+		poseStack.popPose();
 	}
 }

@@ -781,6 +781,11 @@ public final class Economy {
 			case PATRIOT -> new int[]{30, 60, 160, 100};
 			case SHAHED -> new int[]{40, 30, 90, 60};
 			case ISKANDER, KALIBR -> new int[]{30, 60, 180, 110};
+			case P18 -> new int[]{30, 30, 70, 50};
+			case SENTINEL -> new int[]{20, 20, 80, 50};
+			case ST68, KUPOL -> new int[]{30, 40, 100, 70};
+			case TRML4D -> new int[]{20, 40, 110, 70};
+			case MPQ65 -> new int[]{30, 50, 130, 80};
 		};
 	}
 

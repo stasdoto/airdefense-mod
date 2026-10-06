@@ -109,9 +109,9 @@ public enum MissileType {
 		};
 	}
 
-	/** Cruise height above the terrain for cruise missiles and drones. */
+	/** Cruise height above the terrain for cruise missiles and drones: high up, they come down only at the end. */
 	public double cruiseAltitude() {
-		return kind == Kind.DRONE ? 22 : 14;
+		return kind == Kind.DRONE ? 50 : 40;
 	}
 
 	public static MissileType byId(int id) {

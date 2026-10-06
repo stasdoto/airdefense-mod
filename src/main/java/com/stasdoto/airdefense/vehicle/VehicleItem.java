@@ -51,7 +51,13 @@ public class VehicleItem extends Item {
 	@Override
 	public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
 		tooltip.accept(Component.translatable("item.airdefense.vehicle.hint").withStyle(ChatFormatting.GRAY));
-		tooltip.accept(Component.translatable(type.isLauncher() ? "item.airdefense.vehicle.hint_launcher" : "item.airdefense.vehicle.hint_defense")
+		tooltip.accept(Component.translatable(type.isLauncher() ? "item.airdefense.vehicle.hint_launcher"
+				: type.isRadar() ? "item.airdefense.vehicle.hint_radar" : "item.airdefense.vehicle.hint_defense")
 				.withStyle(ChatFormatting.DARK_GRAY));
+		if (type.isRadar()) {
+			tooltip.accept(Component.translatable("item.airdefense.radar.stats", (int) type.radar.range, (int) type.radar.minAltitude,
+					Component.translatable(type.radar.rotates() ? "item.airdefense.radar.rotating" : "item.airdefense.radar.sector", (int) type.radar.sector))
+					.withStyle(ChatFormatting.DARK_AQUA));
+		}
 	}
 }

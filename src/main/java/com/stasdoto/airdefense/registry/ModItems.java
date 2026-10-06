@@ -54,6 +54,13 @@ public final class ModItems {
 	public static final Item IRIS_T = vehicle("iris_t", VehicleType.IRIS_T);
 	public static final Item NASAMS = vehicle("nasams", VehicleType.NASAMS);
 	public static final Item GEPARD = vehicle("gepard", VehicleType.GEPARD);
+	// Radar stations.
+	public static final Item P18 = vehicle("p18", VehicleType.P18);
+	public static final Item ST68 = vehicle("st68", VehicleType.ST68);
+	public static final Item TRML4D = vehicle("trml4d", VehicleType.TRML4D);
+	public static final Item SENTINEL = vehicle("sentinel", VehicleType.SENTINEL);
+	public static final Item MPQ65 = vehicle("mpq65", VehicleType.MPQ65);
+	public static final Item KUPOL = vehicle("kupol", VehicleType.KUPOL);
 
 	// Missile items: what the flying entities look like (their 3D model), also usable as decoration in item frames.
 	public static final Item ISKANDER_MISSILE = missile(MissileType.ISKANDER);
@@ -108,6 +115,12 @@ public final class ModItems {
 				output.accept(IRIS_T);
 				output.accept(NASAMS);
 				output.accept(GEPARD);
+				output.accept(P18);
+				output.accept(ST68);
+				output.accept(KUPOL);
+				output.accept(TRML4D);
+				output.accept(SENTINEL);
+				output.accept(MPQ65);
 				output.accept(MANPADS);
 				output.accept(FACTORY_KIT);
 				output.accept(FACTORY_CONTROLLER);

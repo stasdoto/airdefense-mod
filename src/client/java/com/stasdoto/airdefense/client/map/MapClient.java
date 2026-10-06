@@ -19,6 +19,7 @@ public final class MapClient {
 
 	public static void init() {
 		ClientPlayNetworking.registerGlobalReceiver(MapStatusPayload.TYPE, (payload, context) -> latest = payload);
+		ClientPlayNetworking.registerGlobalReceiver(com.stasdoto.airdefense.map.RadarPayload.TYPE, (payload, context) -> RadarScreen.receive(payload));
 		DesignatorItem.openMap = MapClient::open;
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> {
 			if (mc.level == null) {

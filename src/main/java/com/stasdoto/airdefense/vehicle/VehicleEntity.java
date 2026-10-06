@@ -50,6 +50,8 @@ import com.stasdoto.airdefense.launcher.LauncherType;
 import com.stasdoto.airdefense.missile.Effects;
 import com.stasdoto.airdefense.missile.MissileEntity;
 import com.stasdoto.airdefense.missile.MissileType;
+import com.stasdoto.airdefense.radar.RadarNetwork;
+import com.stasdoto.airdefense.radar.RadarType;
 import com.stasdoto.airdefense.registry.ModParticles;
 import com.stasdoto.airdefense.registry.ModSounds;
 import com.stasdoto.airdefense.registry.ModTickets;
@@ -150,6 +152,10 @@ public class VehicleEntity extends LivingEntity {
 	/** Gepard: rounds of the current burst still to fire, and rounds in flight that will hit when they arrive. */
 	private int burstLeft;
 	private final List<Shell> shells = new ArrayList<>();
+	/** Missile batteries: standing inside a radar station's range (target data from the network). */
+	private boolean radarLinked;
+	/** How much further a battery shoots with target data from a radar station. */
+	public static final double RADAR_RANGE_BONUS = 1.3;
 
 	private static final class Shell {
 		final MissileEntity target;
@@ -186,7 +192,7 @@ public class VehicleEntity extends LivingEntity {
 		v.snapTo(pos.x, pos.y, pos.z, yaw, 0);
 		v.yBodyRot = v.yHeadRot = yaw;
 		v.setHealth(v.getMaxHealth());
-		if (type.isDefense()) {
+		if (type.hasMode()) {
 			v.setMode(MODE_AUTO);
 		}
 		v.setLoadedMask(v.fullMask());
@@ -307,6 +313,9 @@ public class VehicleEntity extends LivingEntity {
 
 	/** Spare shots it can carry: two more salvos for launchers, two magazines for missile batteries, three for Gepard. */
 	public int reserveCapacity() {
+		if (vtype.isRadar()) {
+			return 0;
+		}
 		if (vtype.isLauncher()) {
 			return vtype.rails() * 2;
 		}
@@ -811,9 +820,33 @@ public class VehicleEntity extends LivingEntity {
 		}
 		if (vtype.isLauncher()) {
 			tickLauncher(level);
+		} else if (vtype.isRadar()) {
+			tickRadar(level);
 		} else {
 			tickDefense(level);
 		}
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Radar stations
+
+	/** Switched on and standing still: the antenna goes up (or starts turning) and the radar reports to the network. */
+	private void tickRadar(ServerLevel level) {
+		boolean onTheMove = marchTicks > 0 || stationaryTicks < DEPLOY_STILL_TICKS;
+		boolean active = getMode() != MODE_OFF && !onTheMove;
+		setState(active ? DEPLOYED : STOWED);
+		VehicleGeometry.Geometry g = vtype.geometry;
+		setElevationTarget(active ? g.deployElevation() : g.fixedElevation());
+		if (active && Math.abs(elevation - getElevationTarget()) < 2) {
+			RadarNetwork.report(level, getId(), position().add(0, g.height() * 0.85, 0), getYRot(), vtype.radar);
+		} else {
+			RadarNetwork.remove(level, getId());
+		}
+	}
+
+	/** Whether this radar is up and working (server). */
+	public boolean radarWorking() {
+		return vtype.isRadar() && getState() == DEPLOYED && Math.abs(elevation - vtype.geometry.deployElevation()) < 2;
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -921,7 +954,7 @@ public class VehicleEntity extends LivingEntity {
 			if (vtype.launcher != null && vtype.launcher.missile.kind == MissileType.Kind.ROCKET) {
 				// MLRS: point the pod along the start of the rocket's ballistic arc.
 				double d = Math.sqrt(Mth.square(t.x - getX()) + Mth.square(t.z - getZ()));
-				double apex = Mth.clamp(d * 0.35, 30, 220);
+				double apex = Mth.clamp(d * 0.45, 45, 260);
 				elev = (float) Math.toDegrees(Math.atan2((t.y - getY()) + 4 * apex, d));
 				elev = Mth.clamp(elev, 20, 60);
 			}
@@ -991,6 +1024,9 @@ public class VehicleEntity extends LivingEntity {
 			sirenTimer--;
 		}
 		tickShells(level);
+		if ((tickCount + getId()) % 20 == 0) {
+			radarLinked = !gun && RadarNetwork.linked(level, position());
+		}
 		boolean onTheMove = marchTicks > 0 || (!gun && stationaryTicks < DEPLOY_STILL_TICKS);
 		boolean active = getMode() != MODE_OFF && !onTheMove;
 		setState(active ? DEPLOYED : STOWED);
@@ -1068,7 +1104,7 @@ public class VehicleEntity extends LivingEntity {
 
 	@Nullable
 	private MissileEntity pickThreat(ServerLevel level, DefenseType type, Vec3 radar) {
-		double range = type.range;
+		double range = type.range * (radarLinked ? RADAR_RANGE_BONUS : 1.0);
 		AABB box = new AABB(radar.x - range, radar.y - range, radar.z - range, radar.x + range, radar.y + range, radar.z + range);
 		List<MissileEntity> threats = level.getEntitiesOfClass(MissileEntity.class, box,
 				m -> canEngage(type, m, radar)
@@ -1083,12 +1119,16 @@ public class VehicleEntity extends LivingEntity {
 		if (!m.isAlive() || !m.getMissileType().threat || m.getY() <= level().getMinY()) {
 			return false;
 		}
-		double range = type.range;
+		// A battery linked to a radar station that sees the target gets its track early: it can shoot further out,
+		// and the station's better look helps tell decoys apart.
+		RadarNetwork.Station station = radarLinked && level() instanceof ServerLevel server ? RadarNetwork.coverage(server, m.position()) : null;
+		double range = type.range * (station != null ? RADAR_RANGE_BONUS : 1.0);
 		if (m.distanceToSqr(radar) > range * range || isAboutToLeave(m, radar, range)) {
 			return false;
 		}
 		// A decoy this radar sees through is ignored (each decoy has a fixed "how convincing" roll).
-		if (m.getMissileType().isDecoy() && m.decoyRoll() < type.discrimination) {
+		double discrimination = type.discrimination + (station != null ? station.type().discrimination : 0);
+		if (m.getMissileType().isDecoy() && m.decoyRoll() < discrimination) {
 			return false;
 		}
 		if (type.interceptor == null) {
@@ -1418,7 +1458,7 @@ public class VehicleEntity extends LivingEntity {
 				}
 			}
 			case ACTION_MODE -> {
-				if (vtype.isDefense()) {
+				if (vtype.hasMode()) {
 					cycleMode(player);
 				}
 			}
@@ -1439,7 +1479,15 @@ public class VehicleEntity extends LivingEntity {
 
 	/** Air defence mode set from the tablet map or the mode key (auto / manual / off). */
 	public void setModeByOrder(int mode, @Nullable Player player) {
-		if (!vtype.isDefense() || mode < MODE_OFF || mode > MODE_MANUAL) {
+		if (!vtype.hasMode() || mode < MODE_OFF || mode > MODE_MANUAL) {
+			return;
+		}
+		if (vtype.isRadar()) {
+			mode = mode == MODE_OFF ? MODE_OFF : MODE_AUTO;
+			setMode(mode);
+			if (player != null) {
+				player.sendOverlayMessage(Component.translatable(mode == MODE_OFF ? "message.airdefense.radar.off" : "message.airdefense.radar.on"));
+			}
 			return;
 		}
 		setMode(mode);
@@ -1471,7 +1519,7 @@ public class VehicleEntity extends LivingEntity {
 
 	/** Auto → manual → off → auto. */
 	private void cycleMode(Player player) {
-		setModeByOrder(nextMode(getMode()), player);
+		setModeByOrder(vtype.isRadar() ? (getMode() == MODE_OFF ? MODE_AUTO : MODE_OFF) : nextMode(getMode()), player);
 	}
 
 	public static int nextMode(int mode) {
@@ -1499,6 +1547,12 @@ public class VehicleEntity extends LivingEntity {
 					? Component.translatable("message.airdefense.status.reload", cooldown / 20 + 1)
 					: Component.translatable("message.airdefense.status.ready", Integer.bitCount(getLoadedMask()));
 			return Component.translatable("message.airdefense.vehicle.status_launcher", name, hp, ready).append(reserveText());
+		}
+		if (vtype.isRadar()) {
+			RadarType r = vtype.radar;
+			Component state = Component.translatable(getMode() == MODE_OFF ? "message.airdefense.status.off"
+					: radarWorking() ? "message.airdefense.radar.working" : "message.airdefense.radar.deploying");
+			return Component.translatable("message.airdefense.vehicle.status_radar", name, hp, state, (int) r.range);
 		}
 		DefenseType type = vtype.defense;
 		Component mode = Component.translatable(getMode() == MODE_AUTO ? "message.airdefense.status.on"
@@ -1536,7 +1590,11 @@ public class VehicleEntity extends LivingEntity {
 			steerVis = 0;
 		}
 		if (getState() == DEPLOYED && vtype.geometry.spinner() != null) {
-			radarSpin += 0.25f;
+			radarSpin += vtype.isRadar() ? vtype.radar.spin : 0.25f;
+		} else if (vtype.isRadar()) {
+			// Switched off: the antenna turns back to face forward for the march.
+			float rest = Math.round(radarSpin / Mth.TWO_PI) * Mth.TWO_PI;
+			radarSpin = Mth.approach(radarSpin, rest, 0.06f);
 		}
 		updateTilt();
 		if (!isAlive()) {
@@ -1645,6 +1703,7 @@ public class VehicleEntity extends LivingEntity {
 		}
 		super.die(source);
 		if (level() instanceof ServerLevel server) {
+			RadarNetwork.remove(server, getId());
 			ejectPassengers();
 			// The fuel and every missile still on board go up.
 			float power = 3.5f + Integer.bitCount(getLoadedMask()) * (vtype.isLauncher() ? 1.2f : 0.4f);
@@ -1726,7 +1785,7 @@ public class VehicleEntity extends LivingEntity {
 	@Override
 	protected void readAdditionalSaveData(ValueInput input) {
 		super.readAdditionalSaveData(input);
-		setMode(input.getIntOr("vehicle_mode", vtype.isDefense() ? MODE_AUTO : MODE_OFF));
+		setMode(input.getIntOr("vehicle_mode", vtype.hasMode() ? MODE_AUTO : MODE_OFF));
 		setLoadedMask(input.getIntOr("vehicle_loaded", fullMask()));
 		setAmmo(input.getIntOr("vehicle_ammo", vtype.magazine()));
 		cooldown = input.getIntOr("vehicle_cooldown", 0);

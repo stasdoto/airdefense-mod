@@ -49,7 +49,7 @@ public final class VehicleSounds {
 				continue;
 			}
 			Loop[] loops = PLAYING.computeIfAbsent(v.getId(), id -> new Loop[3]);
-			ensure(mc, loops, 0, v, v.getVehicleType() == VehicleType.GEPARD ? ModSounds.ENGINE_TRACKED : ModSounds.ENGINE_TRUCK, Part.ENGINE);
+			ensure(mc, loops, 0, v, v.getVehicleType().tracked() ? ModSounds.ENGINE_TRACKED : ModSounds.ENGINE_TRUCK, Part.ENGINE);
 			ensure(mc, loops, 1, v, ModSounds.HYDRAULICS, Part.HYDRAULICS);
 			ensure(mc, loops, 2, v, ModSounds.TURRET, Part.TURRET);
 		}

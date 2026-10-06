@@ -22,6 +22,11 @@ public final class ModSounds {
 	public static final SoundEvent GEPARD_BURST = register("gepard_burst", 220);
 	public static final SoundEvent RADAR_LOCK = register("radar_lock", 48);
 	public static final SoundEvent SIREN = register("siren", 220);
+	public static final SoundEvent RADAR_PING = register("radar_ping", 16);
+	/** The Shahed's two-stroke buzz, near and far (looped on the client while one flies). */
+	public static final SoundEvent SHAHED_LOOP = register("shahed_loop", 160);
+	public static final SoundEvent SHAHED_FAR = register("shahed_far", 600);
+	public static final SoundEvent CRUISE_LOOP = register("cruise_loop", 220);
 	public static final SoundEvent DESIGNATE = register("designate", 16);
 	// Stage 6 ("Squad-style"): distance layers picked by the client, see client.fx.SquadAudio.
 	public static final SoundEvent EXPLOSION_NEAR = register("explosion_near", 128);

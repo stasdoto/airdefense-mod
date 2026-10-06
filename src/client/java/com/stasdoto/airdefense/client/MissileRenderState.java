@@ -9,4 +9,8 @@ public class MissileRenderState extends EntityRenderState {
 	public float pitch;
 	public float scale = 1;
 	public boolean motor;
+	/** The engine's glow seen from afar: strength (0 = none), size near by, colour. */
+	public float glow;
+	public float glowBase;
+	public int glowColor;
 }

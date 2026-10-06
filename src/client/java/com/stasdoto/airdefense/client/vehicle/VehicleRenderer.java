@@ -40,6 +40,7 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 			case IRIS_T -> VehicleModels.iris_t();
 			case NASAMS -> VehicleModels.nasams();
 			case GEPARD -> VehicleModels.gepard();
+			default -> GenModels.layer(type.id);
 		};
 		Map<String, String> paths = switch (type) {
 			case ISKANDER -> VehicleModels.iskanderPaths();
@@ -50,6 +51,7 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 			case IRIS_T -> VehicleModels.iris_tPaths();
 			case NASAMS -> VehicleModels.nasamsPaths();
 			case GEPARD -> VehicleModels.gepardPaths();
+			default -> GenModels.paths(type.id);
 		};
 		ModelPart root = layer.bakeRoot();
 		this.model = new VehicleModel(root, paths, type.geometry);

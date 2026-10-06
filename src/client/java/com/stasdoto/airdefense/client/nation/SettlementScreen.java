@@ -44,7 +44,7 @@ public class SettlementScreen extends Screen {
 			new ItemStack(Items.IRON_SHOVEL)};
 	private static final String[] JOB_KEYS = {"wood", "stone", "iron", "build"};
 	private static final VehicleType[] HANGAR_ORDER = {VehicleType.GEPARD, VehicleType.NASAMS, VehicleType.IRIS_T, VehicleType.PATRIOT,
-			VehicleType.HIMARS, VehicleType.SHAHED, VehicleType.ISKANDER, VehicleType.KALIBR};
+			VehicleType.HIMARS, VehicleType.SHAHED, VehicleType.ISKANDER, VehicleType.KALIBR, VehicleType.P18, VehicleType.TRML4D};
 
 	private SettlementInfoPayload info;
 	@Nullable

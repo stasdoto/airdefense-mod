@@ -112,7 +112,10 @@ public final class VehicleClient {
 		int hp = (int) Math.ceil(v.getHealth() / v.getMaxHealth() * 100);
 		Component l1 = Component.translatable("hud.airdefense.vehicle.line1", v.getType().getDescription(), hp, kmh);
 		Component l2;
-		if (type.isLauncher()) {
+		if (type.isRadar()) {
+			l2 = Component.translatable(v.getMode() == VehicleEntity.MODE_OFF ? "hud.airdefense.vehicle.radar_off"
+					: v.radarWorking() ? "hud.airdefense.vehicle.radar_on" : "hud.airdefense.vehicle.radar_deploying", (int) type.radar.range);
+		} else if (type.isLauncher()) {
 			l2 = Component.translatable(v.getState() == VehicleEntity.DEPLOYED ? "hud.airdefense.vehicle.deployed" : "hud.airdefense.vehicle.stowed",
 					Integer.bitCount(v.getLoadedMask()), type.rails());
 		} else {
@@ -123,7 +126,9 @@ public final class VehicleClient {
 			};
 			l2 = Component.translatable(mode, v.getAmmo(), type.magazine());
 		}
-		l2 = Component.empty().append(l2).append(v.reserveText());
+		if (!type.isRadar()) {
+			l2 = Component.empty().append(l2).append(v.reserveText());
+		}
 		String keys = driver ? "hud.airdefense.vehicle.keys_driver"
 				: GunnerHud.isManualGunner(player, v) ? "hud.airdefense.vehicle.keys_manual" : "hud.airdefense.vehicle.keys_gunner";
 		Component l3 = Component.translatable(keys, DEPLOY.getTranslatedKeyMessage(), MODE.getTranslatedKeyMessage(), SEAT.getTranslatedKeyMessage());

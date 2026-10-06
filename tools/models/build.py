@@ -1,0 +1,26 @@
+#!/usr/bin/env python3
+"""Builds every generated model: python3 tools/models/build.py (from the repository root or anywhere)."""
+import os
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+
+import boxgen  # noqa: E402
+import radars  # noqa: E402
+
+ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
+MAIN = os.path.join(ROOT, 'src/main/java/com/stasdoto/airdefense/vehicle/GenGeometry.java')
+CLIENT = os.path.join(ROOT, 'src/client/java/com/stasdoto/airdefense/client/vehicle/GenModels.java')
+TEX = os.path.join(ROOT, 'src/main/resources/assets/airdefense/textures/entity/vehicle')
+ITEMS = os.path.join(ROOT, 'src/main/resources/assets/airdefense/textures/item')
+
+
+def models():
+    out = []
+    out += radars.all_models()
+    return out
+
+
+if __name__ == '__main__':
+    boxgen.build(models(), MAIN, CLIENT, TEX, ITEMS, 'com.stasdoto.airdefense.vehicle', 'com.stasdoto.airdefense.client.vehicle')

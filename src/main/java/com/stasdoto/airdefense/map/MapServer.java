@@ -15,8 +15,12 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.Vec3;
 
 import com.stasdoto.airdefense.item.DesignatorItem;
+import com.stasdoto.airdefense.missile.MissileEntity;
+import com.stasdoto.airdefense.missile.MissileType;
+import com.stasdoto.airdefense.radar.RadarNetwork;
 import com.stasdoto.airdefense.registry.ModSounds;
 import com.stasdoto.airdefense.vehicle.VehicleEntity;
 
@@ -32,6 +36,7 @@ public final class MapServer {
 	public static void init() {
 		PayloadTypeRegistry.serverboundPlay().register(MapActionPayload.TYPE, MapActionPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(MapStatusPayload.TYPE, MapStatusPayload.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(RadarPayload.TYPE, RadarPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(MapActionPayload.TYPE, (payload, context) -> handle(context.player(), payload));
 	}
 
@@ -45,6 +50,11 @@ public final class MapServer {
 		switch (p.action()) {
 			case MapActionPayload.REFRESH -> {
 			}
+			case MapActionPayload.RADAR -> {
+				ServerPlayNetworking.send(player, status(level, player));
+				ServerPlayNetworking.send(player, radar(level));
+				return;
+			}
 			case MapActionPayload.STRIKE -> {
 				if (level.getEntity(p.vehicleId()) instanceof VehicleEntity v && v.getVehicleType().isLauncher()) {
 					BlockPos target = ground(level, p.x(), p.y(), p.z());
@@ -53,7 +63,7 @@ public final class MapServer {
 				}
 			}
 			case MapActionPayload.SET_MODE -> {
-				if (level.getEntity(p.vehicleId()) instanceof VehicleEntity v && v.getVehicleType().isDefense()) {
+				if (level.getEntity(p.vehicleId()) instanceof VehicleEntity v && v.getVehicleType().hasMode()) {
 					v.setModeByOrder(p.x(), player);
 				}
 			}
@@ -86,6 +96,41 @@ public final class MapServer {
 		// The chunk's height is the top block itself (the level's would be the air above it).
 		int top = level.getChunk(x >> 4, z >> 4).getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x & 15, z & 15);
 		return new BlockPos(x, Math.max(level.getMinY(), top), z);
+	}
+
+	/** What the radar stations see right now. */
+	public static RadarPayload radar(ServerLevel level) {
+		List<RadarPayload.Station> stations = new ArrayList<>();
+		for (RadarNetwork.Station st : RadarNetwork.stations(level)) {
+			int type = level.getEntity(st.id()) instanceof VehicleEntity v ? v.getVehicleType().ordinal() : 0;
+			stations.add(new RadarPayload.Station(st.id(), type, (float) st.pos().x, (float) st.pos().y, (float) st.pos().z, st.yaw()));
+		}
+		List<RadarPayload.Contact> contacts = new ArrayList<>();
+		for (MissileEntity m : RadarNetwork.contacts(level, 96)) {
+			MissileType t = m.getMissileType();
+			if (t.kind == MissileType.Kind.DIRECT) {
+				continue;
+			}
+			MissileType shown = t;
+			boolean decoy = false;
+			if (t.isDecoy()) {
+				RadarNetwork.Station c = RadarNetwork.coverage(level, m.position());
+				decoy = c != null && m.decoyRoll() < 0.35 + c.type().discrimination;
+				if (!decoy) {
+					shown = t == MissileType.GERBERA ? MissileType.SHAHED : MissileType.ISKANDER;
+				}
+			}
+			Vec3 v = m.getFlightVelocity();
+			Vec3 tg = m.getTarget();
+			Vec3 l = m.getLaunchPos();
+			BlockPos column = m.blockPosition();
+			float height = level.hasChunkAt(column)
+					? (float) (m.getY() - level.getHeight(Heightmap.Types.MOTION_BLOCKING, column.getX(), column.getZ())) : (float) (m.getY() - 64);
+			contacts.add(new RadarPayload.Contact(m.getId(), shown.ordinal(), t.threat, decoy, (float) m.getX(), (float) m.getY(), (float) m.getZ(),
+					(float) v.x, (float) v.y, (float) v.z, (float) tg.x, (float) tg.y, (float) tg.z, (float) l.x, (float) l.z,
+					Math.min(127, m.getEngagedBy()), height));
+		}
+		return new RadarPayload(stations, contacts);
 	}
 
 	public static MapStatusPayload status(ServerLevel level, ServerPlayer player) {

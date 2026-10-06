@@ -45,6 +45,7 @@ public class TacticalMapScreen extends Screen {
 	private static final int ROW_H = 20;
 	private static final int C_LAUNCHER = 0xFFE8A33C;
 	private static final int C_DEFENSE = 0xFF4FB8E8;
+	private static final int C_RADAR = 0xFF5FE07A;
 	private static final int C_TARGET = 0xFFFF4A3A;
 	private static final int C_TEXT = 0xFFE6E9EC;
 	private static final int C_DIM = 0xFF9AA4AE;
@@ -124,6 +125,8 @@ public class TacticalMapScreen extends Screen {
 				.bounds(px0 + 4, my1 - 20, pw, 20).build());
 		clearButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.clear"), b -> clearTarget())
 				.bounds(px0 + 4, my1 - 42, pw / 2 - 1, 20).build());
+		addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.to_radar"), b -> minecraft.gui.setScreen(new RadarScreen()))
+				.bounds(mx0 + font.width(title) + 8, 2, 70, 13).build());
 		meButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.me"), b -> follow = true)
 				.bounds(px0 + 4 + pw / 2 + 1, my1 - 42, pw - pw / 2 - 1, 20).build());
 		if (!initialised) {
@@ -282,6 +285,8 @@ public class TacticalMapScreen extends Screen {
 			}
 		} else if (e.mode() == VehicleEntity.MODE_OFF) {
 			s = Component.translatable("screen.airdefense.map.st.off");
+		} else if (type.isRadar()) {
+			s = Component.translatable(e.state() == VehicleEntity.DEPLOYED ? "screen.airdefense.map.st.radar_on" : "screen.airdefense.map.st.march");
 		} else if (e.mode() == VehicleEntity.MODE_MANUAL) {
 			s = Component.translatable("screen.airdefense.map.st.manual", Math.max(0, e.ammo()), type.magazine());
 		} else if (e.busy() > 0) {
@@ -329,11 +334,13 @@ public class TacticalMapScreen extends Screen {
 			return;
 		}
 		MapStatusPayload.Entry sel = selectedEntry();
-		boolean defense = sel != null && typeOf(sel).isDefense();
+		boolean defense = sel != null && typeOf(sel).hasMode();
 		fireButton.visible = !defense;
 		fireButton.active = sel != null && typeOf(sel).isLauncher() && cannotFire(sel) == null;
 		modeButton.visible = defense;
-		if (defense) {
+		if (defense && typeOf(sel).isRadar()) {
+			modeButton.setMessage(Component.translatable(sel.mode() == VehicleEntity.MODE_OFF ? "screen.airdefense.map.radar_off" : "screen.airdefense.map.radar_on"));
+		} else if (defense) {
 			modeButton.setMessage(Component.translatable(switch (sel.mode()) {
 				case VehicleEntity.MODE_AUTO -> "screen.airdefense.map.mode_auto";
 				case VehicleEntity.MODE_MANUAL -> "screen.airdefense.map.mode_manual";
@@ -357,10 +364,11 @@ public class TacticalMapScreen extends Screen {
 
 	private void toggleMode() {
 		MapStatusPayload.Entry sel = selectedEntry();
-		if (sel == null || !typeOf(sel).isDefense()) {
+		if (sel == null || !typeOf(sel).hasMode()) {
 			return;
 		}
-		int mode = VehicleEntity.nextMode(sel.mode());
+		int mode = typeOf(sel).isRadar() ? (sel.mode() == VehicleEntity.MODE_OFF ? VehicleEntity.MODE_AUTO : VehicleEntity.MODE_OFF)
+				: VehicleEntity.nextMode(sel.mode());
 		MapClient.send(new MapActionPayload(MapActionPayload.SET_MODE, sel.id(), mode, 0, 0));
 	}
 
@@ -671,7 +679,11 @@ public class TacticalMapScreen extends Screen {
 		MapStatusPayload.Entry sel = selectedEntry();
 		for (MapStatusPayload.Entry e : entries()) {
 			VehicleType type = typeOf(e);
-			if (type.defense != null) {
+			if (type.radar != null) {
+				boolean on = e.state() == VehicleEntity.DEPLOYED;
+				int color = e == sel ? 0xC05FE07A : on ? 0x505FE07A : 0x30808080;
+				circle(g, toScreenX(e.x()), toScreenY(e.z()), type.radar.range * scale(), color, e == sel ? 0 : 5);
+			} else if (type.defense != null) {
 				boolean on = e.mode() != VehicleEntity.MODE_OFF;
 				int color = e == sel ? 0xC04FB8E8 : on ? 0x554FB8E8 : 0x30808080;
 				circle(g, toScreenX(e.x()), toScreenY(e.z()), type.defense.range * scale(), color, e == sel ? 0 : 3);
@@ -750,8 +762,8 @@ public class TacticalMapScreen extends Screen {
 				continue;
 			}
 			boolean sel = e.id() == selected;
-			int color = type.isLauncher() ? C_LAUNCHER : C_DEFENSE;
-			if (type.isDefense() && e.mode() == VehicleEntity.MODE_OFF) {
+			int color = type.isLauncher() ? C_LAUNCHER : type.isRadar() ? C_RADAR : C_DEFENSE;
+			if (type.hasMode() && e.mode() == VehicleEntity.MODE_OFF) {
 				color = 0xFF8A949C;
 			}
 			int len = Math.max(8, (int) (type.geometry.length() * scale()));
@@ -956,7 +968,7 @@ public class TacticalMapScreen extends Screen {
 			if (sel || hover) {
 				g.fill(x0 + 2, y, x1 - 2, y + ROW_H - 1, sel ? 0xFF2E3D4C : 0xFF222C36);
 			}
-			g.fill(x0 + 5, y + 4, x0 + 9, y + 8, type.isLauncher() ? C_LAUNCHER : C_DEFENSE);
+			g.fill(x0 + 5, y + 4, x0 + 9, y + 8, type.isLauncher() ? C_LAUNCHER : type.isRadar() ? C_RADAR : C_DEFENSE);
 			Component name = Component.translatable("entity.airdefense." + type.id);
 			g.text(font, name, x0 + 12, y + 1, sel ? 0xFFFFFFFF : C_TEXT);
 			if (p != null) {
@@ -984,6 +996,9 @@ public class TacticalMapScreen extends Screen {
 				l2 = why != null ? why : Component.translatable("screen.airdefense.map.range", (int) distanceToTarget(sel), typeOf(sel).launcher.maxRange);
 				c2 = why != null ? C_BAD : 0xFF8AE07A;
 			}
+		} else if (typeOf(sel).isRadar()) {
+			l1 = Component.translatable("entity.airdefense." + typeOf(sel).id);
+			l2 = Component.translatable("screen.airdefense.map.radar_range", (int) typeOf(sel).radar.range);
 		} else {
 			l1 = Component.translatable("entity.airdefense." + typeOf(sel).id);
 			l2 = Component.translatable("screen.airdefense.map.ad_range", (int) typeOf(sel).defense.range);

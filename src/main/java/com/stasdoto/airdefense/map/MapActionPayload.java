@@ -15,6 +15,8 @@ public record MapActionPayload(int action, int vehicleId, int x, int y, int z) i
 	public static final int SET_MODE = 2;
 	public static final int SET_TARGET = 3;
 	public static final int CLEAR_TARGET = 4;
+	/** The radar screen: the situation plus what the radars see. */
+	public static final int RADAR = 5;
 	/** Height of a map point the client does not know: the server looks it up. */
 	public static final int Y_UNKNOWN = Integer.MIN_VALUE;
 
@@ -26,6 +28,10 @@ public record MapActionPayload(int action, int vehicleId, int x, int y, int z) i
 			ByteBufCodecs.INT, MapActionPayload::y,
 			ByteBufCodecs.INT, MapActionPayload::z,
 			MapActionPayload::new);
+
+	public static MapActionPayload radar() {
+		return new MapActionPayload(RADAR, -1, 0, 0, 0);
+	}
 
 	public static MapActionPayload refresh() {
 		return new MapActionPayload(REFRESH, -1, 0, 0, 0);

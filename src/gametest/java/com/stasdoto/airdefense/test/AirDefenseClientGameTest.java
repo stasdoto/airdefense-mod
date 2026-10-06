@@ -67,6 +67,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("lineup")) {
 				lineup(ctx, server);
 			}
+			if (scene("radar")) {
+				radar(ctx, server);
+			}
 			if (scene("drive")) {
 				drive(ctx, server);
 			}
@@ -155,6 +158,78 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(10);
 		ctx.takeScreenshot("04_lineup_deployed_side");
 		server.runOnServer(s -> forVehicles(s.overworld(), ids, Entity::discard));
+	}
+
+	/**
+	 * Stage R1: the six radar stations (folded, then switched on and turning), then a TRML-4D with an IRIS-T against
+	 * a Shahed salvo, watched on the tablet's radar screen; the drones' engine glow at night.
+	 */
+	private void radar(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 21000;
+		VehicleType[] radars = {VehicleType.P18, VehicleType.ST68, VehicleType.KUPOL, VehicleType.TRML4D, VehicleType.SENTINEL, VehicleType.MPQ65};
+		camera(server, x, ground + 9, 34, 180, 14);
+		ctx.waitTicks(40);
+		List<Integer> ids = new ArrayList<>();
+		for (int i = 0; i < radars.length; i++) {
+			ids.add(spawnVehicle(server, radars[i], x - 40 + i * 16, 0, 0));
+		}
+		ctx.waitTicks(8);
+		ctx.takeScreenshot("70_radars_folded");
+		ctx.waitTicks(140);
+		ctx.takeScreenshot("71_radars_working");
+		camera(server, x + 52, ground + 7, 22, 120, 12);
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("72_radars_side");
+		camera(server, x - 56, ground + 6, -20, -60, 8);
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("73_radars_back");
+		server.runOnServer(s -> {
+			StringBuilder b = new StringBuilder();
+			forVehicles(s.overworld(), ids, v -> b.append(v.getVehicleType().id).append('=').append(v.radarWorking()).append(' '));
+			AirDefense.LOGGER.info("[airdefense-test] RESULT radars working: {} network {}", b,
+					com.stasdoto.airdefense.radar.RadarNetwork.stations(s.overworld()).size());
+		});
+		// Keep only the TRML-4D (IRIS-T's own radar) for the fight.
+		server.runOnServer(s -> forVehicles(s.overworld(), ids, v -> {
+			if (v.getVehicleType() != VehicleType.TRML4D) {
+				v.discard();
+			}
+		}));
+		int fx = x;
+		BlockPos target = new BlockPos(fx, ground - 1, 70);
+		prepareDefense(ctx, server, VehicleType.IRIS_T, fx + 12, 50, 180);
+		int[] before = counters();
+		launchFrom(ctx, server, VehicleType.SHAHED, fx, -230, target);
+		server.runCommand("gamemode creative @a");
+		camera(server, fx + 20, ground + 2, 40, 180, -15);
+		server.runCommand("clear @a");
+		server.runCommand("item replace entity @a hotbar.0 with airdefense:designator");
+		ctx.waitTicks(10);
+		selectSlot(ctx, 0);
+		ctx.waitTicks(60);
+		ctx.takeScreenshot("74_shaheds_sky_day");
+		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT);
+		ctx.waitForScreen(com.stasdoto.airdefense.client.map.TacticalMapScreen.class);
+		ctx.waitTicks(20);
+		boolean toRadar = ctx.tryClickScreenButton("Radar");
+		AirDefense.LOGGER.info("[airdefense-test] radar tab button: {}", toRadar);
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("75_radar_screen");
+		ctx.waitTicks(60);
+		ctx.takeScreenshot("76_radar_screen_later");
+		int[] seen = ctx.computeOnClient(mc -> new int[]{com.stasdoto.airdefense.client.map.RadarScreen.stationCount(),
+				com.stasdoto.airdefense.client.map.RadarScreen.contactCount()});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT radar screen: stations {} contacts {}", seen[0], seen[1]);
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		ctx.waitTicks(5);
+		server.runCommand("time set 14500");
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("77_shaheds_sky_night");
+		ctx.waitTicks(200);
+		server.runCommand("time set 1000");
+		report("radar_trml_iris_vs_shahed", before);
+		server.runCommand("clear @a");
+		server.runCommand("gamemode spectator @a");
 	}
 
 	private void drive(ClientGameTestContext ctx, TestServerContext server) {

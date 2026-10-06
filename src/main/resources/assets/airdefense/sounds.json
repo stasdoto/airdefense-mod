@@ -561,5 +561,41 @@
       }
     ],
     "subtitle": "subtitles.airdefense.medkit"
+  },
+  "radar_ping": {
+    "sounds": [
+      {
+        "name": "airdefense:radar_ping",
+        "attenuation_distance": 16
+      }
+    ],
+    "subtitle": "subtitles.airdefense.radar_ping"
+  },
+  "shahed_loop": {
+    "sounds": [
+      {
+        "name": "airdefense:shahed_loop",
+        "attenuation_distance": 160
+      }
+    ],
+    "subtitle": "subtitles.airdefense.shahed"
+  },
+  "shahed_far": {
+    "sounds": [
+      {
+        "name": "airdefense:shahed_far",
+        "attenuation_distance": 600
+      }
+    ],
+    "subtitle": "subtitles.airdefense.shahed"
+  },
+  "cruise_loop": {
+    "sounds": [
+      {
+        "name": "airdefense:cruise_loop",
+        "attenuation_distance": 220
+      }
+    ],
+    "subtitle": "subtitles.airdefense.cruise"
   }
 }

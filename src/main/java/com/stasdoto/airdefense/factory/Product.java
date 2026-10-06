@@ -75,6 +75,7 @@ public enum Product {
 			case IRIS_T -> IRIST;
 			case NASAMS -> AMRAAM;
 			case GEPARD -> GEPARD_AMMO;
+			default -> null;
 		};
 	}
 
