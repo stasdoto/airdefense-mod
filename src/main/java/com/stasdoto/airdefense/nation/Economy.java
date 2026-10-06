@@ -793,6 +793,13 @@ public final class Economy {
 			case TOR, TUNGUSKA, PANTSIR -> new int[]{30, 40, 130, 80};
 			case BUK -> new int[]{30, 50, 150, 90};
 			case S300, SAMPT -> new int[]{40, 60, 180, 110};
+			case KOZAK, RHIB -> new int[]{20, 10, 50, 35};
+			case MAXXPRO, M113 -> new int[]{20, 20, 70, 45};
+			case BTR82, BTR4, RAPTOR -> new int[]{20, 30, 100, 60};
+			case BMP2, BRADLEY -> new int[]{30, 40, 120, 70};
+			case GYURZA -> new int[]{40, 30, 150, 90};
+			case T72, T90 -> new int[]{30, 60, 200, 120};
+			case LEOPARD2, ABRAMS -> new int[]{30, 70, 230, 130};
 		};
 	}
 

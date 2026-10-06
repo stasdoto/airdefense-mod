@@ -78,6 +78,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("ad")) {
 				newAirDefense(ctx, server);
 			}
+			if (scene("armor")) {
+				armor(ctx, server);
+			}
 			if (scene("drive")) {
 				drive(ctx, server);
 			}
@@ -406,6 +409,89 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.takeScreenshot("96_mfg_fight");
 		ctx.waitTicks(260);
 		report("mfg_zu23_vs_5_shahed", before);
+	}
+
+	/** Stage R5: tanks, fighting vehicles and boats; a T-72 driven (burning petrol) and firing at a BTR. */
+	private void armor(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 37000;
+		VehicleType[] land = {VehicleType.T72, VehicleType.T90, VehicleType.LEOPARD2, VehicleType.ABRAMS, VehicleType.BMP2, VehicleType.BRADLEY,
+				VehicleType.BTR82, VehicleType.BTR4, VehicleType.M113, VehicleType.MAXXPRO, VehicleType.KOZAK};
+		camera(server, x, ground + 9, 40, 180, 16);
+		ctx.waitTicks(40);
+		// A lake for the boats, behind the land vehicles.
+		server.runCommand(String.format("fill %d %d %d %d %d %d minecraft:water", x - 50, ground - 3, -60, x + 50, ground - 1, -25));
+		List<Integer> ids = new ArrayList<>();
+		for (int i = 0; i < land.length; i++) {
+			ids.add(spawnVehicle(server, land[i], x - 45 + (i % 6) * 15, i < 6 ? 0 : 16, 200));
+		}
+		VehicleType[] boats = {VehicleType.GYURZA, VehicleType.RAPTOR, VehicleType.RHIB};
+		for (int i = 0; i < boats.length; i++) {
+			VehicleType b = boats[i];
+			int bx = x - 30 + i * 28;
+			ids.add(server.computeOnServer(s -> VehicleEntity.spawn(s.overworld(), b, new Vec3(bx + 0.5, ground - 0.1, -42.5), 90).getId()));
+		}
+		ctx.waitTicks(60);
+		ctx.takeScreenshot("a0_armor_lineup");
+		camera(server, x - 56, ground + 7, 30, -125, 12);
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("a1_armor_side");
+		camera(server, x, ground + 10, -5, 180, 25);
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("a2_boats");
+		double boatY = server.computeOnServer(s -> s.overworld().getEntity(ids.get(land.length)).getY());
+		AirDefense.LOGGER.info("[airdefense-test] RESULT boat floats at y {} (water surface {})", String.format(java.util.Locale.ROOT, "%.2f", boatY), ground - 1 + 0.9);
+		server.runOnServer(s -> forVehicles(s.overworld(), ids, Entity::discard));
+
+		// Drive a T-72 on petrol, then shoot at a BTR 50 blocks ahead.
+		int tx = x + 3000;
+		camera(server, tx, ground + 2, -6, 0, 5);
+		ctx.waitTicks(40);
+		int tank = spawnVehicle(server, VehicleType.T72, tx, 0, 0);
+		int btr = spawnVehicle(server, VehicleType.BTR82, tx, 75, 90);
+		server.runCommand("gamemode survival @a");
+		server.runOnServer(s -> {
+			if (s.overworld().getEntity(tank) instanceof VehicleEntity v) {
+				v.setUnlimited(false);
+				v.addReserve(10);
+				s.getPlayerList().getPlayers().getFirst().startRiding(v);
+			}
+		});
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_BACK));
+		ctx.waitTicks(20);
+		float fuel0 = server.computeOnServer(s -> s.overworld().getEntity(tank) instanceof VehicleEntity v ? v.getFuel() : -1f);
+		ctx.getInput().holdKey(o -> o.keyUp);
+		ctx.waitTicks(60);
+		ctx.getInput().releaseKey(o -> o.keyUp);
+		ctx.waitTicks(40);
+		float fuel1 = server.computeOnServer(s -> s.overworld().getEntity(tank) instanceof VehicleEntity v ? v.getFuel() : -1f);
+		ctx.takeScreenshot("a3_tank_driving");
+		float hp0 = server.computeOnServer(s -> s.overworld().getEntity(btr) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		float[] yp = ctx.computeOnClient(mc -> {
+			Vec3 d = new Vec3(tx + 0.5, ground + 1.2, 75.5).subtract(mc.player.getEyePosition());
+			return new float[]{(float) Math.toDegrees(Math.atan2(-d.x, d.z)), (float) -Math.toDegrees(Math.atan2(d.y, Math.sqrt(d.x * d.x + d.z * d.z)))};
+		});
+		ctx.getInput().lookAt(yp[0], yp[1]);
+		ctx.waitTicks(60);
+		ctx.takeScreenshot("a4_tank_aiming");
+		for (int i = 0; i < 3; i++) {
+			ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
+			ctx.waitTicks(4);
+			if (i == 0) {
+				ctx.takeScreenshot("a5_tank_fire");
+			}
+			ctx.waitTicks(150);
+		}
+		ctx.takeScreenshot("a6_tank_after");
+		float hp1 = server.computeOnServer(s -> s.overworld().getEntity(btr) instanceof VehicleEntity v ? v.getHealth() : 0f);
+		int ammo = server.computeOnServer(s -> s.overworld().getEntity(tank) instanceof VehicleEntity v ? v.getAmmo() : -1);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT tank: fuel {} -> {} l, BTR health {} -> {}, shells left {}",
+				(int) fuel0, String.format(java.util.Locale.ROOT, "%.1f", fuel1), (int) hp0, (int) hp1, ammo);
+		ctx.getInput().holdKey(o -> o.keyShift);
+		ctx.waitTicks(5);
+		ctx.getInput().releaseKey(o -> o.keyShift);
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
+		server.runCommand("gamemode spectator @a");
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(tank, btr), Entity::discard));
 	}
 
 	private void drive(ClientGameTestContext ctx, TestServerContext server) {

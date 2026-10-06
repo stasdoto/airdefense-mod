@@ -74,6 +74,8 @@ public class VehicleEntity extends LivingEntity {
 	private static final EntityDataAccessor<Integer> DATA_AMMO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
 	/** Spare missiles (shots) carried for reloading; -1 = unlimited (vehicles put down in creative mode). */
 	private static final EntityDataAccessor<Integer> DATA_RESERVE = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+	/** Litres in the tank; -1 = never runs dry (put down in creative mode). */
+	private static final EntityDataAccessor<Float> DATA_FUEL = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
 
 	public static final int STOWED = 0;
 	public static final int DEPLOYED = 1;
@@ -203,6 +205,9 @@ public class VehicleEntity extends LivingEntity {
 		}
 		v.setLoadedMask(v.fullMask());
 		v.setAmmo(type.magazine());
+		if (type.isArmed()) {
+			v.setMode(MODE_AUTO);
+		}
 		v.fold();
 		level.addFreshEntity(v);
 		// From the first moment on, its ground stays loaded (even if the player walks off right away).
@@ -228,6 +233,7 @@ public class VehicleEntity extends LivingEntity {
 		builder.define(DATA_LOADED, -1);
 		builder.define(DATA_AMMO, -1);
 		builder.define(DATA_RESERVE, -1);
+		builder.define(DATA_FUEL, -1f);
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -315,12 +321,16 @@ public class VehicleEntity extends LivingEntity {
 	/** Put down by a survival player: reloads only from what it is given (by hand or from a factory nearby). */
 	public void setUnlimited(boolean unlimited) {
 		setReserve(unlimited ? -1 : 0);
+		setFuel(unlimited ? -1 : vtype.fuelCapacity());
 	}
 
 	/** Spare shots it can carry: two more salvos for launchers, two magazines for missile batteries, three for Gepard. */
 	public int reserveCapacity() {
 		if (vtype.isRadar()) {
 			return 0;
+		}
+		if (vtype.isArmed()) {
+			return vtype.weapon.magazine;
 		}
 		if (vtype.isLauncher()) {
 			return vtype.rails() * 2;
@@ -330,6 +340,36 @@ public class VehicleEntity extends LivingEntity {
 
 	public int reserveSpace() {
 		return isUnlimited() ? 0 : Math.max(0, reserveCapacity() - getReserve());
+	}
+
+	// --- Fuel (stage R5) ---
+
+	public boolean infiniteFuel() {
+		return entityData.get(DATA_FUEL) < 0;
+	}
+
+	public float getFuel() {
+		float f = entityData.get(DATA_FUEL);
+		return f < 0 ? vtype.fuelCapacity() : f;
+	}
+
+	public void setFuel(float litres) {
+		entityData.set(DATA_FUEL, litres < 0 ? -1f : Math.min(vtype.fuelCapacity(), litres));
+	}
+
+	/** Pours in up to {@code litres}; returns how much went in. */
+	public float refuel(float litres) {
+		if (infiniteFuel()) {
+			return 0;
+		}
+		float space = vtype.fuelCapacity() - getFuel();
+		float in = Math.max(0, Math.min(space, litres));
+		setFuel(getFuel() + in);
+		return in;
+	}
+
+	public boolean outOfFuel() {
+		return !infiniteFuel() && getFuel() <= 0.01f;
 	}
 
 	public void addReserve(int units) {
@@ -415,7 +455,7 @@ public class VehicleEntity extends LivingEntity {
 
 	/** Gepard can shoot on the move; launchers and missile batteries must fold up first. */
 	public boolean canDrive() {
-		return isAlive() && (vtype.gunOnly() || isFolded());
+		return isAlive() && (vtype.gunOnly() || vtype.isArmed() || isFolded());
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -497,6 +537,12 @@ public class VehicleEntity extends LivingEntity {
 			return InteractionResult.PASS;
 		}
 		ItemStack stack = player.getItemInHand(hand);
+		if (stack.is(com.stasdoto.airdefense.registry.ModItems.JERRYCAN)) {
+			if (!level().isClientSide()) {
+				pourFuel(player, stack);
+			}
+			return InteractionResult.SUCCESS;
+		}
 		com.stasdoto.airdefense.factory.Product product = com.stasdoto.airdefense.factory.Product.forItem(stack.getItem());
 		if (product != null && product == com.stasdoto.airdefense.factory.Product.forVehicle(vtype)) {
 			if (!level().isClientSide()) {
@@ -532,6 +578,33 @@ public class VehicleEntity extends LivingEntity {
 		}
 		return InteractionResult.SUCCESS;
 	}
+
+	/** Jerrycans of petrol, 20 litres each, as many as fit. */
+	private void pourFuel(Player player, ItemStack stack) {
+		if (infiniteFuel()) {
+			player.sendOverlayMessage(Component.translatable("message.airdefense.fuel.infinite"));
+			return;
+		}
+		int cans = 0;
+		while (cans < stack.getCount() && vtype.fuelCapacity() - getFuel() >= 10) {
+			refuel(JERRYCAN_LITRES);
+			cans++;
+		}
+		if (cans == 0) {
+			player.sendOverlayMessage(Component.translatable("message.airdefense.fuel.full", (int) getFuel(), vtype.fuelCapacity()));
+			return;
+		}
+		if (!player.getAbilities().instabuild) {
+			stack.shrink(cans);
+			for (int i = 0; i < cans; i++) {
+				player.getInventory().add(new ItemStack(com.stasdoto.airdefense.registry.ModItems.EMPTY_JERRYCAN));
+			}
+		}
+		level().playSound(null, getX(), getY(), getZ(), net.minecraft.sounds.SoundEvents.BUCKET_EMPTY, SoundSource.NEUTRAL, 1.0f, 0.8f);
+		player.sendOverlayMessage(Component.translatable("message.airdefense.fuel.poured", cans * (int) JERRYCAN_LITRES, (int) getFuel(), vtype.fuelCapacity()));
+	}
+
+	public static final float JERRYCAN_LITRES = 20f;
 
 	/** Missiles (or ammunition boxes) handed over by a player go into the reserve. */
 	private void loadByHand(Player player, ItemStack stack, com.stasdoto.airdefense.factory.Product product) {
@@ -687,7 +760,11 @@ public class VehicleEntity extends LivingEntity {
 			}
 			in = Input.EMPTY;
 		}
-		float max = vtype.maxSpeed * (isInWater() ? 0.35f : 1.0f);
+		if (outOfFuel()) {
+			in = new Input(false, false, false, false, in.jump(), in.shift(), in.sprint());
+		}
+		boolean floating = vtype.boat && onWater();
+		float max = vtype.maxSpeed * (vtype.boat ? (floating ? 1.0f : 0.06f) : isInWater() ? 0.35f : 1.0f);
 		if (in.forward()) {
 			speed = Math.min(max, speed + (speed < 0 ? vtype.accel * 3 : vtype.accel));
 		} else if (in.backward()) {
@@ -703,7 +780,12 @@ public class VehicleEntity extends LivingEntity {
 		}
 		float turnInput = in.left() ? -1 : in.right() ? 1 : 0;
 		float yawRate;
-		if (vtype.tracked()) {
+		if (vtype.boat) {
+			// A boat turns with its rudder: hardly at all standing still.
+			float sp = Math.abs(speed) / vtype.maxSpeed;
+			yawRate = turnInput * vtype.pivotTurn * (0.25f + 0.75f * sp) * (speed < -0.01f ? -1 : 1);
+			steer = turnInput * 25;
+		} else if (vtype.tracked()) {
 			float sp = Math.abs(speed) / vtype.maxSpeed;
 			yawRate = turnInput * vtype.pivotTurn * (1 - 0.45f * sp) * (speed < -0.01f ? -1 : 1);
 			steer = turnInput * 20;
@@ -713,14 +795,19 @@ public class VehicleEntity extends LivingEntity {
 			float wb = Math.max(2.5f, vtype.geometry.wheelbase());
 			yawRate = (float) (speed * Math.tan(Math.toRadians(steer)) / wb * Mth.RAD_TO_DEG);
 		}
-		if (onGround() || isInWater()) {
+		if (onGround() || isInWater() || floating) {
 			setYRot(getYRot() + yawRate);
 		}
 		yBodyRot = yHeadRot = getYRot();
 
 		Vec3 f = forward();
 		double vy = getDeltaMovement().y;
-		if (isInWater()) {
+		if (vtype.boat && submerged()) {
+			// Floats up to its waterline.
+			vy = Math.min(vy * 0.6 + 0.05, 0.12);
+		} else if (floating) {
+			vy = 0;
+		} else if (isInWater()) {
 			vy = Math.max(vy - 0.02, -0.15);
 		} else if (onGround() && vy <= 0) {
 			vy = -0.08;
@@ -737,6 +824,32 @@ public class VehicleEntity extends LivingEntity {
 		if (horizontalCollision) {
 			speed *= 0.3f;
 		}
+	}
+
+	/** Boats: water right under the waterline. */
+	public boolean onWater() {
+		BlockPos below = BlockPos.containing(getX(), getY() - 0.3, getZ());
+		return level().getFluidState(below).is(net.minecraft.tags.FluidTags.WATER);
+	}
+
+	/** Boats: sitting too low (the waterline is under water). */
+	private boolean submerged() {
+		BlockPos at = BlockPos.containing(getX(), getY() + 0.12, getZ());
+		return level().getFluidState(at).is(net.minecraft.tags.FluidTags.WATER);
+	}
+
+	/** Burns fuel while it drives (where the vehicle is simulated; the server keeps the count). */
+	private void burnFuel() {
+		if (infiniteFuel() || level().isClientSide()) {
+			return;
+		}
+		double moved = Math.sqrt(Mth.square(getX() - xo) + Mth.square(getZ() - zo));
+		if (moved < 0.01) {
+			return;
+		}
+		// A full tank lasts twenty minutes at full speed.
+		float perTick = vtype.fuelCapacity() / 24000f * (float) Math.min(1.5, moved / vtype.maxSpeed);
+		setFuel(Math.max(0, getFuel() - perTick));
 	}
 
 	/** The collision box covers only the middle of the vehicle; this checks the nose (or tail) for walls and trees. */
@@ -811,6 +924,7 @@ public class VehicleEntity extends LivingEntity {
 	}
 
 	private void serverLogic(ServerLevel level) {
+		burnFuel();
 		Vec3 pos = position();
 		// Only driving counts as moving: a hop from a nearby blast or settling on the ground does not.
 		double moved = Mth.square(pos.x - lastServerPos.x) + Mth.square(pos.z - lastServerPos.z);
@@ -832,8 +946,153 @@ public class VehicleEntity extends LivingEntity {
 			tickLauncher(level);
 		} else if (vtype.isRadar()) {
 			tickRadar(level);
+		} else if (vtype.isArmed()) {
+			tickArmed(level);
 		} else {
 			tickDefense(level);
+		}
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Tanks, fighting vehicles, gunboats: the gun follows where the gunner (or a lone driver) looks
+
+	private int gunCooldown;
+	private int roundsLeft;
+	private int roundTimer;
+	private int ammoReload;
+	private final List<Round> rounds = new ArrayList<>();
+
+	/** A round on its way: lands after {@code ticks}. */
+	private record Round(Vec3 at, @Nullable Entity hit, Weapon weapon, int[] ticks) {
+	}
+
+	/** Who aims: the gunner, or the driver when he is alone. */
+	@Nullable
+	public Player shooter() {
+		Player g = getGunner();
+		return g != null ? g : getDriver();
+	}
+
+	private void tickArmed(ServerLevel level) {
+		Weapon w = vtype.weapon;
+		setState(DEPLOYED);
+		if (gunCooldown > 0) {
+			gunCooldown--;
+		}
+		// Empty: the loader brings up rounds from the reserve.
+		if (getAmmo() <= 0 && (isUnlimited() || getReserve() > 0)) {
+			if (++ammoReload >= w.reload * 4) {
+				ammoReload = 0;
+				setAmmo(takeReserve(w.magazine));
+			}
+		}
+		Player p = shooter();
+		if (p != null) {
+			Vec3 eye = p.getEyePosition();
+			Vec3 end = eye.add(p.getLookAngle().scale(400));
+			net.minecraft.world.phys.BlockHitResult hit = level.clip(new net.minecraft.world.level.ClipContext(eye, end,
+					net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, this));
+			Vec3 point = hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS ? end : hit.getLocation();
+			setTurretTarget(relativeBearing(point));
+			Vec3 muzzle = railWorld(0);
+			double h = Math.sqrt(Mth.square(point.x - getX()) + Mth.square(point.z - getZ()));
+			double base = vtype.geometry.turretPivot()[1] + getY();
+			float elev = (float) Math.toDegrees(Math.atan2(point.y - Math.max(base, muzzle.y - 0.5), Math.max(1, h)));
+			setElevationTarget(Mth.clamp(elev, -8, w.maxElevation));
+		}
+		if (roundsLeft > 0 && --roundTimer <= 0) {
+			fireRound(level, w);
+			roundsLeft--;
+			roundTimer = 3;
+		}
+		for (Iterator<Round> it = rounds.iterator(); it.hasNext(); ) {
+			Round r = it.next();
+			if (--r.ticks[0] <= 0) {
+				it.remove();
+				impact(level, r);
+			}
+		}
+	}
+
+	/** Trigger from the shooter's seat. */
+	public void armedFire(Player player) {
+		if (player != shooter() || !(level() instanceof ServerLevel level) || gunCooldown > 0 || roundsLeft > 0) {
+			return;
+		}
+		Weapon w = vtype.weapon;
+		if (getAmmo() <= 0) {
+			player.sendOverlayMessage(Component.translatable("message.airdefense.vehicle.empty"));
+			gunCooldown = 20;
+			return;
+		}
+		roundsLeft = Math.min(w.burst, getAmmo());
+		roundTimer = 0;
+		gunCooldown = w.reload;
+		if (roundsLeft > 0) {
+			fireRound(level, w);
+			roundsLeft--;
+			roundTimer = 3;
+		}
+	}
+
+	private void fireRound(ServerLevel level, Weapon w) {
+		if (getAmmo() <= 0) {
+			roundsLeft = 0;
+			return;
+		}
+		setAmmo(getAmmo() - 1);
+		Vec3 muzzle = railWorld(0);
+		Vec3 dir = railDirection(0);
+		RandomSource r = level.getRandom();
+		double spread = w.cannon() ? 0.002 : 0.008;
+		dir = dir.add(r.nextGaussian() * spread, r.nextGaussian() * spread, r.nextGaussian() * spread).normalize();
+		double reach = w.cannon() ? 450 : 300;
+		Vec3 end = muzzle.add(dir.scale(reach));
+		net.minecraft.world.phys.BlockHitResult block = level.clip(new net.minecraft.world.level.ClipContext(muzzle, end,
+				net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, this));
+		if (block.getType() != net.minecraft.world.phys.HitResult.Type.MISS) {
+			end = block.getLocation();
+		}
+		net.minecraft.world.phys.EntityHitResult ent = net.minecraft.world.entity.projectile.ProjectileUtil.getEntityHitResult(level, this,
+				muzzle, end, new AABB(muzzle, end).inflate(1.0),
+				e -> e != this && e.isAlive() && !e.isSpectator() && e.isPickable() && !hasPassenger(e) && !(e instanceof MissileEntity m && !m.getMissileType().threat),
+				0.3f);
+		Entity hit = null;
+		if (ent != null) {
+			end = ent.getLocation();
+			hit = ent.getEntity();
+		}
+		double dist = end.distanceTo(muzzle);
+		rounds.add(new Round(end, hit, w, new int[]{Math.max(1, (int) Math.round(dist / w.speed))}));
+		Effects.tracer(level, muzzle, end, (float) w.speed);
+		if (w.cannon()) {
+			com.stasdoto.airdefense.fx.Fx.send(level, com.stasdoto.airdefense.fx.FxPayload.LAUNCH, muzzle.add(dir.scale(0.5)), 1.4f,
+					new Vec3(com.stasdoto.airdefense.fx.FxPayload.LAUNCH_SOUND_HEAVY, 0, 0));
+			// The recoil rocks the vehicle back a little.
+			tiltPitch -= 2.5f;
+		} else {
+			Effects.gunBurst(level, muzzle);
+		}
+	}
+
+	private void impact(ServerLevel level, Round r) {
+		Weapon w = r.weapon();
+		DamageSource source = level.damageSources().explosion(this, shooter());
+		Entity hit = r.hit();
+		if (hit instanceof VehicleEntity v && v.isAlive()) {
+			v.hurtServer(level, source, w.vehicleDamage);
+		} else if (hit instanceof MissileEntity m) {
+			m.hurtServer(level, level.damageSources().generic(), 2f);
+		} else if (hit != null && hit.isAlive()) {
+			hit.hurtServer(level, w.blast > 0 ? source : level.damageSources().mobAttack(this), w.livingDamage);
+		}
+		if (w.blast > 0) {
+			Vec3 at = r.at();
+			level.explode(this, source, null, at.x, at.y, at.z, w.blast, false,
+					w.breaksBlocks ? net.minecraft.world.level.Level.ExplosionInteraction.TNT : net.minecraft.world.level.Level.ExplosionInteraction.NONE,
+					ModParticles.GLOW, ModParticles.GLOW, net.minecraft.util.random.WeightedList.of(),
+					net.minecraft.core.Holder.direct(ModSounds.SILENT));
+			com.stasdoto.airdefense.fx.Fx.send(level, com.stasdoto.airdefense.fx.FxPayload.GROUND_IMPACT, at, w.blast, new Vec3(0, 1, 1));
 		}
 	}
 
@@ -1476,7 +1735,13 @@ public class VehicleEntity extends LivingEntity {
 			return;
 		}
 		switch (action) {
-			case ACTION_FIRE -> manualFire(player);
+			case ACTION_FIRE -> {
+				if (vtype.isArmed()) {
+					armedFire(player);
+				} else {
+					manualFire(player);
+				}
+			}
 			case ACTION_SEAT -> switchSeat(player);
 			case ACTION_STOW_FOR_MARCH -> {
 				if (!isDriver(player)) {
@@ -1601,6 +1866,10 @@ public class VehicleEntity extends LivingEntity {
 					: Component.translatable("message.airdefense.status.ready", Integer.bitCount(getLoadedMask()));
 			return Component.translatable("message.airdefense.vehicle.status_launcher", name, hp, ready).append(reserveText());
 		}
+		if (vtype.isArmed()) {
+			return Component.translatable("message.airdefense.vehicle.status_armed", name, hp, Math.max(0, getAmmo()), vtype.weapon.caliber,
+					(int) getFuel(), vtype.fuelCapacity()).append(reserveText());
+		}
 		if (vtype.isRadar()) {
 			RadarType r = vtype.radar;
 			Component state = Component.translatable(getMode() == MODE_OFF ? "message.airdefense.status.off"
@@ -1661,6 +1930,15 @@ public class VehicleEntity extends LivingEntity {
 
 	private void updateTilt() {
 		VehicleGeometry.Geometry g = vtype.geometry;
+		if (vtype.boat) {
+			// Rocking on the waves, the bow up when it speeds.
+			float t = (tickCount + getId() * 7) * 0.08f;
+			float sp = (float) Math.min(1.0, Math.hypot(getX() - xo, getZ() - zo) / vtype.maxSpeed);
+			tiltPitch += (Mth.sin(t) * 1.2f + sp * 4f - tiltPitch) * 0.2f;
+			tiltRoll += (Mth.sin(t * 0.7f) * 1.8f - tiltRoll) * 0.2f;
+			lift += (Mth.sin(t * 1.3f) * 0.06f - lift) * 0.3f;
+			return;
+		}
 		double halfLen = g.length() * 0.36;
 		double halfW = g.width() * 0.38;
 		double hf = groundAt(0, halfLen);
@@ -1738,7 +2016,7 @@ public class VehicleEntity extends LivingEntity {
 		} else {
 			k = 0.2f;
 		}
-		float dmg = amount * k;
+		float dmg = amount * k * vtype.armor;
 		if (dmg <= 0) {
 			return false;
 		}
@@ -1833,6 +2111,7 @@ public class VehicleEntity extends LivingEntity {
 		output.putInt("vehicle_reload", reloadTimer);
 		output.putBoolean("vehicle_reload_pending", reloadPending);
 		output.putInt("vehicle_reserve", entityData.get(DATA_RESERVE));
+		output.putFloat("vehicle_fuel", entityData.get(DATA_FUEL));
 	}
 
 	@Override
@@ -1846,6 +2125,7 @@ public class VehicleEntity extends LivingEntity {
 		reloadPending = input.getBooleanOr("vehicle_reload_pending", false);
 		// Vehicles from before stage 5 have no reserve entry: they keep reloading for free, as they always did.
 		setReserve(input.getIntOr("vehicle_reserve", -1));
+		entityData.set(DATA_FUEL, input.getFloatOr("vehicle_fuel", -1f));
 		fold();
 	}
 }

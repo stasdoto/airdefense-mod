@@ -48,11 +48,34 @@ public class VehicleItem extends Item {
 		return InteractionResult.SUCCESS;
 	}
 
+	/** Boats go on the water: right-click the water surface. */
+	@Override
+	public InteractionResult use(net.minecraft.world.level.Level level, Player player, net.minecraft.world.InteractionHand hand) {
+		if (!type.boat) {
+			return InteractionResult.PASS;
+		}
+		net.minecraft.world.phys.BlockHitResult hit = getPlayerPOVHitResult(level, player, net.minecraft.world.level.ClipContext.Fluid.SOURCE_ONLY);
+		if (hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK || !level.getFluidState(hit.getBlockPos()).is(net.minecraft.tags.FluidTags.WATER)) {
+			return InteractionResult.PASS;
+		}
+		if (!(level instanceof ServerLevel server)) {
+			return InteractionResult.SUCCESS;
+		}
+		BlockPos water = hit.getBlockPos();
+		VehicleEntity boat = VehicleEntity.spawn(server, type, new Vec3(hit.getLocation().x, water.getY() + 0.9, hit.getLocation().z), player.getYRot());
+		if (!player.getAbilities().instabuild) {
+			player.getItemInHand(hand).shrink(1);
+			boat.setUnlimited(false);
+		}
+		return InteractionResult.SUCCESS;
+	}
+
 	@Override
 	public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
 		tooltip.accept(Component.translatable("item.airdefense.vehicle.hint").withStyle(ChatFormatting.GRAY));
 		tooltip.accept(Component.translatable(type.isLauncher() ? "item.airdefense.vehicle.hint_launcher"
-				: type.isRadar() ? "item.airdefense.vehicle.hint_radar" : "item.airdefense.vehicle.hint_defense")
+				: type.isRadar() ? "item.airdefense.vehicle.hint_radar" : type.boat ? "item.airdefense.vehicle.hint_boat"
+				: type.isArmed() ? "item.airdefense.vehicle.hint_armed" : "item.airdefense.vehicle.hint_defense")
 				.withStyle(ChatFormatting.DARK_GRAY));
 		if (type.isRadar()) {
 			tooltip.accept(Component.translatable("item.airdefense.radar.stats", (int) type.radar.range, (int) type.radar.minAltitude,

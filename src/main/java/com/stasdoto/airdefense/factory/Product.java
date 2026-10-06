@@ -36,7 +36,10 @@ public enum Product {
 	SAM_SHORT("sam_short", 500, 1, cost(Items.IRON_INGOT, 6, Items.GUNPOWDER, 3, Items.REDSTONE, 3)),
 	SAM_LONG("sam_long", 1000, 1, cost(Items.IRON_INGOT, 12, Items.GUNPOWDER, 6, Items.REDSTONE, 4, Items.GOLD_INGOT, 1)),
 	AMMO_23("ammo_23_box", 200, 10, cost(Items.COPPER_INGOT, 6, Items.GUNPOWDER, 4)),
-	AMMO_127("ammo_127_box", 160, 10, cost(Items.COPPER_INGOT, 4, Items.GUNPOWDER, 3));
+	AMMO_127("ammo_127_box", 160, 10, cost(Items.COPPER_INGOT, 4, Items.GUNPOWDER, 3)),
+	// Stage R5: tank shells and autocannon rounds.
+	SHELL_TANK("tank_shell", 300, 1, 2, cost(Items.IRON_INGOT, 3, Items.GUNPOWDER, 3, Items.COPPER_INGOT, 1)),
+	AMMO_30("ammo_30_box", 200, 15, cost(Items.COPPER_INGOT, 5, Items.GUNPOWDER, 4, Items.IRON_NUGGET, 4));
 
 	public record Cost(Item item, int count) {
 	}
@@ -85,6 +88,9 @@ public enum Product {
 			case SHILKA, ZU23 -> AMMO_23;
 			case MFG -> AMMO_127;
 			case AVENGER -> STINGER;
+			case T72, T90, LEOPARD2, ABRAMS -> SHELL_TANK;
+			case BMP2, BRADLEY, BTR82, BTR4, GYURZA -> AMMO_30;
+			case M113, MAXXPRO, KOZAK, RAPTOR, RHIB -> AMMO_127;
 			default -> null;
 		};
 	}

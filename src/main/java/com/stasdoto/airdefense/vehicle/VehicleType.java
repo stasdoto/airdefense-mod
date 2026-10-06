@@ -38,7 +38,22 @@ public enum VehicleType {
 	SAMPT("sampt", GenGeometry.SAMPT, null, DefenseType.SAMPT, 230, 0.85f, 0.012f, 30, 0, 1.4f, 0, 2.55f, 3.3f),
 	AVENGER("avenger", GenGeometry.AVENGER, null, DefenseType.AVENGER, 130, 1.05f, 0.02f, 34, 0, 2.5f, 6.0f, 2.2f, 2.3f),
 	MFG("mfg", GenGeometry.MFG, null, DefenseType.MFG, 90, 1.15f, 0.025f, 35, 0, 6.0f, 10.0f, 1.85f, 1.9f),
-	ZU23("zu23", GenGeometry.ZU23, null, DefenseType.ZU23, 150, 0.9f, 0.016f, 32, 0, 5.0f, 8.0f, 2.5f, 2.9f);
+	ZU23("zu23", GenGeometry.ZU23, null, DefenseType.ZU23, 150, 0.9f, 0.016f, 32, 0, 5.0f, 8.0f, 2.5f, 2.9f),
+	// Armour (stage R5): tanks, infantry fighting vehicles, carriers, armoured cars; then boats.
+	T72("t72", GenGeometry.T72, Weapon.CANNON_125, 0.3f, false, 700, 0.85f, 0.012f, 0, 2.2f, 2.0f, 3.0f, 3.4f, 2.4f),
+	T90("t90", GenGeometry.T90, Weapon.CANNON_125, 0.27f, false, 760, 0.85f, 0.012f, 0, 2.2f, 2.0f, 3.2f, 3.4f, 2.4f),
+	LEOPARD2("leopard2", GenGeometry.LEOPARD2, Weapon.CANNON_120, 0.26f, false, 780, 0.95f, 0.013f, 0, 2.3f, 2.2f, 3.6f, 3.4f, 2.6f),
+	ABRAMS("abrams", GenGeometry.ABRAMS, Weapon.CANNON_120, 0.25f, false, 820, 0.95f, 0.014f, 0, 2.3f, 2.2f, 3.6f, 3.4f, 2.5f),
+	BMP2("bmp2", GenGeometry.BMP2, Weapon.AUTO_30, 0.55f, false, 320, 0.95f, 0.016f, 0, 3.0f, 4.0f, 5.0f, 3.1f, 2.3f),
+	BRADLEY("bradley", GenGeometry.BRADLEY, Weapon.AUTO_25, 0.5f, false, 360, 0.9f, 0.015f, 0, 2.8f, 4.0f, 5.0f, 3.3f, 2.9f),
+	BTR82("btr82", GenGeometry.BTR82, Weapon.AUTO_30, 0.65f, false, 260, 1.15f, 0.02f, 30, 0, 4.0f, 5.0f, 2.9f, 2.4f),
+	BTR4("btr4", GenGeometry.BTR4, Weapon.AUTO_30, 0.62f, false, 280, 1.1f, 0.02f, 30, 0, 4.0f, 5.0f, 2.9f, 2.6f),
+	M113("m113", GenGeometry.M113, Weapon.HMG_127, 0.7f, false, 220, 0.95f, 0.018f, 0, 3.0f, 6.0f, 8.0f, 2.69f, 2.3f),
+	MAXXPRO("maxxpro", GenGeometry.MAXXPRO, Weapon.HMG_127, 0.72f, false, 240, 1.1f, 0.02f, 32, 0, 6.0f, 8.0f, 2.6f, 3.0f),
+	KOZAK("kozak", GenGeometry.KOZAK, Weapon.HMG_127, 0.75f, false, 200, 1.2f, 0.024f, 34, 0, 6.0f, 8.0f, 2.5f, 2.6f),
+	GYURZA("gyurza", GenGeometry.GYURZA, Weapon.AUTO_30, 0.7f, true, 300, 1.3f, 0.012f, 0, 1.6f, 4.0f, 5.0f, 4.8f, 3.5f),
+	RAPTOR("raptor", GenGeometry.RAPTOR, Weapon.HMG_145, 0.8f, true, 220, 1.6f, 0.016f, 0, 2.0f, 6.0f, 8.0f, 4.1f, 3.0f),
+	RHIB("rhib", GenGeometry.RHIB, Weapon.HMG_127, 1.0f, true, 90, 1.5f, 0.02f, 0, 2.6f, 6.0f, 10.0f, 2.6f, 1.2f);
 
 	public final String id;
 	public final VehicleGeometry.Geometry geometry;
@@ -48,6 +63,13 @@ public enum VehicleType {
 	public final DefenseType defense;
 	@Nullable
 	public final RadarType radar;
+	/** Tanks, fighting vehicles, boats: the gun the gunner aims and fires. */
+	@Nullable
+	public final Weapon weapon;
+	/** Share of the damage that gets through (tanks shrug off most of it). */
+	public final float armor;
+	/** Floats and drives on water. */
+	public final boolean boat;
 	public final float maxHealth;
 	public final float maxSpeed;
 	public final float accel;
@@ -68,6 +90,9 @@ public enum VehicleType {
 		this.launcher = launcher;
 		this.defense = defense;
 		this.radar = null;
+		this.weapon = null;
+		this.armor = 1.0f;
+		this.boat = false;
 		this.maxHealth = maxHealth;
 		this.maxSpeed = maxSpeed;
 		this.accel = accel;
@@ -87,6 +112,9 @@ public enum VehicleType {
 		this.launcher = null;
 		this.defense = null;
 		this.radar = radar;
+		this.weapon = null;
+		this.armor = 1.0f;
+		this.boat = false;
 		this.maxHealth = maxHealth;
 		this.maxSpeed = maxSpeed;
 		this.accel = accel;
@@ -96,6 +124,46 @@ public enum VehicleType {
 		this.turretRate = 0;
 		this.boxWidth = boxWidth;
 		this.boxHeight = boxHeight;
+	}
+
+	/** Armour or a boat with a gun. */
+	VehicleType(String id, VehicleGeometry.Geometry geometry, Weapon weapon, float armor, boolean boat, float maxHealth, float maxSpeed,
+			float accel, float maxSteer, float pivotTurn, float elevationRate, float turretRate, float boxWidth, float boxHeight) {
+		this.id = id;
+		this.geometry = geometry;
+		this.launcher = null;
+		this.defense = null;
+		this.radar = null;
+		this.weapon = weapon;
+		this.armor = armor;
+		this.boat = boat;
+		this.maxHealth = maxHealth;
+		this.maxSpeed = maxSpeed;
+		this.accel = accel;
+		this.maxSteer = maxSteer;
+		this.pivotTurn = pivotTurn;
+		this.elevationRate = elevationRate;
+		this.turretRate = turretRate;
+		this.boxWidth = boxWidth;
+		this.boxHeight = boxHeight;
+	}
+
+	public boolean isArmed() {
+		return weapon != null;
+	}
+
+	/** Fuel tank in litres. */
+	public int fuelCapacity() {
+		if (boat) {
+			return 800;
+		}
+		if (weapon != null && weapon.cannon()) {
+			return 1200;
+		}
+		if (tracked()) {
+			return 600;
+		}
+		return (int) (200 + geometry.length() * 25);
 	}
 
 	public boolean isRadar() {
@@ -173,7 +241,7 @@ public enum VehicleType {
 
 	/** Missiles carried: launchers one per rail; air defence per its magazine (Patriot canisters hold several). */
 	public int magazine() {
-		return defense != null ? defense.magazine : radar != null ? 0 : rails();
+		return defense != null ? defense.magazine : radar != null ? 0 : weapon != null ? weapon.magazine : rails();
 	}
 
 	public static VehicleType byId(int ordinal) {

@@ -53,11 +53,11 @@ public class MissileRenderer extends EntityRenderer<MissileEntity, MissileRender
 			state.glow = 0;
 		} else if (type.kind == MissileType.Kind.DRONE) {
 			state.glow = 0.75f;
-			state.glowBase = 0.25f;
+			state.glowBase = 0.55f;
 			state.glowColor = 0xFFC060;
 		} else {
 			state.glow = 1.0f;
-			state.glowBase = type.kind == MissileType.Kind.INTERCEPTOR ? 0.35f : 0.5f;
+			state.glowBase = type.kind == MissileType.Kind.INTERCEPTOR ? 0.6f : 0.85f;
 			state.glowColor = 0xFFE9A0;
 		}
 		itemModelResolver.updateForNonLiving(state.item, entity.getDisplayStack(), ItemDisplayContext.NONE, entity);
@@ -95,7 +95,7 @@ public class MissileRenderer extends EntityRenderer<MissileEntity, MissileRender
 	 */
 	private static void glow(MissileRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
 		double dist = Math.sqrt(state.distanceToCameraSq);
-		float size = (float) (state.glowBase + dist * 0.0055) * state.glow;
+		float size = (float) (state.glowBase + dist * 0.011) * state.glow;
 		float yaw = state.yaw * Mth.DEG_TO_RAD;
 		float pitch = state.pitch * Mth.DEG_TO_RAD;
 		float back = 1.3f * state.scale;

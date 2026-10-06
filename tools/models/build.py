@@ -9,6 +9,7 @@ sys.path.insert(0, HERE)
 import boxgen  # noqa: E402
 import radars  # noqa: E402
 import airdefense  # noqa: E402
+import armor  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 MAIN = os.path.join(ROOT, 'src/main/java/com/stasdoto/airdefense/vehicle/GenGeometry.java')
@@ -21,6 +22,7 @@ def models():
     out = []
     out += radars.all_models()
     out += airdefense.all_models()
+    out += armor.all_models()
     return out
 
 

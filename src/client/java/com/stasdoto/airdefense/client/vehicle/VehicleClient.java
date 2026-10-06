@@ -76,7 +76,8 @@ public final class VehicleClient {
 			return;
 		}
 		v.setClientInput(v.isDriver(player) ? player.input.keyPresses : Input.EMPTY);
-		if (GunnerHud.isManualGunner(player, v)) {
+		boolean armedShooter = v.getVehicleType().isArmed() && v.shooter() == player;
+		if (GunnerHud.isManualGunner(player, v) || armedShooter) {
 			// Manual mode: the left button is the trigger (and must not hit the vehicle or break blocks).
 			boolean click = false;
 			while (mc.options.keyAttack.consumeClick()) {
@@ -112,7 +113,9 @@ public final class VehicleClient {
 		int hp = (int) Math.ceil(v.getHealth() / v.getMaxHealth() * 100);
 		Component l1 = Component.translatable("hud.airdefense.vehicle.line1", v.getType().getDescription(), hp, kmh);
 		Component l2;
-		if (type.isRadar()) {
+		if (type.isArmed()) {
+			l2 = Component.translatable("hud.airdefense.vehicle.weapon", type.weapon.caliber, Math.max(0, v.getAmmo()));
+		} else if (type.isRadar()) {
 			l2 = Component.translatable(v.getMode() == VehicleEntity.MODE_OFF ? "hud.airdefense.vehicle.radar_off"
 					: v.radarWorking() ? "hud.airdefense.vehicle.radar_on" : "hud.airdefense.vehicle.radar_deploying", (int) type.radar.range);
 		} else if (type.isLauncher()) {
@@ -129,7 +132,12 @@ public final class VehicleClient {
 		if (!type.isRadar()) {
 			l2 = Component.empty().append(l2).append(v.reserveText());
 		}
-		String keys = driver ? "hud.airdefense.vehicle.keys_driver"
+		if (!v.infiniteFuel()) {
+			l2 = Component.empty().append(l2).append(Component.translatable(v.outOfFuel() ? "hud.airdefense.vehicle.fuel_empty"
+					: "hud.airdefense.vehicle.fuel", (int) v.getFuel(), type.fuelCapacity()));
+		}
+		String keys = type.isArmed() && v.shooter() == player ? (driver ? "hud.airdefense.vehicle.keys_armed_driver" : "hud.airdefense.vehicle.keys_armed")
+				: driver ? "hud.airdefense.vehicle.keys_driver"
 				: GunnerHud.isManualGunner(player, v) ? "hud.airdefense.vehicle.keys_manual" : "hud.airdefense.vehicle.keys_gunner";
 		Component l3 = Component.translatable(keys, DEPLOY.getTranslatedKeyMessage(), MODE.getTranslatedKeyMessage(), SEAT.getTranslatedKeyMessage());
 		// Top left corner: the bottom of the screen belongs to the chat, the hotbar and the hearts.
@@ -141,5 +149,15 @@ public final class VehicleClient {
 		g.text(font, l2, x, y + 10, 0xFFE0E0E0);
 		g.text(font, l3, x, y + 20, 0xFFA0A0A0);
 		GunnerHud.draw(g, delta, v, player);
+		if (type.isArmed() && v.shooter() == player) {
+			// Where the gun points: a ring in the middle of the screen.
+			int cx = mc.getWindow().getGuiScaledWidth() / 2;
+			int cy = mc.getWindow().getGuiScaledHeight() / 2;
+			int c = 0xC0FFE08A;
+			g.fill(cx - 6, cy, cx - 2, cy + 1, c);
+			g.fill(cx + 3, cy, cx + 7, cy + 1, c);
+			g.fill(cx, cy - 6, cx + 1, cy - 2, c);
+			g.fill(cx, cy + 3, cx + 1, cy + 7, c);
+		}
 	}
 }

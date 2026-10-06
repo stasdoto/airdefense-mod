@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "airdefense:empty_jerrycan",
+    "minecraft:coal",
+    "minecraft:coal"
+  ],
+  "result": {
+    "id": "airdefense:jerrycan",
+    "count": 1
+  }
+}
