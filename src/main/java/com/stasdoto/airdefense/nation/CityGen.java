@@ -125,6 +125,73 @@ public final class CityGen {
 		nanos += System.nanoTime() - t0;
 	}
 
+	/**
+	 * Once a chunk is complete (its neighbours have grown their trees too): leaves and trunks that reached over into
+	 * the streets, the yards and the roads go (the trees of the parks stay).
+	 */
+	public static void tidy(ServerLevel level, net.minecraft.world.level.chunk.LevelChunk chunk) {
+		if (!CityFeature.enabled || level.dimension() != net.minecraft.world.level.Level.OVERWORLD) {
+			return;
+		}
+		ChunkPos cp = chunk.getPos();
+		Cities.Terrain t = Cities.terrain(level);
+		long seed = level.getSeed();
+		int x0 = cp.getMinBlockX();
+		int z0 = cp.getMinBlockZ();
+		List<Cities.City> cities = new ArrayList<>();
+		for (Cities.City c : Cities.citiesAround(seed, t, cp.getMiddleBlockX(), cp.getMiddleBlockZ())) {
+			if (c.outside(x0 + 8, z0 + 8) <= 12) {
+				cities.add(c);
+			}
+		}
+		List<Cities.Road> roads = new ArrayList<>();
+		for (Cities.Road r : Cities.roadsNear(seed, t, cp.getMiddleBlockX(), cp.getMiddleBlockZ())) {
+			if (r.maxX >= x0 && r.minX <= x0 + 15 && r.maxZ >= z0 && r.minZ <= z0 + 15) {
+				roads.add(r);
+			}
+		}
+		if (cities.isEmpty() && roads.isEmpty()) {
+			return;
+		}
+		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+		for (int x = x0; x < x0 + 16; x++) {
+			for (int z = z0; z < z0 + 16; z++) {
+				int from = Integer.MIN_VALUE;
+				for (Cities.City c : cities) {
+					if (c.inside(x, z)) {
+						boolean yard = true;
+						for (Building b : c.buildings()) {
+							if (Math.abs(b.origin.getX() - x) < 30 && Math.abs(b.origin.getZ() - z) < 30 && b.covers(x, z, 1)) {
+								yard = false;
+								break;
+							}
+						}
+						if (yard) {
+							from = c.base + 1;
+						}
+					}
+				}
+				if (from == Integer.MIN_VALUE) {
+					for (Cities.Road r : roads) {
+						double along = r.along(x + 0.5, z + 0.5);
+						if (along >= 0 && along <= r.length && Math.abs(r.across(x + 0.5, z + 0.5)) <= Cities.ROAD_HALF + 0.5) {
+							from = (int) Math.floor(r.height(along)) + 1;
+						}
+					}
+				}
+				if (from == Integer.MIN_VALUE) {
+					continue;
+				}
+				for (int y = from; y < from + 28; y++) {
+					BlockState st = chunk.getBlockState(pos.set(x, y, z));
+					if (st.is(BlockTags.LEAVES) || st.is(BlockTags.LOGS) || st.is(Blocks.VINE) || st.is(Blocks.BEE_NEST) || st.is(Blocks.SNOW)) {
+						level.setBlock(pos, AIR, Block.UPDATE_CLIENTS);
+					}
+				}
+			}
+		}
+	}
+
 	// ------------------------------------------------------------------------------------------------
 	// Columns
 

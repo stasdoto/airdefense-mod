@@ -82,26 +82,47 @@ public final class Nations {
 		NationNet.init();
 	}
 
+	/** For the tests: time spent in each part of the nations' tick (ns): found, discover, capture, maintain, bandits, economy, supply, unrest, war. */
+	public static final long[] PROFILE = new long[9];
+
 	private static void tick(ServerLevel level) {
 		long t = level.getGameTime();
 		Politics p = Politics.get(level.getServer());
+		long t0 = System.nanoTime();
 		if (t % 100 == 0) {
 			foundCities(level, p);
+			long t1 = System.nanoTime();
+			PROFILE[0] += t1 - t0;
 			discover(level, p);
+			t0 = System.nanoTime();
+			PROFILE[1] += t0 - t1;
 		}
 		if (t % 20 == 7) {
 			captureTick(level, p);
 		}
+		long t2 = System.nanoTime();
+		PROFILE[2] += t2 - t0;
 		if (t % 200 == 50) {
 			maintain(level, p);
 		}
+		long t3 = System.nanoTime();
+		PROFILE[3] += t3 - t2;
 		if (t % 1200 == 300) {
 			bandits(level, p);
 		}
+		long t4 = System.nanoTime();
+		PROFILE[4] += t4 - t3;
 		Economy.tick(level, p);
+		long t5 = System.nanoTime();
+		PROFILE[5] += t5 - t4;
 		Supply.tick(level, p);
+		long t6 = System.nanoTime();
+		PROFILE[6] += t6 - t5;
 		Unrest.tick(level, p);
+		long t7 = System.nanoTime();
+		PROFILE[7] += t7 - t6;
 		War.tick(level, p);
+		PROFILE[8] += System.nanoTime() - t7;
 	}
 
 	// ------------------------------------------------------------------------------------------------

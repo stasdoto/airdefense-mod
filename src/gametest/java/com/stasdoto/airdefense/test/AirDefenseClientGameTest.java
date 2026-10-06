@@ -209,6 +209,12 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			camera(server, cx - cap[2] - 30.5, base + 25, cz + 0.5, 270, 20);
 			ctx.waitTicks(80);
 			ctx.takeScreenshot("143_real_city_edge");
+			camera(server, cx + 16.5, base + 2.8, cz + cap[2] - 4.5, 180, 3);
+			ctx.waitTicks(80);
+			ctx.takeScreenshot("144_real_street");
+			AirDefense.LOGGER.info("[airdefense-test] RESULT real_profile_ms: {} tick {} ms", java.util.Arrays.toString(
+					java.util.Arrays.stream(com.stasdoto.airdefense.nation.Nations.PROFILE).map(v -> v / 1_000_000).toArray()),
+					server.computeOnServer(s -> s.getAverageTickTimeNanos() / 1_000_000f));
 		}
 	}
 
@@ -845,6 +851,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		}
 		server.runCommand("gamemode spectator @a");
 		server.runCommand("time set 1000");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT nations_profile_ms: {}", java.util.Arrays.toString(
+				java.util.Arrays.stream(com.stasdoto.airdefense.nation.Nations.PROFILE).map(v -> v / 1_000_000).toArray()));
 	}
 
 	/** Puts a whole building up at once (for the screenshots), shapes of fences and panes fixed in a second pass. */

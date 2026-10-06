@@ -30,6 +30,7 @@ public record CityFeature() implements Feature {
 
 	public static void init() {
 		Registry.register(BuiltInRegistries.FEATURE_TYPE, AirDefense.id("cities"), CODEC);
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents.CHUNK_GENERATE.register(CityGen::tidy);
 		BiomeModifications.addFeature(BiomeSelectors.foundInOverworld(), GenerationStep.Decoration.TOP_LAYER_MODIFICATION,
 				ResourceKey.create(Registries.PLACED_FEATURE, AirDefense.id("cities")));
 	}
