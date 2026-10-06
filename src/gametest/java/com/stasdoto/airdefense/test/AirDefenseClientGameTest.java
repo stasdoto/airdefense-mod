@@ -2689,12 +2689,13 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 
 	private void war(ClientGameTestContext ctx, TestServerContext server) {
 		int x = 38000;
-		int bx = x + 120;
+		// Two villages closer than Nations.SPACING would be one.
+		int bx = x + 170;
 		int g = ground;
 		server.runCommand("difficulty normal");
 		server.runCommand("gamemode spectator @a");
 		server.runCommand("time set 1000");
-		camera(server, x + 60.5, g + 30, 30.5, 180, 40);
+		camera(server, x + 85.5, g + 30, 30.5, 180, 40);
 		ctx.waitTicks(40);
 		village(server, x, 0, new String[]{"none", "farmer", "none", "librarian", "none", "mason", "none", "cleric"});
 		village(server, bx, 0, new String[]{"none", "farmer", "none", "fletcher", "none"});
@@ -2739,7 +2740,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.runOnClient(mc -> {
 			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
 				m.setTab(1);
-				m.centerOn(x + 60, 0, 1);
+				m.centerOn(x + 85, 0, 1);
 				m.selectVillage(b);
 			}
 		});
@@ -2765,7 +2766,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			var stA = p.settlements.get(a);
 			int ai = p.settlements.get(b).country;
 			int enemies = s.overworld().getEntitiesOfClass(com.stasdoto.airdefense.nation.SoldierEntity.class,
-					new net.minecraft.world.phys.AABB(x - 120, g - 10, -120, x + 120, g + 30, 120), e -> e.isAlive() && e.country() == ai).size();
+					new net.minecraft.world.phys.AABB(x - 120, g - 10, -120, x + 200, g + 30, 120), e -> e.isAlive() && e.country() == ai).size();
 			return enemies + " enemies, " + com.stasdoto.airdefense.nation.Nations.guards(s.overworld(), stA).size() + " guards";
 		});
 		AirDefense.LOGGER.info("[airdefense-test] RESULT squad: sent {}, after the fight {}", sent, fight);
