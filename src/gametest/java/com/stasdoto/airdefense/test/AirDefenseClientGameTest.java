@@ -46,6 +46,27 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			server.runCommand("gamemode spectator @a");
 			ground = server.computeOnServer(s -> s.overworld().getHeight(Heightmap.Types.MOTION_BLOCKING, 0, 0));
 			AirDefense.LOGGER.info("[airdefense-test] ground level {}", ground);
+			if (scene("probe")) {
+				server.runOnServer(s -> {
+					var ra = s.registryAccess();
+					var ops = net.minecraft.resources.RegistryOps.create(com.mojang.serialization.JsonOps.INSTANCE, ra);
+					for (String id : new String[]{"trees_plains", "freeze_top_layer", "lake_lava_surface"}) {
+						var key = net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.PLACED_FEATURE,
+								net.minecraft.resources.Identifier.withDefaultNamespace(id));
+						ra.lookupOrThrow(net.minecraft.core.registries.Registries.PLACED_FEATURE).get(key).ifPresent(h -> {
+							AirDefense.LOGGER.info("[airdefense-test] PROBE placed {} = {}", id,
+									net.minecraft.world.level.levelgen.placement.PlacedFeature.DIRECT_CODEC.encodeStart(ops, h.value()));
+							AirDefense.LOGGER.info("[airdefense-test] PROBE feature {} = {}", id,
+									net.minecraft.world.level.levelgen.feature.Feature.DIRECT_CODEC.encodeStart(ops, h.value().feature().value()));
+						});
+					}
+					var sk = net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.STRUCTURE_SET,
+							net.minecraft.resources.Identifier.withDefaultNamespace("villages"));
+					ra.lookupOrThrow(net.minecraft.core.registries.Registries.STRUCTURE_SET).get(sk).ifPresent(h -> AirDefense.LOGGER.info(
+							"[airdefense-test] PROBE structure_set villages = {}",
+							net.minecraft.world.level.levelgen.structure.StructureSet.DIRECT_CODEC.encodeStart(ops, h.value())));
+				});
+			}
 			int books = server.computeOnServer(s -> s.getPlayerList().getPlayers().getFirst().getInventory().countItem(net.minecraft.world.item.Items.WRITTEN_BOOK));
 			AirDefense.LOGGER.info("[airdefense-test] RESULT guide: books given on joining {}", books);
 			if (scene("guide")) {
