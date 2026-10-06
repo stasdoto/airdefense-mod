@@ -393,7 +393,7 @@
   "screen.airdefense.map.village_war": "%s · WAR",
   "screen.airdefense.map.enemy": "Enemy: you are at war with this country",
   "guide.airdefense.title": "Air Defense guide",
-  "guide.airdefense.page.1": "Air Defense - guide\n\nVehicles and missiles, air defence, the factory, weapons, villages and countries, building, the army and wars.\n\nTurn the page →",
+  "guide.airdefense.page.1": "Air Defence — guide\n\nVehicles and missiles, air defence, radars, drones, the factory, weapons, fuel and logistics, cities and countries, armies and wars.\n\nTurn the page →",
   "guide.airdefense.page.2": "VEHICLES\n\nPlace them from the Air Defense tab (right click the ground) or have them made in a village hangar.\nRight click a vehicle - get in.\nG - change seat.\nR - raise or stow the launcher.\nShift - get out.",
   "guide.airdefense.page.3": "TABLET\n\nRight click - the map with your vehicles.\nPick a vehicle, click a target on the map, press Fire.\nShift + right click - mark the block you look at.",
   "guide.airdefense.page.4": "AIR DEFENCE\n\nV - mode: auto / manual / off.\nAuto: the vehicle shoots down missiles and drones by itself.\nManual: take the gunner's seat, aim, left click fires.\nStinger: aim at the target, right click.",
@@ -701,5 +701,10 @@
   "message.airdefense.magura.water": "The Magura goes on water: look at water close by",
   "hud.airdefense.drone.pilot": "Mouse to steer · %s to exit",
   "radar.airdefense.contact.fpv": "FPV drone",
-  "radar.airdefense.contact.magura": "sea drone"
+  "radar.airdefense.contact.magura": "sea drone",
+  "guide.airdefense.page.13": "RADARS AND DRONES\n\nA radar goes down like a vehicle and turns by itself. What it sees is on the Radar tab of the tablet.\n\nGive a Shahed a flight plan, watch through its camera; Mass strike sends a whole wave.",
+  "guide.airdefense.page.14": "TANKS, BOATS, AIRCRAFT\n\nGet in (RMB), aim with the mouse, LMB fires.\nBoats: RMB on water.\nHelicopter: Space up, Ctrl down.\nPlane: W/S throttle, flies where you look.\nAll need fuel: a jerrycan, RMB on the vehicle.",
+  "guide.airdefense.page.15": "FUEL AND LOGISTICS\n\nOil wells pump oil, the refinery makes fuel, the hub makes ammunition.\nVehicles fill up at a gas station; at a hub they are rearmed too.\nTrucks: R switches the mode (load, unload, serve).",
+  "guide.airdefense.page.16": "CITIES AND COUNTRIES\n\nEvery country has a capital and two more towns joined by asphalt roads.\nBuy a charter or take the flag and a town is yours.\nOn the tablet map (Army tab) click a building to pull it down or rebuild it.",
+  "guide.airdefense.page.17": "FPV AND MAGURA\n\nFPV drone: RMB to take off, flies where you look, blows up on impact.\nMagura: RMB on water, goes where you look, sinks boats.\nSneak to let go."
 }

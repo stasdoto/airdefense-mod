@@ -863,7 +863,13 @@ public class MissileEntity extends Entity {
 			MissileStats.ROCKET_IMPACTS.incrementAndGet();
 			MissileStats.log("{} {} at {} after {} ticks{}", type, inAir ? "self-destruct" : "IMPACT", fmt(at), life,
 					directHit == null ? "" : " on " + directHit.getType().getDescriptionId());
-			Effects.rpgImpact(level, this, at, owner, directHit);
+			if (type == MissileType.FPV) {
+				Effects.rpgImpact(level, this, at, owner, directHit, 260f, 2.4f);
+			} else if (type == MissileType.MAGURA) {
+				Effects.rpgImpact(level, this, at, owner, directHit, 600f, 5.5f);
+			} else {
+				Effects.rpgImpact(level, this, at, owner, directHit);
+			}
 			return;
 		}
 		if (type.isDecoy()) {

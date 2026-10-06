@@ -146,16 +146,22 @@ public final class Effects {
 	 */
 	public static void rpgImpact(ServerLevel level, Entity rocket, Vec3 at, @org.jetbrains.annotations.Nullable Entity owner,
 			@org.jetbrains.annotations.Nullable Entity direct) {
+		rpgImpact(level, rocket, at, owner, direct, 70f, 2.2f);
+	}
+
+	/** A shaped charge (or a boat full of explosive): {@code vehicleDamage} to a vehicle it hits, a blast of {@code power}. */
+	public static void rpgImpact(ServerLevel level, Entity rocket, Vec3 at, @org.jetbrains.annotations.Nullable Entity owner,
+			@org.jetbrains.annotations.Nullable Entity direct, float vehicleDamage, float power) {
 		DamageSource source = level.damageSources().explosion(rocket, owner);
 		if (direct instanceof VehicleEntity vehicle) {
-			vehicle.hurtServer(level, source, 70f);
+			vehicle.hurtServer(level, source, vehicleDamage);
 		} else if (direct != null) {
 			direct.hurtServer(level, source, 14f);
 		}
-		level.explode(rocket, source, null, at.x, at.y, at.z, 2.2f, false, Level.ExplosionInteraction.TNT,
+		level.explode(rocket, source, null, at.x, at.y, at.z, power, false, Level.ExplosionInteraction.TNT,
 				ModParticles.GLOW, ModParticles.GLOW, WeightedList.of(), Holder.direct(ModSounds.SILENT));
-		Fx.send(level, FxPayload.GROUND_IMPACT, at, 2.2f, new Vec3(0, 1, 1));
-		shockWave(level, rocket, at, 7, 0.5, 0.8);
+		Fx.send(level, FxPayload.GROUND_IMPACT, at, power, new Vec3(0, 1, 1));
+		shockWave(level, rocket, at, 3 * power + 1, 0.5, 0.8);
 	}
 
 	/** The RPG's back-blast: a cloud of smoke behind the tube, the launch report, and it hurts whoever stands there. */

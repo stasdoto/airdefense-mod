@@ -157,17 +157,19 @@ public final class CityGen {
 		for (int x = x0; x < x0 + 16; x++) {
 			for (int z = z0; z < z0 + 16; z++) {
 				int from = Integer.MIN_VALUE;
+				int span = 28;
 				for (Cities.City c : cities) {
 					if (c.inside(x, z)) {
-						boolean yard = true;
+						boolean park = false;
 						for (Building b : c.buildings()) {
-							if (Math.abs(b.origin.getX() - x) < 30 && Math.abs(b.origin.getZ() - z) < 30 && b.covers(x, z, 1)) {
-								yard = false;
+							if (b.type == BuildingType.PARK && Math.abs(b.origin.getX() - x) < 30 && Math.abs(b.origin.getZ() - z) < 30 && b.covers(x, z, 1)) {
+								park = true;
 								break;
 							}
 						}
-						if (yard) {
+						if (!park) {
 							from = c.base + 1;
+							span = 64;
 						}
 					}
 				}
@@ -182,7 +184,7 @@ public final class CityGen {
 				if (from == Integer.MIN_VALUE) {
 					continue;
 				}
-				for (int y = from; y < from + 28; y++) {
+				for (int y = from; y < from + span; y++) {
 					BlockState st = chunk.getBlockState(pos.set(x, y, z));
 					if (st.is(BlockTags.LEAVES) || st.is(BlockTags.LOGS) || st.is(Blocks.VINE) || st.is(Blocks.BEE_NEST) || st.is(Blocks.SNOW)) {
 						chunk.setBlockState(pos, AIR, 0);
