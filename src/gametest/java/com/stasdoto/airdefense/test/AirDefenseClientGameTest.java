@@ -75,6 +75,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("drones")) {
 				drones(ctx, server);
 			}
+			if (scene("ad")) {
+				newAirDefense(ctx, server);
+			}
 			if (scene("drive")) {
 				drive(ctx, server);
 			}
@@ -243,6 +246,21 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	 */
 	private void drones(ClientGameTestContext ctx, TestServerContext server) {
 		int x = 24000;
+		// The engine glow, close up at night: a Shahed and a Kalibr crossing the view 50-70 blocks away.
+		camera(server, x + 0.5, ground + 2, -300, 0, -20);
+		ctx.waitTicks(40);
+		server.runCommand("time set 15000");
+		server.runOnServer(s -> {
+			com.stasdoto.airdefense.missile.MissileEntity.launchStrike(s.overworld(), com.stasdoto.airdefense.missile.MissileType.SHAHED,
+					new Vec3(x - 40, ground + 25, -240), new Vec3(x + 400, ground, -240), new Vec3(1, 0, 0));
+			com.stasdoto.airdefense.missile.MissileEntity.launchStrike(s.overworld(), com.stasdoto.airdefense.missile.MissileType.KALIBR,
+					new Vec3(x - 60, ground + 30, -220), new Vec3(x + 500, ground, -220), new Vec3(1, 0, 0));
+		});
+		ctx.waitTicks(45);
+		ctx.takeScreenshot("79_glow_night");
+		server.runCommand("time set 1000");
+		ctx.waitTicks(5);
+		ctx.takeScreenshot("79b_glow_day");
 		server.runCommand("gamemode creative @a");
 		camera(server, x + 0.5, ground + 1, -4, 0, 5);
 		ctx.waitTicks(40);
@@ -328,6 +346,66 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runOnServer(s -> forVehicles(s.overworld(), ids, Entity::discard));
 		server.runCommand("clear @a");
 		server.runCommand("gamemode spectator @a");
+	}
+
+	/** Stage R4: the twelve new air defence vehicles, folded and deployed, then a few of them at work. */
+	private void newAirDefense(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 27000;
+		VehicleType[] ad = {VehicleType.PANTSIR, VehicleType.TOR, VehicleType.BUK, VehicleType.S300, VehicleType.OSA, VehicleType.STRELA10,
+				VehicleType.SHILKA, VehicleType.TUNGUSKA, VehicleType.SAMPT, VehicleType.AVENGER, VehicleType.MFG, VehicleType.ZU23};
+		camera(server, x, ground + 10, 46, 180, 16);
+		ctx.waitTicks(40);
+		List<Integer> ids = new ArrayList<>();
+		for (int i = 0; i < ad.length; i++) {
+			ids.add(spawnVehicle(server, ad[i], x - 40 + (i % 6) * 16, i < 6 ? 0 : 22, 200));
+		}
+		ctx.waitTicks(8);
+		ctx.takeScreenshot("90_ad_folded");
+		ctx.waitTicks(200);
+		ctx.takeScreenshot("91_ad_deployed");
+		camera(server, x - 52, ground + 6, 34, -125, 10);
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("92_ad_side");
+		camera(server, x + 50, ground + 6, -14, 60, 10);
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("93_ad_other_side");
+		server.runOnServer(s -> forVehicles(s.overworld(), ids, Entity::discard));
+
+		// Pantsir against five Shaheds: missiles further out, the guns close in.
+		int px = x + 3000;
+		prepareDefense(ctx, server, VehicleType.PANTSIR, px + 12, 50, 180);
+		int[] before = counters();
+		launchFrom(ctx, server, VehicleType.SHAHED, px, -170, new BlockPos(px, ground - 1, 70));
+		ctx.waitTicks(150);
+		camera(server, px + 28, ground + 6, 74, 150, -10);
+		ctx.waitTicks(90);
+		ctx.takeScreenshot("94_pantsir_fight");
+		ctx.waitTicks(260);
+		report("pantsir_vs_5_shahed", before);
+
+		// S-300 against an Iskander.
+		int sx = x + 6000;
+		prepareDefense(ctx, server, VehicleType.S300, sx + 15, 60, 180);
+		before = counters();
+		launchFrom(ctx, server, VehicleType.ISKANDER, sx, -320, new BlockPos(sx, ground - 1, 80));
+		camera(server, sx + 40, ground + 8, 90, 145, -25);
+		ctx.waitTicks(260);
+		ctx.takeScreenshot("95_s300_fight");
+		ctx.waitTicks(200);
+		report("s300_vs_iskander", before);
+
+		// A mobile fire group and a ZU-23 against Shaheds.
+		int mx = x + 9000;
+		prepareDefense(ctx, server, VehicleType.MFG, mx + 10, 40, 180);
+		spawnVehicle(server, VehicleType.ZU23, mx - 12, 46, 180);
+		before = counters();
+		launchFrom(ctx, server, VehicleType.SHAHED, mx, -170, new BlockPos(mx, ground - 1, 60));
+		ctx.waitTicks(220);
+		camera(server, mx + 18, ground + 4, 64, 150, -12);
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("96_mfg_fight");
+		ctx.waitTicks(260);
+		report("mfg_zu23_vs_5_shahed", before);
 	}
 
 	private void drive(ClientGameTestContext ctx, TestServerContext server) {

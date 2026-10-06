@@ -31,7 +31,12 @@ public enum Product {
 	AMMO_762("ammo_762", 200, 1, 60, cost(Items.COPPER_INGOT, 4, Items.GUNPOWDER, 6, Items.IRON_NUGGET, 4)),
 	AMMO_9MM("ammo_9mm", 120, 1, 64, cost(Items.COPPER_INGOT, 3, Items.GUNPOWDER, 3)),
 	RPG_ROUND("rpg_round", 300, 1, 2, cost(Items.IRON_INGOT, 2, Items.GUNPOWDER, 3, Items.TNT, 1)),
-	F1_GRENADE("f1_grenade", 240, 1, 4, cost(Items.IRON_INGOT, 3, Items.TNT, 1));
+	F1_GRENADE("f1_grenade", 240, 1, 4, cost(Items.IRON_INGOT, 3, Items.TNT, 1)),
+	// Stage R4: missiles and shells for the other air defence.
+	SAM_SHORT("sam_short", 500, 1, cost(Items.IRON_INGOT, 6, Items.GUNPOWDER, 3, Items.REDSTONE, 3)),
+	SAM_LONG("sam_long", 1000, 1, cost(Items.IRON_INGOT, 12, Items.GUNPOWDER, 6, Items.REDSTONE, 4, Items.GOLD_INGOT, 1)),
+	AMMO_23("ammo_23_box", 200, 10, cost(Items.COPPER_INGOT, 6, Items.GUNPOWDER, 4)),
+	AMMO_127("ammo_127_box", 160, 10, cost(Items.COPPER_INGOT, 4, Items.GUNPOWDER, 3));
 
 	public record Cost(Item item, int count) {
 	}
@@ -75,6 +80,11 @@ public enum Product {
 			case IRIS_T -> IRIST;
 			case NASAMS -> AMRAAM;
 			case GEPARD -> GEPARD_AMMO;
+			case PANTSIR, TOR, OSA, STRELA10, TUNGUSKA -> SAM_SHORT;
+			case BUK, S300, SAMPT -> SAM_LONG;
+			case SHILKA, ZU23 -> AMMO_23;
+			case MFG -> AMMO_127;
+			case AVENGER -> STINGER;
 			default -> null;
 		};
 	}

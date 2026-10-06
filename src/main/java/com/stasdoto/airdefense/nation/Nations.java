@@ -113,7 +113,8 @@ public final class Nations {
 			// The town square: the bell nearest to this villager, or where he stands.
 			BlockPos center = level.getPoiManager().findClosest(h -> h.is(PoiTypes.MEETING), v.blockPosition(), 48, PoiManager.Occupancy.ANY)
 					.orElse(v.blockPosition());
-			if (p.settlementAt(center) != null) {
+			// One village, one settlement: no new one right next to another (a big village has several bells).
+			if (p.settlementAt(center) != null || !p.near(center, SPACING).isEmpty()) {
 				continue;
 			}
 			found(level, p, center);
@@ -234,7 +235,69 @@ public final class Nations {
 		}
 	}
 
+	/** Villages closer than this are one village. */
+	public static final int SPACING = 150;
+	public static int merged;
+
+	/**
+	 * Two settlements found in what is really one village (older worlds): the empty one (no player's, nothing built,
+	 * no stock) is dropped, with its flag.
+	 */
+	private static void mergeTwins(ServerLevel level, Politics p) {
+		List<Settlement> all = new ArrayList<>(p.settlements.values());
+		for (int i = 0; i < all.size(); i++) {
+			Settlement a = all.get(i);
+			if (!p.settlements.containsKey(a.id)) {
+				continue;
+			}
+			for (int j = i + 1; j < all.size(); j++) {
+				Settlement b = all.get(j);
+				if (!p.settlements.containsKey(b.id) || a.center.distSqr(b.center) > 110 * 110) {
+					continue;
+				}
+				Settlement drop = droppable(p, b) ? b : droppable(p, a) ? a : null;
+				if (drop == null) {
+					continue;
+				}
+				remove(level, p, drop);
+				if (drop == a) {
+					break;
+				}
+			}
+		}
+	}
+
+	private static boolean droppable(Politics p, Settlement s) {
+		Country c = p.country(s.country);
+		return (c == null || c.owner == null) && s.eco.isEmpty() && s.soldiers.isEmpty();
+	}
+
+	private static void remove(ServerLevel level, Politics p, Settlement s) {
+		p.settlements.remove(s.id);
+		if (level.isLoaded(s.flag) && level.getBlockState(s.flag).getBlock() instanceof BannerBlock) {
+			level.removeBlock(s.flag, false);
+		}
+		Country c = p.country(s.country);
+		if (c != null && c.capital == s.id) {
+			List<Settlement> rest = p.settlementsOf(c.id);
+			if (rest.isEmpty()) {
+				p.countries.remove(c.id);
+				for (Country o : p.countries.values()) {
+					o.wars.remove(c.id);
+					o.warSince.remove(c.id);
+					o.warScore.remove(c.id);
+				}
+			} else {
+				c.capital = rest.getFirst().id;
+			}
+		}
+		merged++;
+		p.setDirty();
+		AirDefense.LOGGER.info("[airdefense] village {} merged into its neighbour", s.name);
+	}
+
 	private static void maintain(ServerLevel level, Politics p) {
+		mergeTwins(level, p);
 		for (Settlement s : p.settlements.values()) {
 			if (!level.isLoaded(s.center)) {
 				continue;

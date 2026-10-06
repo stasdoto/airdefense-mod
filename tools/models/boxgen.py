@@ -208,6 +208,17 @@ class Box:
         return (self.px_size(), self.style, self.faces, tuple(sorted(self.sides.items())))
 
 
+def unrotate_x(p, pivot, deg):
+    """Point p given where it is after turning the part by deg about x (around pivot): where it is at rest."""
+    t = math.radians(-deg)
+    y = p[1] - pivot[1]
+    z = p[2] - pivot[2]
+    # Forward rotation (raises the front): y' = y cos + z sin, z' = z cos - y sin; here with -deg.
+    yr = y * math.cos(t) + z * math.sin(t)
+    zr = z * math.cos(t) - y * math.sin(t)
+    return (p[0], pivot[1] + round(yr, 6), pivot[2] + round(zr, 6))
+
+
 class Part:
     def __init__(self, model, name, pivot, rot, parent):
         self.model = model
@@ -217,9 +228,26 @@ class Part:
         self.parent = parent
         self.boxes = []
         self.children = []
+        # Boxes are given as they look turned by this many degrees about x (e.g. a vertical launcher drawn upright).
+        self.design_x = 0
 
     def box(self, a, b, style=None, faces=None, sides=None):
-        """Box between corners a and b (metres, vehicle space at rest)."""
+        """Box between corners a and b (metres, vehicle space at rest, or as designed - see design_x)."""
+        if self.design_x:
+            a = unrotate_x(a, self.pivot, self.design_x)
+            b = unrotate_x(b, self.pivot, self.design_x)
+            if faces or sides:
+                # Faces keep their names in the designed frame: top <-> front etc.
+                k = round(self.design_x / 90) % 4
+                cyc = ['top', 'back', 'bottom', 'front'] if k else None
+                def mapf(f):
+                    if cyc is None or f not in cyc:
+                        return f
+                    return cyc[(cyc.index(f) - k) % 4]
+                if faces:
+                    faces = tuple(mapf(f) for f in faces)
+                if sides:
+                    sides = {mapf(f): v for f, v in sides.items()}
         self.boxes.append(Box(a, b, style or self.model.paint, faces, sides))
         return self
 
@@ -283,6 +311,33 @@ class Model:
 
     def seat(self, role, x, y, z):
         self.seats.append((role, x, y, z))
+
+    def set_turret(self, part, rate=0):
+        self.turret = part.name
+        self.turret_pivot = part.pivot
+
+    def set_elevator(self, part, deploy=0.0, fixed=0.0):
+        """The part that elevates (launcher, guns); rails are given relative to it."""
+        self.elevator = part.name
+        self._elev_abs = part.pivot
+        self.deploy_elevation = deploy
+        self.fixed_elevation = fixed
+        tp = self.turret_pivot if self.turret else (0, 0, 0)
+        self.elevator_pivot = tuple(part.pivot[i] - tp[i] for i in range(3))
+
+    def set_virtual_elevator(self, name, pivot_abs, deploy, fixed):
+        """A launch frame without a moving part (vertical launch cells)."""
+        self.elevator = name
+        self._elev_abs = pivot_abs
+        self.deploy_elevation = deploy
+        self.fixed_elevation = fixed
+        tp = self.turret_pivot if self.turret else (0, 0, 0)
+        self.elevator_pivot = tuple(pivot_abs[i] - tp[i] for i in range(3))
+
+    def rail(self, part_name, pos, at=0.0):
+        """Launch point (missile centre) where it is with the elevator at {at} degrees; stored at elevation 0."""
+        p = unrotate_x(pos, self._elev_abs, at) if at else pos
+        self.rails.append((part_name, p[0] - self._elev_abs[0], p[1] - self._elev_abs[1], p[2] - self._elev_abs[2]))
 
     def wheel(self, name, x, y, z, r, width, steer=False, side='wheel', tread='tire', parent=None):
         """A wheel turning about the x axis, pivot at its axle (x, y, z)."""

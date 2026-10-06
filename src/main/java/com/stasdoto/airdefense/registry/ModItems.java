@@ -61,6 +61,23 @@ public final class ModItems {
 	public static final Item SENTINEL = vehicle("sentinel", VehicleType.SENTINEL);
 	public static final Item MPQ65 = vehicle("mpq65", VehicleType.MPQ65);
 	public static final Item KUPOL = vehicle("kupol", VehicleType.KUPOL);
+	// Air defence (stage R4).
+	public static final Item PANTSIR = vehicle("pantsir", VehicleType.PANTSIR);
+	public static final Item TOR = vehicle("tor", VehicleType.TOR);
+	public static final Item BUK = vehicle("buk", VehicleType.BUK);
+	public static final Item S300 = vehicle("s300", VehicleType.S300);
+	public static final Item OSA = vehicle("osa", VehicleType.OSA);
+	public static final Item STRELA10 = vehicle("strela10", VehicleType.STRELA10);
+	public static final Item SHILKA = vehicle("shilka", VehicleType.SHILKA);
+	public static final Item TUNGUSKA = vehicle("tunguska", VehicleType.TUNGUSKA);
+	public static final Item SAMPT = vehicle("sampt", VehicleType.SAMPT);
+	public static final Item AVENGER = vehicle("avenger", VehicleType.AVENGER);
+	public static final Item MFG = vehicle("mfg", VehicleType.MFG);
+	public static final Item ZU23 = vehicle("zu23", VehicleType.ZU23);
+	public static final Item SAM_SHORT = register("sam_short", Item::new, new Item.Properties().stacksTo(8));
+	public static final Item SAM_LONG = register("sam_long", Item::new, new Item.Properties().stacksTo(4));
+	public static final Item AMMO_23_BOX = register("ammo_23_box", Item::new, new Item.Properties().stacksTo(16));
+	public static final Item AMMO_127_BOX = register("ammo_127_box", Item::new, new Item.Properties().stacksTo(16));
 
 	// Missile items: what the flying entities look like (their 3D model), also usable as decoration in item frames.
 	public static final Item ISKANDER_MISSILE = missile(MissileType.ISKANDER);
@@ -121,6 +138,22 @@ public final class ModItems {
 				output.accept(TRML4D);
 				output.accept(SENTINEL);
 				output.accept(MPQ65);
+				output.accept(PANTSIR);
+				output.accept(TOR);
+				output.accept(BUK);
+				output.accept(S300);
+				output.accept(OSA);
+				output.accept(STRELA10);
+				output.accept(SHILKA);
+				output.accept(TUNGUSKA);
+				output.accept(SAMPT);
+				output.accept(AVENGER);
+				output.accept(MFG);
+				output.accept(ZU23);
+				output.accept(SAM_SHORT);
+				output.accept(SAM_LONG);
+				output.accept(AMMO_23_BOX);
+				output.accept(AMMO_127_BOX);
 				output.accept(MANPADS);
 				output.accept(FACTORY_KIT);
 				output.accept(FACTORY_CONTROLLER);

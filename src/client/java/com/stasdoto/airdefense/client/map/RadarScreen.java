@@ -423,6 +423,9 @@ public class RadarScreen extends Screen {
 			double eta = eta(c);
 			String line2 = Component.translatable(c.engaged() > 0 ? "screen.airdefense.radar.row_engaged" : "screen.airdefense.radar.row",
 					kmh(c), eta < 999 ? String.format(Locale.ROOT, "%.0f", eta) : "-").getString();
+			if (!c.decoy()) {
+				line2 = line2 + " · " + com.stasdoto.airdefense.map.Grid.square(c.tx(), c.tz(), MapClient.cyrillic());
+			}
 			small(g, line2, x0 + 5, y + 10, c.engaged() > 0 ? C_FRIEND : C_DIMG);
 			y += 20;
 		}

@@ -25,7 +25,20 @@ public enum VehicleType {
 	TRML4D("trml4d", GenGeometry.TRML4D, RadarType.TRML4D, 180, 0.88f, 0.013f, 30, 0, 0, 2.55f, 3.2f),
 	SENTINEL("sentinel", GenGeometry.SENTINEL, RadarType.SENTINEL, 130, 0.95f, 0.016f, 32, 0, 0, 2.2f, 2.2f),
 	MPQ65("mpq65", GenGeometry.MPQ65, RadarType.MPQ65, 220, 0.75f, 0.010f, 28, 0, 0.8f, 2.5f, 3.3f),
-	KUPOL("kupol", GenGeometry.KUPOL, RadarType.KUPOL, 260, 0.75f, 0.012f, 0, 2.6f, 0, 3.2f, 3.0f);
+	KUPOL("kupol", GenGeometry.KUPOL, RadarType.KUPOL, 260, 0.75f, 0.012f, 0, 2.6f, 0, 3.2f, 3.0f),
+	// Air defence of the war in Ukraine (stage R4).
+	PANTSIR("pantsir", GenGeometry.PANTSIR, null, DefenseType.PANTSIR, 260, 0.9f, 0.013f, 30, 0, 4.0f, 6.0f, 2.55f, 3.2f),
+	TOR("tor", GenGeometry.TOR, null, DefenseType.TOR, 300, 0.8f, 0.014f, 0, 2.6f, 0, 6.0f, 3.3f, 3.0f),
+	BUK("buk", GenGeometry.BUK, null, DefenseType.BUK, 280, 0.75f, 0.012f, 0, 2.4f, 1.0f, 3.0f, 3.25f, 3.0f),
+	S300("s300", GenGeometry.S300, null, DefenseType.S300, 260, 0.75f, 0.010f, 28, 0, 1.0f, 0, 3.05f, 3.4f),
+	OSA("osa", GenGeometry.OSA, null, DefenseType.OSA, 220, 0.85f, 0.013f, 30, 0, 1.5f, 5.0f, 2.75f, 2.9f),
+	STRELA10("strela10", GenGeometry.STRELA10, null, DefenseType.STRELA10, 200, 0.85f, 0.016f, 0, 3.0f, 2.0f, 5.0f, 2.85f, 2.4f),
+	SHILKA("shilka", GenGeometry.SHILKA, null, DefenseType.SHILKA, 260, 0.8f, 0.015f, 0, 3.0f, 5.0f, 8.0f, 3.1f, 2.6f),
+	TUNGUSKA("tunguska", GenGeometry.TUNGUSKA, null, DefenseType.TUNGUSKA, 300, 0.85f, 0.015f, 0, 3.0f, 4.5f, 7.0f, 3.25f, 3.0f),
+	SAMPT("sampt", GenGeometry.SAMPT, null, DefenseType.SAMPT, 230, 0.85f, 0.012f, 30, 0, 1.4f, 0, 2.55f, 3.3f),
+	AVENGER("avenger", GenGeometry.AVENGER, null, DefenseType.AVENGER, 130, 1.05f, 0.02f, 34, 0, 2.5f, 6.0f, 2.2f, 2.3f),
+	MFG("mfg", GenGeometry.MFG, null, DefenseType.MFG, 90, 1.15f, 0.025f, 35, 0, 6.0f, 10.0f, 1.85f, 1.9f),
+	ZU23("zu23", GenGeometry.ZU23, null, DefenseType.ZU23, 150, 0.9f, 0.016f, 32, 0, 5.0f, 8.0f, 2.5f, 2.9f);
 
 	public final String id;
 	public final VehicleGeometry.Geometry geometry;
@@ -108,6 +121,54 @@ public enum VehicleType {
 
 	public int rails() {
 		return geometry.rails().length;
+	}
+
+	private int[] missileRails;
+	private int[] barrelRails;
+
+	/** Rails that hold missiles (not gun barrels). */
+	public int[] missileRails() {
+		if (missileRails == null) {
+			split();
+		}
+		return missileRails;
+	}
+
+	/** Gun barrels (rails named "barrel..."); for pure gun systems every rail. */
+	public int[] barrelRails() {
+		if (barrelRails == null) {
+			split();
+		}
+		return barrelRails;
+	}
+
+	private void split() {
+		VehicleGeometry.Rail[] r = geometry.rails();
+		java.util.List<Integer> m = new java.util.ArrayList<>();
+		java.util.List<Integer> b = new java.util.ArrayList<>();
+		for (int i = 0; i < r.length; i++) {
+			(r[i].part().startsWith("barrel") || (defense != null && defense.gunOnly()) ? b : m).add(i);
+		}
+		missileRails = m.stream().mapToInt(Integer::intValue).toArray();
+		barrelRails = b.stream().mapToInt(Integer::intValue).toArray();
+	}
+
+	/** Guns only (they can fire on the move, aim straight at the target). */
+	public boolean gunOnly() {
+		return defense != null && defense.gunOnly();
+	}
+
+	/** Guns, alone or with missiles: the mount tracks the target. */
+	public boolean hasGuns() {
+		return defense != null && defense.hasGuns();
+	}
+
+	/** The second seat is in the turret (it turns with it). */
+	public boolean gunnerInTurret() {
+		return switch (this) {
+			case GEPARD, SHILKA, TUNGUSKA, TOR, BUK, STRELA10, MFG, ZU23, AVENGER -> true;
+			default -> false;
+		};
 	}
 
 	/** Missiles carried: launchers one per rail; air defence per its magazine (Patriot canisters hold several). */

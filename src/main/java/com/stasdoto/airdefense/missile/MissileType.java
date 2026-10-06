@@ -23,7 +23,16 @@ public enum MissileType {
 	ISKANDER_DECOY("stinger_missile", Kind.BALLISTIC, true, 4.0, 0.06, 0.5f, false, 1f, 1.5f, 0, 1200, 0.0, Trail.MEDIUM, null),
 	GERBERA("shahed_drone", Kind.DRONE, true, 0.82, 0.03, 0.7f, false, 1.5f, 1.7f, 0, 9000, 0.05, Trail.NONE, null),
 	// RPG-7 rocket grenade: unguided, straight out of the tube, the sustainer burns 1.5 s, then it drops; shaped charge.
-	RPG("rpg_round", Kind.DIRECT, false, 3.4, 0.25, 2.2f, false, 1f, 1.0f, 0, 90, 0.0, Trail.SMALL, null);
+	RPG("rpg_round", Kind.DIRECT, false, 3.4, 0.25, 2.2f, false, 1f, 1.0f, 0, 90, 0.0, Trail.SMALL, null),
+	// Stage R4: the interceptors of the other air defence systems (the models reuse the closest-looking missile).
+	M57E6("irist_missile", Kind.INTERCEPTOR, false, 4.6, 0.36, 2.0f, false, 2f, 1.2f, 3.5, 170, 0.28, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
+	M9M338("amraam_missile", Kind.INTERCEPTOR, false, 3.9, 0.34, 2.0f, false, 2f, 1.25f, 3.5, 160, 0.3, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
+	M9M317("pac3_missile", Kind.INTERCEPTOR, false, 4.4, 0.3, 3.0f, false, 2f, 2.3f, 4.0, 230, 0.22, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
+	M48N6("pac3_missile", Kind.INTERCEPTOR, false, 5.6, 0.32, 3.5f, false, 2f, 2.8f, 4.0, 260, 0.2, Trail.HEAVY, ModSounds.MISSILE_FLIGHT),
+	M9M33("amraam_missile", Kind.INTERCEPTOR, false, 3.6, 0.3, 1.8f, false, 2f, 1.35f, 3.5, 150, 0.27, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
+	M9M37("stinger_missile", Kind.INTERCEPTOR, false, 3.0, 0.3, 1.5f, false, 1f, 1.5f, 3.0, 140, 0.32, Trail.WHITE, null),
+	ASTER30("irist_missile", Kind.INTERCEPTOR, false, 5.4, 0.36, 2.5f, false, 2f, 2.0f, 3.2, 230, 0.26, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
+	M9M311("irist_missile", Kind.INTERCEPTOR, false, 4.2, 0.34, 1.8f, false, 2f, 1.0f, 3.5, 150, 0.3, Trail.WHITE, ModSounds.MISSILE_FLIGHT);
 
 	public enum Kind { BALLISTIC, ROCKET, CRUISE, DRONE, INTERCEPTOR, DIRECT }
 
@@ -76,7 +85,11 @@ public enum MissileType {
 			case PAC3 -> 0.05;
 			case IRIST -> 0.06;
 			case AMRAAM -> 0.08;
-			case STINGER -> 0.15;
+			case STINGER, M9M37 -> 0.15;
+			case M57E6, M9M311 -> 0.08;
+			case M9M338, M9M33 -> 0.07;
+			case M9M317, M48N6 -> 0.06;
+			case ASTER30 -> 0.04;
 			default -> 0;
 		};
 	}
@@ -99,11 +112,47 @@ public enum MissileType {
 				case ROCKET -> 0.45;
 				default -> 0.8;
 			};
-			case STINGER -> switch (target) {
+			case STINGER, M9M37 -> switch (target) {
 				case BALLISTIC -> 0.03;
 				case ROCKET -> 0.2;
 				case CRUISE -> 0.55;
 				default -> 0.8;
+			};
+			case M57E6, M9M311 -> switch (target) {
+				case BALLISTIC -> 0.08;
+				case ROCKET -> 0.45;
+				case CRUISE -> 0.75;
+				default -> 0.85;
+			};
+			case M9M338 -> switch (target) {
+				case BALLISTIC -> 0.15;
+				case ROCKET -> 0.55;
+				case CRUISE -> 0.8;
+				default -> 0.88;
+			};
+			case M9M33 -> switch (target) {
+				case BALLISTIC -> 0.05;
+				case ROCKET -> 0.3;
+				case CRUISE -> 0.65;
+				default -> 0.75;
+			};
+			case M9M317 -> switch (target) {
+				case BALLISTIC -> 0.35;
+				case ROCKET -> 0.55;
+				case CRUISE -> 0.8;
+				default -> 0.8;
+			};
+			case M48N6 -> switch (target) {
+				case BALLISTIC -> 0.6;
+				case ROCKET -> 0.65;
+				case CRUISE -> 0.82;
+				default -> 0.75;
+			};
+			case ASTER30 -> switch (target) {
+				case BALLISTIC -> 0.72;
+				case ROCKET -> 0.7;
+				case CRUISE -> 0.88;
+				default -> 0.85;
 			};
 			default -> 0;
 		};

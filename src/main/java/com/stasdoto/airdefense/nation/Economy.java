@@ -786,6 +786,13 @@ public final class Economy {
 			case ST68, KUPOL -> new int[]{30, 40, 100, 70};
 			case TRML4D -> new int[]{20, 40, 110, 70};
 			case MPQ65 -> new int[]{30, 50, 130, 80};
+			case MFG -> new int[]{20, 10, 30, 25};
+			case ZU23 -> new int[]{20, 20, 60, 40};
+			case AVENGER, STRELA10 -> new int[]{20, 20, 70, 45};
+			case SHILKA, OSA -> new int[]{20, 30, 90, 55};
+			case TOR, TUNGUSKA, PANTSIR -> new int[]{30, 40, 130, 80};
+			case BUK -> new int[]{30, 50, 150, 90};
+			case S300, SAMPT -> new int[]{40, 60, 180, 110};
 		};
 	}
 

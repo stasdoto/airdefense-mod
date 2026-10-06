@@ -123,8 +123,12 @@ if __name__ == '__main__':
             continue
         anim = {}
         if m.elevator:
+            anim[m.elevator] = (m.fixed_elevation, 0, 0)
+        render(m, os.path.join(out, m.id + '_a.png'), 35, 22, dict(anim))
+        if m.elevator:
             anim[m.elevator] = (m.deploy_elevation, 0, 0)
-        render(m, os.path.join(out, m.id + '_a.png'), 35, 22)
+        if m.turret:
+            anim[m.turret] = (0, 35, 0)
         if m.spinner:
             anim[m.spinner] = (0, 60, 0)
         render(m, os.path.join(out, m.id + '_b.png'), -130, 18, anim)

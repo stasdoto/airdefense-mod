@@ -52,4 +52,88 @@ public final class GenGeometry {
 			null, new float[]{0F, 0F, 0F}, null, new float[]{0F, 0F, 0F},
 			0F, 0F, new Rail[]{}, "antenna", new String[]{}, 14F,
 			1024, 352);
+
+	public static final Geometry PANTSIR = new Geometry("pantsir", 9.99F, 2.55F, 4.45F, 6.3F, false,
+			new Seat[]{new Seat("driver", -0.6F, 1.8F, 3.8F), new Seat("gunner", 0.6F, 1.8F, 3.8F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.62F, true), new Wheel("wheel_1_r", 0.62F, true), new Wheel("wheel_2_l", 0.62F, true), new Wheel("wheel_2_r", 0.62F, true), new Wheel("wheel_3_l", 0.62F, false), new Wheel("wheel_3_r", 0.62F, false), new Wheel("wheel_4_l", 0.62F, false), new Wheel("wheel_4_r", 0.62F, false)},
+			"turret", new float[]{0F, 1.8F, -2.4F}, "weapons", new float[]{0F, 0.75F, -0.3F},
+			15F, 0F, new Rail[]{new Rail("can_0", -1.79F, -0.17F, 2.3F), new Rail("can_1", -1.55F, -0.17F, 2.3F), new Rail("can_2", -1.31F, -0.17F, 2.3F), new Rail("can_3", -1.79F, 0.21F, 2.3F), new Rail("can_4", -1.55F, 0.21F, 2.3F), new Rail("can_5", -1.31F, 0.21F, 2.3F), new Rail("can_6", 1.31F, -0.17F, 2.3F), new Rail("can_7", 1.55F, -0.17F, 2.3F), new Rail("can_8", 1.79F, -0.17F, 2.3F), new Rail("can_9", 1.31F, 0.21F, 2.3F), new Rail("can_10", 1.55F, 0.21F, 2.3F), new Rail("can_11", 1.79F, 0.21F, 2.3F), new Rail("barrel_l", -1.55F, -0.5F, 3F), new Rail("barrel_r", 1.55F, -0.5F, 3F)}, "search", new String[]{}, 14F,
+			1024, 240);
+
+	public static final Geometry TOR = new Geometry("tor", 7.63F, 3.3F, 4.3F, 0F, true,
+			new Seat[]{new Seat("driver", -0.75F, 1.3F, 3F), new Seat("gunner", 0F, 2.6F, 0.2F)},
+			new Wheel[]{new Wheel("road_0_l", 0.32F, false), new Wheel("road_1_l", 0.32F, false), new Wheel("road_2_l", 0.32F, false), new Wheel("road_3_l", 0.32F, false), new Wheel("road_4_l", 0.32F, false), new Wheel("road_5_l", 0.32F, false), new Wheel("sprocket_l", 0.3F, false), new Wheel("idler_l", 0.28F, false), new Wheel("road_0_r", 0.32F, false), new Wheel("road_1_r", 0.32F, false), new Wheel("road_2_r", 0.32F, false), new Wheel("road_3_r", 0.32F, false), new Wheel("road_4_r", 0.32F, false), new Wheel("road_5_r", 0.32F, false), new Wheel("sprocket_r", 0.3F, false), new Wheel("idler_r", 0.28F, false)},
+			"turret", new float[]{0F, 1.8F, -0.4F}, "vls", new float[]{0F, 1.2F, 0F},
+			90F, 90F, new Rail[]{new Rail("cell_0", -0.6F, 0.9F, 0.6F), new Rail("cell_1", -0.2F, 0.9F, 0.6F), new Rail("cell_2", 0.2F, 0.9F, 0.6F), new Rail("cell_3", 0.6F, 0.9F, 0.6F), new Rail("cell_4", -0.6F, 0.45F, 0.6F), new Rail("cell_5", -0.2F, 0.45F, 0.6F), new Rail("cell_6", 0.2F, 0.45F, 0.6F), new Rail("cell_7", 0.6F, 0.45F, 0.6F)}, "search", new String[]{}, 12F,
+			1024, 256);
+
+	public static final Geometry BUK = new Geometry("buk", 9.23F, 3.25F, 4.31F, 0F, true,
+			new Seat[]{new Seat("driver", -0.9F, 1.5F, 3.8F), new Seat("gunner", 0.6F, 2.4F, 0.3F)},
+			new Wheel[]{new Wheel("road_0_l", 0.33F, false), new Wheel("road_1_l", 0.33F, false), new Wheel("road_2_l", 0.33F, false), new Wheel("road_3_l", 0.33F, false), new Wheel("road_4_l", 0.33F, false), new Wheel("road_5_l", 0.33F, false), new Wheel("sprocket_l", 0.3F, false), new Wheel("idler_l", 0.28F, false), new Wheel("road_0_r", 0.33F, false), new Wheel("road_1_r", 0.33F, false), new Wheel("road_2_r", 0.33F, false), new Wheel("road_3_r", 0.33F, false), new Wheel("road_4_r", 0.33F, false), new Wheel("road_5_r", 0.33F, false), new Wheel("sprocket_r", 0.3F, false), new Wheel("idler_r", 0.28F, false)},
+			"turret", new float[]{0F, 1.85F, -0.6F}, "launcher", new float[]{0F, 1.15F, -1.6F},
+			25F, 0F, new Rail[]{new Rail("missile_0", -0.55F, 0.2F, 5.5F), new Rail("missile_1", 0.55F, 0.2F, 5.5F), new Rail("missile_2", -0.55F, 0.75F, 5.5F), new Rail("missile_3", 0.55F, 0.75F, 5.5F)}, null, new String[]{}, 14F,
+			1024, 384);
+
+	public static final Geometry S300 = new Geometry("s300", 13.18F, 3.05F, 4.24F, 7F, false,
+			new Seat[]{new Seat("driver", -1.05F, 1.9F, 5.4F), new Seat("gunner", 1.05F, 1.9F, 5.4F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.78F, true), new Wheel("wheel_1_r", 0.78F, true), new Wheel("wheel_2_l", 0.78F, true), new Wheel("wheel_2_r", 0.78F, true), new Wheel("wheel_3_l", 0.78F, false), new Wheel("wheel_3_r", 0.78F, false), new Wheel("wheel_4_l", 0.78F, false), new Wheel("wheel_4_r", 0.78F, false)},
+			null, new float[]{0F, 0F, 0F}, "erector", new float[]{0F, 2F, -6F},
+			90F, 0F, new Rail[]{new Rail("can_0", -0.56F, 0.62F, 7.6F), new Rail("can_1", 0.56F, 0.62F, 7.6F), new Rail("can_2", -0.56F, 1.72F, 7.6F), new Rail("can_3", 0.56F, 1.72F, 7.6F)}, null, new String[]{}, 17F,
+			1024, 384);
+
+	public static final Geometry OSA = new Geometry("osa", 9.38F, 2.75F, 3.75F, 4F, false,
+			new Seat[]{new Seat("driver", -0.5F, 1.55F, 2.7F), new Seat("gunner", 0.5F, 1.55F, 2.7F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.62F, true), new Wheel("wheel_1_r", 0.62F, true), new Wheel("wheel_2_l", 0.62F, false), new Wheel("wheel_2_r", 0.62F, false), new Wheel("wheel_3_l", 0.62F, false), new Wheel("wheel_3_r", 0.62F, false)},
+			"turret", new float[]{0F, 1.85F, -0.9F}, "launcher", new float[]{0F, 0.55F, -0.4F},
+			25F, 0F, new Rail[]{new Rail("missile_0", -1.5F, -0.35F, 2.05F), new Rail("missile_1", -1.5F, 0.07F, 2.05F), new Rail("missile_2", -1.5F, 0.49F, 2.05F), new Rail("missile_3", 1.5F, -0.35F, 2.05F), new Rail("missile_4", 1.5F, 0.07F, 2.05F), new Rail("missile_5", 1.5F, 0.49F, 2.05F)}, "search", new String[]{}, 12F,
+			1024, 176);
+
+	public static final Geometry STRELA10 = new Geometry("strela10", 6.63F, 2.85F, 2.57F, 0F, true,
+			new Seat[]{new Seat("driver", -0.6F, 1.2F, 2.4F), new Seat("gunner", 0F, 2F, -0.4F)},
+			new Wheel[]{new Wheel("road_0_l", 0.27F, false), new Wheel("road_1_l", 0.27F, false), new Wheel("road_2_l", 0.27F, false), new Wheel("road_3_l", 0.27F, false), new Wheel("road_4_l", 0.27F, false), new Wheel("road_5_l", 0.27F, false), new Wheel("sprocket_l", 0.3F, false), new Wheel("idler_l", 0.28F, false), new Wheel("road_0_r", 0.27F, false), new Wheel("road_1_r", 0.27F, false), new Wheel("road_2_r", 0.27F, false), new Wheel("road_3_r", 0.27F, false), new Wheel("road_4_r", 0.27F, false), new Wheel("road_5_r", 0.27F, false), new Wheel("sprocket_r", 0.3F, false), new Wheel("idler_r", 0.28F, false)},
+			"turret", new float[]{0F, 1.65F, -0.4F}, "launcher", new float[]{0F, 0.65F, 0F},
+			30F, 0F, new Rail[]{new Rail("can_0", -1F, 0.15F, 1.3F), new Rail("can_1", -1.28F, 0.15F, 1.3F), new Rail("can_2", 1F, 0.15F, 1.3F), new Rail("can_3", 1.28F, 0.15F, 1.3F)}, null, new String[]{}, 11F,
+			1024, 208);
+
+	public static final Geometry SHILKA = new Geometry("shilka", 6.63F, 3.1F, 3.75F, 0F, true,
+			new Seat[]{new Seat("driver", -0.7F, 1.3F, 2.5F), new Seat("gunner", 0F, 2.3F, -0.3F)},
+			new Wheel[]{new Wheel("road_0_l", 0.3F, false), new Wheel("road_1_l", 0.3F, false), new Wheel("road_2_l", 0.3F, false), new Wheel("road_3_l", 0.3F, false), new Wheel("road_4_l", 0.3F, false), new Wheel("road_5_l", 0.3F, false), new Wheel("sprocket_l", 0.3F, false), new Wheel("idler_l", 0.28F, false), new Wheel("road_0_r", 0.3F, false), new Wheel("road_1_r", 0.3F, false), new Wheel("road_2_r", 0.3F, false), new Wheel("road_3_r", 0.3F, false), new Wheel("road_4_r", 0.3F, false), new Wheel("road_5_r", 0.3F, false), new Wheel("sprocket_r", 0.3F, false), new Wheel("idler_r", 0.28F, false)},
+			"turret", new float[]{0F, 1.7F, -0.3F}, "guns", new float[]{0F, 0.35F, 1.3F},
+			0F, 0F, new Rail[]{new Rail("barrel_l", -0.55F, 0F, 2.1F), new Rail("barrel_r", 0.55F, 0F, 2.1F)}, "radar", new String[]{}, 11F,
+			1024, 208);
+
+	public static final Geometry TUNGUSKA = new Geometry("tunguska", 7.83F, 3.25F, 3.9F, 0F, true,
+			new Seat[]{new Seat("driver", -0.75F, 1.3F, 3F), new Seat("gunner", 0F, 2.6F, -0.5F)},
+			new Wheel[]{new Wheel("road_0_l", 0.32F, false), new Wheel("road_1_l", 0.32F, false), new Wheel("road_2_l", 0.32F, false), new Wheel("road_3_l", 0.32F, false), new Wheel("road_4_l", 0.32F, false), new Wheel("road_5_l", 0.32F, false), new Wheel("sprocket_l", 0.3F, false), new Wheel("idler_l", 0.28F, false), new Wheel("road_0_r", 0.32F, false), new Wheel("road_1_r", 0.32F, false), new Wheel("road_2_r", 0.32F, false), new Wheel("road_3_r", 0.32F, false), new Wheel("road_4_r", 0.32F, false), new Wheel("road_5_r", 0.32F, false), new Wheel("sprocket_r", 0.3F, false), new Wheel("idler_r", 0.28F, false)},
+			"turret", new float[]{0F, 1.8F, -0.5F}, "weapons", new float[]{0F, 0.7F, 0F},
+			12F, 0F, new Rail[]{new Rail("can_0", -1.89F, 0.1F, 1.6F), new Rail("can_1", -1.61F, 0.1F, 1.6F), new Rail("can_2", -1.89F, 0.4F, 1.6F), new Rail("can_3", -1.61F, 0.4F, 1.6F), new Rail("barrel_l", -1.75F, -0.3F, 2.5F), new Rail("can_4", 1.61F, 0.1F, 1.6F), new Rail("can_5", 1.89F, 0.1F, 1.6F), new Rail("can_6", 1.61F, 0.4F, 1.6F), new Rail("can_7", 1.89F, 0.4F, 1.6F), new Rail("barrel_r", 1.75F, -0.3F, 2.5F)}, "search", new String[]{}, 12F,
+			1024, 272);
+
+	public static final Geometry SAMPT = new Geometry("sampt", 10.94F, 2.55F, 3.05F, 6.5F, false,
+			new Seat[]{new Seat("driver", -0.6F, 1.9F, 4.2F), new Seat("gunner", 0.6F, 1.9F, 4.2F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.6F, true), new Wheel("wheel_1_r", 0.6F, true), new Wheel("wheel_2_l", 0.6F, true), new Wheel("wheel_2_r", 0.6F, true), new Wheel("wheel_3_l", 0.6F, false), new Wheel("wheel_3_r", 0.6F, false), new Wheel("wheel_4_l", 0.6F, false), new Wheel("wheel_4_r", 0.6F, false)},
+			null, new float[]{0F, 0F, 0F}, "launcher", new float[]{0F, 1.75F, -5.3F},
+			90F, 0F, new Rail[]{new Rail("can_0", -0.87F, 0.3F, 6.5F), new Rail("can_1", -0.29F, 0.3F, 6.5F), new Rail("can_2", 0.29F, 0.3F, 6.5F), new Rail("can_3", 0.87F, 0.3F, 6.5F), new Rail("can_4", -0.87F, 0.9F, 6.5F), new Rail("can_5", -0.29F, 0.9F, 6.5F), new Rail("can_6", 0.29F, 0.9F, 6.5F), new Rail("can_7", 0.87F, 0.9F, 6.5F)}, null, new String[]{}, 15F,
+			1024, 272);
+
+	public static final Geometry AVENGER = new Geometry("avenger", 4.68F, 2.2F, 2.4F, 3.3F, false,
+			new Seat[]{new Seat("driver", -0.45F, 1.05F, 0F), new Seat("gunner", 0F, 1.6F, -1.5F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.46F, true), new Wheel("wheel_1_r", 0.46F, true), new Wheel("wheel_2_l", 0.46F, false), new Wheel("wheel_2_r", 0.46F, false)},
+			"turret", new float[]{0F, 1.35F, -1.5F}, "pods", new float[]{0F, 0.65F, 0F},
+			20F, 0F, new Rail[]{new Rail("pod_l", -1F, -0.3F, 1F), new Rail("pod_l", -1F, -0.1F, 1F), new Rail("pod_l", -1F, 0.1F, 1F), new Rail("pod_l", -1F, 0.3F, 1F), new Rail("pod_r", 1F, -0.3F, 1F), new Rail("pod_r", 1F, -0.1F, 1F), new Rail("pod_r", 1F, 0.1F, 1F), new Rail("pod_r", 1F, 0.3F, 1F)}, null, new String[]{}, 10F,
+			1024, 96);
+
+	public static final Geometry MFG = new Geometry("mfg", 5.46F, 1.85F, 1.9F, 3.1F, false,
+			new Seat[]{new Seat("driver", -0.4F, 1F, 0.4F), new Seat("gunner", 0F, 1.1F, -2.1F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.4F, true), new Wheel("wheel_1_r", 0.4F, true), new Wheel("wheel_2_l", 0.4F, false), new Wheel("wheel_2_r", 0.4F, false)},
+			"mount", new float[]{0F, 1F, -1.5F}, "gun", new float[]{0F, 0.8F, 0F},
+			0F, 0F, new Rail[]{new Rail("barrel", 0F, 0.02F, 1.4F), new Rail("barrel_2", 0F, 0.02F, 1.4F)}, null, new String[]{}, 8F,
+			1024, 96);
+
+	public static final Geometry ZU23 = new Geometry("zu23", 7.04F, 2.5F, 2.9F, 4.2F, false,
+			new Seat[]{new Seat("driver", -0.55F, 1.75F, 2.4F), new Seat("gunner", 0F, 1.6F, -2.1F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.6F, true), new Wheel("wheel_1_r", 0.6F, true), new Wheel("wheel_2_l", 0.6F, false), new Wheel("wheel_2_r", 0.6F, false), new Wheel("wheel_3_l", 0.6F, false), new Wheel("wheel_3_r", 0.6F, false)},
+			"mount", new float[]{0F, 1.2F, -1.4F}, "guns", new float[]{0F, 0.75F, 0F},
+			0F, 0F, new Rail[]{new Rail("barrel_l", -0.22F, 0F, 2.3F), new Rail("barrel_r", 0.22F, 0F, 2.3F)}, null, new String[]{}, 10F,
+			1024, 128);
 }

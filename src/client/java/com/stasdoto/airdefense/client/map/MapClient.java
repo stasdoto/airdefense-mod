@@ -21,6 +21,7 @@ public final class MapClient {
 		ClientPlayNetworking.registerGlobalReceiver(MapStatusPayload.TYPE, (payload, context) -> latest = payload);
 		ClientPlayNetworking.registerGlobalReceiver(com.stasdoto.airdefense.map.RadarPayload.TYPE, (payload, context) -> RadarScreen.receive(payload));
 		DesignatorItem.openMap = MapClient::open;
+		net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.addLast(com.stasdoto.airdefense.AirDefense.id("grid"), GridHud::draw);
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> {
 			if (mc.level == null) {
 				latest = null;
@@ -40,6 +41,12 @@ public final class MapClient {
 	public static List<MapStatusPayload.Entry> vehicles() {
 		MapStatusPayload p = latest;
 		return p == null ? List.of() : p.vehicles();
+	}
+
+	/** Russian or Ukrainian game: grid squares get Cyrillic letters. */
+	public static boolean cyrillic() {
+		String lang = Minecraft.getInstance().options.languageCode;
+		return lang != null && (lang.startsWith("ru") || lang.startsWith("uk") || lang.startsWith("be"));
 	}
 
 	public static void send(MapActionPayload payload) {

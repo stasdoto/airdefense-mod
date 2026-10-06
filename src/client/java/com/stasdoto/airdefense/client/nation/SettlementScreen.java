@@ -43,8 +43,12 @@ public class SettlementScreen extends Screen {
 	private static final ItemStack[] JOB_ICONS = {new ItemStack(Items.IRON_AXE), new ItemStack(Items.STONE_PICKAXE), new ItemStack(Items.IRON_PICKAXE),
 			new ItemStack(Items.IRON_SHOVEL)};
 	private static final String[] JOB_KEYS = {"wood", "stone", "iron", "build"};
-	private static final VehicleType[] HANGAR_ORDER = {VehicleType.GEPARD, VehicleType.NASAMS, VehicleType.IRIS_T, VehicleType.PATRIOT,
-			VehicleType.HIMARS, VehicleType.SHAHED, VehicleType.ISKANDER, VehicleType.KALIBR, VehicleType.P18, VehicleType.TRML4D};
+	/** Everything the hangar makes: air defence (cheapest first), radars, then the rest; the list scrolls. */
+	private static final VehicleType[] HANGAR_ORDER = java.util.Arrays.stream(VehicleType.values())
+			.sorted(java.util.Comparator.comparingInt((VehicleType v) -> v.isDefense() ? 0 : v.isRadar() ? 1 : v.isLauncher() ? 3 : 2)
+					.thenComparingInt(v -> Economy.vehicleCost(v)[2]))
+			.toArray(VehicleType[]::new);
+	private int hangarScroll;
 
 	private SettlementInfoPayload info;
 	@Nullable
@@ -183,13 +187,34 @@ public class SettlementScreen extends Screen {
 			}
 		}).bounds(x0 + w - 74, top, 66, 14).build());
 		buildButtons.add(cancel);
-		// Hangar: a button per vehicle.
-		for (int i = 0; i < HANGAR_ORDER.length; i++) {
-			VehicleType v = HANGAR_ORDER[i];
-			hangarButtons.add(addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.order_it"),
-					b -> send(NationActionPayload.VEHICLE, v.ordinal(), 0)).bounds(x0 + w - 74, rows + i * ROW, 66, 14).build()));
+		// Hangar: a button per visible row of the (scrolling) list.
+		for (int i = 0; i < hangarRows(); i++) {
+			int slot = i;
+			hangarButtons.add(addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.order_it"), b -> {
+				int k = slot + hangarScroll;
+				if (k < HANGAR_ORDER.length) {
+					send(NationActionPayload.VEHICLE, HANGAR_ORDER[k].ordinal(), 0);
+				}
+			}).bounds(x0 + w - 74, rows + i * ROW, 66, 14).build()));
 		}
 		updateButtons();
+	}
+
+	/** Rows of the hangar list that fit on the screen. */
+	private int hangarRows() {
+		int rows = contentTop() + 24;
+		return Math.max(1, (y0 + h - 6 - rows) / ROW);
+	}
+
+	@Override
+	public boolean mouseScrolled(double mx, double my, double sx, double sy) {
+		if (tab == HANGAR) {
+			int max = Math.max(0, HANGAR_ORDER.length - hangarRows());
+			hangarScroll = Math.max(0, Math.min(max, hangarScroll - (int) Math.signum(sy)));
+			updateButtons();
+			return true;
+		}
+		return super.mouseScrolled(mx, my, sx, sy);
 	}
 
 	private int contentTop() {
@@ -259,8 +284,13 @@ public class SettlementScreen extends Screen {
 						&& (eco.free() || t == BuildingType.ROADS || affordable(t.wood, t.stone, t.iron));
 			}
 			cancel.active = !eco.queue().isEmpty() && eco.queue().getLast() % 1000 == 0;
-			for (int i = 0; i < HANGAR_ORDER.length; i++) {
-				int[] c = Economy.vehicleCost(HANGAR_ORDER[i]);
+			for (int i = 0; i < hangarButtons.size(); i++) {
+				int k = i + hangarScroll;
+				if (k >= HANGAR_ORDER.length) {
+					hangarButtons.get(i).visible = false;
+					continue;
+				}
+				int[] c = Economy.vehicleCost(HANGAR_ORDER[k]);
 				hangarButtons.get(i).active = eco.hangarQueue().size() < Economy.MAX_HANGAR_QUEUE && (eco.free() || affordable(c[0], c[1], c[2]));
 			}
 		}
@@ -504,8 +534,13 @@ public class SettlementScreen extends Screen {
 			}
 		}
 		int rows = top + 24;
-		for (int i = 0; i < HANGAR_ORDER.length; i++) {
-			VehicleType v = HANGAR_ORDER[i];
+		int shown = hangarRows();
+		if (HANGAR_ORDER.length > shown) {
+			String more = (hangarScroll + 1) + "-" + Math.min(HANGAR_ORDER.length, hangarScroll + shown) + " / " + HANGAR_ORDER.length;
+			g.text(font, more, x0 + w - 8 - font.width(more), top + 3, C_DIM);
+		}
+		for (int i = 0; i < shown && i + hangarScroll < HANGAR_ORDER.length; i++) {
+			VehicleType v = HANGAR_ORDER[i + hangarScroll];
 			int y = rows + i * ROW;
 			g.text(font, Component.translatable("entity.airdefense." + v.id), x, y + 3, C_TEXT);
 			int[] c = Economy.vehicleCost(v);

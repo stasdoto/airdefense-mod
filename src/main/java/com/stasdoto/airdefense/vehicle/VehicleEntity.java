@@ -325,7 +325,7 @@ public class VehicleEntity extends LivingEntity {
 		if (vtype.isLauncher()) {
 			return vtype.rails() * 2;
 		}
-		return vtype.defense.magazine * (vtype == VehicleType.GEPARD ? 3 : 2);
+		return vtype.defense.magazine * (vtype.gunOnly() ? 3 : 2);
 	}
 
 	public int reserveSpace() {
@@ -367,12 +367,16 @@ public class VehicleEntity extends LivingEntity {
 		DefenseType type = vtype.defense;
 		int have = Math.max(0, getAmmo());
 		setAmmo(have + takeReserve(type.magazine - have));
-		int rails = vtype.rails();
+		int[] missiles = vtype.missileRails();
+		int rails = Math.max(1, missiles.length);
 		int perRail = Math.max(1, (type.magazine + rails - 1) / rails);
 		int first = Math.min(rails, (type.magazine - getAmmo()) / perRail);
 		int mask = 0;
-		for (int i = first; i < rails; i++) {
-			mask |= 1 << i;
+		for (int i = first; i < missiles.length; i++) {
+			mask |= 1 << missiles[i];
+		}
+		for (int b : vtype.barrelRails()) {
+			mask |= 1 << b;
 		}
 		setLoadedMask(getAmmo() > 0 ? mask : 0);
 	}
@@ -411,7 +415,7 @@ public class VehicleEntity extends LivingEntity {
 
 	/** Gepard can shoot on the move; launchers and missile batteries must fold up first. */
 	public boolean canDrive() {
-		return isAlive() && (vtype == VehicleType.GEPARD || isFolded());
+		return isAlive() && (vtype.gunOnly() || isFolded());
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -603,7 +607,7 @@ public class VehicleEntity extends LivingEntity {
 		double x = seat.x();
 		double z = seat.z();
 		double y = seat.y();
-		if (vtype == VehicleType.GEPARD && seatIndexOf(passenger) == 1) {
+		if (vtype.gunnerInTurret() && vtype.geometry.turret() != null && seatIndexOf(passenger) == 1) {
 			// The commander stands in the turret hatch and turns with it.
 			double a = Math.toRadians(turretYaw);
 			double zt = z - vtype.geometry.turretPivot()[2];
@@ -797,7 +801,7 @@ public class VehicleEntity extends LivingEntity {
 			// Erectors slow down near the ends of their travel, like hydraulics do.
 			float d = elevTarget - elevation;
 			// Gun mounts track at full speed; the big hydraulic erectors slow down near the end.
-			float step = vtype == VehicleType.GEPARD ? rate : Math.min(rate, Math.max(rate * 0.25f, Math.abs(d) * 0.08f));
+			float step = vtype.hasGuns() ? rate : Math.min(rate, Math.max(rate * 0.25f, Math.abs(d) * 0.08f));
 			elevation += Mth.clamp(d, -step, step);
 		}
 		if (vtype.turretRate > 0) {
@@ -1037,7 +1041,8 @@ public class VehicleEntity extends LivingEntity {
 
 	private void tickDefense(ServerLevel level) {
 		DefenseType type = vtype.defense;
-		boolean gun = type.interceptor == null;
+		boolean gun = type.gunOnly();
+		boolean hybrid = type.hybrid();
 		if (reloadTimer > 0 && --reloadTimer == 0) {
 			reloadMagazine();
 		}
@@ -1066,7 +1071,7 @@ public class VehicleEntity extends LivingEntity {
 			return;
 		}
 		VehicleGeometry.Geometry g = vtype.geometry;
-		if (!gun) {
+		if (!gun && !hybrid) {
 			setElevationTarget(g.deployElevation());
 		}
 		if (getMode() == MODE_MANUAL) {
@@ -1096,7 +1101,7 @@ public class VehicleEntity extends LivingEntity {
 			}
 		}
 		if (tracked == null) {
-			if (gun) {
+			if (gun || hybrid) {
 				setElevationTarget(10);
 			}
 			return;
@@ -1108,6 +1113,19 @@ public class VehicleEntity extends LivingEntity {
 		if (gun) {
 			tickGun(level, type, tracked);
 			return;
+		}
+		if (hybrid) {
+			// Close in the guns do the work; further out the missiles - the whole mount points at the target either way.
+			double d = tracked.distanceTo(this);
+			if (d < type.gunRange && tracked.getMissileType().kind != MissileType.Kind.BALLISTIC) {
+				tickGun(level, type, tracked);
+				return;
+			}
+			burstLeft = 0;
+			Vec3 muzzle = position().add(0, 2.3, 0);
+			Vec3 at = tracked.position();
+			double h = Math.sqrt(Mth.square(at.x - getX()) + Mth.square(at.z - getZ()));
+			setElevationTarget((float) Mth.clamp(Math.toDegrees(Math.atan2(at.y - muzzle.y, h)), 0, 80));
 		}
 		if (g.turret() != null) {
 			// The launcher turns towards the threat, but missiles do not need it to: they turn by themselves after launch.
@@ -1127,7 +1145,7 @@ public class VehicleEntity extends LivingEntity {
 	}
 
 	private boolean elevationLagging() {
-		return Math.abs(elevation - getElevationTarget()) > (vtype == VehicleType.GEPARD ? GUN_ELEVATION_TOLERANCE : 1.5f);
+		return Math.abs(elevation - getElevationTarget()) > (vtype.hasGuns() ? GUN_ELEVATION_TOLERANCE : 1.5f);
 	}
 
 	@Nullable
@@ -1181,10 +1199,11 @@ public class VehicleEntity extends LivingEntity {
 	}
 
 	private void fireInterceptor(ServerLevel level, DefenseType type, MissileEntity target) {
-		int rails = vtype.rails();
+		int[] missiles = vtype.missileRails();
+		int rails = Math.max(1, missiles.length);
 		int perRail = Math.max(1, (type.magazine + rails - 1) / rails);
 		int fired = type.magazine - getAmmo();
-		int rail = Math.min(rails - 1, fired / perRail);
+		int rail = missiles.length == 0 ? 0 : missiles[Math.min(rails - 1, fired / perRail)];
 		Vec3 from = railWorld(rail);
 		Vec3 dir = railDirection(rail);
 		MissileEntity.launchInterceptor(level, type.interceptor, from.add(dir.scale(1.0)), dir, target);
@@ -1225,15 +1244,19 @@ public class VehicleEntity extends LivingEntity {
 			}
 			return;
 		}
-		if (getMode() != MODE_AUTO || fireTimer > 0 || getAmmo() <= 0 || !onTarget) {
+		boolean hybrid = type.hybrid();
+		if (getMode() != MODE_AUTO || fireTimer > 0 || (!hybrid && getAmmo() <= 0) || !onTarget) {
 			return;
 		}
 		Effects.gunBurst(level, muzzle);
 		burstLeft = 6;
-		fireTimer = type.interval;
-		setAmmo(getAmmo() - 1);
-		if (getAmmo() <= 0) {
-			reloadTimer = type.reload;
+		fireTimer = hybrid ? 8 : type.interval;
+		if (!hybrid) {
+			// The hybrids' guns have their own (big) ammunition load; the magazine counts the missiles.
+			setAmmo(getAmmo() - 1);
+			if (getAmmo() <= 0) {
+				reloadTimer = type.reload;
+			}
 		}
 		fireRounds(level, target, aim, yawErr, elevErr);
 	}
@@ -1243,10 +1266,12 @@ public class VehicleEntity extends LivingEntity {
 		RandomSource r = level.getRandom();
 		MissileType.Kind kind = target.getMissileType().kind;
 		double aimFactor = 1.0 / (1.0 + (yawErr * yawErr + elevErr * elevErr) / 40.0);
+		int[] barrels = vtype.barrelRails();
 		for (int barrel = 0; barrel < 2 && burstLeft > 0; barrel++, burstLeft--) {
-			Vec3 muzzle = railWorld(barrel == 0 ? 0 : vtype.rails() - 1);
+			Vec3 muzzle = railWorld(barrels.length == 0 ? 0 : barrel == 0 ? barrels[0] : barrels[barrels.length - 1]);
 			double dist = aim.distanceTo(muzzle);
-			double chance = DefenseType.gunHitChance(kind) * (1.0 - 0.45 * dist / vtype.defense.range) * aimFactor;
+			double reach = vtype.defense.gunRange > 0 ? vtype.defense.gunRange : vtype.defense.range;
+			double chance = DefenseType.gunHitChance(kind) * vtype.defense.gunSkill * (1.0 - 0.45 * dist / reach) * aimFactor;
 			boolean hit = r.nextDouble() < chance;
 			int flight = Math.max(1, (int) Math.round(dist / SHELL_SPEED));
 			Vec3 end;

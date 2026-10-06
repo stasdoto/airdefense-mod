@@ -27,6 +27,7 @@ import com.stasdoto.airdefense.nation.NationActionPayload;
 import com.stasdoto.airdefense.nation.NationMapPayload;
 import com.stasdoto.airdefense.nation.Settlement;
 import com.stasdoto.airdefense.nation.SoldierEntity;
+import com.stasdoto.airdefense.map.Grid;
 import com.stasdoto.airdefense.map.MapActionPayload;
 import com.stasdoto.airdefense.map.MapStatusPayload;
 import com.stasdoto.airdefense.missile.MissileEntity;
@@ -690,17 +691,56 @@ public class TacticalMapScreen extends Screen {
 		return step;
 	}
 
+	/**
+	 * The military grid: 100-block squares named "Д-14" (letter west to east, number north to south); zoomed in, the
+	 * nine small squares of each ("улитка", 1-9); zoomed far out, only every fifth line.
+	 */
 	private void drawGrid(GuiGraphicsExtractor g) {
-		int step = gridStep();
+		double px = Grid.SIZE * scale();
+		int every = px >= 26 ? 1 : px >= 6 ? 5 : 10;
+		int step = Grid.SIZE * every;
 		int x0 = Mth.floor(toWorldX(mx0) / step) * step;
 		int z0 = Mth.floor(toWorldZ(my0) / step) * step;
+		boolean cyr = MapClient.cyrillic();
+		if (px >= 150) {
+			// The small squares.
+			int sub = Grid.SIZE / 3;
+			for (int x = x0; toScreenX(x) < mx1; x += Grid.SIZE) {
+				for (int k = 1; k <= 2; k++) {
+					int sx = Mth.floor(toScreenX(x + (k == 1 ? sub : Grid.SIZE - sub)));
+					for (int y = my0; y < my1; y += 4) {
+						g.fill(sx, y, sx + 1, y + 2, 0x18FFFFFF);
+					}
+				}
+			}
+			for (int z = z0; toScreenY(z) < my1; z += Grid.SIZE) {
+				for (int k = 1; k <= 2; k++) {
+					int sy = Mth.floor(toScreenY(z + (k == 1 ? sub : Grid.SIZE - sub)));
+					for (int x = mx0; x < mx1; x += 4) {
+						g.fill(x, sy, x + 2, sy + 1, 0x18FFFFFF);
+					}
+				}
+			}
+		}
 		for (int x = x0; toScreenX(x) < mx1; x += step) {
 			int sx = Mth.floor(toScreenX(x));
-			g.fill(sx, my0, sx + 1, my1, x == 0 ? 0x50FFFFFF : 0x22FFFFFF);
+			g.fill(sx, my0, sx + 1, my1, x == 0 ? 0x60FFFFFF : 0x30FFFFFF);
 		}
 		for (int z = z0; toScreenY(z) < my1; z += step) {
 			int sy = Mth.floor(toScreenY(z));
-			g.fill(mx0, sy, mx1, sy + 1, z == 0 ? 0x50FFFFFF : 0x22FFFFFF);
+			g.fill(mx0, sy, mx1, sy + 1, z == 0 ? 0x60FFFFFF : 0x30FFFFFF);
+		}
+		// Square names in their top left corners.
+		if (px * every >= 34) {
+			for (int x = x0; toScreenX(x) < mx1; x += step) {
+				for (int z = z0; toScreenY(z) < my1; z += step) {
+					int sx = Mth.floor(toScreenX(x)) + 2;
+					int sy = Mth.floor(toScreenY(z)) + 2;
+					if (sx >= mx0 && sy >= my0) {
+						small(g, Grid.square(x, z, cyr), sx, sy, 0x90FFFFFF);
+					}
+				}
+			}
 		}
 	}
 
@@ -963,7 +1003,9 @@ public class TacticalMapScreen extends Screen {
 		g.text(font, title, mx0, 5, 0xFFFFD24A);
 		String info;
 		if (inMap(mouseX, mouseY)) {
-			info = String.format(Locale.ROOT, "X %d   Z %d", Mth.floor(toWorldX(mouseX)), Mth.floor(toWorldZ(mouseY)));
+			double wx = toWorldX(mouseX);
+			double wz = toWorldZ(mouseY);
+			info = String.format(Locale.ROOT, "%s   X %d   Z %d", Grid.full(wx, wz, MapClient.cyrillic()), Mth.floor(wx), Mth.floor(wz));
 		} else {
 			info = "";
 		}
