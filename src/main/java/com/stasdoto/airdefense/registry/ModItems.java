@@ -127,6 +127,11 @@ public final class ModItems {
 	public static final Item IRIST_MISSILE = missile(MissileType.IRIST);
 	public static final Item AMRAAM_MISSILE = missile(MissileType.AMRAAM);
 	public static final Item STINGER_MISSILE = missile(MissileType.STINGER);
+	// Stage R9: drones you fly yourself.
+	public static final Item FPV_DRONE = register("fpv_drone", p -> new com.stasdoto.airdefense.drone.PilotedDroneItem(p, MissileType.FPV),
+			new Item.Properties().stacksTo(8));
+	public static final Item MAGURA_DRONE = register("magura_drone", p -> new com.stasdoto.airdefense.drone.PilotedDroneItem(p, MissileType.MAGURA),
+			new Item.Properties().stacksTo(1));
 
 	// Small arms and gear (stage 7). One ammunition item = one round.
 	public static final Item AMMO_545 = register("ammo_545", Item::new, new Item.Properties().stacksTo(90));
@@ -232,6 +237,8 @@ public final class ModItems {
 				output.accept(IRIST_MISSILE);
 				output.accept(AMRAAM_MISSILE);
 				output.accept(STINGER_MISSILE);
+				output.accept(FPV_DRONE);
+				output.accept(MAGURA_DRONE);
 				output.accept(GunItem.loaded(AK74));
 				output.accept(GunItem.loaded(PKM));
 				output.accept(GunItem.loaded(SVD));

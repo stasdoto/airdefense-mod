@@ -693,5 +693,13 @@
   "screen.airdefense.map.rebuild_cost": "Нова будівля: дерево %s, камінь %s, залізо %s",
   "nation.airdefense.eco.demolished": "Знесено: %s (%s)",
   "nation.airdefense.eco.rebuilding": "%s зноситься, на його місці будують: %s (%s)",
-  "nation.airdefense.eco.no_room": "Не вміщується на цьому місці: %s"
+  "nation.airdefense.eco.no_room": "Не вміщується на цьому місці: %s",
+  "item.airdefense.fpv_drone": "FPV-дрон",
+  "item.airdefense.magura_drone": "Морський дрон «Магура»",
+  "item.airdefense.fpv_drone.hint": "ПКМ — запустити. Летить туди, куди дивишся (вид з його камери), вибухає від удару. Shift — кинути керування",
+  "item.airdefense.magura_drone.hint": "ПКМ по воді — спустити. Пливе туди, куди дивишся, 300 кг вибухівки — топить катери й руйнує мости",
+  "message.airdefense.magura.water": "«Магуру» спускають на воду: подивися на воду поруч",
+  "hud.airdefense.drone.pilot": "Миша — куди летіти · %s — вийти",
+  "radar.airdefense.contact.fpv": "FPV-дрон",
+  "radar.airdefense.contact.magura": "морський дрон"
 }

@@ -173,7 +173,8 @@ public final class DroneClient {
 			int ground = mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING, m.getBlockX(), m.getBlockZ());
 			double hgt = m.getY() - ground;
 			double v = Math.hypot(m.getX() - m.xo, m.getZ() - m.zo) * 20 * 3.6;
-			double dist = camDrone == m.getId() ? Math.hypot(camTx - m.getX(), camTz - m.getZ()) : -1;
+			boolean piloted = m.getMissileType().piloted();
+			double dist = camDrone == m.getId() && !piloted ? Math.hypot(camTx - m.getX(), camTz - m.getZ()) : -1;
 			float heading = Mth.wrapDegrees(-m.getYRot() + 180);
 			int y = h - 52;
 			g.text(font, Component.translatable("hud.airdefense.drone.alt", (int) Math.round(hgt)), 8, y, 0xFFE8F0E8);
@@ -182,7 +183,8 @@ public final class DroneClient {
 				g.text(font, Component.translatable("hud.airdefense.drone.dist", (int) Math.round(dist)), 8, y + 20, dist < 60 ? 0xFFFF7A6A : 0xFFE8F0E8);
 			}
 			g.text(font, Component.translatable("hud.airdefense.drone.heading", (int) Math.floorMod((int) heading, 360)), 8, y + 30, 0xFFE8F0E8);
-			Component hint = Component.translatable("hud.airdefense.drone.exit", mc.options.keyShift.getTranslatedKeyMessage());
+			Component hint = Component.translatable(piloted ? "hud.airdefense.drone.pilot" : "hud.airdefense.drone.exit",
+					mc.options.keyShift.getTranslatedKeyMessage());
 			g.text(font, hint, w - font.width(hint) - 8, h - 14, 0xA0E8F0E8);
 		} else if (lostTicks > 0) {
 			g.fill(0, 0, w, h, 0xFF101010);

@@ -88,6 +88,9 @@ public class MissileEntity extends Entity {
 	private Entity owner;
 	@org.jetbrains.annotations.Nullable
 	private Entity directHit;
+	/** Piloted drones (FPV, Magura): who flies it from its camera. */
+	@org.jetbrains.annotations.Nullable
+	private java.util.UUID pilot;
 	/** Never hits this one (the aircraft that fired it). */
 	@org.jetbrains.annotations.Nullable
 	private Entity ignore;
@@ -438,6 +441,9 @@ public class MissileEntity extends Entity {
 	// --- Unguided rockets (RPG): straight out of the tube, the sustainer burns ~1.5 s, then gravity takes over ---
 
 	private Vec3 directStep(MissileType type) {
+		if (type.piloted()) {
+			return pilotedStep(type);
+		}
 		if (type == MissileType.FAB250) {
 			// A bomb: falls, keeping the aircraft's speed.
 			setMotor(false);
@@ -450,6 +456,57 @@ public class MissileEntity extends Entity {
 			return lastVel.normalize().scale(speed).add(0, -0.004, 0);
 		}
 		return lastVel.add(0, -0.05, 0).scale(0.995);
+	}
+
+	// --- Piloted drones: they go where the pilot looks (through their camera) ---
+
+	/** An FPV drone or a Magura sea drone, flown by {@code pilot} from its camera. */
+	public static MissileEntity launchPiloted(ServerLevel level, MissileType type, Vec3 pos, Vec3 dir, net.minecraft.server.level.ServerPlayer pilot) {
+		MissileEntity m = launchWithVelocity(level, type, pos, dir.normalize().scale(type == MissileType.MAGURA ? 0.3 : 0.5), pilot, null);
+		m.pilot = pilot.getUUID();
+		return m;
+	}
+
+	public boolean isPilotedBy(Entity e) {
+		return pilot != null && pilot.equals(e.getUUID());
+	}
+
+	private Vec3 pilotedStep(MissileType type) {
+		setMotor(true);
+		Vec3 dir = lastVel.lengthSqr() > 1e-6 ? lastVel.normalize() : launchDir;
+		net.minecraft.server.level.ServerPlayer p = pilot == null || level().getServer() == null ? null : level().getServer().getPlayerList().getPlayer(pilot);
+		boolean flown = p != null && p.getCamera() == this;
+		if (type == MissileType.MAGURA) {
+			// On the water: turns where the pilot looks, keeps to the surface; runs aground = goes off.
+			Vec3 look = flown ? p.getLookAngle() : dir;
+			Vec3 flat = new Vec3(look.x, 0, look.z);
+			if (flat.lengthSqr() < 1e-4) {
+				flat = new Vec3(dir.x, 0, dir.z);
+			}
+			Vec3 d = new Vec3(dir.x, 0, dir.z).normalize().lerp(flat.normalize(), 0.12).normalize();
+			speed = Math.min(type.maxSpeed, speed + type.accel);
+			Vec3 next = position().add(d.scale(speed));
+			BlockPos below = BlockPos.containing(next.x, next.y - 0.6, next.z);
+			double y = next.y;
+			if (level().getFluidState(below).is(net.minecraft.tags.FluidTags.WATER)) {
+				y = below.getY() + 1.05;
+			} else if (level().getFluidState(below.above()).is(net.minecraft.tags.FluidTags.WATER)) {
+				y = below.getY() + 2.05;
+			} else if (level().getFluidState(below.below()).is(net.minecraft.tags.FluidTags.WATER)) {
+				y = below.getY() + 0.05;
+			} else if (life > 10) {
+				detonate(next, false);
+				return null;
+			}
+			return new Vec3(d.x * speed, y - getY(), d.z * speed);
+		}
+		if (!flown) {
+			// Lost its pilot: the motors stop, it drops.
+			setMotor(false);
+			return lastVel.add(0, -0.06, 0).scale(0.97);
+		}
+		speed = Math.min(type.maxSpeed, speed + type.accel);
+		return dir.lerp(p.getLookAngle(), 0.3).normalize().scale(speed);
 	}
 
 	// --- Ballistic missiles and MLRS rockets: deterministic parabola that ends exactly on the target -----

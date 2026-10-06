@@ -105,6 +105,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("air")) {
 				aircraft(ctx, server);
 			}
+			if (scene("fpv")) {
+				pilotedDrones(ctx, server);
+			}
 			if (scene("cities")) {
 				cities(ctx, server);
 			}
@@ -674,6 +677,84 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
 		server.runCommand("gamemode spectator @a");
 		server.runOnServer(s -> forVehicles(s.overworld(), List.of(heli, plane), Entity::discard));
+	}
+
+	/** Flies a piloted drone (FPV or Magura) from the player's seat into a vehicle; returns {ticks, health before, after}. */
+	private int[] flyInto(ClientGameTestContext ctx, TestServerContext server, com.stasdoto.airdefense.missile.MissileType type, Vec3 start, Vec3 dir,
+			int targetId, String shot) {
+		float hp0 = server.computeOnServer(s -> s.overworld().getEntity(targetId) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		int drone = server.computeOnServer(s -> com.stasdoto.airdefense.missile.MissileEntity.launchPiloted(s.overworld(), type, start, dir,
+				s.getPlayerList().getPlayers().getFirst()).getId());
+		server.runOnServer(s -> {
+			if (s.overworld().getEntity(drone) instanceof com.stasdoto.airdefense.missile.MissileEntity m) {
+				com.stasdoto.airdefense.drone.DroneCam.start(s.getPlayerList().getPlayers().getFirst(), m);
+			}
+		});
+		int t = 0;
+		boolean shotTaken = false;
+		for (; t < 600; t++) {
+			Vec3 dp = server.computeOnServer(s -> s.overworld().getEntity(drone) instanceof com.stasdoto.airdefense.missile.MissileEntity m && m.isAlive()
+					? m.position() : null);
+			Vec3 tp = entityPos(server, targetId);
+			if (dp == null || tp == null) {
+				break;
+			}
+			Vec3 d = tp.add(0, 1.2, 0).subtract(dp);
+			float yaw = (float) Math.toDegrees(Math.atan2(-d.x, d.z));
+			float pitch = (float) -Math.toDegrees(Math.atan2(d.y, Math.hypot(d.x, d.z)));
+			ctx.runOnClient(mc -> {
+				mc.player.setYRot(yaw);
+				mc.player.setXRot(pitch);
+			});
+			server.runOnServer(s -> {
+				var pl = s.getPlayerList().getPlayers().getFirst();
+				pl.setYRot(yaw);
+				pl.setXRot(pitch);
+			});
+			if (!shotTaken && d.length() < 40) {
+				shotTaken = true;
+				ctx.takeScreenshot(shot);
+			}
+			ctx.waitTick();
+		}
+		ctx.waitTicks(30);
+		float hp1 = server.computeOnServer(s -> s.overworld().getEntity(targetId) instanceof VehicleEntity v ? v.getHealth() : 0f);
+		return new int[]{t, (int) hp0, (int) hp1};
+	}
+
+	private void pilotedDrones(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 41000;
+		int g = ground;
+		server.runCommand("gamemode creative @a");
+		server.runCommand("time set 6000");
+		camera(server, x + 0.5, g, 60.5, 180, 0);
+		ctx.waitTicks(40);
+		int tank = spawnVehicle(server, VehicleType.T72, x, -40, 0);
+		ctx.waitTicks(20);
+		int[] r = flyInto(ctx, server, com.stasdoto.airdefense.missile.MissileType.FPV, new Vec3(x + 0.5, g + 1.8, 59.5), new Vec3(0, 0.3, -1), tank,
+				"150_fpv_camera");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT fpv: flew {} ticks, tank {} -> {}, cam sessions {}", r[0], r[1], r[2],
+				com.stasdoto.airdefense.drone.DroneCam.started);
+		ctx.waitTicks(40);
+		// A lake with a boat on it; the Magura goes in at the near shore.
+		server.runOnServer(s -> {
+			for (int wx = x + 60; wx <= x + 90; wx++) {
+				for (int wz = -60; wz <= 50; wz++) {
+					for (int wy = g - 3; wy <= g - 1; wy++) {
+						s.overworld().setBlock(new BlockPos(wx, wy, wz), Blocks.WATER.defaultBlockState(), 2);
+					}
+				}
+			}
+		});
+		camera(server, x + 75.5, g + 1, 58.5, 180, 10);
+		ctx.waitTicks(30);
+		int boat = server.computeOnServer(s -> VehicleEntity.spawn(s.overworld(), VehicleType.RHIB, new Vec3(x + 75.5, g - 0.5, -45.5), 0).getId());
+		ctx.waitTicks(30);
+		int[] b = flyInto(ctx, server, com.stasdoto.airdefense.missile.MissileType.MAGURA, new Vec3(x + 75.5, g + 0.05, 45.5), new Vec3(0, 0, -1), boat,
+				"151_magura_camera");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT magura: ran {} ticks, boat {} -> {}", b[0], b[1], b[2]);
+		ctx.waitTicks(40);
+		server.runCommand("gamemode spectator @a");
 	}
 
 	/** Builds the chunks of a square (as the world generator would). */

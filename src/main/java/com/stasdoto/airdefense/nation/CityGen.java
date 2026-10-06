@@ -185,7 +185,7 @@ public final class CityGen {
 				for (int y = from; y < from + 28; y++) {
 					BlockState st = chunk.getBlockState(pos.set(x, y, z));
 					if (st.is(BlockTags.LEAVES) || st.is(BlockTags.LOGS) || st.is(Blocks.VINE) || st.is(Blocks.BEE_NEST) || st.is(Blocks.SNOW)) {
-						level.setBlock(pos, AIR, Block.UPDATE_CLIENTS);
+						chunk.setBlockState(pos, AIR, 0);
 					}
 				}
 			}

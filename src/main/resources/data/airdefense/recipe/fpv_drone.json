@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "I I",
+    " R ",
+    "IGI"
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "R": "minecraft:redstone",
+    "G": "minecraft:gunpowder"
+  },
+  "result": {
+    "id": "airdefense:fpv_drone",
+    "count": 2
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " R ",
+    "TBT",
+    "III"
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "R": "minecraft:redstone",
+    "T": "minecraft:tnt",
+    "B": "minecraft:oak_boat"
+  },
+  "result": {
+    "id": "airdefense:magura_drone",
+    "count": 1
+  }
+}

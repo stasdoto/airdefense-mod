@@ -36,7 +36,10 @@ public enum MissileType {
 	// Stage R6: aircraft weapons.
 	S8("rpg_round", Kind.DIRECT, false, 4.5, 0.4, 2.4f, false, 1f, 1.1f, 0, 140, 0.0, Trail.SMALL, null),
 	FAB250("kalibr_missile", Kind.DIRECT, false, 0, 0, 6.0f, false, 1f, 0.75f, 0, 600, 0.0, Trail.NONE, null),
-	AIM9("stinger_missile", Kind.INTERCEPTOR, false, 4.8, 0.4, 2.0f, false, 1f, 1.3f, 3.5, 200, 0.3, Trail.WHITE, ModSounds.MISSILE_FLIGHT);
+	AIM9("stinger_missile", Kind.INTERCEPTOR, false, 4.8, 0.4, 2.0f, false, 1f, 1.3f, 3.5, 200, 0.3, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
+	// Stage R9: piloted from their camera - an FPV quadcopter with an RPG grenade, a Magura sea drone with 300 kg.
+	FPV("fpv_drone", Kind.DIRECT, false, 1.4, 0.06, 2.8f, false, 1f, 0.8f, 0, 1800, 0.0, Trail.NONE, ModSounds.DRONE_BUZZ),
+	MAGURA("magura_drone", Kind.DIRECT, false, 1.1, 0.03, 8.0f, true, 6f, 2.4f, 0, 6000, 0.0, Trail.NONE, ModSounds.ENGINE_TRUCK);
 
 	public enum Kind { BALLISTIC, ROCKET, CRUISE, DRONE, INTERCEPTOR, DIRECT }
 
@@ -73,6 +76,11 @@ public enum MissileType {
 		this.turnRate = turnRate;
 		this.trail = trail;
 		this.loopSound = loopSound;
+	}
+
+	/** Flown by a player from its camera. */
+	public boolean piloted() {
+		return this == FPV || this == MAGURA;
 	}
 
 	/** A decoy: on the radar it is a missile or a drone, but it has no real warhead. */

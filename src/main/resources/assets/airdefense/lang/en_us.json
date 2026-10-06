@@ -693,5 +693,13 @@
   "screen.airdefense.map.rebuild_cost": "New building: wood %s, stone %s, iron %s",
   "nation.airdefense.eco.demolished": "Pulled down: %s (%s)",
   "nation.airdefense.eco.rebuilding": "%s is pulled down, going up in its place: %s (%s)",
-  "nation.airdefense.eco.no_room": "Does not fit here: %s"
+  "nation.airdefense.eco.no_room": "Does not fit here: %s",
+  "item.airdefense.fpv_drone": "FPV drone",
+  "item.airdefense.magura_drone": "Magura sea drone",
+  "item.airdefense.fpv_drone.hint": "Right-click to launch. Flies where you look (through its camera), blows up on impact. Sneak to let go",
+  "item.airdefense.magura_drone.hint": "Right-click on water to launch. Goes where you look; 300 kg of explosive sinks boats and breaks bridges",
+  "message.airdefense.magura.water": "The Magura goes on water: look at water close by",
+  "hud.airdefense.drone.pilot": "Mouse to steer · %s to exit",
+  "radar.airdefense.contact.fpv": "FPV drone",
+  "radar.airdefense.contact.magura": "sea drone"
 }
