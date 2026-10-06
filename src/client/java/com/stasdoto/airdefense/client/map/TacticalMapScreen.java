@@ -94,6 +94,17 @@ public class TacticalMapScreen extends Screen {
 	private Button manageButton;
 	private Button planButton;
 	private Button massButton;
+	/** A building picked on the map (army tab): to pull down or rebuild. */
+	private int pickedVillage = -1;
+	private int pickedIndex = -1;
+	private int pickedType;
+	private int rebuildChoice;
+	private Button prevTypeButton;
+	private Button typeButton;
+	private Button nextTypeButton;
+	private Button rebuildButton;
+	private Button demolishButton;
+	private Button dropButton;
 
 	public TacticalMapScreen() {
 		super(Component.translatable("screen.airdefense.map.title"));
@@ -137,6 +148,15 @@ public class TacticalMapScreen extends Screen {
 				.bounds(px0 + 4 + pw / 2 + 1, my1 - 20, pw - pw / 2 - 1, 20).build());
 		meButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.me"), b -> follow = true)
 				.bounds(px0 + 4 + pw / 2 + 1, my1 - 42, pw - pw / 2 - 1, 20).build());
+		prevTypeButton = addRenderableWidget(Button.builder(Component.literal("<"), b -> cycleRebuild(-1)).bounds(px0 + 4, my1 - 64, 18, 20).build());
+		typeButton = addRenderableWidget(Button.builder(Component.empty(), b -> cycleRebuild(1)).bounds(px0 + 24, my1 - 64, pw - 40, 20).build());
+		nextTypeButton = addRenderableWidget(Button.builder(Component.literal(">"), b -> cycleRebuild(1)).bounds(px0 + pw - 14, my1 - 64, 18, 20).build());
+		rebuildButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.rebuild"), b -> buildingAction(NationActionPayload.REBUILD))
+				.bounds(px0 + 4, my1 - 42, pw, 20).build());
+		demolishButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.demolish"), b -> buildingAction(NationActionPayload.DEMOLISH))
+				.bounds(px0 + 4, my1 - 20, pw / 2 - 1, 20).build());
+		dropButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.drop"), b -> dropBuilding())
+				.bounds(px0 + 4 + pw / 2 + 1, my1 - 20, pw - pw / 2 - 1, 20).build());
 		if (!initialised) {
 			initialised = true;
 			Player p = minecraft.player;
@@ -324,6 +344,19 @@ public class TacticalMapScreen extends Screen {
 		tabArmy.active = !army;
 		NationMapPayload.Village v = selectedVillage();
 		boolean mine = v != null && v.mine();
+		boolean editing = army && pickedVillage >= 0;
+		prevTypeButton.visible = editing;
+		typeButton.visible = editing;
+		nextTypeButton.visible = editing;
+		rebuildButton.visible = editing;
+		demolishButton.visible = editing;
+		dropButton.visible = editing;
+		if (editing) {
+			typeButton.setMessage(Component.translatable(REBUILD_TYPES[rebuildChoice].key()));
+			rebuildButton.active = mine && REBUILD_TYPES[rebuildChoice].ordinal() != pickedType;
+			demolishButton.active = mine;
+		}
+		army = army && !editing;
 		callButton.visible = army;
 		dismissButton.visible = army;
 		manageButton.visible = army;
@@ -337,7 +370,7 @@ public class TacticalMapScreen extends Screen {
 		clearButton.visible = !army;
 		meButton.visible = !army;
 		massButton.active = target != null;
-		if (army) {
+		if (army || editing) {
 			fireButton.visible = false;
 			modeButton.visible = false;
 			planButton.visible = false;
@@ -585,7 +618,11 @@ public class TacticalMapScreen extends Screen {
 			if (!dragMoved) {
 				MapStatusPayload.Entry hit = tab == 0 ? vehicleAt(event.x(), event.y()) : null;
 				NationMapPayload.Village village = tab == 1 ? villageAt(event.x(), event.y()) : null;
-				if (village != null) {
+				int[] building = tab == 1 && village == null ? buildingAt(event.x(), event.y()) : null;
+				if (building != null) {
+					pickBuilding(building);
+				} else if (village != null) {
+					dropBuilding();
 					selectVillage(village.id());
 				} else if (hit != null) {
 					select(hit.id());
@@ -910,21 +947,16 @@ public class TacticalMapScreen extends Screen {
 	/** A village's buildings: their footprints, coloured by kind (outlined only while they are going up). */
 	private void drawBuildings(GuiGraphicsExtractor g, NationMapPayload.Village v) {
 		List<Integer> list = v.buildings();
-		for (int i = 0; i + 1 < list.size(); i += 2) {
+		for (int i = 0; i + 2 < list.size(); i += 3) {
 			int head = list.get(i);
-			int off = list.get(i + 1);
 			com.stasdoto.airdefense.nation.BuildingType type = com.stasdoto.airdefense.nation.BuildingType.byId(head >> 4);
-			net.minecraft.core.Direction facing = net.minecraft.core.Direction.from2DDataValue(head >> 1 & 3);
 			boolean done = (head & 1) == 1;
-			int ox = v.x() + (off >> 16);
-			int oz = v.z() + (short) (off & 0xFFFF);
-			int hw = type.halfWidth();
-			net.minecraft.core.Direction right = facing.getClockWise();
-			// Two opposite corners of the footprint (local x from -hw to hw, z from 0 to depth - 1).
-			int ax = ox + right.getStepX() * -hw;
-			int az = oz + right.getStepZ() * -hw;
-			int bx = ox + right.getStepX() * hw + facing.getStepX() * (type.depth - 1);
-			int bz = oz + right.getStepZ() * hw + facing.getStepZ() * (type.depth - 1);
+			int[] fp = footprint(v, list, i);
+			int ax = fp[0];
+			int az = fp[1];
+			int bx = fp[2];
+			int bz = fp[3];
+			boolean picked = v.id() == pickedVillage && list.get(i + 2) == pickedIndex;
 			int x0 = (int) Math.floor(toScreenX(Math.min(ax, bx)));
 			int z0 = (int) Math.floor(toScreenY(Math.min(az, bz)));
 			int x1 = (int) Math.ceil(toScreenX(Math.max(ax, bx) + 1));
@@ -942,8 +974,22 @@ public class TacticalMapScreen extends Screen {
 				case FACTORY -> 0xFFA04A36;
 				case HOSPITAL -> 0xFFF2F2F2;
 				case WAREHOUSE -> 0xFFC8A060;
+				case PANEL5, PANEL9 -> 0xFFE4E0D6;
+				case TOWER, OFFICE -> 0xFF6E90B0;
+				case COTTAGE -> 0xFFB07A50;
+				case SHOP -> 0xFFE0A040;
+				case SCHOOL -> 0xFFD8B070;
+				case CITY_HALL -> 0xFFF0EEE6;
+				case PARK -> 0xFF4E9A3E;
+				case GAS_STATION -> 0xFFE04040;
+				case LOGISTICS_HUB -> 0xFF4A7AC0;
+				case OIL_WELL, REFINERY -> 0xFF303030;
+				case GARAGES -> 0xFF9A9A9A;
 				default -> 0xFF808080;
 			};
+			if (picked) {
+				g.fill(x0 - 2, z0 - 2, x1 + 2, z1 + 2, 0xFFFFE040);
+			}
 			if (done) {
 				g.fill(x0, z0, x1, z1, 0xFF101418);
 				g.fill(x0 + 1, z0 + 1, x1 - 1, z1 - 1, color);
@@ -965,6 +1011,100 @@ public class TacticalMapScreen extends Screen {
 				}
 			}
 		}
+	}
+
+	/** World corners {ax, az, bx, bz} of the building at {@code i} in the village's list. */
+	private static int[] footprint(NationMapPayload.Village v, List<Integer> list, int i) {
+		int head = list.get(i);
+		int off = list.get(i + 1);
+		com.stasdoto.airdefense.nation.BuildingType type = com.stasdoto.airdefense.nation.BuildingType.byId(head >> 4);
+		net.minecraft.core.Direction facing = net.minecraft.core.Direction.from2DDataValue(head >> 1 & 3);
+		int ox = v.x() + (off >> 16);
+		int oz = v.z() + (short) (off & 0xFFFF);
+		int hw = type.halfWidth();
+		net.minecraft.core.Direction right = facing.getClockWise();
+		// Two opposite corners of the footprint (local x from -hw to hw, z from 0 to depth - 1).
+		return new int[]{ox + right.getStepX() * -hw, oz + right.getStepZ() * -hw,
+				ox + right.getStepX() * hw + facing.getStepX() * (type.depth - 1), oz + right.getStepZ() * hw + facing.getStepZ() * (type.depth - 1)};
+	}
+
+	/** The building under the cursor: {village id, index in its list, type id}, or null. */
+	@Nullable
+	private int[] buildingAt(double sx, double sy) {
+		double wx = toWorldX(sx);
+		double wz = toWorldZ(sy);
+		for (NationMapPayload.Village v : NationClient.villages()) {
+			List<Integer> list = v.buildings();
+			for (int i = 0; i + 2 < list.size(); i += 3) {
+				int[] fp = footprint(v, list, i);
+				if (wx >= Math.min(fp[0], fp[2]) && wx < Math.max(fp[0], fp[2]) + 1 && wz >= Math.min(fp[1], fp[3]) && wz < Math.max(fp[1], fp[3]) + 1) {
+					return new int[]{v.id(), list.get(i + 2), list.get(i) >> 4};
+				}
+			}
+		}
+		return null;
+	}
+
+	/** Types a building can be rebuilt as. */
+	private static final com.stasdoto.airdefense.nation.BuildingType[] REBUILD_TYPES = {
+			com.stasdoto.airdefense.nation.BuildingType.COTTAGE, com.stasdoto.airdefense.nation.BuildingType.SMALL_HOUSE,
+			com.stasdoto.airdefense.nation.BuildingType.HOUSE, com.stasdoto.airdefense.nation.BuildingType.APARTMENTS,
+			com.stasdoto.airdefense.nation.BuildingType.PANEL5, com.stasdoto.airdefense.nation.BuildingType.PANEL9,
+			com.stasdoto.airdefense.nation.BuildingType.TOWER, com.stasdoto.airdefense.nation.BuildingType.OFFICE,
+			com.stasdoto.airdefense.nation.BuildingType.SHOP, com.stasdoto.airdefense.nation.BuildingType.SCHOOL,
+			com.stasdoto.airdefense.nation.BuildingType.HOSPITAL, com.stasdoto.airdefense.nation.BuildingType.PARK,
+			com.stasdoto.airdefense.nation.BuildingType.GARAGES, com.stasdoto.airdefense.nation.BuildingType.WAREHOUSE,
+			com.stasdoto.airdefense.nation.BuildingType.GAS_STATION, com.stasdoto.airdefense.nation.BuildingType.LOGISTICS_HUB,
+			com.stasdoto.airdefense.nation.BuildingType.REFINERY, com.stasdoto.airdefense.nation.BuildingType.BARRACKS,
+			com.stasdoto.airdefense.nation.BuildingType.HANGAR, com.stasdoto.airdefense.nation.BuildingType.CITY_HALL};
+
+	private void pickBuilding(int[] hit) {
+		pickedVillage = hit[0];
+		pickedIndex = hit[1];
+		pickedType = hit[2];
+		rebuildChoice = 0;
+		for (int k = 0; k < REBUILD_TYPES.length; k++) {
+			if (REBUILD_TYPES[k].ordinal() == hit[2]) {
+				rebuildChoice = k;
+			}
+		}
+		selectVillage(hit[0]);
+	}
+
+	/** For the tests: open the army tab and pick the building at a world point, to be rebuilt as {@code type}. */
+	public boolean pickForTest(double wx, double wz, int type) {
+		setTab(1);
+		int[] hit = buildingAt(toScreenX(wx), toScreenY(wz));
+		if (hit == null) {
+			return false;
+		}
+		pickBuilding(hit);
+		for (int k = 0; k < REBUILD_TYPES.length; k++) {
+			if (REBUILD_TYPES[k].ordinal() == type) {
+				rebuildChoice = k;
+			}
+		}
+		updateButtons();
+		return true;
+	}
+
+	private void dropBuilding() {
+		pickedVillage = -1;
+		pickedIndex = -1;
+		updateButtons();
+	}
+
+	private void cycleRebuild(int d) {
+		rebuildChoice = Math.floorMod(rebuildChoice + d, REBUILD_TYPES.length);
+		updateButtons();
+	}
+
+	private void buildingAction(int action) {
+		if (pickedVillage < 0) {
+			return;
+		}
+		NationClient.send(action, pickedVillage, pickedIndex, REBUILD_TYPES[rebuildChoice].ordinal(), 0, 0);
+		dropBuilding();
 	}
 
 	/** Guards, soldiers (yours with a white rim) and bandits (dark with a red rim). */
@@ -1122,7 +1262,13 @@ public class TacticalMapScreen extends Screen {
 		NationMapPayload.Village sel = selectedVillage();
 		Component l1;
 		Component l2 = null;
-		if (sel == null) {
+		if (pickedVillage >= 0 && sel != null) {
+			var cur = com.stasdoto.airdefense.nation.BuildingType.byId(pickedType);
+			var to = REBUILD_TYPES[rebuildChoice];
+			l1 = Component.translatable("screen.airdefense.map.picked", Component.translatable(cur.key()), sel.name());
+			l2 = !sel.mine() ? Component.translatable("screen.airdefense.map.not_yours")
+					: Component.translatable("screen.airdefense.map.rebuild_cost", to.wood, to.stone, to.iron);
+		} else if (sel == null) {
 			l1 = Component.translatable("screen.airdefense.map.select_village");
 		} else if (!sel.mine()) {
 			l1 = Component.literal(sel.name());

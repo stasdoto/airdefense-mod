@@ -271,7 +271,7 @@
   "screen.airdefense.map.village_mine": "ваше · меш. %s · солдатів %s",
   "screen.airdefense.map.village_free": "незалежне · меш. %s",
   "screen.airdefense.map.village_guards": "варта %s",
-  "screen.airdefense.map.select_village": "Виберіть село у списку або на мапі",
+  "screen.airdefense.map.select_village": "Обери місто у списку або на карті. Клік по будівлі — знести чи перебудувати",
   "screen.airdefense.map.not_yours": "Не ваше. Підійдіть до мешканця: Shift+ПКМ",
   "screen.airdefense.map.army_of": "%s: загін %s",
   "screen.airdefense.map.pick_point": "Клацніть на мапі точку для загону",
@@ -685,5 +685,13 @@
   "building.airdefense.garages": "Гаражі",
   "hud.airdefense.truck.mode_0": "режим: РОЗДАЧА",
   "hud.airdefense.truck.mode_1": "режим: ЗАВАНТАЖЕННЯ",
-  "hud.airdefense.truck.mode_2": "режим: ВИВАНТАЖЕННЯ"
+  "hud.airdefense.truck.mode_2": "режим: ВИВАНТАЖЕННЯ",
+  "screen.airdefense.map.rebuild": "Перебудувати",
+  "screen.airdefense.map.demolish": "Знести",
+  "screen.airdefense.map.drop": "Скасувати",
+  "screen.airdefense.map.picked": "%s · %s",
+  "screen.airdefense.map.rebuild_cost": "Нова будівля: дерево %s, камінь %s, залізо %s",
+  "nation.airdefense.eco.demolished": "Знесено: %s (%s)",
+  "nation.airdefense.eco.rebuilding": "%s зноситься, на його місці будують: %s (%s)",
+  "nation.airdefense.eco.no_room": "Не вміщується на цьому місці: %s"
 }

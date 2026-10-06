@@ -39,6 +39,10 @@ public record NationActionPayload(int action, int settlement, int a, int x, int 
 	public static final int PEACE = 16;
 	/** Pay what it asks for peace. */
 	public static final int TRIBUTE = 17;
+	/** Pull a building down and put another up in its place: a = its index in the village's list, x = the new type. */
+	public static final int REBUILD = 18;
+	/** Pull a building down: a = its index. */
+	public static final int DEMOLISH = 19;
 
 	public static final Type<NationActionPayload> TYPE = new Type<>(AirDefense.id("nation_action"));
 	public static final StreamCodec<ByteBuf, NationActionPayload> CODEC = StreamCodec.composite(

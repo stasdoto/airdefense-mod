@@ -271,7 +271,7 @@
   "screen.airdefense.map.village_mine": "ваша · жит. %s · солдат %s",
   "screen.airdefense.map.village_free": "независимая · жит. %s",
   "screen.airdefense.map.village_guards": "стража %s",
-  "screen.airdefense.map.select_village": "Выберите деревню в списке или на карте",
+  "screen.airdefense.map.select_village": "Выбери город в списке или на карте. Клик по зданию — снести или перестроить",
   "screen.airdefense.map.not_yours": "Не ваша. Подойдите к жителю: Shift+ПКМ",
   "screen.airdefense.map.army_of": "%s: отряд %s",
   "screen.airdefense.map.pick_point": "Кликните на карте точку для отряда",
@@ -685,5 +685,13 @@
   "building.airdefense.garages": "Гаражи",
   "hud.airdefense.truck.mode_0": "режим: РАЗДАЧА",
   "hud.airdefense.truck.mode_1": "режим: ЗАГРУЗКА",
-  "hud.airdefense.truck.mode_2": "режим: ВЫГРУЗКА"
+  "hud.airdefense.truck.mode_2": "режим: ВЫГРУЗКА",
+  "screen.airdefense.map.rebuild": "Перестроить",
+  "screen.airdefense.map.demolish": "Снести",
+  "screen.airdefense.map.drop": "Отмена",
+  "screen.airdefense.map.picked": "%s · %s",
+  "screen.airdefense.map.rebuild_cost": "Новое здание: дерево %s, камень %s, железо %s",
+  "nation.airdefense.eco.demolished": "Снесено: %s (%s)",
+  "nation.airdefense.eco.rebuilding": "%s сносится, на его месте строят: %s (%s)",
+  "nation.airdefense.eco.no_room": "Не помещается на этом месте: %s"
 }

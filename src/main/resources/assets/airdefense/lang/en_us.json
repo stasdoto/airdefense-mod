@@ -271,7 +271,7 @@
   "screen.airdefense.map.village_mine": "yours · %s people · %s soldiers",
   "screen.airdefense.map.village_free": "independent · %s people",
   "screen.airdefense.map.village_guards": "guards %s",
-  "screen.airdefense.map.select_village": "Pick a village in the list or on the map",
+  "screen.airdefense.map.select_village": "Pick a town in the list or on the map. Click a building to pull it down or rebuild it",
   "screen.airdefense.map.not_yours": "Not yours. Go to a villager: Shift+right click",
   "screen.airdefense.map.army_of": "%s: squad of %s",
   "screen.airdefense.map.pick_point": "Click a point on the map for the squad",
@@ -685,5 +685,13 @@
   "building.airdefense.garages": "Garages",
   "hud.airdefense.truck.mode_0": "mode: SERVE",
   "hud.airdefense.truck.mode_1": "mode: LOAD",
-  "hud.airdefense.truck.mode_2": "mode: UNLOAD"
+  "hud.airdefense.truck.mode_2": "mode: UNLOAD",
+  "screen.airdefense.map.rebuild": "Rebuild",
+  "screen.airdefense.map.demolish": "Pull down",
+  "screen.airdefense.map.drop": "Cancel",
+  "screen.airdefense.map.picked": "%s · %s",
+  "screen.airdefense.map.rebuild_cost": "New building: wood %s, stone %s, iron %s",
+  "nation.airdefense.eco.demolished": "Pulled down: %s (%s)",
+  "nation.airdefense.eco.rebuilding": "%s is pulled down, going up in its place: %s (%s)",
+  "nation.airdefense.eco.no_room": "Does not fit here: %s"
 }

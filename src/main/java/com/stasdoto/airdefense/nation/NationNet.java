@@ -129,6 +129,16 @@ public final class NationNet {
 					War.payTribute(level, player, s);
 				}
 			}
+			case NationActionPayload.REBUILD -> {
+				if (near || tablet) {
+					Economy.rebuild(level, player, s, p.a(), BuildingType.byId(p.x()));
+				}
+			}
+			case NationActionPayload.DEMOLISH -> {
+				if (near || tablet) {
+					Economy.demolish(level, player, s, p.a());
+				}
+			}
 			case NationActionPayload.OPEN -> {
 				if (near || tablet && Economy.owner(politics, s, player)) {
 					sendInfo(level, player, s, true);
@@ -164,7 +174,7 @@ public final class NationNet {
 			tribute = own != null ? War.tribute(own, c) : 0;
 		}
 		ServerPlayNetworking.send(player, new SettlementInfoPayload(open, s.id, s.name, c == null ? "" : c.name, c == null ? 0 : c.argb(),
-				c != null && c.cityState, mine, Nations.villagers(level, s).size(), Nations.guards(level, s).size(), Nations.soldiers(level, s).size(),
+				c != null && c.cityState, mine, s.isCity() ? s.citizens : Nations.villagers(level, s).size(), Nations.guards(level, s).size(), Nations.soldiers(level, s).size(),
 				mine ? Nations.mobilizable(level, s) : 0, Nations.reputation(level, s, player), Nations.charterPrice(p, s),
 				problem == null ? "" : problem.getString(), player.getAbilities().instabuild, elder, war, tribute));
 		if (mine) {
@@ -241,13 +251,14 @@ public final class NationNet {
 	private static List<Integer> mapBuildings(Settlement s) {
 		List<Integer> out = new ArrayList<>();
 		for (Building b : s.eco.buildings) {
-			if (b.type == BuildingType.ROADS || out.size() >= 1000) {
+			if (b.type == BuildingType.ROADS || out.size() >= 1500) {
 				continue;
 			}
 			out.add(b.type.ordinal() << 4 | b.facing.get2DDataValue() << 1 | (b.done ? 1 : 0));
 			int dx = b.origin.getX() - s.center.getX();
 			int dz = b.origin.getZ() - s.center.getZ();
 			out.add(dx << 16 | dz & 0xFFFF);
+			out.add(s.eco.buildings.indexOf(b));
 		}
 		return out;
 	}

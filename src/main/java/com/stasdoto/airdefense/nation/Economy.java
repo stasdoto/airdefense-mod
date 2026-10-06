@@ -407,6 +407,116 @@ public final class Economy {
 		return true;
 	}
 
+	/** Pulls a finished building down (the site goes back to grass). */
+	public static boolean demolish(ServerLevel level, ServerPlayer player, Settlement s, int index) {
+		Politics p = Politics.get(level.getServer());
+		if (!owner(p, s, player)) {
+			player.sendOverlayMessage(Component.translatable("nation.airdefense.not_yours"));
+			return false;
+		}
+		if (index < 0 || index >= s.eco.buildings.size()) {
+			return false;
+		}
+		Building b = s.eco.buildings.get(index);
+		if (b.type == BuildingType.ROADS || !b.done) {
+			return false;
+		}
+		clearSite(level, b);
+		s.eco.buildings.remove(index);
+		p.setDirty();
+		player.sendSystemMessage(Component.translatable("nation.airdefense.eco.demolished", Component.translatable(b.type.key()), s.name));
+		return true;
+	}
+
+	/** Pulls a building down and orders another on the same spot, facing the same way (it has to fit). */
+	public static boolean rebuild(ServerLevel level, ServerPlayer player, Settlement s, int index, BuildingType type) {
+		Politics p = Politics.get(level.getServer());
+		if (!owner(p, s, player)) {
+			player.sendOverlayMessage(Component.translatable("nation.airdefense.not_yours"));
+			return false;
+		}
+		if (index < 0 || index >= s.eco.buildings.size() || type == BuildingType.ROADS || type == BuildingType.FACTORY || type == BuildingType.OIL_WELL) {
+			return false;
+		}
+		Building old = s.eco.buildings.get(index);
+		if (old.type == BuildingType.ROADS || !old.done) {
+			return false;
+		}
+		VillageEconomy e = s.eco;
+		if (e.queued() >= MAX_QUEUE) {
+			player.sendOverlayMessage(Component.translatable("nation.airdefense.eco.queue_full"));
+			return false;
+		}
+		boolean free = player.getAbilities().instabuild;
+		if (!free && !canPay(e, type.wood, type.stone, type.iron)) {
+			player.sendOverlayMessage(missing(e, type.wood, type.stone, type.iron));
+			return false;
+		}
+		Building nb = new Building(p.newId(), type, old.origin, old.facing, free);
+		nb.variant = old.variant;
+		if (!fits(level, s, nb, old)) {
+			player.sendOverlayMessage(Component.translatable("nation.airdefense.eco.no_room", Component.translatable(type.key())));
+			return false;
+		}
+		if (!free) {
+			pay(e, type.wood, type.stone, type.iron);
+		}
+		clearSite(level, old);
+		e.buildings.remove(index);
+		e.buildings.add(nb);
+		p.setDirty();
+		player.sendSystemMessage(Component.translatable("nation.airdefense.eco.rebuilding", Component.translatable(old.type.key()),
+				Component.translatable(type.key()), s.name));
+		AirDefense.LOGGER.info("[airdefense] {} in {} rebuilt as {} at {}", old.type.id, s.name, type.id, old.origin.toShortString());
+		return true;
+	}
+
+	/** The footprint keeps clear of the other buildings and of the streets. */
+	private static boolean fits(ServerLevel level, Settlement s, Building nb, Building old) {
+		int hw = nb.type.halfWidth();
+		for (int x = -hw; x <= hw; x++) {
+			for (int z = -1; z < nb.type.depth; z++) {
+				BlockPos at = nb.at(x, 0, z);
+				for (Building o : s.eco.buildings) {
+					if (o != old && o.type != BuildingType.ROADS && o.covers(at.getX(), at.getZ(), 0)) {
+						return false;
+					}
+				}
+				BlockState ground = level.getBlockState(at);
+				if (ground.is(Blocks.CONCRETE.pick(DyeColor.GRAY)) || ground.is(Blocks.CONCRETE.pick(DyeColor.WHITE))) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	/** Everything of the building goes; the floor turns back into grass. */
+	private static void clearSite(ServerLevel level, Building b) {
+		int hw = b.type.halfWidth() + 1;
+		int top = b.type.height + 4;
+		for (int x = -hw; x <= hw; x++) {
+			for (int z = -2; z <= b.type.depth; z++) {
+				for (int y = top; y >= 0; y--) {
+					BlockPos at = b.at(x, y, z);
+					BlockState st = level.getBlockState(at);
+					if (st.isAir() || Blueprints.protectedBlock(st) || st.getBlock() instanceof net.minecraft.world.level.block.BellBlock) {
+						continue;
+					}
+					if (y == 0) {
+						if (z >= 0 && z < b.type.depth && Math.abs(x) < hw) {
+							level.setBlock(at, Blocks.GRASS_BLOCK.defaultBlockState(), Block.UPDATE_CLIENTS);
+						}
+						continue;
+					}
+					level.setBlock(at, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+				}
+			}
+		}
+		level.playSound(null, b.middle(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 1.2f, 0.7f);
+		level.sendParticles(ParticleTypes.CLOUD, b.middle().getX() + 0.5, b.middle().getY() + 2, b.middle().getZ() + 0.5, 40, hw, 3, hw, 0.02);
+	}
+
 	/** Roads from the square to every building, and to the nearest two villages of the same country (within 400 blocks). */
 	private static boolean orderRoads(ServerLevel level, Politics p, ServerPlayer player, Settlement s, boolean free) {
 		List<BlockPos> points = new ArrayList<>();
@@ -1035,6 +1145,15 @@ public final class Economy {
 		}
 		if (adults < 2 || beds(level, s, true) <= babies) {
 			return false;
+		}
+		// A city grows in numbers only: the streets keep the same few people (or the world would crawl).
+		if (s.isCity() && villagers.size() >= Math.max(10, Math.min(40, s.citizens / 25))) {
+			if (s.citizens < 1000) {
+				s.citizens = Math.min(1000, s.citizens + 5);
+				s.eco.births++;
+				p.setDirty();
+			}
+			return true;
 		}
 		Villager baby = EntityTypes.VILLAGER.create(level, EntitySpawnReason.BREEDING);
 		if (baby == null) {

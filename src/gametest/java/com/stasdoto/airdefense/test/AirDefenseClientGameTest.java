@@ -165,6 +165,51 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
+		if (scene("realcity")) {
+			realCity(ctx);
+		}
+	}
+
+	/** A normal world (hills, rivers, forests): the capital of the first country as the world generator builds it. */
+	private void realCity(ClientGameTestContext ctx) {
+		try (TestSingleplayerContext sp = ctx.worldBuilder().setUseConsistentSettings(false).adjustSettings(st -> st.setSeed("airdefense")).create()) {
+			TestServerContext server = sp.getServer();
+			server.runCommand("gamemode spectator @a");
+			server.runCommand("time set 6000");
+			server.runCommand("weather clear");
+			int[] cap = server.computeOnServer(s -> {
+				ServerLevel l = s.overworld();
+				var t = com.stasdoto.airdefense.nation.Cities.terrain(l);
+				var list = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), t, 0, 0);
+				for (var c : list) {
+					AirDefense.LOGGER.info("[airdefense-test] RESULT real_plan: #{} {} at {} {} ground {} (sea {})", c.index, c.size, c.x, c.z, c.base, t.sea());
+				}
+				AirDefense.LOGGER.info("[airdefense-test] RESULT real_roads: {}", com.stasdoto.airdefense.nation.Cities.roads(l.getSeed(), t, 0, 0).size());
+				return list.isEmpty() ? null : new int[]{list.getFirst().x, list.getFirst().z, list.getFirst().half(), list.getFirst().base};
+			});
+			if (cap == null) {
+				return;
+			}
+			int cx = cap[0];
+			int cz = cap[1];
+			int base = cap[3];
+			camera(server, cx + 0.5, base + 80, cz + cap[2] + 80, 180, 38);
+			int waited = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Nations.citiesFounded > 0, 1800);
+			ctx.waitTicks(200);
+			AirDefense.LOGGER.info("[airdefense-test] RESULT real_city: founded after {} ticks, {} chunks, avg {} us per chunk", waited,
+					com.stasdoto.airdefense.nation.CityGen.chunks,
+					com.stasdoto.airdefense.nation.CityGen.chunks == 0 ? 0 : com.stasdoto.airdefense.nation.CityGen.nanos / 1000 / com.stasdoto.airdefense.nation.CityGen.chunks);
+			ctx.takeScreenshot("140_real_capital");
+			camera(server, cx + 0.5, base + 140, cz + 0.5, 0, 90);
+			ctx.waitTicks(100);
+			ctx.takeScreenshot("141_real_capital_top");
+			camera(server, cx + 0.5, base + 6, cz + 34.5, 180, 8);
+			ctx.waitTicks(60);
+			ctx.takeScreenshot("142_real_city_hall");
+			camera(server, cx - cap[2] - 30.5, base + 25, cz + 0.5, 270, 20);
+			ctx.waitTicks(80);
+			ctx.takeScreenshot("143_real_city_edge");
+		}
 	}
 
 	private static boolean scene(String name) {
@@ -750,8 +795,54 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		});
 		ctx.waitTicks(30);
 		ctx.takeScreenshot("135_city_map");
-		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
-		ctx.waitTicks(5);
+		// Take the capital, pick a panel block on the map and rebuild it as a tower.
+		int[] target = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			for (var st : p.settlements.values()) {
+				if (st.isCity() && st.capitalCity) {
+					com.stasdoto.airdefense.nation.Nations.takeOver(s.overworld(), s.getPlayerList().getPlayers().getFirst(), st);
+					for (int i = 0; i < st.eco.buildings.size(); i++) {
+						var b = st.eco.buildings.get(i);
+						if (b.type == com.stasdoto.airdefense.nation.BuildingType.PANEL9) {
+							return new int[]{st.id, i, b.middle().getX(), b.middle().getZ(), b.origin.getY()};
+						}
+					}
+				}
+			}
+			return null;
+		});
+		if (target != null) {
+			ctx.waitTicks(30);
+			boolean picked = ctx.computeOnClient(mc -> mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen sc
+					&& sc.pickForTest(target[2] + 0.5, target[3] + 0.5, com.stasdoto.airdefense.nation.BuildingType.TOWER.ordinal()));
+			ctx.waitTicks(10);
+			ctx.takeScreenshot("136_rebuild_panel");
+			boolean pressed = ctx.tryClickScreenButton("Rebuild");
+			ctx.waitTicks(20);
+			String after = server.computeOnServer(s -> {
+				var st = com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(target[0]);
+				var last = st.eco.buildings.getLast();
+				var at = new BlockPos(target[2], target[4] + 8, target[3]);
+				return last.type.id + " done=" + last.done + " at " + last.origin.toShortString() + ", old site block " + s.overworld().getBlockState(at)
+						+ ", queue " + st.eco.queued();
+			});
+			AirDefense.LOGGER.info("[airdefense-test] RESULT city_rebuild: picked {} pressed {} -> {}", picked, pressed, after);
+			ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+			ctx.waitTicks(5);
+			camera(server, target[2] + 0.5, base + 30, target[3] + 40.5, 180, 25);
+			for (int k = 0; k < 30 && !server.computeOnServer(s -> com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(target[0]).eco.buildings.getLast().done); k++) {
+				ctx.waitTicks(40);
+			}
+			ctx.takeScreenshot("137_rebuilt_tower");
+			String rebuilt = server.computeOnServer(s -> {
+				var last = com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(target[0]).eco.buildings.getLast();
+				return last.type.id + " " + last.percent() + "%";
+			});
+			AirDefense.LOGGER.info("[airdefense-test] RESULT city_rebuilt: {}", rebuilt);
+		} else {
+			ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+			ctx.waitTicks(5);
+		}
 		server.runCommand("gamemode spectator @a");
 		server.runCommand("time set 1000");
 	}
