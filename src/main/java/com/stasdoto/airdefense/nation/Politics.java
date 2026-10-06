@@ -81,7 +81,7 @@ public final class Politics extends SavedData {
 		double bestD = Double.MAX_VALUE;
 		for (Settlement s : settlements.values()) {
 			double d = pos.distSqr(s.center);
-			if (d <= (double) Settlement.RADIUS * Settlement.RADIUS && d < bestD) {
+			if (d <= (double) s.radius * s.radius && d < bestD) {
 				best = s;
 				bestD = d;
 			}

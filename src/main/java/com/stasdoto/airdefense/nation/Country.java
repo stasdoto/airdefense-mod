@@ -43,9 +43,11 @@ public final class Country {
 					out.add(v);
 				});
 				return out;
-			})
-	).apply(i, (id, name, color, owner, ownerName, capital, cityState, wars, wanted, since, score) -> {
+			}),
+			Codec.LONG.optionalFieldOf("cell", Long.MIN_VALUE).forGetter(c -> c.cell)
+	).apply(i, (id, name, color, owner, ownerName, capital, cityState, wars, wanted, since, score, cell) -> {
 		Country c = new Country(id, name, color, owner, ownerName, capital, cityState, wars, wanted);
+		c.cell = cell;
 		for (int k = 0; k + 1 < since.size(); k += 2) {
 			c.warSince.put((int) (long) since.get(k), since.get(k + 1));
 		}
@@ -64,6 +66,8 @@ public final class Country {
 	public int capital;
 	/** A one-village country. */
 	public boolean cityState;
+	/** The country cell of the world plan it was made for ({@link Cities#cellKey}), or Long.MIN_VALUE. */
+	public long cell = Long.MIN_VALUE;
 	public final Set<Integer> wars = new HashSet<>();
 	/** Players who shot at this country's people: its guards shoot them on sight. */
 	public final Set<UUID> wanted = new HashSet<>();

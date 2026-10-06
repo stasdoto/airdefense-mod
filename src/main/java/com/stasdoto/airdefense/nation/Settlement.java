@@ -35,12 +35,20 @@ public final class Settlement {
 			VillageEconomy.CODEC.optionalFieldOf("economy").forGetter(s -> s.eco.isEmpty() ? Optional.empty() : Optional.of(s.eco)),
 			Codec.LONG.optionalFieldOf("captured_at", -1L).forGetter(s -> s.capturedAt),
 			Codec.LONG.optionalFieldOf("calm_until", 0L).forGetter(s -> s.calmUntil),
-			Codec.BOOL.optionalFieldOf("riot", false).forGetter(s -> s.riot)
-	).apply(i, (id, name, center, flag, country, elder, population, bonus, guards, soldiers, eco, capturedAt, calmUntil, riot) -> {
+			Codec.BOOL.optionalFieldOf("riot", false).forGetter(s -> s.riot),
+			Codec.LONG.listOf().optionalFieldOf("city", List.of()).forGetter(s -> s.city < 0 ? List.of() : List.of(s.city, (long) s.radius,
+					(long) s.citizens, s.capitalCity ? 1L : 0L))
+	).apply(i, (id, name, center, flag, country, elder, population, bonus, guards, soldiers, eco, capturedAt, calmUntil, riot, city) -> {
 		Settlement s = new Settlement(id, name, center, flag, country, elder, population, bonus, guards, soldiers, eco);
 		s.capturedAt = capturedAt;
 		s.calmUntil = calmUntil;
 		s.riot = riot;
+		if (city.size() >= 4) {
+			s.city = city.get(0);
+			s.radius = (int) (long) city.get(1);
+			s.citizens = (int) (long) city.get(2);
+			s.capitalCity = city.get(3) != 0;
+		}
 		return s;
 	}));
 
@@ -67,6 +75,14 @@ public final class Settlement {
 	public long calmUntil;
 	/** A riot is going on. */
 	public boolean riot;
+	/** A planned city ({@link Cities.City#key()}), or -1 for a village found in the wild. */
+	public long city = -1;
+	/** How far the settlement reaches. */
+	public int radius = RADIUS;
+	/** People living here (cities: a number; only some of them walk the streets). */
+	public int citizens;
+	/** The capital its country was planned around. */
+	public boolean capitalCity;
 
 	// Not saved: a capture in progress, how long rebels have held the flag.
 	public int riotTicks;
@@ -97,7 +113,16 @@ public final class Settlement {
 	}
 
 	public boolean contains(BlockPos pos) {
-		return pos.distSqr(center) <= (double) RADIUS * RADIUS;
+		return pos.distSqr(center) <= (double) radius * radius;
+	}
+
+	public boolean isCity() {
+		return city >= 0;
+	}
+
+	/** People to show: the city's number, or the villagers counted around. */
+	public int people() {
+		return Math.max(population, citizens);
 	}
 
 	public boolean independent() {

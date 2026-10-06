@@ -86,6 +86,7 @@ public final class Nations {
 		long t = level.getGameTime();
 		Politics p = Politics.get(level.getServer());
 		if (t % 100 == 0) {
+			foundCities(level, p);
 			discover(level, p);
 		}
 		if (t % 20 == 7) {
@@ -111,6 +112,11 @@ public final class Nations {
 			if (p.settlementAt(v.blockPosition()) != null) {
 				continue;
 			}
+			// People of a planned city that stands here wait for their city (founded with all its buildings).
+			Cities.City planned = Cities.cityAt(level.getSeed(), Cities.terrain(level), v.getBlockX(), v.getBlockZ(), Cities.MARGIN);
+			if (planned != null && level.isLoaded(planned.bell()) && level.getBlockState(planned.bell()).is(Blocks.BELL)) {
+				continue;
+			}
 			// The town square: the bell nearest to this villager, or where he stands.
 			BlockPos center = level.getPoiManager().findClosest(h -> h.is(PoiTypes.MEETING), v.blockPosition(), 48, PoiManager.Occupancy.ANY)
 					.orElse(v.blockPosition());
@@ -120,6 +126,84 @@ public final class Nations {
 			}
 			found(level, p, center);
 		}
+	}
+
+	public static int citiesFounded;
+
+	/** Planned cities near the players whose central square stands (built by the world generator) join the map. */
+	private static void foundCities(ServerLevel level, Politics p) {
+		if (level.players().isEmpty()) {
+			return;
+		}
+		Cities.Terrain t = Cities.terrain(level);
+		long seed = level.getSeed();
+		Set<Long> have = new HashSet<>();
+		for (Settlement s : p.settlements.values()) {
+			if (s.city >= 0) {
+				have.add(s.city);
+			}
+		}
+		for (ServerPlayer pl : level.players()) {
+			int px = pl.getBlockX();
+			int pz = pl.getBlockZ();
+			for (int cx = Math.floorDiv(px - 300, Cities.CELL); cx <= Math.floorDiv(px + 300, Cities.CELL); cx++) {
+				for (int cz = Math.floorDiv(pz - 300, Cities.CELL); cz <= Math.floorDiv(pz + 300, Cities.CELL); cz++) {
+					for (Cities.City c : Cities.cities(seed, t, cx, cz)) {
+						BlockPos bell = c.bell();
+						if (have.contains(c.key()) || !level.isLoaded(bell) || !level.getBlockState(bell).is(Blocks.BELL)) {
+							continue;
+						}
+						foundCity(level, p, c);
+						have.add(c.key());
+					}
+				}
+			}
+		}
+	}
+
+	/** A planned city on the political map: its buildings, its people, its country (made by the first of its towns found). */
+	public static Settlement foundCity(ServerLevel level, Politics p, Cities.City c) {
+		Random r = new Random(c.seed ^ 0x5EED1234L);
+		Set<String> names = new HashSet<>();
+		p.settlements.values().forEach(s -> names.add(s.name));
+		int id = p.newId();
+		BlockPos bell = c.bell();
+		Settlement s = new Settlement(id, Names.village(r, names), bell, flagSpot(level, bell), -1, Optional.empty(), 0,
+				Map.of(), List.of(), List.of());
+		s.city = c.key();
+		s.radius = c.radius();
+		s.citizens = c.citizens;
+		s.capitalCity = c.capital();
+		for (Building b : c.buildings()) {
+			Building nb = new Building(p.newId(), b.type, b.origin, b.facing, true);
+			nb.variant = b.variant;
+			nb.done = true;
+			s.eco.buildings.add(nb);
+		}
+		p.settlements.put(id, s);
+		long cell = Cities.cellKey(c.cx, c.cz);
+		Country country = null;
+		for (Country k : p.countries.values()) {
+			if (k.cell == cell) {
+				country = k;
+			}
+		}
+		if (country == null) {
+			country = newCountry(p, r, null, "", id, false);
+			country.color = c.color;
+			country.cell = cell;
+		}
+		if (c.capital()) {
+			country.capital = id;
+		}
+		s.country = country.id;
+		placeFlag(level, p, s);
+		p.setDirty();
+		discovered++;
+		citiesFounded++;
+		AirDefense.LOGGER.info("[airdefense] city {} ({}, {} people, {} buildings) at {} -> {}{}", s.name, c.size, c.citizens, s.eco.buildings.size(),
+				bell.toShortString(), country.name, c.capital() ? " (capital)" : "");
+		return s;
 	}
 
 	/** A new village on the political map, with its status decided by a roll that is fixed for this world and place. */
@@ -332,12 +416,12 @@ public final class Nations {
 	}
 
 	public static List<Villager> villagers(ServerLevel level, Settlement s) {
-		return level.getEntitiesOfClass(Villager.class, new AABB(s.center).inflate(Settlement.RADIUS, 32, Settlement.RADIUS),
+		return level.getEntitiesOfClass(Villager.class, new AABB(s.center).inflate(s.radius, 32, s.radius),
 				v -> v.isAlive() && s.contains(v.blockPosition()));
 	}
 
 	public static List<SoldierEntity> guards(ServerLevel level, Settlement s) {
-		return level.getEntitiesOfClass(SoldierEntity.class, new AABB(s.center).inflate(Settlement.RADIUS + 16, 32, Settlement.RADIUS + 16),
+		return level.getEntitiesOfClass(SoldierEntity.class, new AABB(s.center).inflate(s.radius + 16, 32, s.radius + 16),
 				g -> g.isAlive() && g.role() == SoldierEntity.GUARD && g.home() == s.id);
 	}
 

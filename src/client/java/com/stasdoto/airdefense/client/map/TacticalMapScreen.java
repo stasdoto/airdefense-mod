@@ -862,15 +862,28 @@ public class TacticalMapScreen extends Screen {
 		for (NationMapPayload.Village v : NationClient.villages()) {
 			double sx = toScreenX(v.x());
 			double sy = toScreenY(v.z());
-			double r = Settlement.RADIUS * scale();
+			double r = v.radius() * scale();
 			if (sx + r < mx0 || sx - r > mx1 || sy + r < my0 || sy - r > my1) {
 				continue;
 			}
 			boolean independent = v.country().isEmpty();
 			int color = v.color();
-			circle(g, sx, sy, r, (color & 0x00FFFFFF) | 0xC0000000, independent ? 3 : 0);
-			if (!independent && r > 6) {
-				circle(g, sx, sy, r - 1, (color & 0x00FFFFFF) | 0x60000000, 0);
+			if (v.half() > 0) {
+				// A city: its square of streets.
+				int h = (int) Math.round((v.half() + 2) * scale());
+				int cx = (int) toScreenX(v.x() - 12);
+				int cy = (int) toScreenY(v.z() - 11);
+				int edge = (color & 0x00FFFFFF) | 0xC0000000;
+				g.fill(cx - h, cy - h, cx + h + 1, cy + h + 1, (color & 0x00FFFFFF) | 0x28000000);
+				g.fill(cx - h, cy - h, cx + h + 1, cy - h + 1, edge);
+				g.fill(cx - h, cy + h, cx + h + 1, cy + h + 1, edge);
+				g.fill(cx - h, cy - h, cx - h + 1, cy + h + 1, edge);
+				g.fill(cx + h, cy - h, cx + h + 1, cy + h + 1, edge);
+			} else {
+				circle(g, sx, sy, r, (color & 0x00FFFFFF) | 0xC0000000, independent ? 3 : 0);
+				if (!independent && r > 6) {
+					circle(g, sx, sy, r - 1, (color & 0x00FFFFFF) | 0x60000000, 0);
+				}
 			}
 			boolean sel = v.id() == selectedVillage;
 			drawBuildings(g, v);
@@ -888,7 +901,7 @@ public class TacticalMapScreen extends Screen {
 				circle(g, sx, sy, Math.max(6, r) + 2, 0xFFFFFFFF, 2);
 			}
 			if (scale() >= 0.25f || sel || v.mine()) {
-				String label = v.name();
+				String label = v.capital() ? "★ " + v.name() : v.name();
 				small(g, label, (int) sx - (int) (font.width(label) * 0.375f), (int) sy + 4, sel ? 0xFFFFFFFF : 0xFFE6E9EC);
 			}
 		}

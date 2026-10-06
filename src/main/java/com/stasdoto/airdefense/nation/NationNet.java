@@ -217,8 +217,8 @@ public final class NationNet {
 			Country c = p.country(s.country);
 			villages.add(new NationMapPayload.Village(s.id, s.name, s.center.getX(), s.center.getY(), s.center.getZ(),
 					c == null ? 0xFFE8E8E8 : c.argb(), c == null ? "" : c.name, c != null && own != null && c.id == own.id,
-					s.population, s.guardsAlive, s.soldiers.size(), s.flag.getX(), s.flag.getZ(), c != null && own != null && own.atWarWith(c.id),
-					mapBuildings(s)));
+					s.people(), s.guardsAlive, s.soldiers.size(), s.flag.getX(), s.flag.getZ(), c != null && own != null && own.atWarWith(c.id),
+					mapBuildings(s), s.radius, s.isCity() ? Math.max(0, (int) ((s.radius - 4) / 1.2)) : 0, c != null && c.capital == s.id));
 			if (villages.size() >= 64) {
 				break;
 			}
@@ -241,7 +241,7 @@ public final class NationNet {
 	private static List<Integer> mapBuildings(Settlement s) {
 		List<Integer> out = new ArrayList<>();
 		for (Building b : s.eco.buildings) {
-			if (b.type == BuildingType.ROADS || out.size() >= 60) {
+			if (b.type == BuildingType.ROADS || out.size() >= 1000) {
 				continue;
 			}
 			out.add(b.type.ordinal() << 4 | b.facing.get2DDataValue() << 1 | (b.done ? 1 : 0));

@@ -18,14 +18,14 @@ public record NationMapPayload(List<Village> villages, List<Man> men) implements
 	 *                  village square as (dx << 16) | (dz & 0xFFFF)
 	 */
 	public record Village(int id, String name, int x, int y, int z, int color, String country, boolean mine, int population, int guards,
-			int soldiers, int fx, int fz, boolean war, List<Integer> buildings) {
+			int soldiers, int fx, int fz, boolean war, List<Integer> buildings, int radius, int half, boolean capital) {
 	}
 
 	public record Man(int id, int x, int z, int role, int color, boolean mine, int home) {
 	}
 
 	public static final Type<NationMapPayload> TYPE = new Type<>(AirDefense.id("nation_map"));
-	private static final StreamCodec<ByteBuf, List<Integer>> INTS = ByteBufCodecs.INT.apply(ByteBufCodecs.list(64));
+	private static final StreamCodec<ByteBuf, List<Integer>> INTS = ByteBufCodecs.INT.apply(ByteBufCodecs.list(1024));
 	public static final StreamCodec<ByteBuf, NationMapPayload> CODEC = new StreamCodec<>() {
 		@Override
 		public NationMapPayload decode(ByteBuf b) {
@@ -34,7 +34,8 @@ public record NationMapPayload(List<Village> villages, List<Man> men) implements
 			for (int i = 0; i < n; i++) {
 				v.add(new Village(ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.STRING_UTF8.decode(b), b.readInt(), b.readInt(), b.readInt(),
 						b.readInt(), ByteBufCodecs.STRING_UTF8.decode(b), b.readBoolean(), ByteBufCodecs.VAR_INT.decode(b),
-						ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b), b.readInt(), b.readInt(), b.readBoolean(), INTS.decode(b)));
+						ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b), b.readInt(), b.readInt(), b.readBoolean(), INTS.decode(b), ByteBufCodecs.VAR_INT.decode(b),
+						ByteBufCodecs.VAR_INT.decode(b), b.readBoolean()));
 			}
 			int m = ByteBufCodecs.VAR_INT.decode(b);
 			List<Man> men = new ArrayList<>();
@@ -64,6 +65,9 @@ public record NationMapPayload(List<Village> villages, List<Man> men) implements
 				b.writeInt(v.fz);
 				b.writeBoolean(v.war);
 				INTS.encode(b, v.buildings);
+				ByteBufCodecs.VAR_INT.encode(b, v.radius);
+				ByteBufCodecs.VAR_INT.encode(b, v.half);
+				b.writeBoolean(v.capital);
 			}
 			ByteBufCodecs.VAR_INT.encode(b, p.men.size());
 			for (Man m : p.men) {

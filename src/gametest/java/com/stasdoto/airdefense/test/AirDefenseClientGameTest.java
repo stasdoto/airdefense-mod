@@ -105,6 +105,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("air")) {
 				aircraft(ctx, server);
 			}
+			if (scene("cities")) {
+				cities(ctx, server);
+			}
 			if (scene("logistics")) {
 				logistics(ctx, server);
 			}
@@ -622,6 +625,137 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runOnServer(s -> forVehicles(s.overworld(), List.of(heli, plane), Entity::discard));
 	}
 
+	/** Builds the chunks of a square (as the world generator would). */
+	private static void generateCity(TestServerContext server, int x0, int z0, int x1, int z1) {
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var t = com.stasdoto.airdefense.nation.Cities.terrain(l);
+			long t0 = System.nanoTime();
+			int before = com.stasdoto.airdefense.nation.CityGen.chunks;
+			for (int cx = Math.floorDiv(x0, 16); cx <= Math.floorDiv(x1, 16); cx++) {
+				for (int cz = Math.floorDiv(z0, 16); cz <= Math.floorDiv(z1, 16); cz++) {
+					com.stasdoto.airdefense.nation.CityGen.generate(l, t, l.getSeed(), new net.minecraft.world.level.ChunkPos(cx, cz));
+				}
+			}
+			AirDefense.LOGGER.info("[airdefense-test] RESULT city_chunks: {} chunks built in {} ms", com.stasdoto.airdefense.nation.CityGen.chunks - before,
+					(System.nanoTime() - t0) / 1_000_000);
+		});
+	}
+
+	private void cities(ClientGameTestContext ctx, TestServerContext server) {
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 6000");
+		server.runCommand("difficulty peaceful");
+		// The plan of the cell at the world's centre.
+		int[] cap = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var t = com.stasdoto.airdefense.nation.Cities.terrain(l);
+			long t0 = System.nanoTime();
+			var list = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), t, 0, 0);
+			var roads = com.stasdoto.airdefense.nation.Cities.roads(l.getSeed(), t, 0, 0);
+			long ms = (System.nanoTime() - t0) / 1_000_000;
+			for (var c : list) {
+				java.util.Map<String, Integer> kinds = new java.util.TreeMap<>();
+				for (var b : c.buildings()) {
+					kinds.merge(b.type.id, 1, Integer::sum);
+				}
+				AirDefense.LOGGER.info("[airdefense-test] RESULT city_plan: #{} {} at {} {} ground {} people {} buildings {} {}", c.index, c.size, c.x, c.z,
+						c.base, c.citizens, c.buildings().size(), kinds);
+			}
+			StringBuilder rs = new StringBuilder();
+			for (var r : roads) {
+				rs.append((int) r.length).append(' ');
+			}
+			AirDefense.LOGGER.info("[airdefense-test] RESULT city_roads: {} roads, lengths {} (plan {} ms)", roads.size(), rs.toString().trim(), ms);
+			if (list.isEmpty()) {
+				return null;
+			}
+			var c = list.getFirst();
+			var r = roads.isEmpty() ? null : roads.getFirst();
+			return new int[]{c.x, c.z, c.half(), c.base, r == null ? c.x : r.x0, r == null ? c.z : r.z0, r == null ? 0 : (int) Math.round(r.ux * 100),
+					r == null ? 0 : (int) Math.round(r.uz * 100)};
+		});
+		if (cap == null) {
+			return;
+		}
+		int cx = cap[0];
+		int cz = cap[1];
+		int half = cap[2];
+		int base = cap[3];
+		camera(server, cx + 0.5, base + 70, cz + half + 90, 180, 35);
+		ctx.waitTicks(60);
+		int m = half + 20;
+		generateCity(server, cx - m, cz - m, cx + m, cz + m);
+		// The first stretch of the first road out of the capital.
+		for (int k = 0; k < 10; k++) {
+			int rx = cap[4] + cap[6] * k * 16 / 100;
+			int rz = cap[5] + cap[7] * k * 16 / 100;
+			generateCity(server, rx - 8, rz - 8, rx + 8, rz + 8);
+		}
+		ctx.waitTicks(100);
+		ctx.takeScreenshot("130_capital_aerial");
+		camera(server, cx + 0.5, base + 120, cz + 0.5, 0, 90);
+		ctx.waitTicks(60);
+		ctx.takeScreenshot("130b_capital_top");
+		// The city hall and the square.
+		camera(server, cx + 0.5, base + 6, cz + 34.5, 180, 8);
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("131_city_hall");
+		// Along a street.
+		camera(server, cx - half + 64 + 1.5, base + 2.8, cz + half - 6.5, 180, 2);
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("132_street");
+		camera(server, cx - half + 96 + 0.5, base + 30, cz + half - 2.5, 180, 25);
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("132b_street_above");
+		// Where the road leaves the city.
+		float yaw = (float) Math.toDegrees(Math.atan2(-cap[6], cap[7]));
+		camera(server, cap[4] - cap[6] * 0.2 + 0.5, base + 14, cap[5] - cap[7] * 0.2 + 0.5, yaw, 20);
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("133_road");
+		// The city joins the map (its square stands).
+		camera(server, cx + 0.5, base + 20, cz + 40.5, 180, 20);
+		int waited = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Nations.citiesFounded > 0, 300);
+		String founded = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			StringBuilder sb = new StringBuilder();
+			for (var st : p.settlements.values()) {
+				if (st.isCity()) {
+					var c = p.country(st.country);
+					sb.append(st.name).append(" r=").append(st.radius).append(" people=").append(st.citizens).append(" buildings=")
+							.append(st.eco.buildings.size()).append(" country=").append(c == null ? "-" : c.name).append(" capital=")
+							.append(c != null && c.capital == st.id).append(" villagers=").append(com.stasdoto.airdefense.nation.Nations.villagers(s.overworld(), st).size())
+							.append("; ");
+				}
+			}
+			return sb.toString();
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT city_founded after {} ticks: {} | avg {} ms per chunk", waited, founded,
+				com.stasdoto.airdefense.nation.CityGen.chunks == 0 ? 0 : com.stasdoto.airdefense.nation.CityGen.nanos / 1_000_000 / com.stasdoto.airdefense.nation.CityGen.chunks);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("134_flag_square");
+		// The tablet map.
+		server.runCommand("gamemode creative @a");
+		server.runCommand("clear @a");
+		server.runCommand("item replace entity @a hotbar.0 with airdefense:designator");
+		ctx.runOnClient(mc -> mc.player.getInventory().setSelectedSlot(0));
+		ctx.waitTicks(40);
+		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT);
+		ctx.waitForScreen(com.stasdoto.airdefense.client.map.TacticalMapScreen.class);
+		ctx.waitTicks(30);
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen s) {
+				s.centerOn(cx, cz, 2);
+			}
+		});
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("135_city_map");
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		ctx.waitTicks(5);
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 1000");
+	}
+
 	/** Puts a whole building up at once (for the screenshots), shapes of fences and panes fixed in a second pass. */
 	private static void stamp(ServerLevel l, com.stasdoto.airdefense.nation.Building b) {
 		var plan = com.stasdoto.airdefense.nation.Blueprints.placements(b, net.minecraft.world.item.DyeColor.BLUE);
@@ -763,6 +897,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				com.stasdoto.airdefense.nation.Supply.served);
 		// The trucks drive off to the front line: a BTR and a tank with empty tanks wait there.
 		int front = vx + 160;
+		camera(server, front + 4.5, g + 9, vz + 22, 180, 22);
+		ctx.waitTicks(40);
 		int btr = spawnVehicle(server, VehicleType.BTR82, front, vz + 4, 0);
 		int bmp = spawnVehicle(server, VehicleType.BMP2, front + 8, vz + 4, 0);
 		server.runOnServer(s -> {

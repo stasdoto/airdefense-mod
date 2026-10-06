@@ -660,7 +660,7 @@
   "message.airdefense.vehicle.status_truck": "%s: прочность %s%%, груз %s/%s · %s",
   "hud.airdefense.vehicle.cargo_fuel": "БЕНЗИН %s/%s л · %s",
   "hud.airdefense.vehicle.cargo_ammo": "БОЕПРИПАСЫ %s/%s · %s",
-  "hud.airdefense.vehicle.keys_truck": "%1$s — сменить режим (раздача / загрузка / выгрузка) · Shift — выйти",
+  "hud.airdefense.vehicle.keys_truck": "%1$s — режим (раздача / загрузка / выгрузка) · Shift — выйти",
   "item.airdefense.vehicle.hint_truck": "Сядь и нажми R — режим. Загрузи в своём городе (склад/НПЗ), отвези технике или в другой город",
   "item.airdefense.vehicle.hint_air": "Садись: ПКМ. W/S — тяга, мышь — куда лететь, ЛКМ — огонь. Нужен бензин",
   "nation.airdefense.supply.no_fuel": "В «%s» нет бензина — нужен НПЗ и нефтяная вышка",
@@ -682,5 +682,8 @@
   "building.airdefense.logistics_hub": "Логистический хаб",
   "building.airdefense.oil_well": "Нефтяная вышка",
   "building.airdefense.refinery": "НПЗ (завод топлива)",
-  "building.airdefense.garages": "Гаражи"
+  "building.airdefense.garages": "Гаражи",
+  "hud.airdefense.truck.mode_0": "режим: РАЗДАЧА",
+  "hud.airdefense.truck.mode_1": "режим: ЗАГРУЗКА",
+  "hud.airdefense.truck.mode_2": "режим: ВЫГРУЗКА"
 }

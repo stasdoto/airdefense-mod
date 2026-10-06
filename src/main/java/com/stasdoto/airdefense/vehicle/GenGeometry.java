@@ -226,7 +226,7 @@ public final class GenGeometry {
 			new Wheel[]{},
 			"turret", new float[]{0F, 1.4F, 4.6F}, "gun", new float[]{0F, 0.4F, 0.6F},
 			0F, 0F, new Rail[]{new Rail("barrel", 0F, 0F, 1.95F)}, null, new String[]{}, 14F,
-			1024, 368);
+			1024, 384);
 
 	public static final Geometry RHIB = new Geometry("rhib", 8.5F, 2.6F, 1.4F, 0F, false,
 			new Seat[]{new Seat("driver", -0.3F, 0.4F, -0.8F), new Seat("gunner", 0F, 0.4F, 1.2F)},

@@ -208,6 +208,19 @@ class Box:
         return (self.px_size(), self.style, self.faces, tuple(sorted(self.sides.items())))
 
 
+def outward_face(a, b, pivot):
+    """A thin pane of glass shows only its outer side: from inside a cab you look out through it."""
+    lo = [min(a[i], b[i]) for i in range(3)]
+    hi = [max(a[i], b[i]) for i in range(3)]
+    dx = hi[0] - lo[0]
+    dz = hi[2] - lo[2]
+    if min(dx, dz) > 0.1:
+        return None
+    if dz <= dx:
+        return ('front',) if (lo[2] + hi[2]) / 2 >= 0 else ('back',)
+    return ('right',) if (lo[0] + hi[0]) / 2 >= 0 else ('left',)
+
+
 def unrotate_x(p, pivot, deg):
     """Point p given where it is after turning the part by deg about x (around pivot): where it is at rest."""
     t = math.radians(-deg)
@@ -248,6 +261,8 @@ class Part:
                     faces = tuple(mapf(f) for f in faces)
                 if sides:
                     sides = {mapf(f): v for f, v in sides.items()}
+        if style == 'glass' and faces is None and not self.design_x:
+            faces = outward_face(a, b, self.pivot)
         self.boxes.append(Box(a, b, style or self.model.paint, faces, sides))
         return self
 

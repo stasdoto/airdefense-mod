@@ -44,7 +44,7 @@ public final class Sites {
 			return oilWell(level, p, s, id, free, columns, reasons);
 		}
 		int start = 9 + Math.max(type.width, type.depth) / 2;
-		int end = Settlement.RADIUS + 8;
+		int end = s.radius + 8;
 		// Start each ring at an angle of its own for this village, so buildings spread around the square.
 		double phase = (s.id * 2.3999632) % (Math.PI * 2);
 		int tried = 0;

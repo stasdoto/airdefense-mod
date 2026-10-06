@@ -192,7 +192,7 @@ public final class Unrest {
 	}
 
 	public static List<SoldierEntity> rebels(ServerLevel level, Settlement s) {
-		return level.getEntitiesOfClass(SoldierEntity.class, new AABB(s.center).inflate(Settlement.RADIUS + 32, 40, Settlement.RADIUS + 32),
+		return level.getEntitiesOfClass(SoldierEntity.class, new AABB(s.center).inflate(s.radius + 32, 40, s.radius + 32),
 				e -> e.isAlive() && e.role() == SoldierEntity.REBEL && e.home() == s.id);
 	}
 

@@ -485,25 +485,25 @@ public class SettlementScreen extends Screen {
 		int sw = x0 + w - 8 - sx;
 		g.text(font, Component.translatable("screen.airdefense.village.store"), sx, top, C_GOLD);
 		for (int k = 0; k < 3; k++) {
-			int ry = top + 14 + k * 22;
+			int ry = top + 14 + k * 19;
 			g.item(RESOURCE_ICONS[k], sx, ry);
 			String amount = eco.free() ? "∞" : eco.stock(k) + " / " + eco.cap();
 			g.text(font, Component.translatable("screen.airdefense.village.res." + k), sx + 20, ry, C_TEXT);
 			g.text(font, amount, sx + 20, ry + 9, eco.free() ? C_OK : C_DIM);
 			int bx = sx + 20;
 			int bw = sw - 20;
-			g.fill(bx, ry + 18, bx + bw, ry + 20, 0xFF303A44);
+			g.fill(bx, ry + 17, bx + bw, ry + 18, 0xFF303A44);
 			int fillW = eco.free() ? bw : (int) ((long) bw * Math.min(eco.stock(k), eco.cap()) / Math.max(1, eco.cap()));
-			g.fill(bx, ry + 18, bx + fillW, ry + 20, k == 0 ? 0xFFB08850 : k == 1 ? 0xFFA0A0A0 : 0xFFD8D8E0);
+			g.fill(bx, ry + 17, bx + fillW, ry + 18, k == 0 ? 0xFFB08850 : k == 1 ? 0xFFA0A0A0 : 0xFFD8D8E0);
 		}
 		// Oil, fuel and ammunition (the oil well, the refinery and the logistics hub).
 		if (eco.extra().size() >= 5) {
-			int ry = top + 14 + 3 * 22;
+			int ry = top + 14 + 3 * 19;
 			for (int k = 0; k < 3; k++) {
 				int cap = k < 2 ? eco.extra().get(3) : eco.extra().get(4);
 				String line = Component.translatable("screen.airdefense.village.res2." + k).getString() + ": "
 						+ (eco.free() ? "∞" : eco.extra().get(k) + " / " + cap);
-				small(g, line, sx, ry + k * 9, k == 0 ? 0xFF9A8A70 : k == 1 ? 0xFFE8C860 : 0xFFC8A070);
+				small(g, line, sx, ry + k * 8, k == 0 ? 0xFF9A8A70 : k == 1 ? 0xFFE8C860 : 0xFFC8A070);
 			}
 		}
 	}

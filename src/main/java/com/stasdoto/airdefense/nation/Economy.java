@@ -897,7 +897,7 @@ public final class Economy {
 	// Beds, births, barracks
 
 	public static int beds(ServerLevel level, Settlement s, boolean freeOnly) {
-		return (int) level.getPoiManager().getCountInRange(h -> h.is(PoiTypes.HOME), s.center, Settlement.RADIUS + 8,
+		return (int) level.getPoiManager().getCountInRange(h -> h.is(PoiTypes.HOME), s.center, s.radius + 8,
 				freeOnly ? PoiManager.Occupancy.HAS_SPACE : PoiManager.Occupancy.ANY);
 	}
 

@@ -660,7 +660,7 @@
   "message.airdefense.vehicle.status_truck": "%s: міцність %s%%, вантаж %s/%s · %s",
   "hud.airdefense.vehicle.cargo_fuel": "ПАЛЬНЕ %s/%s л · %s",
   "hud.airdefense.vehicle.cargo_ammo": "БОЄПРИПАСИ %s/%s · %s",
-  "hud.airdefense.vehicle.keys_truck": "%1$s — змінити режим (роздача / завантаження / вивантаження) · Shift — вийти",
+  "hud.airdefense.vehicle.keys_truck": "%1$s — режим (роздача / завантаження / вивантаження) · Shift — вийти",
   "item.airdefense.vehicle.hint_truck": "Сядь і натисни R — режим. Завантаж у своєму місті (склад/НПЗ), відвези техніці або в інше місто",
   "item.airdefense.vehicle.hint_air": "Сідай: ПКМ. W/S — тяга, миша — куди летіти, ЛКМ — вогонь. Потрібне пальне",
   "nation.airdefense.supply.no_fuel": "У «%s» немає пального — потрібен НПЗ і нафтова вишка",
@@ -682,5 +682,8 @@
   "building.airdefense.logistics_hub": "Логістичний хаб",
   "building.airdefense.oil_well": "Нафтова вишка",
   "building.airdefense.refinery": "НПЗ (завод пального)",
-  "building.airdefense.garages": "Гаражі"
+  "building.airdefense.garages": "Гаражі",
+  "hud.airdefense.truck.mode_0": "режим: РОЗДАЧА",
+  "hud.airdefense.truck.mode_1": "режим: ЗАВАНТАЖЕННЯ",
+  "hud.airdefense.truck.mode_2": "режим: ВИВАНТАЖЕННЯ"
 }

@@ -124,7 +124,7 @@ public final class VehicleClient {
 					Math.max(0, (int) (v.getY() - ground)), (int) (v.throttle * 100), weapons);
 		} else if (type.isTruck()) {
 			l2 = Component.translatable(type.cargo == 1 ? "hud.airdefense.vehicle.cargo_fuel" : "hud.airdefense.vehicle.cargo_ammo",
-					v.getCargo(), type.cargoCapacity, Component.translatable("message.airdefense.truck.mode_" + v.getMode()));
+					v.getCargo(), type.cargoCapacity, Component.translatable("hud.airdefense.truck.mode_" + v.getMode()));
 		} else if (type.isArmed()) {
 			l2 = Component.translatable("hud.airdefense.vehicle.weapon", type.weapon.caliber, Math.max(0, v.getAmmo()));
 		} else if (type.isRadar()) {

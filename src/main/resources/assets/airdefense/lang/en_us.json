@@ -660,7 +660,7 @@
   "message.airdefense.vehicle.status_truck": "%s: health %s%%, cargo %s/%s · %s",
   "hud.airdefense.vehicle.cargo_fuel": "FUEL %s/%s L · %s",
   "hud.airdefense.vehicle.cargo_ammo": "AMMO %s/%s · %s",
-  "hud.airdefense.vehicle.keys_truck": "%1$s — switch mode (serve / load / unload) · Shift — exit",
+  "hud.airdefense.vehicle.keys_truck": "%1$s — mode (serve / load / unload) · Shift — exit",
   "item.airdefense.vehicle.hint_truck": "Get in and press R for the mode. Load at your town (store/refinery), bring it to vehicles or another town",
   "item.airdefense.vehicle.hint_air": "Get in: RMB. W/S — throttle, mouse — steer, LMB — fire. Needs fuel",
   "nation.airdefense.supply.no_fuel": "%s has no fuel — build a refinery and an oil well",
@@ -682,5 +682,8 @@
   "building.airdefense.logistics_hub": "Logistics hub",
   "building.airdefense.oil_well": "Oil well",
   "building.airdefense.refinery": "Refinery",
-  "building.airdefense.garages": "Garages"
+  "building.airdefense.garages": "Garages",
+  "hud.airdefense.truck.mode_0": "mode: SERVE",
+  "hud.airdefense.truck.mode_1": "mode: LOAD",
+  "hud.airdefense.truck.mode_2": "mode: UNLOAD"
 }
