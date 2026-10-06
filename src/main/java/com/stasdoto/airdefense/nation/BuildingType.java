@@ -23,7 +23,29 @@ public enum BuildingType {
 	/** Keeps more of everything; the workers bring what they get here. */
 	WAREHOUSE("warehouse", 11, 9, 10, 150, 50, 4, 0),
 	/** Roads from the square to every building and to the nearest villages of the same country. */
-	ROADS("roads", 0, 0, 0, 0, 0, 0, 0);
+	ROADS("roads", 0, 0, 0, 0, 0, 0, 0),
+	// Stage R7-R8: the modern town.
+	/** Five-storey panel block. */
+	PANEL5("panel5", 21, 11, 17, 40, 300, 30, 6),
+	/** Nine-storey panel block. */
+	PANEL9("panel9", 25, 13, 29, 40, 520, 60, 8),
+	/** Glass tower of sixteen floors. */
+	TOWER("tower", 15, 15, 50, 20, 600, 120, 2),
+	OFFICE("office", 17, 13, 24, 20, 380, 80, 0),
+	COTTAGE("cottage", 9, 9, 9, 60, 80, 6, 3),
+	SHOP("shop", 17, 11, 7, 30, 120, 20, 0),
+	SCHOOL("school", 25, 13, 14, 40, 300, 30, 0),
+	CITY_HALL("city_hall", 21, 15, 21, 40, 360, 40, 0),
+	PARK("park", 21, 21, 7, 40, 30, 0, 0),
+	/** Refuels every vehicle that stops next to it (from the town's fuel). */
+	GAS_STATION("gas_station", 15, 13, 8, 20, 80, 40, 0),
+	/** Refuels and rearms vehicles near it from the town's stock; makes ammunition from iron. */
+	LOGISTICS_HUB("logistics_hub", 21, 17, 10, 40, 200, 80, 0),
+	/** Pumps crude oil (only on an oil field). */
+	OIL_WELL("oil_well", 7, 9, 8, 10, 30, 60, 0),
+	/** Turns crude oil into fuel. */
+	REFINERY("refinery", 19, 17, 22, 30, 200, 160, 0),
+	GARAGES("garages", 17, 7, 5, 10, 80, 10, 0);
 
 	public final String id;
 	public final int width;

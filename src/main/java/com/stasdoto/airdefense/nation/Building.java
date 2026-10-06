@@ -24,9 +24,11 @@ public final class Building {
 			Codec.BOOL.optionalFieldOf("done", false).forGetter(b -> b.done),
 			Codec.BOOL.optionalFieldOf("free", false).forGetter(b -> b.free),
 			BlockPos.CODEC.listOf().optionalFieldOf("points", List.of()).forGetter(b -> new ArrayList<>(b.points)),
-			Codec.INT.optionalFieldOf("total", 0).forGetter(b -> b.total)
-	).apply(i, (id, type, origin, facing, index, done, free, points, total) -> {
+			Codec.INT.optionalFieldOf("total", 0).forGetter(b -> b.total),
+			Codec.INT.optionalFieldOf("variant", 0).forGetter(b -> b.variant)
+	).apply(i, (id, type, origin, facing, index, done, free, points, total, variant) -> {
 		Building b = new Building(id, BuildingType.byId(type), origin, Direction.from2DDataValue(facing), free);
+		b.variant = variant;
 		b.index = index;
 		b.done = done;
 		b.points.addAll(points);
@@ -45,6 +47,8 @@ public final class Building {
 	/** Blueprint size when it was last known (for the percentage on the screen). */
 	public int total;
 	public boolean done;
+	/** Which look of the design (colours, details). */
+	public int variant;
 	public final List<BlockPos> points = new ArrayList<>();
 
 	public Building(int id, BuildingType type, BlockPos origin, Direction facing, boolean free) {

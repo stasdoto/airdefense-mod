@@ -40,6 +40,9 @@ public final class Sites {
 		Map<Long, Column> columns = new HashMap<>();
 		int[] reasons = new int[5];
 		BlockPos c = s.center;
+		if (type == BuildingType.OIL_WELL) {
+			return oilWell(level, p, s, id, free, columns, reasons);
+		}
 		int start = 9 + Math.max(type.width, type.depth) / 2;
 		int end = Settlement.RADIUS + 8;
 		// Start each ring at an angle of its own for this village, so buildings spread around the square.
@@ -66,6 +69,34 @@ public final class Sites {
 		lastReport = String.format("%s: none in %d tries, %d ms (overlap %d, unloaded %d, slope %d, ground %d, blocked %d)", type.id, tried,
 				(System.nanoTime() - t0) / 1_000_000, reasons[0], reasons[1], reasons[2], reasons[3], reasons[4]);
 		AirDefense.LOGGER.info("[airdefense] site {}", lastReport);
+		return null;
+	}
+
+	/** An oil well goes on the nearest oil field within 220 blocks of the village. */
+	@Nullable
+	private static Building oilWell(ServerLevel level, Politics p, Settlement s, int id, boolean free, Map<Long, Column> columns, int[] reasons) {
+		long salt = OilFields.salt(level.getSeed());
+		List<OilFields.Field> fields = OilFields.near(salt, s.center.getX(), s.center.getZ(), 220);
+		fields.sort(java.util.Comparator.comparingDouble(f -> Math.hypot(f.x() - s.center.getX(), f.z() - s.center.getZ())));
+		for (OilFields.Field f : fields) {
+			if (Math.hypot(f.x() - s.center.getX(), f.z() - s.center.getZ()) > 220) {
+				continue;
+			}
+			for (int r = 0; r <= f.radius(); r += 3) {
+				int steps = Math.max(1, (int) (Math.PI * 2 * r / 4));
+				for (int i = 0; i < steps; i++) {
+					double a = Math.PI * 2 * i / steps;
+					int x = f.x() + (int) Math.round(Math.cos(a) * r);
+					int z = f.z() + (int) Math.round(Math.sin(a) * r);
+					Building b = check(level, p, BuildingType.OIL_WELL, id, new BlockPos(x, s.center.getY(), z), Direction.NORTH, free, columns, reasons);
+					if (b != null) {
+						lastReport = "oil_well on the field at " + f.x() + " " + f.z();
+						return b;
+					}
+				}
+			}
+		}
+		lastReport = "oil_well: no free spot on an oil field within 220 blocks";
 		return null;
 	}
 
@@ -142,7 +173,9 @@ public final class Sites {
 				}
 			}
 		}
-		return new Building(id, type, new BlockPos(at.getX(), floor, at.getZ()), facing, free);
+		Building found = new Building(id, type, new BlockPos(at.getX(), floor, at.getZ()), facing, free);
+		found.variant = Math.floorMod((int) (at.asLong() * 31 + id), 97);
+		return found;
 	}
 
 	/** The ground of one column: how high, whether it is natural, and how many free (or clearable) blocks are above it. */

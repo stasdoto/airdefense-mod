@@ -1,0 +1,749 @@
+package com.stasdoto.airdefense.nation;
+
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+
+import com.stasdoto.airdefense.nation.Blueprints.L;
+import com.stasdoto.airdefense.nation.Blueprints.Plan;
+
+/**
+ * Today's buildings: panel blocks of five and nine floors, glass towers and offices, cottages, shops, a school, the
+ * city hall, parks, a gas station, the logistics hub, oil wells and a refinery, garages - and modern versions of the
+ * old village buildings. Every design has variants (colours, details) picked by the building's {@code variant}.
+ * Drawn like the other blueprints: x right of the door, z into the building, y up from the floor.
+ */
+final class ModernDesigns {
+	private ModernDesigns() {
+	}
+
+	/** Wall colours of panel blocks: main, accent (balconies, bands), plinth. */
+	private static final DyeColor[][] PANEL = {
+			{DyeColor.WHITE, DyeColor.LIGHT_GRAY, DyeColor.GRAY},
+			{DyeColor.LIGHT_GRAY, DyeColor.WHITE, DyeColor.GRAY},
+			{DyeColor.WHITE, DyeColor.LIGHT_BLUE, DyeColor.LIGHT_GRAY},
+			{DyeColor.WHITE, DyeColor.ORANGE, DyeColor.GRAY},
+			{DyeColor.LIGHT_GRAY, DyeColor.YELLOW, DyeColor.GRAY},
+			{DyeColor.WHITE, DyeColor.CYAN, DyeColor.GRAY},
+			{DyeColor.WHITE, DyeColor.PINK, DyeColor.LIGHT_GRAY},
+			{DyeColor.LIGHT_GRAY, DyeColor.GREEN, DyeColor.GRAY},
+	};
+	private static final DyeColor[] GLASS = {DyeColor.LIGHT_BLUE, DyeColor.CYAN, DyeColor.GRAY, DyeColor.BLUE, DyeColor.LIGHT_GRAY, DyeColor.BLACK};
+
+	static BlockState concrete(DyeColor c) {
+		return Blocks.CONCRETE.pick(c).defaultBlockState();
+	}
+
+	static BlockState glass(DyeColor c) {
+		return Blocks.STAINED_GLASS.pick(c).defaultBlockState();
+	}
+
+	static BlockState pane(DyeColor c) {
+		return Blocks.STAINED_GLASS_PANE.pick(c).defaultBlockState();
+	}
+
+	static boolean design(Plan p, int variant, DyeColor flag) {
+		switch (p.b.type) {
+			case PANEL5 -> panel(p, 5, variant);
+			case PANEL9 -> panel(p, 9, variant);
+			case APARTMENTS -> panel(p, 4, variant);
+			case TOWER -> tower(p, 16, variant);
+			case OFFICE -> tower(p, 7, variant);
+			case COTTAGE -> cottage(p, 2, variant);
+			case HOUSE -> cottage(p, 2, variant + 3);
+			case SMALL_HOUSE -> cottage(p, 1, variant);
+			case SHOP -> shop(p, variant);
+			case SCHOOL -> school(p, variant);
+			case CITY_HALL -> cityHall(p, flag);
+			case PARK -> park(p, variant);
+			case GAS_STATION -> gasStation(p, variant);
+			case LOGISTICS_HUB -> logisticsHub(p, variant);
+			case OIL_WELL -> oilWell(p);
+			case REFINERY -> refinery(p);
+			case GARAGES -> garages(p, variant);
+			case HOSPITAL -> hospital(p);
+			case WAREHOUSE -> warehouse(p, variant);
+			case BARRACKS -> barracks(p, flag);
+			case HANGAR -> hangar(p);
+			default -> {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Helpers
+
+	/** Foundation and floor slab over the whole footprint. */
+	private static void base(Plan p, int hw, int d, BlockState foundation, BlockState floor) {
+		p.fill(-hw, -1, 0, hw, -1, d, foundation);
+		p.fill(-hw, 0, 0, hw, 0, d, floor);
+	}
+
+	/** Walls of one storey from y0 to y0 + 2 (y0 = the floor), windows in the middle row every {@code step} blocks. */
+	private static void storey(Plan p, int hw, int d, int y0, BlockState wall, BlockState win, int step, boolean floorSlab, BlockState slab) {
+		if (floorSlab) {
+			p.fill(-hw, y0, 0, hw, y0, d, slab);
+		}
+		for (int y = y0 + 1; y <= y0 + 2; y++) {
+			p.ring(-hw, 0, hw, d, y, wall);
+		}
+		int wy = y0 + 1;
+		for (int x = -hw + 1; x < hw; x++) {
+			if (Math.floorMod(x + hw, step) != 0) {
+				p.set(x, wy, 0, win);
+				p.set(x, wy, d, win);
+				if (step <= 2) {
+					p.set(x, wy + 1, 0, win);
+					p.set(x, wy + 1, d, win);
+				}
+			}
+		}
+		for (int z = 1; z < d; z++) {
+			if (Math.floorMod(z, step) != 0) {
+				p.set(-hw, wy, z, win);
+				p.set(hw, wy, z, win);
+			}
+		}
+	}
+
+	/** Flat roof with a parapet, at height {@code y}. */
+	private static void flatRoof(Plan p, int hw, int d, int y, BlockState roof, BlockState parapet) {
+		p.fill(-hw, y, 0, hw, y, d, roof);
+		p.ring(-hw, 0, hw, d, y + 1, parapet);
+		p.top = Math.max(p.top, y + 2);
+	}
+
+	private static void entrance(Plan p, int x, Block door, BlockState canopy, boolean lamp) {
+		p.door(x, 1, 0, door, L.BACK);
+		for (int dx = -1; dx <= 1; dx++) {
+			p.set(x + dx, 3, -1, canopy);
+		}
+		if (lamp) {
+			p.set(x, 3, 0, Blocks.SEA_LANTERN.defaultBlockState());
+		}
+	}
+
+	private static BlockState slabTop(Block block) {
+		return block.defaultBlockState().setValue(BlockStateProperties.SLAB_TYPE, net.minecraft.world.level.block.state.properties.SlabType.TOP);
+	}
+
+	/** A street lamp: a post with a lantern hanging from it. */
+	private static void lamp(Plan p, int x, int z, int h) {
+		for (int y = 1; y <= h; y++) {
+			p.set(x, y, z, Blocks.IRON_BARS.defaultBlockState());
+		}
+		p.set(x, h + 1, z, Blocks.SMOOTH_STONE_SLAB.defaultBlockState());
+		p.lantern(x, h, z, true);
+	}
+
+	private static void tree(Plan p, int x, int z, Block log, Block leaves) {
+		for (int y = 1; y <= 4; y++) {
+			p.set(x, y, z, log.defaultBlockState());
+		}
+		BlockState l = leaves.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, true);
+		for (int dx = -2; dx <= 2; dx++) {
+			for (int dz = -2; dz <= 2; dz++) {
+				for (int y = 4; y <= 6; y++) {
+					if (Math.abs(dx) + Math.abs(dz) + (y == 6 ? 2 : 0) <= 3 && !(dx == 0 && dz == 0 && y < 5)) {
+						p.set(x + dx, y, z + dz, l);
+					}
+				}
+			}
+		}
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Housing
+
+	/**
+	 * A panel block: {@code floors} floors of flats, balconies on the front, entrances with canopies, a flat roof with
+	 * the lift rooms. Eight colour schemes.
+	 */
+	private static void panel(Plan p, int floors, int variant) {
+		DyeColor[] c = PANEL[Math.floorMod(variant, PANEL.length)];
+		BlockState wall = concrete(c[0]);
+		BlockState accent = concrete(c[1]);
+		BlockState plinth = concrete(c[2]);
+		BlockState win = Blocks.GLASS_PANE.defaultBlockState();
+		int hw = p.b.type.halfWidth();
+		int d = p.b.type.depth - 1;
+		base(p, hw, d, plinth, Blocks.SMOOTH_STONE.defaultBlockState());
+		for (int f = 0; f < floors; f++) {
+			int y0 = f * 3;
+			storey(p, hw, d, y0, wall, win, 3, f > 0, Blocks.SMOOTH_STONE.defaultBlockState());
+			// Panel joints: an accent band at each floor line.
+			if (f > 0) {
+				p.ring(-hw, 0, hw, d, y0, accent);
+			}
+		}
+		// Ground floor plinth.
+		p.ring(-hw, 0, hw, d, 1, plinth);
+		int top = floors * 3;
+		flatRoof(p, hw, d, top, concrete(DyeColor.GRAY), wall);
+		// Balconies on the front (every other window column, from the second floor).
+		boolean glazed = variant % 3 == 0;
+		for (int f = 1; f < floors; f++) {
+			int y0 = f * 3;
+			for (int x = -hw + 2; x <= hw - 2; x += 6) {
+				for (int dx = 0; dx <= 1; dx++) {
+					p.set(x + dx, y0, -1, accent);
+					p.set(x + dx, y0 + 1, -1, glazed ? win : Blocks.IRON_BARS.defaultBlockState());
+				}
+			}
+		}
+		// Entrances (one per 9 blocks of front), with the lift room above each on the roof.
+		int sections = Math.max(1, (2 * hw + 1) / 9);
+		for (int k = 0; k < sections; k++) {
+			int x = -hw + (2 * hw + 1) * (2 * k + 1) / (2 * sections);
+			entrance(p, x, Blocks.DARK_OAK_DOOR, slabTop(Blocks.SMOOTH_STONE_SLAB), true);
+			p.fill(x - 1, top + 1, 2, x + 1, top + 3, 4, concrete(c[2]));
+			p.set(x, 2, 0, wall);
+			// A staircase lit at every floor.
+			for (int f = 1; f < floors; f++) {
+				p.set(x, f * 3 + 2, 0, glass(DyeColor.WHITE));
+			}
+		}
+		// Flats on the ground floor: a few beds and a workstation (homes for the townsfolk).
+		DyeColor[] beds = {DyeColor.RED, DyeColor.BLUE, DyeColor.WHITE, DyeColor.GREEN};
+		int n = 0;
+		for (int x = -hw + 2; x <= hw - 2 && n < Math.max(2, p.b.type.beds); x += 3) {
+			if (p.has(x, 1, d) || x % 9 == 0) {
+				p.bed(x, 1, d - 2, L.FRONT, beds[n % beds.length]);
+				n++;
+			}
+		}
+		p.set(-hw + 1, 1, 1, Blocks.SMOKER.defaultBlockState());
+		// Antennas and a satellite dish on the roof.
+		p.set(-hw + 1, top + 1, 1, Blocks.IRON_BARS.defaultBlockState());
+		p.set(hw - 1, top + 1, d - 1, Blocks.IRON_BARS.defaultBlockState());
+		p.set(hw - 1, top + 2, d - 1, Blocks.IRON_BARS.defaultBlockState());
+		p.top = top + 4;
+	}
+
+	/** Glass tower (or a smaller office block): a concrete frame with glass between, a lobby, a crown on top. */
+	private static void tower(Plan p, int floors, int variant) {
+		DyeColor g = GLASS[Math.floorMod(variant, GLASS.length)];
+		BlockState frame = concrete(variant % 2 == 0 ? DyeColor.WHITE : DyeColor.GRAY);
+		BlockState curtain = glass(g);
+		int hw = p.b.type.halfWidth();
+		int d = p.b.type.depth - 1;
+		base(p, hw, d, concrete(DyeColor.GRAY), Blocks.POLISHED_ANDESITE.defaultBlockState());
+		for (int f = 0; f < floors; f++) {
+			int y0 = f * 3;
+			if (f > 0) {
+				p.fill(-hw, y0, 0, hw, y0, d, Blocks.SMOOTH_STONE.defaultBlockState());
+				p.ring(-hw, 0, hw, d, y0, frame);
+			}
+			for (int y = y0 + 1; y <= y0 + 2; y++) {
+				p.ring(-hw, 0, hw, d, y, curtain);
+			}
+			// Corner columns and a middle mullion.
+			for (int y = y0 + 1; y <= y0 + 2; y++) {
+				for (int x : new int[]{-hw, hw}) {
+					p.set(x, y, 0, frame);
+					p.set(x, y, d, frame);
+				}
+				if (variant % 3 != 1) {
+					for (int x = -hw + 4; x < hw; x += 4) {
+						p.set(x, y, 0, frame);
+						p.set(x, y, d, frame);
+					}
+				}
+			}
+		}
+		int top = floors * 3;
+		flatRoof(p, hw, d, top, frame, frame);
+		// The crown: a set-back top floor and a mast.
+		p.fill(-hw + 3, top + 1, 3, hw - 3, top + 3, d - 3, frame);
+		for (int y = top + 4; y <= top + 9; y++) {
+			p.set(0, y, d / 2, Blocks.IRON_BARS.defaultBlockState());
+		}
+		p.set(0, top + 10, d / 2, Blocks.REDSTONE_LAMP.defaultBlockState().setValue(BlockStateProperties.LIT, true));
+		// Lobby: a glass front with a wide entrance.
+		for (int x = -2; x <= 2; x++) {
+			p.set(x, 1, 0, curtain);
+			p.set(x, 2, 0, curtain);
+		}
+		p.door(0, 1, 0, Blocks.BIRCH_DOOR, L.BACK);
+		for (int x = -3; x <= 3; x++) {
+			p.set(x, 3, -1, slabTop(Blocks.SMOOTH_STONE_SLAB));
+			p.set(x, 3, -2, slabTop(Blocks.SMOOTH_STONE_SLAB));
+		}
+		p.set(-2, 1, 2, Blocks.LECTERN.defaultBlockState());
+		p.set(2, 1, 2, Blocks.POTTED_BAMBOO.defaultBlockState());
+		if (p.b.type.beds > 0) {
+			p.bed(-hw + 2, 1, d - 2, L.FRONT, DyeColor.WHITE);
+			p.bed(hw - 2, 1, d - 2, L.FRONT, DyeColor.GRAY);
+		}
+		p.top = top + 11;
+	}
+
+	/** A modern private house: white walls, big windows, a flat or a pitched dark roof, a fence and a garden. */
+	private static void cottage(Plan p, int floors, int variant) {
+		int hw = p.b.type.halfWidth();
+		int d = p.b.type.depth - 1;
+		BlockState[] walls = {concrete(DyeColor.WHITE), Blocks.BRICKS.defaultBlockState(), concrete(DyeColor.LIGHT_GRAY),
+				Blocks.SMOOTH_SANDSTONE.defaultBlockState(), Blocks.DYED_TERRACOTTA.white().defaultBlockState(), Blocks.MUD_BRICKS.defaultBlockState()};
+		BlockState wall = walls[Math.floorMod(variant, walls.length)];
+		BlockState trim = concrete(variant % 2 == 0 ? DyeColor.GRAY : DyeColor.BLACK);
+		base(p, hw, d, trim, Blocks.OAK_PLANKS.defaultBlockState());
+		for (int f = 0; f < floors; f++) {
+			storey(p, hw, d, f * 3, wall, Blocks.GLASS_PANE.defaultBlockState(), 2, f > 0, Blocks.OAK_PLANKS.defaultBlockState());
+		}
+		int top = floors * 3;
+		if (variant % 2 == 0) {
+			flatRoof(p, hw, d, top, trim, trim);
+		} else {
+			p.fill(-hw, top, 0, hw, top, d, trim);
+			p.roofAlongZ(top + 1, Blocks.DEEPSLATE_TILE_STAIRS, Blocks.DEEPSLATE_TILES, wall.getBlock(), true, true);
+		}
+		if (floors > 1) {
+			p.ladder(hw - 1, 1, 3, d - 1, L.RIGHT);
+			p.remove(hw - 1, 3, d - 1);
+		}
+		p.door(0, 1, 0, Blocks.SPRUCE_DOOR, L.BACK);
+		p.set(0, 3, -1, slabTop(Blocks.SMOOTH_STONE_SLAB));
+		p.bed(-hw + 1, 1, d - 2, L.BACK, variant % 2 == 0 ? DyeColor.LIGHT_BLUE : DyeColor.ORANGE);
+		if (p.b.type.beds > 2) {
+			p.bed(-hw + 1, 4, d - 2, L.BACK, DyeColor.WHITE);
+			p.bed(-hw + 3, 4, d - 2, L.BACK, DyeColor.WHITE);
+		}
+		p.set(hw - 1, 1, 1, Blocks.CRAFTING_TABLE.defaultBlockState());
+		p.lantern(0, 2, 1, false);
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Town
+
+	private static void shop(Plan p, int variant) {
+		int hw = p.b.type.halfWidth();
+		int d = p.b.type.depth - 1;
+		DyeColor sign = new DyeColor[]{DyeColor.RED, DyeColor.GREEN, DyeColor.BLUE, DyeColor.ORANGE, DyeColor.PURPLE}[Math.floorMod(variant, 5)];
+		base(p, hw, d, concrete(DyeColor.GRAY), Blocks.POLISHED_ANDESITE.defaultBlockState());
+		storey(p, hw, d, 0, concrete(DyeColor.LIGHT_GRAY), Blocks.GLASS_PANE.defaultBlockState(), 4, false, null);
+		// Shop window across the front, a coloured sign band above.
+		for (int x = -hw + 1; x < hw; x++) {
+			p.set(x, 1, 0, Blocks.GLASS.defaultBlockState());
+			p.set(x, 2, 0, Blocks.GLASS.defaultBlockState());
+			p.set(x, 3, 0, concrete(sign));
+		}
+		p.ring(-hw, 0, hw, d, 3, concrete(sign));
+		flatRoof(p, hw, d, 4, concrete(DyeColor.GRAY), concrete(DyeColor.LIGHT_GRAY));
+		p.door(0, 1, 0, Blocks.BIRCH_DOOR, L.BACK);
+		p.door(1, 1, 0, Blocks.BIRCH_DOOR, L.BACK);
+		for (int x = -hw + 2; x <= hw - 2; x += 2) {
+			p.set(x, 1, d - 2, Blocks.BARREL.defaultBlockState());
+			p.set(x, 2, d - 2, Blocks.BARREL.defaultBlockState());
+		}
+		p.set(-3, 1, 2, Blocks.CARTOGRAPHY_TABLE.defaultBlockState());
+		// AC units on the roof.
+		p.set(-hw + 2, 5, d - 2, Blocks.IRON_BLOCK.defaultBlockState());
+		p.set(hw - 2, 5, d - 2, Blocks.IRON_BLOCK.defaultBlockState());
+		p.top = 7;
+	}
+
+	private static void school(Plan p, int variant) {
+		int hw = p.b.type.halfWidth();
+		int d = p.b.type.depth - 1;
+		BlockState wall = variant % 2 == 0 ? Blocks.BRICKS.defaultBlockState() : concrete(DyeColor.YELLOW);
+		BlockState band = concrete(DyeColor.WHITE);
+		base(p, hw, d, concrete(DyeColor.GRAY), Blocks.OAK_PLANKS.defaultBlockState());
+		for (int f = 0; f < 3; f++) {
+			storey(p, hw, d, f * 4, wall, Blocks.GLASS_PANE.defaultBlockState(), 2, f > 0, Blocks.OAK_PLANKS.defaultBlockState());
+			p.ring(-hw, 0, hw, d, f * 4 + 3, wall);
+			if (f > 0) {
+				p.ring(-hw, 0, hw, d, f * 4, band);
+			}
+		}
+		flatRoof(p, hw, d, 12, concrete(DyeColor.GRAY), band);
+		entrance(p, 0, Blocks.OAK_DOOR, slabTop(Blocks.SMOOTH_STONE_SLAB), true);
+		p.door(1, 1, 0, Blocks.OAK_DOOR, L.BACK);
+		for (int x = -hw + 2; x <= hw - 2; x += 3) {
+			p.set(x, 1, d - 2, Blocks.LECTERN.defaultBlockState());
+		}
+		// The bell over the entrance.
+		p.set(0, 13, 2, Blocks.BELL.defaultBlockState());
+		p.top = 14;
+	}
+
+	/** The city hall: columns along the front, the flag on the roof (the country's colour). */
+	private static void cityHall(Plan p, DyeColor flag) {
+		int hw = p.b.type.halfWidth();
+		int d = p.b.type.depth - 1;
+		BlockState wall = Blocks.SMOOTH_QUARTZ.defaultBlockState();
+		base(p, hw, d, Blocks.POLISHED_ANDESITE.defaultBlockState(), Blocks.POLISHED_DIORITE.defaultBlockState());
+		for (int f = 0; f < 3; f++) {
+			storey(p, hw, d, f * 4, wall, Blocks.GLASS_PANE.defaultBlockState(), 2, f > 0, Blocks.SMOOTH_STONE.defaultBlockState());
+			p.ring(-hw, 0, hw, d, f * 4 + 3, wall);
+		}
+		flatRoof(p, hw, d, 12, Blocks.SMOOTH_STONE.defaultBlockState(), wall);
+		// Portico: columns and steps.
+		for (int x = -6; x <= 6; x += 3) {
+			for (int y = 1; y <= 7; y++) {
+				p.set(x, y, -3, Blocks.QUARTZ_PILLAR.defaultBlockState());
+			}
+		}
+		p.fill(-7, 8, -4, 7, 8, -1, wall);
+		p.fill(-7, 0, -4, 7, 0, -1, Blocks.POLISHED_DIORITE.defaultBlockState());
+		p.door(0, 1, 0, Blocks.DARK_OAK_DOOR, L.BACK);
+		p.door(-1, 1, 0, Blocks.DARK_OAK_DOOR, L.BACK);
+		// Flagpole with the country's banner.
+		for (int y = 13; y <= 19; y++) {
+			p.set(0, y, 3, Blocks.IRON_BARS.defaultBlockState());
+		}
+		p.set(0, 20, 3, Blocks.BANNER.pick(flag).defaultBlockState().setValue(net.minecraft.world.level.block.BannerBlock.ROTATION,
+				Blueprints.rotation16(p.w(L.FRONT))));
+		p.set(0, 1, 6, Blocks.BELL.defaultBlockState());
+		p.set(-4, 1, 4, Blocks.LECTERN.defaultBlockState());
+		p.top = 21;
+	}
+
+	/** A park: grass, paths, trees, benches, a fountain in the middle, lamps. */
+	private static void park(Plan p, int variant) {
+		int hw = p.b.type.halfWidth();
+		int d = p.b.type.depth - 1;
+		p.fill(-hw, -1, 0, hw, -1, d, Blocks.DIRT.defaultBlockState());
+		p.fill(-hw, 0, 0, hw, 0, d, Blocks.GRASS_BLOCK.defaultBlockState());
+		int cz = d / 2;
+		for (int x = -hw; x <= hw; x++) {
+			p.set(x, 0, cz, Blocks.POLISHED_ANDESITE.defaultBlockState());
+		}
+		for (int z = 0; z <= d; z++) {
+			p.set(0, 0, z, Blocks.POLISHED_ANDESITE.defaultBlockState());
+		}
+		// Fountain.
+		p.ring(-2, cz - 2, 2, cz + 2, 0, Blocks.STONE_BRICKS.defaultBlockState());
+		p.ring(-2, cz - 2, 2, cz + 2, 1, Blocks.STONE_BRICK_SLAB.defaultBlockState());
+		p.fill(-1, 0, cz - 1, 1, 0, cz + 1, Blocks.WATER.defaultBlockState());
+		p.set(0, 1, cz, Blocks.STONE_BRICK_WALL.defaultBlockState());
+		Block log = variant % 2 == 0 ? Blocks.BIRCH_LOG : Blocks.OAK_LOG;
+		Block leaves = variant % 2 == 0 ? Blocks.BIRCH_LEAVES : Blocks.OAK_LEAVES;
+		for (int[] t : new int[][]{{-hw + 3, 3}, {hw - 3, 3}, {-hw + 3, d - 3}, {hw - 3, d - 3}}) {
+			tree(p, t[0], t[1], log, leaves);
+		}
+		for (int x : new int[]{-5, 5}) {
+			p.set(x, 1, cz + 1, p.stairs(Blocks.OAK_STAIRS, L.BACK, false));
+			p.set(x, 1, cz - 1, p.stairs(Blocks.OAK_STAIRS, L.FRONT, false));
+		}
+		lamp(p, -2, cz - 4, 3);
+		lamp(p, 2, cz + 4, 3);
+		for (int x = -hw; x <= hw; x += 2) {
+			p.set(x, 1, 0, Blocks.FLOWERING_AZALEA.defaultBlockState());
+		}
+		p.top = 7;
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Fuel and logistics
+
+	/** Gas station: a canopy on columns over two pumps, a small shop at the back, the price board. */
+	private static void gasStation(Plan p, int variant) {
+		int hw = p.b.type.halfWidth();
+		int d = p.b.type.depth - 1;
+		DyeColor brand = new DyeColor[]{DyeColor.GREEN, DyeColor.RED, DyeColor.YELLOW, DyeColor.BLUE}[Math.floorMod(variant, 4)];
+		p.fill(-hw, -1, 0, hw, -1, d, concrete(DyeColor.GRAY));
+		p.fill(-hw, 0, 0, hw, 0, d, concrete(DyeColor.LIGHT_GRAY));
+		// Canopy.
+		for (int[] c : new int[][]{{-4, 2}, {4, 2}, {-4, 5}, {4, 5}}) {
+			for (int y = 1; y <= 4; y++) {
+				p.set(c[0], y, c[1], concrete(DyeColor.WHITE));
+			}
+		}
+		p.fill(-6, 5, 0, 6, 5, 7, concrete(DyeColor.WHITE));
+		p.ring(-6, 0, 6, 7, 5, concrete(brand));
+		p.set(0, 4, 3, Blocks.SEA_LANTERN.defaultBlockState());
+		p.set(0, 4, 5, Blocks.SEA_LANTERN.defaultBlockState());
+		// Pumps.
+		for (int x : new int[]{-2, 2}) {
+			p.set(x, 1, 3, Blocks.IRON_BLOCK.defaultBlockState());
+			p.set(x, 2, 3, concrete(brand));
+			p.set(x, 1, 4, Blocks.IRON_BLOCK.defaultBlockState());
+			p.set(x, 2, 4, concrete(brand));
+			p.set(x, 3, 3, Blocks.IRON_CHAIN.defaultBlockState());
+		}
+		// The shop.
+		p.fill(-hw, 1, 8, hw, 3, d, concrete(DyeColor.WHITE));
+		p.fill(-hw + 1, 1, 9, hw - 1, 2, d - 1, Blocks.AIR.defaultBlockState());
+		for (int x = -4; x <= 4; x++) {
+			p.set(x, 2, 8, Blocks.GLASS.defaultBlockState());
+		}
+		p.fill(-hw, 4, 8, hw, 4, d, concrete(brand));
+		p.door(0, 1, 8, Blocks.BIRCH_DOOR, L.BACK);
+		p.set(-4, 1, 9, Blocks.BARREL.defaultBlockState());
+		// Price board on a pole.
+		for (int y = 1; y <= 5; y++) {
+			p.set(-hw, y, 0, Blocks.IRON_BARS.defaultBlockState());
+		}
+		p.set(-hw, 6, 0, concrete(brand));
+		p.set(-hw, 7, 0, concrete(DyeColor.WHITE));
+		p.top = 8;
+	}
+
+	/** Logistics hub: a big warehouse with loading docks and containers in the yard. */
+	private static void logisticsHub(Plan p, int variant) {
+		int hw = p.b.type.halfWidth();
+		int d = p.b.type.depth - 1;
+		p.fill(-hw, -1, 0, hw, -1, d, concrete(DyeColor.GRAY));
+		p.fill(-hw, 0, 0, hw, 0, d, concrete(DyeColor.LIGHT_GRAY));
+		int z0 = 6;
+		for (int y = 1; y <= 7; y++) {
+			p.ring(-hw, z0, hw, d, y, concrete(y <= 2 ? DyeColor.GRAY : DyeColor.LIGHT_GRAY));
+		}
+		for (int x = -hw; x <= hw; x++) {
+			for (int z = z0; z <= d; z++) {
+				p.set(x, 8, z, Blocks.IRON_BLOCK.defaultBlockState());
+			}
+		}
+		// Loading docks: wide openings with shutters (iron trapdoors) above.
+		for (int x : new int[]{-6, 0, 6}) {
+			for (int dx = -1; dx <= 1; dx++) {
+				p.remove(x + dx, 1, z0);
+				p.remove(x + dx, 2, z0);
+				p.remove(x + dx, 3, z0);
+				p.set(x + dx, 4, z0, concrete(DyeColor.ORANGE));
+			}
+		}
+		p.set(hw - 2, 5, z0, concrete(DyeColor.BLUE));
+		// Containers in the yard.
+		DyeColor[] cont = {DyeColor.RED, DyeColor.BLUE, DyeColor.GREEN, DyeColor.ORANGE};
+		for (int i = 0; i < 3; i++) {
+			int x = -hw + 1 + i * 4;
+			DyeColor c = cont[(i + variant) % cont.length];
+			p.fill(x, 1, 1, x + 2, 2, 4, concrete(c));
+		}
+		p.fill(hw - 4, 1, 1, hw - 1, 1, 3, Blocks.BARREL.defaultBlockState());
+		for (int x = -hw + 2; x <= hw - 2; x += 4) {
+			p.set(x, 1, d - 1, Blocks.CHEST.defaultBlockState());
+			p.set(x + 1, 1, d - 1, Blocks.BARREL.defaultBlockState());
+		}
+		p.set(0, 1, d - 2, Blocks.SMITHING_TABLE.defaultBlockState());
+		lamp(p, -hw, 0, 5);
+		lamp(p, hw, 0, 5);
+		p.top = 9;
+	}
+
+	/** An oil well: a pump jack (walking beam on a frame), a small tank, a fence round it. */
+	private static void oilWell(Plan p) {
+		int hw = p.b.type.halfWidth();
+		int d = p.b.type.depth - 1;
+		p.fill(-hw, -1, 0, hw, -1, d, Blocks.GRAVEL.defaultBlockState());
+		p.fill(-hw, 0, 0, hw, 0, d, concrete(DyeColor.GRAY));
+		// A-frame and the walking beam with the horse head.
+		for (int y = 1; y <= 4; y++) {
+			p.set(-1, y, 4, Blocks.IRON_BARS.defaultBlockState());
+			p.set(1, y, 4, Blocks.IRON_BARS.defaultBlockState());
+		}
+		p.set(0, 5, 4, Blocks.IRON_BLOCK.defaultBlockState());
+		for (int z = 1; z <= 7; z++) {
+			p.set(0, 5, z, concrete(DyeColor.BLACK));
+		}
+		p.set(0, 5, 1, concrete(DyeColor.YELLOW));
+		p.set(0, 4, 1, concrete(DyeColor.YELLOW));
+		for (int y = 1; y <= 3; y++) {
+			p.set(0, y, 1, Blocks.IRON_CHAIN.defaultBlockState());
+		}
+		p.set(0, 1, 7, concrete(DyeColor.RED));
+		p.set(0, 2, 7, concrete(DyeColor.RED));
+		// Wellhead and a tank.
+		p.set(0, 0, 1, concrete(DyeColor.BLACK));
+		p.fill(hw - 1, 1, d - 1, hw, 3, d, concrete(DyeColor.WHITE));
+		p.ring(-hw, 0, hw, d, 1, Blocks.IRON_BARS.defaultBlockState());
+		p.remove(0, 1, 0);
+		p.top = 7;
+	}
+
+	/** Refinery: storage tanks, a distillation column, pipes and the flare stack. */
+	private static void refinery(Plan p) {
+		int hw = p.b.type.halfWidth();
+		int d = p.b.type.depth - 1;
+		p.fill(-hw, -1, 0, hw, -1, d, concrete(DyeColor.GRAY));
+		p.fill(-hw, 0, 0, hw, 0, d, concrete(DyeColor.LIGHT_GRAY));
+		// Round-ish tanks (white, silver).
+		for (int[] t : new int[][]{{-hw + 3, 4}, {-hw + 3, d - 3}, {hw - 3, d - 3}}) {
+			for (int y = 1; y <= 5; y++) {
+				for (int dx = -2; dx <= 2; dx++) {
+					for (int dz = -2; dz <= 2; dz++) {
+						if (Math.abs(dx) + Math.abs(dz) <= 3 && (Math.abs(dx) == 2 || Math.abs(dz) == 2 || Math.abs(dx) + Math.abs(dz) == 3 || y == 5)) {
+							p.set(t[0] + dx, y, t[1] + dz, concrete(y == 5 ? DyeColor.LIGHT_GRAY : DyeColor.WHITE));
+						}
+					}
+				}
+			}
+		}
+		// Distillation column.
+		for (int y = 1; y <= 16; y++) {
+			p.set(2, y, 6, Blocks.IRON_BLOCK.defaultBlockState());
+			p.set(3, y, 6, Blocks.IRON_BLOCK.defaultBlockState());
+			if (y % 4 == 0) {
+				p.ring(1, 5, 4, 7, y, Blocks.IRON_BARS.defaultBlockState());
+			}
+		}
+		// Pipes.
+		for (int x = -hw + 5; x <= hw - 2; x++) {
+			p.set(x, 3, 9, concrete(DyeColor.YELLOW));
+		}
+		for (int z = 2; z <= d - 2; z++) {
+			p.set(5, 2, z, concrete(DyeColor.GRAY));
+		}
+		// The flare stack with its flame.
+		for (int y = 1; y <= 19; y++) {
+			p.set(hw - 2, y, 2, Blocks.STONE_BRICK_WALL.defaultBlockState());
+		}
+		p.set(hw - 2, 20, 2, Blocks.NETHERRACK.defaultBlockState());
+		p.set(hw - 2, 21, 2, Blocks.FIRE.defaultBlockState());
+		// Control room.
+		p.fill(-2, 1, 0, 2, 3, 2, concrete(DyeColor.WHITE));
+		p.fill(-1, 1, 1, 1, 2, 1, Blocks.AIR.defaultBlockState());
+		p.door(0, 1, 0, Blocks.IRON_DOOR, L.BACK);
+		p.set(-1, 2, 0, Blocks.GLASS_PANE.defaultBlockState());
+		p.set(1, 2, 0, Blocks.GLASS_PANE.defaultBlockState());
+		p.set(0, 1, 2, Blocks.BLAST_FURNACE.defaultBlockState());
+		p.top = 22;
+	}
+
+	private static void garages(Plan p, int variant) {
+		int hw = p.b.type.halfWidth();
+		int d = p.b.type.depth - 1;
+		base(p, hw, d, concrete(DyeColor.GRAY), concrete(DyeColor.GRAY));
+		for (int y = 1; y <= 3; y++) {
+			p.ring(-hw, 0, hw, d, y, concrete(DyeColor.LIGHT_GRAY));
+		}
+		for (int x = -hw + 3; x < hw; x += 3) {
+			for (int y = 1; y <= 3; y++) {
+				p.set(x, y, 0, concrete(DyeColor.LIGHT_GRAY));
+				for (int z = 1; z < d; z++) {
+					p.set(x, y, z, concrete(DyeColor.LIGHT_GRAY));
+				}
+			}
+		}
+		DyeColor[] doors = {DyeColor.GREEN, DyeColor.BROWN, DyeColor.BLUE, DyeColor.GRAY};
+		for (int x = -hw + 1; x < hw - 1; x += 3) {
+			p.set(x, 1, 0, concrete(doors[Math.floorMod(x + variant, doors.length)]));
+			p.set(x + 1, 1, 0, concrete(doors[Math.floorMod(x + variant, doors.length)]));
+			p.set(x, 2, 0, concrete(doors[Math.floorMod(x + variant, doors.length)]));
+			p.set(x + 1, 2, 0, concrete(doors[Math.floorMod(x + variant, doors.length)]));
+		}
+		p.fill(-hw, 4, 0, hw, 4, d, concrete(DyeColor.GRAY));
+		p.top = 5;
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// The old village buildings, today's way
+
+	private static void hospital(Plan p) {
+		int hw = p.b.type.halfWidth();
+		int d = p.b.type.depth - 1;
+		base(p, hw, d, concrete(DyeColor.GRAY), Blocks.SMOOTH_QUARTZ.defaultBlockState());
+		for (int f = 0; f < 3; f++) {
+			storey(p, hw, d, f * 3, concrete(DyeColor.WHITE), Blocks.GLASS_PANE.defaultBlockState(), 2, f > 0, Blocks.SMOOTH_QUARTZ.defaultBlockState());
+		}
+		flatRoof(p, hw, d, 9, concrete(DyeColor.LIGHT_GRAY), concrete(DyeColor.WHITE));
+		// The red cross over the entrance.
+		p.set(0, 7, 0, concrete(DyeColor.RED));
+		p.set(-1, 7, 0, concrete(DyeColor.RED));
+		p.set(1, 7, 0, concrete(DyeColor.RED));
+		p.set(0, 6, 0, concrete(DyeColor.RED));
+		p.set(0, 8, 0, concrete(DyeColor.RED));
+		entrance(p, 0, Blocks.BIRCH_DOOR, slabTop(Blocks.SMOOTH_STONE_SLAB), true);
+		p.bed(-hw + 1, 1, d - 2, L.BACK, DyeColor.WHITE);
+		p.bed(hw - 1, 1, d - 2, L.BACK, DyeColor.WHITE);
+		p.set(-2, 1, 2, Blocks.BREWING_STAND.defaultBlockState());
+		p.ladder(hw - 1, 1, 8, 1, L.RIGHT);
+		p.top = 11;
+	}
+
+	private static void warehouse(Plan p, int variant) {
+		int hw = p.b.type.halfWidth();
+		int d = p.b.type.depth - 1;
+		base(p, hw, d, concrete(DyeColor.GRAY), concrete(DyeColor.LIGHT_GRAY));
+		for (int y = 1; y <= 5; y++) {
+			p.ring(-hw, 0, hw, d, y, concrete(y <= 1 ? DyeColor.GRAY : variant % 2 == 0 ? DyeColor.LIGHT_GRAY : DyeColor.WHITE));
+		}
+		p.fill(-hw, 6, 0, hw, 6, d, Blocks.IRON_BLOCK.defaultBlockState());
+		for (int x = -1; x <= 1; x++) {
+			for (int y = 1; y <= 3; y++) {
+				p.remove(x, y, 0);
+			}
+		}
+		for (int z = 2; z <= d - 2; z += 2) {
+			p.set(-hw + 1, 1, z, Blocks.BARREL.defaultBlockState());
+			p.set(-hw + 1, 2, z, Blocks.BARREL.defaultBlockState());
+			p.set(hw - 1, 1, z, Blocks.CHEST.defaultBlockState());
+		}
+		p.lantern(0, 5, d / 2, true);
+		p.top = 7;
+	}
+
+	private static void barracks(Plan p, DyeColor flag) {
+		int hw = p.b.type.halfWidth();
+		int d = p.b.type.depth - 1;
+		base(p, hw, d, concrete(DyeColor.GRAY), concrete(DyeColor.LIGHT_GRAY));
+		for (int y = 1; y <= 4; y++) {
+			p.ring(-hw, 0, hw, d, y, concrete(DyeColor.GREEN));
+		}
+		for (int x = -hw + 2; x < hw; x += 3) {
+			p.set(x, 2, 0, Blocks.IRON_BARS.defaultBlockState());
+			p.set(x, 2, d, Blocks.IRON_BARS.defaultBlockState());
+		}
+		flatRoof(p, hw, d, 5, concrete(DyeColor.GRAY), concrete(DyeColor.GREEN));
+		p.door(0, 1, 0, Blocks.SPRUCE_DOOR, L.BACK);
+		DyeColor[] beds = {DyeColor.GREEN, DyeColor.BROWN};
+		int i = 0;
+		for (int x = -hw + 1; x <= hw - 1 && i < 6; x += 2) {
+			if (x != 0) {
+				p.bed(x, 1, d - 2, L.BACK, beds[i % 2]);
+				i++;
+			}
+		}
+		for (int y = 1; y <= 7; y++) {
+			p.set(-hw - 1, y, -2, Blocks.IRON_BARS.defaultBlockState());
+		}
+		p.set(-hw - 1, 8, -2, Blocks.BANNER.pick(flag).defaultBlockState().setValue(net.minecraft.world.level.block.BannerBlock.ROTATION,
+				Blueprints.rotation16(p.w(L.FRONT))));
+		p.minX = Math.min(p.minX, -hw - 1);
+		p.minZ = Math.min(p.minZ, -2);
+		p.top = 9;
+	}
+
+	/** A modern arched hangar: steel shell, a wide gate. */
+	private static void hangar(Plan p) {
+		int hw = p.b.type.halfWidth();
+		int d = p.b.type.depth - 1;
+		base(p, hw, d, concrete(DyeColor.GRAY), concrete(DyeColor.GRAY));
+		int[] heights = {3, 6, 8, 9, 10, 10, 10, 9, 8, 6, 3};
+		for (int x = -hw; x <= hw; x++) {
+			int k = (int) Math.round((double) (x + hw) / (2 * hw) * (heights.length - 1));
+			int h = heights[k];
+			for (int z = 0; z <= d; z++) {
+				p.set(x, h, z, Blocks.IRON_BLOCK.defaultBlockState());
+				if (Math.abs(x) == hw) {
+					for (int y = 1; y < h; y++) {
+						p.set(x, y, z, concrete(DyeColor.LIGHT_GRAY));
+					}
+				}
+			}
+			for (int y = 1; y < h; y++) {
+				p.set(x, y, d, concrete(DyeColor.LIGHT_GRAY));
+				if (Math.abs(x) > 4) {
+					p.set(x, y, 0, concrete(DyeColor.LIGHT_GRAY));
+				}
+			}
+			// Fill the steps between neighbouring heights so the arch is closed.
+			int prev = heights[Math.max(0, k - 1)];
+			for (int y = Math.min(prev, h); y < Math.max(prev, h); y++) {
+				for (int z = 0; z <= d; z++) {
+					p.set(x, y, z, Blocks.IRON_BLOCK.defaultBlockState());
+				}
+			}
+		}
+		for (int x = -4; x <= 4; x++) {
+			p.set(x, 7, 0, concrete(DyeColor.YELLOW));
+		}
+		p.lantern(0, 8, d / 2, true);
+		p.top = 11;
+	}
+}

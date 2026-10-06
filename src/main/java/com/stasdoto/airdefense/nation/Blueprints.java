@@ -257,6 +257,9 @@ public final class Blueprints {
 
 	static Plan design(Building b, DyeColor flag) {
 		Plan p = new Plan(b);
+		if (ModernDesigns.design(p, b.variant, flag)) {
+			return p;
+		}
 		switch (b.type) {
 			case SMALL_HOUSE -> smallHouse(p);
 			case HOUSE -> house(p);

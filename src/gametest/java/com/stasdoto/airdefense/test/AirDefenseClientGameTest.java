@@ -84,6 +84,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("air")) {
 				aircraft(ctx, server);
 			}
+			if (scene("logistics")) {
+				logistics(ctx, server);
+			}
 			if (scene("drive")) {
 				drive(ctx, server);
 			}
@@ -422,7 +425,15 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		camera(server, x, ground + 9, 40, 180, 16);
 		ctx.waitTicks(40);
 		// A lake for the boats, behind the land vehicles.
-		server.runCommand(String.format("fill %d %d %d %d %d %d minecraft:water", x - 50, ground - 3, -60, x + 50, ground - 1, -25));
+		server.runOnServer(s -> {
+			for (int wx = x - 50; wx <= x + 50; wx++) {
+				for (int wz = -60; wz <= -25; wz++) {
+					for (int wy = ground - 3; wy <= ground - 1; wy++) {
+						s.overworld().setBlock(new BlockPos(wx, wy, wz), Blocks.WATER.defaultBlockState(), 2);
+					}
+				}
+			}
+		});
 		List<Integer> ids = new ArrayList<>();
 		for (int i = 0; i < land.length; i++) {
 			ids.add(spawnVehicle(server, land[i], x - 45 + (i % 6) * 15, i < 6 ? 0 : 16, 200));
@@ -588,6 +599,211 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
 		server.runCommand("gamemode spectator @a");
 		server.runOnServer(s -> forVehicles(s.overworld(), List.of(heli, plane), Entity::discard));
+	}
+
+	/** Puts a whole building up at once (for the screenshots), shapes of fences and panes fixed in a second pass. */
+	private static void stamp(ServerLevel l, com.stasdoto.airdefense.nation.Building b) {
+		var plan = com.stasdoto.airdefense.nation.Blueprints.placements(b, net.minecraft.world.item.DyeColor.BLUE);
+		for (var pl : plan) {
+			l.setBlock(pl.pos(), pl.state(), 2);
+			if (pl.pair()) {
+				l.setBlock(pl.pos2(), pl.state2(), 2);
+			}
+		}
+		for (var pl : plan) {
+			if (!pl.pair() && !pl.state().isAir()) {
+				net.minecraft.world.level.block.state.BlockState st = Block.updateFromNeighbourShapes(pl.state(), l, pl.pos());
+				if (!st.isAir()) {
+					l.setBlock(pl.pos(), st, 2);
+				}
+			}
+		}
+	}
+
+	private void logistics(ClientGameTestContext ctx, TestServerContext server) {
+		int x0 = 39000;
+		int g = ground;
+		server.runCommand("difficulty peaceful");
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 6000");
+		// The modern buildings, three at a time.
+		com.stasdoto.airdefense.nation.BuildingType[] types = {
+				com.stasdoto.airdefense.nation.BuildingType.PANEL5, com.stasdoto.airdefense.nation.BuildingType.PANEL9,
+				com.stasdoto.airdefense.nation.BuildingType.TOWER, com.stasdoto.airdefense.nation.BuildingType.OFFICE,
+				com.stasdoto.airdefense.nation.BuildingType.COTTAGE, com.stasdoto.airdefense.nation.BuildingType.SHOP,
+				com.stasdoto.airdefense.nation.BuildingType.SCHOOL, com.stasdoto.airdefense.nation.BuildingType.CITY_HALL,
+				com.stasdoto.airdefense.nation.BuildingType.PARK, com.stasdoto.airdefense.nation.BuildingType.GAS_STATION,
+				com.stasdoto.airdefense.nation.BuildingType.LOGISTICS_HUB, com.stasdoto.airdefense.nation.BuildingType.OIL_WELL,
+				com.stasdoto.airdefense.nation.BuildingType.REFINERY, com.stasdoto.airdefense.nation.BuildingType.GARAGES,
+				com.stasdoto.airdefense.nation.BuildingType.HOSPITAL, com.stasdoto.airdefense.nation.BuildingType.WAREHOUSE,
+				com.stasdoto.airdefense.nation.BuildingType.BARRACKS, com.stasdoto.airdefense.nation.BuildingType.HANGAR,
+				com.stasdoto.airdefense.nation.BuildingType.APARTMENTS, com.stasdoto.airdefense.nation.BuildingType.HOUSE,
+				com.stasdoto.airdefense.nation.BuildingType.SMALL_HOUSE};
+		int cx = x0;
+		for (int i = 0; i < types.length; i += 3) {
+			int gx0 = cx;
+			List<com.stasdoto.airdefense.nation.Building> group = new ArrayList<>();
+			for (int j = i; j < Math.min(types.length, i + 3); j++) {
+				var t = types[j];
+				int bx = cx + t.width / 2;
+				var b = new com.stasdoto.airdefense.nation.Building(90000 + j, t, new BlockPos(bx, g - 1, 0), net.minecraft.core.Direction.NORTH, true);
+				b.variant = j * 7 + 3;
+				group.add(b);
+				cx += t.width + 6;
+			}
+			int mid = (gx0 + cx - 6) / 2;
+			int span = cx - 6 - gx0;
+			camera(server, mid + 0.5, g + 14 + span * 0.12, 18 + span * 0.62, 180, 18);
+			ctx.waitTicks(30);
+			long t0 = System.nanoTime();
+			int blocks = server.computeOnServer(s -> {
+				int n = 0;
+				for (var b : group) {
+					stamp(s.overworld(), b);
+					n += com.stasdoto.airdefense.nation.Blueprints.placements(b, net.minecraft.world.item.DyeColor.BLUE).size();
+				}
+				return n;
+			});
+			StringBuilder names = new StringBuilder();
+			for (var b : group) {
+				names.append(b.type.id).append(' ');
+			}
+			AirDefense.LOGGER.info("[airdefense-test] RESULT city_design {}: {} blocks in {} ms", names.toString().trim(), blocks,
+					(System.nanoTime() - t0) / 1_000_000);
+			ctx.waitTicks(40);
+			ctx.takeScreenshot(String.format("120_city_%02d", i / 3));
+		}
+
+		// A town with an oil well, a refinery, a gas station and a logistics hub.
+		int vx = x0;
+		int vz = 200;
+		server.runCommand("gamemode creative @a");
+		camera(server, vx + 0.5, g + 30, vz + 75, 180, 25);
+		ctx.waitTicks(30);
+		village(server, vx, vz, new String[]{"none", "none", "none", "farmer", "none", "mason", "none", "none"});
+		waitUntil(ctx, () -> settlementAt(server, vx, vz) >= 0, 400);
+		int id = settlementAt(server, vx, vz);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT logistics_town: settlement {}", id);
+		if (id < 0) {
+			return;
+		}
+		server.runOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var st = p.settlements.get(id);
+			com.stasdoto.airdefense.nation.Nations.takeOver(s.overworld(), s.getPlayerList().getPlayers().getFirst(), st);
+			Object[][] plan = {{com.stasdoto.airdefense.nation.BuildingType.GAS_STATION, -32}, {com.stasdoto.airdefense.nation.BuildingType.LOGISTICS_HUB, 0},
+					{com.stasdoto.airdefense.nation.BuildingType.REFINERY, 32}, {com.stasdoto.airdefense.nation.BuildingType.OIL_WELL, 58}};
+			for (Object[] e : plan) {
+				var t = (com.stasdoto.airdefense.nation.BuildingType) e[0];
+				var b = new com.stasdoto.airdefense.nation.Building(p.newId(), t, new BlockPos(vx + (Integer) e[1], g - 1, vz + 40), net.minecraft.core.Direction.SOUTH,
+						true);
+				b.variant = 5;
+				b.done = true;
+				st.eco.buildings.add(b);
+				stamp(s.overworld(), b);
+			}
+			st.eco.stock[com.stasdoto.airdefense.nation.VillageEconomy.IRON] = 60;
+			for (int k = 0; k < 4; k++) {
+				com.stasdoto.airdefense.nation.Supply.produce(p, st);
+			}
+			AirDefense.LOGGER.info("[airdefense-test] RESULT supply_produce: oil {} fuel {} ammo {} (pumped {}, refined {}, caps {} / {})",
+					st.eco.stock[com.stasdoto.airdefense.nation.VillageEconomy.OIL], st.eco.stock[com.stasdoto.airdefense.nation.VillageEconomy.FUEL],
+					st.eco.stock[com.stasdoto.airdefense.nation.VillageEconomy.AMMO], com.stasdoto.airdefense.nation.Supply.pumped,
+					com.stasdoto.airdefense.nation.Supply.refined, st.eco.liquidCap(), st.eco.ammoCap());
+			// Enough fuel for the vehicle tests even if the refinery is slow.
+			st.eco.stock[com.stasdoto.airdefense.nation.VillageEconomy.FUEL] = Math.max(st.eco.stock[com.stasdoto.airdefense.nation.VillageEconomy.FUEL], 3000);
+		});
+		// The buildings face south (towards the camera): their fronts at z = vz + 40, footprints to vz + 40 + depth.
+		int tank = spawnVehicle(server, VehicleType.T72, vx - 32, vz + 36, 0);
+		int fuelTruck = spawnVehicle(server, VehicleType.FUEL_TRUCK, vx + 4, vz + 34, 90);
+		int ammoTruck = spawnVehicle(server, VehicleType.SUPPLY_TRUCK, vx - 6, vz + 34, 90);
+		server.runOnServer(s -> {
+			for (int vid : new int[]{tank, fuelTruck, ammoTruck}) {
+				if (s.overworld().getEntity(vid) instanceof VehicleEntity v) {
+					v.setUnlimited(false);
+					v.setFuel(v == s.overworld().getEntity(tank) ? 5 : 60);
+					v.setTruckMode(VehicleEntity.TRUCK_LOAD);
+				}
+			}
+		});
+		float tankBefore = 5;
+		ctx.waitTicks(100);
+		ctx.takeScreenshot("125_logistics_town");
+		String loaded = server.computeOnServer(s -> {
+			StringBuilder sb = new StringBuilder();
+			for (int vid : new int[]{tank, fuelTruck, ammoTruck}) {
+				if (s.overworld().getEntity(vid) instanceof VehicleEntity v) {
+					sb.append(v.getVehicleType().id).append(" fuel ").append((int) v.getFuel()).append(" cargo ").append(v.getCargo()).append("; ");
+				}
+			}
+			return sb.toString();
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT station_and_load: tank fuel was {} | {} (served {})", tankBefore, loaded,
+				com.stasdoto.airdefense.nation.Supply.served);
+		// The trucks drive off to the front line: a BTR and a tank with empty tanks wait there.
+		int front = vx + 160;
+		int btr = spawnVehicle(server, VehicleType.BTR82, front, vz + 4, 0);
+		int bmp = spawnVehicle(server, VehicleType.BMP2, front + 8, vz + 4, 0);
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			for (int vid : new int[]{btr, bmp}) {
+				if (l.getEntity(vid) instanceof VehicleEntity v) {
+					v.setUnlimited(false);
+					v.setFuel(2);
+				}
+			}
+			if (l.getEntity(fuelTruck) instanceof VehicleEntity t) {
+				t.teleportTo(front + 4.5, g, vz - 4.5);
+				t.setTruckMode(VehicleEntity.TRUCK_SUPPLY);
+			}
+			if (l.getEntity(ammoTruck) instanceof VehicleEntity t) {
+				t.teleportTo(front - 4.5, g, vz - 4.5);
+				t.setTruckMode(VehicleEntity.TRUCK_SUPPLY);
+			}
+		});
+		camera(server, front + 4.5, g + 9, vz + 22, 180, 22);
+		ctx.waitTicks(80);
+		ctx.takeScreenshot("126_front_supply");
+		String served = server.computeOnServer(s -> {
+			StringBuilder sb = new StringBuilder();
+			for (int vid : new int[]{btr, bmp, fuelTruck, ammoTruck}) {
+				if (s.overworld().getEntity(vid) instanceof VehicleEntity v) {
+					sb.append(v.getVehicleType().id).append(" fuel ").append((int) v.getFuel()).append(" reserve ").append(v.getReserve())
+							.append(" cargo ").append(v.getCargo()).append("; ");
+				}
+			}
+			return sb.toString();
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT truck_supply: {}", served);
+		// Jerrycans filled at the gas station.
+		camera(server, vx - 32 + 0.5, g, vz + 36.5, 0, 10);
+		ctx.waitTicks(10);
+		String cans = server.computeOnServer(s -> {
+			var pl = s.getPlayerList().getPlayers().getFirst();
+			ItemStack empty = new ItemStack(com.stasdoto.airdefense.registry.ModItems.EMPTY_JERRYCAN, 4);
+			pl.getInventory().add(empty);
+			ItemStack held = pl.getInventory().getItem(pl.getInventory().findSlotMatchingItem(new ItemStack(com.stasdoto.airdefense.registry.ModItems.EMPTY_JERRYCAN)));
+			boolean ok = com.stasdoto.airdefense.nation.Supply.fillCans(s.overworld(), pl, held);
+			return ok + " full " + pl.getInventory().countItem(com.stasdoto.airdefense.registry.ModItems.JERRYCAN);
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT jerrycans: {}", cans);
+		// The town's store with oil, fuel and ammunition.
+		ecoScreen(ctx, server, id, com.stasdoto.airdefense.client.nation.SettlementScreen.WORK);
+		ctx.takeScreenshot("127_store_oil_fuel");
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		ctx.waitTicks(5);
+		// A driver's view in the fuel truck.
+		server.runOnServer(s -> {
+			var pl = s.getPlayerList().getPlayers().getFirst();
+			if (s.overworld().getEntity(fuelTruck) instanceof VehicleEntity t) {
+				pl.startRiding(t);
+			}
+		});
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("128_fuel_truck_hud");
+		server.runOnServer(s -> s.getPlayerList().getPlayers().getFirst().stopRiding());
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 1000");
 	}
 
 	private void drive(ClientGameTestContext ctx, TestServerContext server) {

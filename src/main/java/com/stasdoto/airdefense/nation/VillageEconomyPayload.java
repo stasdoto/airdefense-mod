@@ -17,7 +17,8 @@ import com.stasdoto.airdefense.AirDefense;
  */
 public record VillageEconomyPayload(int id, int wood, int stone, int iron, int cap, boolean free, List<Integer> jobs, int idle,
 		int beds, int freeBeds, int births, List<Integer> built, List<Integer> queue, int builders, boolean hangar,
-		List<Integer> hangarQueue, int hangarPercent, int birthEvery, int mood, List<Integer> moodReasons, int rebels, int calmPrice)
+		List<Integer> hangarQueue, int hangarPercent, int birthEvery, int mood, List<Integer> moodReasons, int rebels, int calmPrice,
+		List<Integer> extra)
 		implements CustomPacketPayload {
 	public static final Type<VillageEconomyPayload> TYPE = new Type<>(AirDefense.id("village_economy"));
 	private static final StreamCodec<ByteBuf, List<Integer>> INTS = ByteBufCodecs.VAR_INT.apply(ByteBufCodecs.list(64));
@@ -28,7 +29,7 @@ public record VillageEconomyPayload(int id, int wood, int stone, int iron, int c
 					ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b), b.readBoolean(), INTS.decode(b), ByteBufCodecs.VAR_INT.decode(b),
 					ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b), INTS.decode(b), INTS.decode(b),
 					ByteBufCodecs.VAR_INT.decode(b), b.readBoolean(), INTS.decode(b), ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b),
-					b.readInt(), INTS.decode(b), ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b));
+					b.readInt(), INTS.decode(b), ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b), INTS.decode(b));
 		}
 
 		@Override
@@ -55,6 +56,7 @@ public record VillageEconomyPayload(int id, int wood, int stone, int iron, int c
 			INTS.encode(b, p.moodReasons);
 			ByteBufCodecs.VAR_INT.encode(b, p.rebels);
 			ByteBufCodecs.VAR_INT.encode(b, p.calmPrice);
+			INTS.encode(b, p.extra);
 		}
 	};
 

@@ -804,6 +804,7 @@ public final class Economy {
 			case MI24, KA52 -> new int[]{30, 30, 180, 110};
 			case SU25 -> new int[]{40, 40, 220, 130};
 			case F16 -> new int[]{40, 40, 240, 140};
+			case FUEL_TRUCK, SUPPLY_TRUCK -> new int[]{20, 10, 60, 40};
 		};
 	}
 

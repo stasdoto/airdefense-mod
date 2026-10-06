@@ -269,4 +269,18 @@ public final class GenGeometry {
 			null, new float[]{0F, 0F, 0F}, null, new float[]{0F, 0F, 0F},
 			0F, 0F, new Rail[]{}, null, new String[]{}, 18F,
 			1024, 160);
+
+	public static final Geometry FUEL_TRUCK = new Geometry("fuel_truck", 7.36F, 2.5F, 3.15F, 4.2F, false,
+			new Seat[]{new Seat("driver", -0.5F, 1.45F, 1.55F), new Seat("gunner", 0.5F, 1.45F, 1.55F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.62F, true), new Wheel("wheel_1_r", 0.62F, true), new Wheel("wheel_2_l", 0.62F, false), new Wheel("wheel_2_r", 0.62F, false), new Wheel("wheel_3_l", 0.62F, false), new Wheel("wheel_3_r", 0.62F, false)},
+			null, new float[]{0F, 0F, 0F}, null, new float[]{0F, 0F, 0F},
+			0F, 0F, new Rail[]{}, null, new String[]{}, 12F,
+			1024, 176);
+
+	public static final Geometry SUPPLY_TRUCK = new Geometry("supply_truck", 7.44F, 2.5F, 3.3F, 4.2F, false,
+			new Seat[]{new Seat("driver", -0.5F, 1.45F, 1.55F), new Seat("gunner", 0.5F, 1.45F, 1.55F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.62F, true), new Wheel("wheel_1_r", 0.62F, true), new Wheel("wheel_2_l", 0.62F, false), new Wheel("wheel_2_r", 0.62F, false), new Wheel("wheel_3_l", 0.62F, false), new Wheel("wheel_3_r", 0.62F, false)},
+			null, new float[]{0F, 0F, 0F}, null, new float[]{0F, 0F, 0F},
+			0F, 0F, new Rail[]{}, null, new String[]{}, 12F,
+			1024, 176);
 }

@@ -122,6 +122,9 @@ public final class VehicleClient {
 			}
 			l2 = Component.translatable(type.air == VehicleType.PLANE ? "hud.airdefense.vehicle.plane" : "hud.airdefense.vehicle.heli",
 					Math.max(0, (int) (v.getY() - ground)), (int) (v.throttle * 100), weapons);
+		} else if (type.isTruck()) {
+			l2 = Component.translatable(type.cargo == 1 ? "hud.airdefense.vehicle.cargo_fuel" : "hud.airdefense.vehicle.cargo_ammo",
+					v.getCargo(), type.cargoCapacity, Component.translatable("message.airdefense.truck.mode_" + v.getMode()));
 		} else if (type.isArmed()) {
 			l2 = Component.translatable("hud.airdefense.vehicle.weapon", type.weapon.caliber, Math.max(0, v.getAmmo()));
 		} else if (type.isRadar()) {
@@ -138,7 +141,7 @@ public final class VehicleClient {
 			};
 			l2 = Component.translatable(mode, v.getAmmo(), type.magazine());
 		}
-		if (!type.isRadar()) {
+		if (!type.isRadar() && !type.isTruck()) {
 			l2 = Component.empty().append(l2).append(v.reserveText());
 		}
 		if (!v.infiniteFuel()) {
@@ -148,6 +151,7 @@ public final class VehicleClient {
 		String keys = type.isAir() ? (driver ? (type.air == VehicleType.PLANE ? "hud.airdefense.vehicle.keys_plane" : "hud.airdefense.vehicle.keys_heli")
 				: "hud.airdefense.vehicle.keys_passenger")
 				: type.isArmed() && v.shooter() == player ? (driver ? "hud.airdefense.vehicle.keys_armed_driver" : "hud.airdefense.vehicle.keys_armed")
+				: type.isTruck() ? "hud.airdefense.vehicle.keys_truck"
 				: driver ? "hud.airdefense.vehicle.keys_driver"
 				: GunnerHud.isManualGunner(player, v) ? "hud.airdefense.vehicle.keys_manual" : "hud.airdefense.vehicle.keys_gunner";
 		Component l3 = Component.translatable(keys, DEPLOY.getTranslatedKeyMessage(), MODE.getTranslatedKeyMessage(), SEAT.getTranslatedKeyMessage());

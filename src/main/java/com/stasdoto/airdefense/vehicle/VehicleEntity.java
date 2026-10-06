@@ -238,6 +238,7 @@ public class VehicleEntity extends LivingEntity {
 		builder.define(DATA_RESERVE, -1);
 		builder.define(DATA_FUEL, -1f);
 		builder.define(DATA_ORDNANCE, 0);
+		builder.define(DATA_CARGO, 0);
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -1055,6 +1056,8 @@ public class VehicleEntity extends LivingEntity {
 			tickRadar(level);
 		} else if (vtype.isAir()) {
 			tickAir(level);
+		} else if (vtype.isTruck()) {
+			tickTruck(level);
 		} else if (vtype.isArmed()) {
 			tickArmed(level);
 		} else {
@@ -1142,6 +1145,89 @@ public class VehicleEntity extends LivingEntity {
 			roundsLeft--;
 			roundTimer = 3;
 		}
+	}
+
+	// --- Logistics trucks: carry fuel or ammunition, fill up at a town, unload at another, serve vehicles on the spot ---
+
+	private static final EntityDataAccessor<Integer> DATA_CARGO = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+	public static final int TRUCK_SUPPLY = 0;
+	public static final int TRUCK_LOAD = 1;
+	public static final int TRUCK_UNLOAD = 2;
+
+	public int getCargo() {
+		return entityData.get(DATA_CARGO);
+	}
+
+	public void setCargo(int amount) {
+		entityData.set(DATA_CARGO, Math.max(0, Math.min(vtype.cargoCapacity, amount)));
+	}
+
+	private void tickTruck(ServerLevel level) {
+		setState(DEPLOYED);
+		if ((tickCount + getId()) % 20 != 0) {
+			return;
+		}
+		boolean fuel = vtype.cargo == 1;
+		int mode = getMode();
+		if (mode == TRUCK_SUPPLY) {
+			// Vehicles round the truck get what it carries.
+			for (VehicleEntity v : level.getEntitiesOfClass(VehicleEntity.class, getBoundingBox().inflate(12, 6, 12), v -> v != this && v.isAlive())) {
+				if (getCargo() <= 0) {
+					break;
+				}
+				if (fuel) {
+					if (!v.infiniteFuel()) {
+						int give = (int) Math.min(Math.min(60, getCargo()), v.vtype.fuelCapacity() - v.getFuel());
+						if (give > 0) {
+							v.refuel(give);
+							setCargo(getCargo() - give);
+						}
+					}
+				} else {
+					com.stasdoto.airdefense.nation.VillageEconomy pool = new com.stasdoto.airdefense.nation.VillageEconomy();
+					pool.stock[com.stasdoto.airdefense.nation.VillageEconomy.AMMO] = getCargo();
+					com.stasdoto.airdefense.nation.Supply.rearm(pool, v);
+					setCargo(pool.stock[com.stasdoto.airdefense.nation.VillageEconomy.AMMO]);
+				}
+			}
+			return;
+		}
+		// Load or unload at a town of a player (any building of it within 40 blocks, or its centre).
+		com.stasdoto.airdefense.nation.Politics p = com.stasdoto.airdefense.nation.Politics.get(level.getServer());
+		com.stasdoto.airdefense.nation.Settlement town = com.stasdoto.airdefense.nation.Supply.townNear(p, blockPosition());
+		if (town == null) {
+			return;
+		}
+		int kind = fuel ? com.stasdoto.airdefense.nation.VillageEconomy.FUEL : com.stasdoto.airdefense.nation.VillageEconomy.AMMO;
+		int[] stock = town.eco.stock;
+		int rate = fuel ? 250 : 25;
+		if (mode == TRUCK_LOAD) {
+			int k = Math.min(rate, Math.min(stock[kind], vtype.cargoCapacity - getCargo()));
+			if (k > 0) {
+				stock[kind] -= k;
+				setCargo(getCargo() + k);
+				p.setDirty();
+			}
+		} else {
+			int k = Math.min(rate, Math.min(getCargo(), town.eco.capOf(kind) - stock[kind]));
+			if (k > 0) {
+				stock[kind] += k;
+				setCargo(getCargo() - k);
+				p.setDirty();
+			}
+		}
+	}
+
+	public void setTruckMode(int mode) {
+		if (vtype.isTruck()) {
+			setMode(Math.floorMod(mode, 3));
+		}
+	}
+
+	private void cycleTruckMode(Player player) {
+		int mode = (getMode() + 1) % 3;
+		setMode(mode);
+		player.sendOverlayMessage(Component.translatable("message.airdefense.truck.mode_" + mode));
 	}
 
 	// --- Aircraft weapons ---
@@ -2014,6 +2100,10 @@ public class VehicleEntity extends LivingEntity {
 				}
 			}
 			case ACTION_DEPLOY -> {
+				if (vtype.isTruck()) {
+					cycleTruckMode(player);
+					return;
+				}
 				if (vtype.isAir()) {
 					releaseOrdnance(player);
 					return;
@@ -2123,6 +2213,10 @@ public class VehicleEntity extends LivingEntity {
 					? Component.translatable("message.airdefense.status.reload", cooldown / 20 + 1)
 					: Component.translatable("message.airdefense.status.ready", Integer.bitCount(getLoadedMask()));
 			return Component.translatable("message.airdefense.vehicle.status_launcher", name, hp, ready).append(reserveText());
+		}
+		if (vtype.isTruck()) {
+			return Component.translatable("message.airdefense.vehicle.status_truck", name, hp, getCargo(), vtype.cargoCapacity,
+					Component.translatable("message.airdefense.truck.mode_" + getMode()));
 		}
 		if (vtype.isArmed()) {
 			return Component.translatable("message.airdefense.vehicle.status_armed", name, hp, Math.max(0, getAmmo()), vtype.weapon.caliber,
@@ -2390,6 +2484,7 @@ public class VehicleEntity extends LivingEntity {
 		output.putInt("vehicle_reserve", entityData.get(DATA_RESERVE));
 		output.putFloat("vehicle_fuel", entityData.get(DATA_FUEL));
 		output.putInt("vehicle_ordnance", getOrdnance());
+		output.putInt("vehicle_cargo", getCargo());
 	}
 
 	@Override
@@ -2405,6 +2500,7 @@ public class VehicleEntity extends LivingEntity {
 		setReserve(input.getIntOr("vehicle_reserve", -1));
 		entityData.set(DATA_FUEL, input.getFloatOr("vehicle_fuel", -1f));
 		entityData.set(DATA_ORDNANCE, input.getIntOr("vehicle_ordnance", vtype.ordnance != null ? vtype.ordnance.count : 0));
+		entityData.set(DATA_CARGO, input.getIntOr("vehicle_cargo", 0));
 		fold();
 	}
 }

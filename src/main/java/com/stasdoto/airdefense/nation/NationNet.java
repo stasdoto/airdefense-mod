@@ -204,7 +204,8 @@ public final class NationNet {
 				player.getAbilities().instabuild, jobs, Economy.free(level, s).size(), Economy.beds(level, s, false), Economy.beds(level, s, true),
 				e.births, built, queue, builders, e.count(BuildingType.HANGAR) > 0, hangar, Economy.hangarPercent(s),
 				Economy.birthEvery(level, Politics.get(level.getServer()), s), mood.value(), reasons,
-				s.riot ? Unrest.rebels(level, s).size() : 0, Unrest.calmPrice(s)));
+				s.riot ? Unrest.rebels(level, s).size() : 0, Unrest.calmPrice(s),
+				List.of(e.stock[VillageEconomy.OIL], e.stock[VillageEconomy.FUEL], e.stock[VillageEconomy.AMMO], e.liquidCap(), e.ammoCap())));
 	}
 
 	/** Villages within 2000 blocks and the soldiers that are loaded within 700. */

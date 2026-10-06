@@ -33,7 +33,8 @@ public final class GridHud {
 		int w = mc.getWindow().getGuiScaledWidth();
 		int bw = Math.max(font.width(square) * 2, font.width(coords)) + 10;
 		int x = w - bw - 4;
-		int y = 4;
+		// Below the vehicle panel when driving.
+		int y = p.getVehicle() instanceof VehicleEntity ? 42 : 4;
 		g.fill(x, y, x + bw, y + 32, 0x88000000);
 		g.pose().pushMatrix();
 		g.pose().translate(x + 5, y + 4);

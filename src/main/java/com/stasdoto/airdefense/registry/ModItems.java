@@ -95,13 +95,24 @@ public final class ModItems {
 	public static final Item KA52 = vehicle("ka52", VehicleType.KA52);
 	public static final Item SU25 = vehicle("su25", VehicleType.SU25);
 	public static final Item F16 = vehicle("f16", VehicleType.F16);
+	public static final Item FUEL_TRUCK = vehicle("fuel_truck", VehicleType.FUEL_TRUCK);
+	public static final Item SUPPLY_TRUCK = vehicle("supply_truck", VehicleType.SUPPLY_TRUCK);
 	public static final Item S8_ROCKETS = register("s8_rockets", Item::new, new Item.Properties().stacksTo(8));
 	public static final Item FAB250 = register("fab250", Item::new, new Item.Properties().stacksTo(4));
 	public static final Item TANK_SHELL = register("tank_shell", Item::new, new Item.Properties().stacksTo(8));
 	public static final Item AMMO_30_BOX = register("ammo_30_box", Item::new, new Item.Properties().stacksTo(16));
 	/** Petrol: 20 litres a can (right-click a vehicle to pour it in). */
 	public static final Item JERRYCAN = register("jerrycan", Item::new, new Item.Properties().stacksTo(16));
-	public static final Item EMPTY_JERRYCAN = register("empty_jerrycan", Item::new, new Item.Properties().stacksTo(16));
+	public static final Item EMPTY_JERRYCAN = register("empty_jerrycan", p -> new Item(p) {
+		@Override
+		public net.minecraft.world.InteractionResult use(net.minecraft.world.level.Level level, net.minecraft.world.entity.player.Player player,
+				net.minecraft.world.InteractionHand hand) {
+			if (level instanceof net.minecraft.server.level.ServerLevel server && player instanceof net.minecraft.server.level.ServerPlayer sp) {
+				com.stasdoto.airdefense.nation.Supply.fillCans(server, sp, player.getItemInHand(hand));
+			}
+			return net.minecraft.world.InteractionResult.SUCCESS;
+		}
+	}, new Item.Properties().stacksTo(16));
 	public static final Item SAM_SHORT = register("sam_short", Item::new, new Item.Properties().stacksTo(8));
 	public static final Item SAM_LONG = register("sam_long", Item::new, new Item.Properties().stacksTo(4));
 	public static final Item AMMO_23_BOX = register("ammo_23_box", Item::new, new Item.Properties().stacksTo(16));
@@ -197,6 +208,8 @@ public final class ModItems {
 				output.accept(KA52);
 				output.accept(SU25);
 				output.accept(F16);
+				output.accept(FUEL_TRUCK);
+				output.accept(SUPPLY_TRUCK);
 				output.accept(S8_ROCKETS);
 				output.accept(FAB250);
 				output.accept(TANK_SHELL);

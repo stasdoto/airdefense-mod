@@ -98,6 +98,7 @@ public final class Nations {
 			bandits(level, p);
 		}
 		Economy.tick(level, p);
+		Supply.tick(level, p);
 		Unrest.tick(level, p);
 		War.tick(level, p);
 	}

@@ -49,6 +49,13 @@ public class SettlementScreen extends Screen {
 					.thenComparingInt(v -> Economy.vehicleCost(v)[2]))
 			.toArray(VehicleType[]::new);
 	private int hangarScroll;
+	/** What can be ordered on the building tab, homes first; the list scrolls. */
+	private static final BuildingType[] BUILD_ORDER = {BuildingType.ROADS, BuildingType.COTTAGE, BuildingType.SMALL_HOUSE, BuildingType.HOUSE,
+			BuildingType.APARTMENTS, BuildingType.PANEL5, BuildingType.PANEL9, BuildingType.TOWER, BuildingType.SHOP, BuildingType.OFFICE,
+			BuildingType.SCHOOL, BuildingType.HOSPITAL, BuildingType.PARK, BuildingType.WAREHOUSE, BuildingType.GARAGES, BuildingType.GAS_STATION,
+			BuildingType.LOGISTICS_HUB, BuildingType.OIL_WELL, BuildingType.REFINERY, BuildingType.BARRACKS, BuildingType.HANGAR,
+			BuildingType.FACTORY, BuildingType.CITY_HALL};
+	private int buildScroll;
 
 	private SettlementInfoPayload info;
 	@Nullable
@@ -177,9 +184,14 @@ public class SettlementScreen extends Screen {
 				b -> send(NationActionPayload.WORKERS_HOME, 0, 0)).bounds(x0 + 12 + bw, y0 + h - 24, bw, 18).build()));
 		// Building: a button per kind of building, cancel the last one ordered.
 		int rows = top + 24;
-		for (BuildingType t : BuildingType.values()) {
-			buildButtons.add(addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.build_it"),
-					b -> send(NationActionPayload.BUILD, t.ordinal(), 0)).bounds(x0 + w - 74, rows + t.ordinal() * ROW, 66, 14).build()));
+		for (int i = 0; i < hangarRows(); i++) {
+			int slot = i;
+			buildButtons.add(addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.build_it"), b -> {
+				int k = slot + buildScroll;
+				if (k < BUILD_ORDER.length) {
+					send(NationActionPayload.BUILD, BUILD_ORDER[k].ordinal(), 0);
+				}
+			}).bounds(x0 + w - 74, rows + i * ROW, 66, 14).build()));
 		}
 		cancel = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.cancel"), b -> {
 			if (eco != null && !eco.queue().isEmpty()) {
@@ -211,6 +223,12 @@ public class SettlementScreen extends Screen {
 		if (tab == HANGAR) {
 			int max = Math.max(0, HANGAR_ORDER.length - hangarRows());
 			hangarScroll = Math.max(0, Math.min(max, hangarScroll - (int) Math.signum(sy)));
+			updateButtons();
+			return true;
+		}
+		if (tab == BUILD) {
+			int max = Math.max(0, BUILD_ORDER.length - hangarRows());
+			buildScroll = Math.max(0, Math.min(max, buildScroll - (int) Math.signum(sy)));
 			updateButtons();
 			return true;
 		}
@@ -279,8 +297,14 @@ public class SettlementScreen extends Screen {
 				workButtons.get(j * 2).active = j < eco.jobs().size() && eco.jobs().get(j) > 0;
 				workButtons.get(j * 2 + 1).active = eco.idle() > 0;
 			}
-			for (BuildingType t : BuildingType.values()) {
-				buildButtons.get(t.ordinal()).active = eco.queue().size() < Economy.MAX_QUEUE
+			for (int i = 0; i < hangarRows() && i < buildButtons.size() - 1; i++) {
+				int k = i + buildScroll;
+				if (k >= BUILD_ORDER.length) {
+					buildButtons.get(i).visible = false;
+					continue;
+				}
+				BuildingType t = BUILD_ORDER[k];
+				buildButtons.get(i).active = eco.queue().size() < Economy.MAX_QUEUE
 						&& (eco.free() || t == BuildingType.ROADS || affordable(t.wood, t.stone, t.iron));
 			}
 			cancel.active = !eco.queue().isEmpty() && eco.queue().getLast() % 1000 == 0;
@@ -472,6 +496,16 @@ public class SettlementScreen extends Screen {
 			int fillW = eco.free() ? bw : (int) ((long) bw * Math.min(eco.stock(k), eco.cap()) / Math.max(1, eco.cap()));
 			g.fill(bx, ry + 18, bx + fillW, ry + 20, k == 0 ? 0xFFB08850 : k == 1 ? 0xFFA0A0A0 : 0xFFD8D8E0);
 		}
+		// Oil, fuel and ammunition (the oil well, the refinery and the logistics hub).
+		if (eco.extra().size() >= 5) {
+			int ry = top + 14 + 3 * 22;
+			for (int k = 0; k < 3; k++) {
+				int cap = k < 2 ? eco.extra().get(3) : eco.extra().get(4);
+				String line = Component.translatable("screen.airdefense.village.res2." + k).getString() + ": "
+						+ (eco.free() ? "∞" : eco.extra().get(k) + " / " + cap);
+				small(g, line, sx, ry + k * 9, k == 0 ? 0xFF9A8A70 : k == 1 ? 0xFFE8C860 : 0xFFC8A070);
+			}
+		}
 	}
 
 	private void build(GuiGraphicsExtractor g) {
@@ -496,8 +530,14 @@ public class SettlementScreen extends Screen {
 			}
 		}
 		int rows = top + 24;
-		for (BuildingType t : BuildingType.values()) {
-			int y = rows + t.ordinal() * ROW;
+		int shown = hangarRows();
+		if (BUILD_ORDER.length > shown) {
+			String pages = (buildScroll + 1) + "-" + Math.min(BUILD_ORDER.length, buildScroll + shown) + " / " + BUILD_ORDER.length;
+			g.text(font, pages, x0 + w - 82 - font.width(pages), top + 13, C_DIM);
+		}
+		for (int i = 0; i < shown && i + buildScroll < BUILD_ORDER.length; i++) {
+			BuildingType t = BUILD_ORDER[i + buildScroll];
+			int y = rows + i * ROW;
 			int n = eco.builtCount(t);
 			Component name = Component.translatable(t.key());
 			if (n > 0) {

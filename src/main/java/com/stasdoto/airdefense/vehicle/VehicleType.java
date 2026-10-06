@@ -59,7 +59,10 @@ public enum VehicleType {
 	MI24("mi24", GenGeometry.MI24, 1, Weapon.HMG_127, Ordnance.S8, 0.65f, 380, 2.1f, 0.035f, 3.0f, 2.6f, 3.4f),
 	KA52("ka52", GenGeometry.KA52, 1, Weapon.AUTO_30, Ordnance.S8, 0.65f, 360, 2.2f, 0.035f, 3.2f, 2.6f, 3.4f),
 	SU25("su25", GenGeometry.SU25, 2, Weapon.AUTO_30, Ordnance.FAB250, 0.6f, 420, 3.6f, 0.03f, 2.4f, 3.0f, 3.0f),
-	F16("f16", GenGeometry.F16, 2, Weapon.AUTO_25, Ordnance.AIM9, 0.75f, 380, 4.2f, 0.035f, 3.0f, 3.0f, 3.0f);
+	F16("f16", GenGeometry.F16, 2, Weapon.AUTO_25, Ordnance.AIM9, 0.75f, 380, 4.2f, 0.035f, 3.0f, 3.0f, 3.0f),
+	// Logistics (stage R7): what they carry, and how much.
+	FUEL_TRUCK("fuel_truck", GenGeometry.FUEL_TRUCK, 1, 5000, 160, 0.85f, 0.013f, 30, 2.5f, 3.2f),
+	SUPPLY_TRUCK("supply_truck", GenGeometry.SUPPLY_TRUCK, 2, 400, 160, 0.85f, 0.013f, 30, 2.5f, 3.2f);
 
 	public static final int HELI = 1;
 	public static final int PLANE = 2;
@@ -83,6 +86,9 @@ public enum VehicleType {
 	public final int air;
 	@Nullable
 	public final Ordnance ordnance;
+	/** Trucks: 1 = fuel (litres), 2 = ammunition (points); and how much they take. */
+	public final int cargo;
+	public final int cargoCapacity;
 	public final float maxHealth;
 	public final float maxSpeed;
 	public final float accel;
@@ -108,6 +114,8 @@ public enum VehicleType {
 		this.boat = false;
 		this.air = 0;
 		this.ordnance = null;
+		this.cargo = 0;
+		this.cargoCapacity = 0;
 		this.maxHealth = maxHealth;
 		this.maxSpeed = maxSpeed;
 		this.accel = accel;
@@ -132,6 +140,8 @@ public enum VehicleType {
 		this.boat = false;
 		this.air = 0;
 		this.ordnance = null;
+		this.cargo = 0;
+		this.cargoCapacity = 0;
 		this.maxHealth = maxHealth;
 		this.maxSpeed = maxSpeed;
 		this.accel = accel;
@@ -156,6 +166,8 @@ public enum VehicleType {
 		this.boat = boat;
 		this.air = 0;
 		this.ordnance = null;
+		this.cargo = 0;
+		this.cargoCapacity = 0;
 		this.maxHealth = maxHealth;
 		this.maxSpeed = maxSpeed;
 		this.accel = accel;
@@ -180,6 +192,8 @@ public enum VehicleType {
 		this.boat = false;
 		this.air = air;
 		this.ordnance = ordnance;
+		this.cargo = 0;
+		this.cargoCapacity = 0;
 		this.maxHealth = maxHealth;
 		this.maxSpeed = maxSpeed;
 		this.accel = accel;
@@ -189,6 +203,36 @@ public enum VehicleType {
 		this.turretRate = 0;
 		this.boxWidth = boxWidth;
 		this.boxHeight = boxHeight;
+	}
+
+	/** A logistics truck. */
+	VehicleType(String id, VehicleGeometry.Geometry geometry, int cargo, int cargoCapacity, float maxHealth, float maxSpeed, float accel,
+			float maxSteer, float boxWidth, float boxHeight) {
+		this.id = id;
+		this.geometry = geometry;
+		this.launcher = null;
+		this.defense = null;
+		this.radar = null;
+		this.weapon = null;
+		this.armor = 1.0f;
+		this.boat = false;
+		this.air = 0;
+		this.ordnance = null;
+		this.cargo = cargo;
+		this.cargoCapacity = cargoCapacity;
+		this.maxHealth = maxHealth;
+		this.maxSpeed = maxSpeed;
+		this.accel = accel;
+		this.maxSteer = maxSteer;
+		this.pivotTurn = 0;
+		this.elevationRate = 0;
+		this.turretRate = 0;
+		this.boxWidth = boxWidth;
+		this.boxHeight = boxHeight;
+	}
+
+	public boolean isTruck() {
+		return cargo != 0;
 	}
 
 	public boolean isAir() {
