@@ -518,6 +518,10 @@ public final class CityGen {
 		BlockState surface = path ? Blocks.DIRT_PATH.defaultBlockState()
 				: top.is(BlockTags.DIRT) || top.is(BlockTags.SAND) || top.is(Blocks.SNOW_BLOCK) || top.is(Blocks.GRAVEL) ? top : GRASS;
 		if (target == g[0] && !path) {
+			if (blend <= 3 && g[1] > g[0]) {
+				// Right next to the houses and fields: no trees in the way.
+				shape(w, x, z, target, top, g, pos);
+			}
 			return true;
 		}
 		if (target == g[0]) {
