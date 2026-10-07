@@ -414,8 +414,8 @@ final class Architecture {
 		// The LED stripe up the middle of the front and the back.
 		for (int y = 7; y <= top; y++) {
 			boolean led = y % 3 == 0;
-			p.set(-1, y, -1, led ? COLD : accent);
-			p.set(1, y, d + 1, led ? COLD : accent);
+			p.set(-1, y, -1, led ? COLD : frame);
+			p.set(1, y, d + 1, led ? COLD : frame);
 		}
 		// Flats: four to a floor round the stair; a ladder in the corner.
 		p.ladder(hw - 1, 1, top - 1, d - 1, L.BACK);

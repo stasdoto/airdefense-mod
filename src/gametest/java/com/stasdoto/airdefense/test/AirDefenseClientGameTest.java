@@ -829,17 +829,17 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				"209_villa2", "210_school", "211_hospital", "212_street", "213_street_high"};
 		List<float[]> cams = new ArrayList<>();
 		cams.add(new float[]{cx + 0.5f, base + 75, cz + half + 70, 180, 38});
-		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.CITY_HALL, 0, 26, 7, 0));
-		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.PANEL9, 0, 22, 6, 6));
-		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.PANEL5, 0, 18, 5, 5));
-		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.TOWER, 0, 30, 10, 6));
-		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.OFFICE, 0, 22, 6, 4));
+		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.CITY_HALL, 0, 14, 9, 0));
+		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.PANEL9, 0, 11, 12, 4));
+		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.PANEL5, 0, 10, 9, 3));
+		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.TOWER, 0, 12, 16, 4));
+		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.OFFICE, 0, 11, 9, 3));
 		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.SHOP, 0, 9, 2.5, 3));
 		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.SHOP, 1, 9, 2.5, -3));
 		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.COTTAGE, 0, 9, 3, 4));
 		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.HOUSE, 0, 9, 3, -4));
-		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.SCHOOL, 0, 20, 5, 0));
-		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.HOSPITAL, 0, 12, 4, 2));
+		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.SCHOOL, 0, 11, 8, 0));
+		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.HOSPITAL, 0, 9, 6, 2));
 		cams.add(new float[]{cx + 16.5f + 1, base + 2.6f, cz + half - 2.5f, 180, 2});
 		cams.add(new float[]{cx - 16.5f, base + 14, cz + 40.5f, 160, 20});
 		for (int i = 0; i < names.length; i++) {
