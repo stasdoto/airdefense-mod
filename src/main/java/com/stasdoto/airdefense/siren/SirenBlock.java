@@ -35,7 +35,7 @@ import com.stasdoto.airdefense.registry.ModBlockEntities;
 public class SirenBlock extends BaseEntityBlock {
 	public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
 	public static final EnumProperty<Signal> SIGNAL = EnumProperty.create("signal", Signal.class);
-	private static final VoxelShape SHAPE = Block.box(6, 0, 6, 10, 16, 10);
+	private static final VoxelShape SHAPE = Block.box(1.5, 0, 1.5, 14.5, 16, 14.5);
 
 	public enum Signal implements StringRepresentable {
 		OFF("off"), ALERT("alert"), CLEAR("clear");

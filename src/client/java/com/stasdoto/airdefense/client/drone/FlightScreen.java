@@ -41,7 +41,7 @@ public class FlightScreen extends Screen {
 	private final VehicleType type;
 	private EditBox xBox;
 	private EditBox zBox;
-	private int altitude = 50;
+	private int altitude = 70;
 	private int speed = 100;
 	private int maneuver = FlightPlan.WEAVE;
 	private int count;
@@ -64,7 +64,7 @@ public class FlightScreen extends Screen {
 			pendingZ = target.getZ();
 		}
 		if (type.launcher != null && type.launcher.missile.kind == MissileType.Kind.CRUISE) {
-			altitude = 40;
+			altitude = 55;
 			maneuver = FlightPlan.STRAIGHT;
 		}
 	}

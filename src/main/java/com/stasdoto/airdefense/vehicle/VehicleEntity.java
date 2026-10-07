@@ -1380,7 +1380,7 @@ public class VehicleEntity extends LivingEntity {
 		Vec3 look = p.getLookAngle();
 		MissileEntity best = null;
 		double bestCos = Math.cos(Math.toRadians(15));
-		for (MissileEntity m : level().getEntitiesOfClass(MissileEntity.class, new AABB(eye, eye).inflate(300), m -> m.isAlive() && m.getMissileType().threat)) {
+		for (MissileEntity m : MissileEntity.find(level(), new AABB(eye, eye).inflate(300), m -> m.isAlive() && m.getMissileType().threat)) {
 			Vec3 to = m.position().subtract(eye);
 			double d = to.length();
 			if (d < 5 || d > 300) {
@@ -1808,7 +1808,7 @@ public class VehicleEntity extends LivingEntity {
 	private MissileEntity pickThreat(ServerLevel level, DefenseType type, Vec3 radar) {
 		double range = type.range * (radarLinked ? RADAR_RANGE_BONUS : 1.0);
 		AABB box = new AABB(radar.x - range, radar.y - range, radar.z - range, radar.x + range, radar.y + range, radar.z + range);
-		List<MissileEntity> threats = level.getEntitiesOfClass(MissileEntity.class, box,
+		List<MissileEntity> threats = MissileEntity.find(level, box,
 				m -> canEngage(type, m, radar)
 						&& (type.interceptor == null || m.getEngagedBy() < type.shotsPerTarget(m.getMissileType().kind)));
 		return threats.stream()
@@ -2018,7 +2018,7 @@ public class VehicleEntity extends LivingEntity {
 	private MissileEntity sightThreat(Vec3 eye, Vec3 look, double range, double coneDeg) {
 		MissileEntity best = null;
 		double bestCos = Math.cos(Math.toRadians(coneDeg));
-		for (MissileEntity m : level().getEntitiesOfClass(MissileEntity.class, new AABB(eye, eye).inflate(range),
+		for (MissileEntity m : MissileEntity.find(level(), new AABB(eye, eye).inflate(range),
 				m -> m.isAlive() && m.getMissileType().threat)) {
 			Vec3 to = m.position().subtract(eye);
 			double d = to.length();
@@ -2082,7 +2082,7 @@ public class VehicleEntity extends LivingEntity {
 		double range = type.range;
 		MissileEntity best = null;
 		double bestCos = Math.cos(Math.toRadians(8));
-		for (MissileEntity m : level().getEntitiesOfClass(MissileEntity.class, new AABB(eye, eye).inflate(range),
+		for (MissileEntity m : MissileEntity.find(level(), new AABB(eye, eye).inflate(range),
 				m -> m.isAlive() && m.getMissileType().threat)) {
 			Vec3 to = m.position().subtract(eye);
 			double d = to.length();
@@ -2112,7 +2112,7 @@ public class VehicleEntity extends LivingEntity {
 		// The two guns are harmonised: their fire meets on the line from the middle of the turret, so the aiming
 		// error is measured from there (from each barrel the target is a few degrees off at 20-30 blocks).
 		Vec3 centre = position().add(0, 2.3, 0);
-		List<MissileEntity> threats = level.getEntitiesOfClass(MissileEntity.class, new AABB(centre, centre).inflate(range),
+		List<MissileEntity> threats = MissileEntity.find(level, new AABB(centre, centre).inflate(range),
 				m -> m.isAlive() && m.getMissileType().threat);
 		for (int barrel = 0; barrel < 2 && burstLeft > 0; barrel++, burstLeft--) {
 			Vec3 muzzle = railWorld(barrel == 0 ? first : last);

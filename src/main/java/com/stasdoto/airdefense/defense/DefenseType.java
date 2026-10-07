@@ -51,7 +51,8 @@ public enum DefenseType {
 	DefenseType(@Nullable MissileType interceptor, double range, int magazine, int reload, int interval, double discrimination,
 			double gunRange, double gunSkill) {
 		this.interceptor = interceptor;
-		this.range = range;
+		// Missile systems reach five times further (1.24); guns keep their range.
+		this.range = interceptor == null ? range : range * MissileType.RANGE_SCALE;
 		this.magazine = magazine;
 		this.reload = reload;
 		this.interval = interval;
@@ -77,6 +78,10 @@ public enum DefenseType {
 	/** How many interceptors this system sends at one target of the given kind (two at ballistic missiles for the big ones). */
 	public int shotsPerTarget(MissileType.Kind kind) {
 		boolean heavy = kind == MissileType.Kind.BALLISTIC || kind == MissileType.Kind.ROCKET;
+		if (this == IRON_DOME) {
+			// Iron Dome sends two Tamirs at a rocket aimed at a town (one is the spare in case the first misses).
+			return kind == MissileType.Kind.ROCKET ? 2 : 1;
+		}
 		return heavy && (this == PATRIOT || this == S300 || this == SAMPT) ? 2 : 1;
 	}
 

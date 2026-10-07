@@ -17,10 +17,10 @@ public record FlightPlan(int altitude, int speedPercent, int maneuver, int count
 	public static final int MANEUVERS = 4;
 
 	public static final int MIN_ALT = 15;
-	public static final int MAX_ALT = 150;
+	public static final int MAX_ALT = 200;
 	public static final int LOW_ALT = 7;
 
-	public static final FlightPlan DEFAULT = new FlightPlan(50, 100, WEAVE, 0, false);
+	public static final FlightPlan DEFAULT = new FlightPlan(70, 100, WEAVE, 0, false);
 
 	public FlightPlan {
 		altitude = Math.max(MIN_ALT, Math.min(MAX_ALT, altitude));

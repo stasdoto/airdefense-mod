@@ -54,6 +54,12 @@ public enum MissileType {
 
 	public enum Kind { BALLISTIC, ROCKET, CRUISE, DRONE, INTERCEPTOR, DIRECT }
 
+	/**
+	 * 1.24: every launcher, air defence missile and radar reaches five times further than before (the numbers in the
+	 * tables are the old ones); the guns keep their range.
+	 */
+	public static final int RANGE_SCALE = 5;
+
 	public enum Trail { HEAVY, MEDIUM, JET, WHITE, NONE, SMALL }
 
 	public final String itemId;
@@ -83,7 +89,8 @@ public enum MissileType {
 		this.health = health;
 		this.renderScale = renderScale;
 		this.proximity = proximity;
-		this.maxLife = maxLife;
+		// Far-flying things live long enough for the longer ranges; infantry rounds do not change.
+		this.maxLife = kind == Kind.DIRECT ? maxLife : maxLife * RANGE_SCALE;
 		this.turnRate = turnRate;
 		this.trail = trail;
 		this.loopSound = loopSound;
@@ -223,7 +230,20 @@ public enum MissileType {
 
 	/** Cruise height above the terrain for cruise missiles and drones: high up, they come down only at the end. */
 	public double cruiseAltitude() {
-		return kind == Kind.DRONE ? 50 : 40;
+		return kind == Kind.DRONE ? 70 : 55;
+	}
+
+	/**
+	 * How much bigger than its entity box a bullet finds it: a Shahed is 2.5 m across the wings, a cruise missile has
+	 * wings too; rockets and ballistic missiles are about as thin as the box.
+	 */
+	public double hitGrow() {
+		return switch (kind) {
+			case DRONE -> 0.9;
+			case CRUISE -> 0.35;
+			case BALLISTIC, ROCKET -> 0.1;
+			default -> 0;
+		};
 	}
 
 	public static MissileType byId(int id) {

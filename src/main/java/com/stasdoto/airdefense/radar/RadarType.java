@@ -27,7 +27,7 @@ public enum RadarType {
 	public final int rpm;
 
 	RadarType(double range, double minAltitude, double sector, float facing, float spin, double discrimination, int rpm) {
-		this.range = range;
+		this.range = range * com.stasdoto.airdefense.missile.MissileType.RANGE_SCALE;
 		this.minAltitude = minAltitude;
 		this.sector = sector;
 		this.facing = facing;

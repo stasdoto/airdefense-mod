@@ -1,0 +1,49 @@
+{
+ "variants": {
+  "facing=north,part=base": {
+   "model": "airdefense:block/siren_mast_base"
+  },
+  "facing=north,part=pipe": {
+   "model": "airdefense:block/siren_mast_pipe"
+  },
+  "facing=north,part=box": {
+   "model": "airdefense:block/siren_mast_box"
+  },
+  "facing=east,part=base": {
+   "model": "airdefense:block/siren_mast_base",
+   "y": 90
+  },
+  "facing=east,part=pipe": {
+   "model": "airdefense:block/siren_mast_pipe",
+   "y": 90
+  },
+  "facing=east,part=box": {
+   "model": "airdefense:block/siren_mast_box",
+   "y": 90
+  },
+  "facing=south,part=base": {
+   "model": "airdefense:block/siren_mast_base",
+   "y": 180
+  },
+  "facing=south,part=pipe": {
+   "model": "airdefense:block/siren_mast_pipe",
+   "y": 180
+  },
+  "facing=south,part=box": {
+   "model": "airdefense:block/siren_mast_box",
+   "y": 180
+  },
+  "facing=west,part=base": {
+   "model": "airdefense:block/siren_mast_base",
+   "y": 270
+  },
+  "facing=west,part=pipe": {
+   "model": "airdefense:block/siren_mast_pipe",
+   "y": 270
+  },
+  "facing=west,part=box": {
+   "model": "airdefense:block/siren_mast_box",
+   "y": 270
+  }
+ }
+}

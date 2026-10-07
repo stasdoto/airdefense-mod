@@ -145,6 +145,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("sirens")) {
 				sirens(ctx, server);
 			}
+			if (scene("rifleDrone")) {
+				rifleVsShahed(ctx, server);
+			}
 			if (scene("nations")) {
 				nations(ctx, server);
 			}
@@ -2255,6 +2258,67 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	// ------------------------------------------------------------------------------------------------
 	// 1.24: air raid sirens and Iron Dome
 
+	/**
+	 * 1.24: a Shahed flying over at 35 m is brought down with an AK-74 (aimed, short bursts) - drones are hit by their
+	 * real size (2.5 m across the wings).
+	 */
+	private void rifleVsShahed(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 33000;
+		int g = ground;
+		final int left = com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT;
+		final int right = com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT;
+		server.runCommand("gamemode survival @a");
+		server.runCommand("clear @a");
+		server.runCommand("effect give @a minecraft:resistance 600 4 true");
+		camera(server, x + 0.5, g, 0.5, 180, -20);
+		ctx.waitTicks(40);
+		server.runOnServer(s -> {
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			pl.getInventory().setItem(0, com.stasdoto.airdefense.weapon.GunItem.loaded(
+					com.stasdoto.airdefense.registry.ModItems.GUNS.get(com.stasdoto.airdefense.weapon.GunType.AK74)));
+			pl.getInventory().setItem(1, new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(AirDefense.id("ammo_545")), 64));
+		});
+		ctx.runOnClient(mc -> mc.player.getInventory().setSelectedSlot(0));
+		ctx.waitTicks(10);
+		int downBefore = com.stasdoto.airdefense.weapon.GunServer.MISSILES_DOWN.get();
+		int hitsBefore = com.stasdoto.airdefense.weapon.GunServer.MISSILE_HITS.get();
+		int shotsBefore = com.stasdoto.airdefense.weapon.GunServer.SHOTS.get();
+		int drone = server.computeOnServer(s -> {
+			var m = com.stasdoto.airdefense.missile.MissileEntity.launchStrike(s.overworld(), com.stasdoto.airdefense.missile.MissileType.SHAHED,
+					new Vec3(x + 12, g + 35, -170), new Vec3(x + 12, g, 400), new Vec3(0, 0, 1));
+			m.setCruiseAltitude(35);
+			return m.getId();
+		});
+		ctx.getInput().holdMouse(right);
+		int fired = 0;
+		boolean shotAt = false;
+		for (int t = 0; t < 260 && alive(server, drone); t++) {
+			Vec3 p = entityPos(server, drone);
+			double d = p.distanceTo(new Vec3(x + 0.5, g + 1.6, 0.5));
+			aimAt(ctx, p.add(0, 0.3, 0));
+			if (d < 95 && t % 8 < 4) {
+				ctx.getInput().holdMouse(left);
+				shotAt = true;
+			} else {
+				ctx.getInput().releaseMouse(left);
+			}
+			if (t == 60 || shotAt && fired++ == 6) {
+				ctx.takeScreenshot(t == 60 ? "170_rifle_shahed_coming" : "171_rifle_shahed_firing");
+			}
+			ctx.waitTick();
+		}
+		ctx.getInput().releaseMouse(left);
+		ctx.getInput().releaseMouse(right);
+		ctx.waitTicks(4);
+		ctx.takeScreenshot("172_rifle_shahed_down");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT rifle_shahed: shots {}, hits on the drone {}, brought down {}, still flying {}",
+				com.stasdoto.airdefense.weapon.GunServer.SHOTS.get() - shotsBefore,
+				com.stasdoto.airdefense.weapon.GunServer.MISSILE_HITS.get() - hitsBefore,
+				com.stasdoto.airdefense.weapon.GunServer.MISSILES_DOWN.get() - downBefore, alive(server, drone));
+		server.runCommand("clear @a");
+		server.runCommand("gamemode spectator @a");
+	}
+
 	/** The sirens standing within {@code r} of (x, z), nearest first. */
 	private static List<BlockPos> sirensNear(TestServerContext server, int x, int z, int r) {
 		return server.computeOnServer(s -> {
@@ -2324,7 +2388,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			ServerLevel l = s.overworld();
 			var c = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), com.stasdoto.airdefense.nation.Cities.terrain(l), 0, 0).getFirst();
 			BlockPos bell = c.bell();
-			return new int[]{c.x, c.z, c.half(), c.base, bell.getX(), bell.getZ()};
+			return new int[]{c.x, c.z, c.half(), c.base, bell.getX(), bell.getZ(), c.radius()};
 		});
 		int cx = cap[0];
 		int cz = cap[1];
@@ -2349,18 +2413,32 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			return;
 		}
 		int town = server.computeOnServer(s -> com.stasdoto.airdefense.siren.Sirens.townOf(s.overworld(), city.getFirst()));
-		shot(ctx, server, sirenCam(server, city.getFirst(), 6, 1.2), "300_siren_square", 40);
+		ctx.runOnClient(mc -> {
+			if (!mc.gui.hud.isHidden()) {
+				mc.gui.hud.toggle();
+			}
+		});
+		shot(ctx, server, sirenCam(server, city.getFirst(), 9, -3.6), "300_siren_square", 40);
+		shot(ctx, server, sirenCam(server, city.getFirst(), 3.2, 0.6), "300b_siren_close", 20);
 		if (city.size() > 1) {
-			shot(ctx, server, sirenCam(server, city.get(1), 7, 2.5), "301_siren_street", 30);
+			shot(ctx, server, sirenCam(server, city.get(1), 11, -3.4), "301_siren_street", 30);
 		}
-		// One more siren out in the field, put there by hand (it belongs to no town).
-		int fx = cx + half + 140;
-		int fz = cz - 30;
-		camera(server, fx + 6.5, base + 4, fz + 6.5, 135, 15);
-		ctx.waitTicks(40);
-		server.runCommand(String.format("setblock %d %d %d airdefense:siren[facing=south]", fx, base + 1, fz));
+		ctx.runOnClient(mc -> {
+			if (mc.gui.hud.isHidden()) {
+				mc.gui.hud.toggle();
+			}
+		});
+		// One more siren out in the field, put up by hand on its mast (it belongs to no town).
+		int fx = cap[4] + cap[6] + 24;
+		int fz = cap[5] - 20;
+		BlockPos field = new BlockPos(fx, base + 1 + com.stasdoto.airdefense.siren.SirenItem.MAST, fz);
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			com.stasdoto.airdefense.siren.SirenItem.buildMast(l, field, net.minecraft.core.Direction.SOUTH);
+			l.setBlock(field, com.stasdoto.airdefense.registry.ModBlocks.SIREN.defaultBlockState()
+					.setValue(com.stasdoto.airdefense.siren.SirenBlock.FACING, net.minecraft.core.Direction.SOUTH), Block.UPDATE_ALL);
+		});
 		ctx.waitTicks(30);
-		BlockPos field = new BlockPos(fx, base + 1, fz);
 		List<BlockPos> fieldList = List.of(field);
 
 		// The tablet: right click opens the map, the "Air raid alert" button the warning page.
@@ -2394,12 +2472,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		AirDefense.LOGGER.info("[airdefense-test] RESULT siren_clear: button {} -> all clear {}/{}; silence {} -> quiet {}/{}", clear, c[2], city.size(),
 				silence, q[0], city.size());
 		// One town: a click on the "Alert" of the first row (the nearest town, the capital).
-		int[] click = ctx.computeOnClient(mc -> {
-			var sc = mc.gui.screen();
-			int colW = Math.min(240, (sc.width - 30) / 2);
-			int x0 = (sc.width - colW * 2 - 10) / 2;
-			return new int[]{x0 + colW - 104 + 25, 52 + 14 + 2 + 8};
-		});
+		int[] click = ctx.computeOnClient(mc -> ((com.stasdoto.airdefense.client.siren.SirenScreen) mc.gui.screen()).townAlertCenter(0));
 		int scale = ctx.computeOnClient(mc -> mc.getWindow().getGuiScale());
 		ctx.getInput().setCursorPos(click[0] * scale, click[1] * scale);
 		ctx.waitTicks(2);
@@ -2476,14 +2549,14 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.takeScreenshot("307_iron_dome_intercepts");
 		ctx.waitTicks(40);
 		int[] auto = signals(server, city);
-		shot(ctx, server, sirenCam(server, city.getFirst(), 6, 1.2), "308_siren_auto_alert", 30);
+		shot(ctx, server, sirenCam(server, city.getFirst(), 9, -3.6), "308_siren_auto_alert", 30);
 		ctx.waitTicks(200);
 		report("iron_dome_city_salvo", before);
 		AirDefense.LOGGER.info("[airdefense-test] RESULT siren_auto: automatic alerts {}, city sirens on alert {}/{}",
 				com.stasdoto.airdefense.siren.Sirens.autoAlerts - autoBefore, auto[1], city.size());
 		// Dusk: the lamp on the sounding siren.
 		server.runCommand("time set 13200");
-		shot(ctx, server, sirenCam(server, city.getFirst(), 5, 1.0), "309_siren_dusk", 40);
+		shot(ctx, server, sirenCam(server, city.getFirst(), 7, -2.5), "309_siren_dusk", 40);
 		server.runOnServer(s -> com.stasdoto.airdefense.siren.Sirens.get(s).silence());
 		server.runCommand("time set 1000");
 	}
@@ -2729,7 +2802,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			grp.add(husk(server, x0 - 1 + i * 1.2, g, -8.0, false, false));
 		}
 		ctx.waitTicks(10);
-		aimAt(ctx, new Vec3(x0 + 0.5, g + 3.2, -8.0));
+		aimAt(ctx, new Vec3(x0 + 0.5, g + 2.0, -8.0));
 		for (int i = 0; i < 2; i++) {
 			ctx.getInput().pressMouse(left);
 			ctx.waitTicks(i == 0 ? 8 : 40);

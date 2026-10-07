@@ -116,7 +116,7 @@ public final class RadarNetwork {
 		for (Station s : stations(level)) {
 			double r = s.type.range;
 			AABB box = new AABB(s.pos.x - r, s.pos.y - r, s.pos.z - r, s.pos.x + r, s.pos.y + r, s.pos.z + r);
-			for (MissileEntity m : level.getEntitiesOfClass(MissileEntity.class, box, m -> m.isAlive() && !seen.containsKey(m.getId()))) {
+			for (MissileEntity m : MissileEntity.find(level, box, m -> m.isAlive() && !seen.containsKey(m.getId()))) {
 				if (sees(level, s, m.position())) {
 					seen.put(m.getId(), m);
 					if (seen.size() >= max) {

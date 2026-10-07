@@ -28,6 +28,10 @@ public class SirenScreen extends Screen {
 	private int x0;
 	private int top;
 	private int colW;
+	/** Row buttons (worked out from the text widths, so they fit in any language and at any window size). */
+	private int alertW;
+	private int clearW;
+	private int modeW;
 
 	public SirenScreen() {
 		super(Component.translatable("screen.airdefense.siren.title"));
@@ -35,19 +39,32 @@ public class SirenScreen extends Screen {
 
 	@Override
 	protected void init() {
-		colW = Math.min(240, (width - 30) / 2);
+		colW = Math.min(260, (width - 30) / 2);
 		x0 = (width - colW * 2 - 10) / 2;
-		top = 52;
-		int bw = Math.min(130, (colW * 2 + 10 - 12) / 4);
-		int bx = x0;
-		addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.siren.all_alert"), b -> SirenClient.send(SirenNet.Action.ALL, 1, 0))
-				.bounds(bx, 22, bw, 20).build());
-		addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.siren.all_clear"), b -> SirenClient.send(SirenNet.Action.ALL, 0, 0))
-				.bounds(bx + bw + 4, 22, bw, 20).build());
-		addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.siren.silence"), b -> SirenClient.send(SirenNet.Action.SILENCE, 0, 0))
-				.bounds(bx + (bw + 4) * 2, 22, bw, 20).build());
-		addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.siren.back"), b -> minecraft.gui.setScreen(new TacticalMapScreen()))
-				.bounds(bx + (bw + 4) * 3, 22, bw, 20).build());
+		int total = colW * 2 + 10;
+		Component[] labels = {Component.translatable("screen.airdefense.siren.all_alert"), Component.translatable("screen.airdefense.siren.all_clear"),
+				Component.translatable("screen.airdefense.siren.silence"), Component.translatable("screen.airdefense.siren.back")};
+		Button.OnPress[] actions = {b -> SirenClient.send(SirenNet.Action.ALL, 1, 0), b -> SirenClient.send(SirenNet.Action.ALL, 0, 0),
+				b -> SirenClient.send(SirenNet.Action.SILENCE, 0, 0), b -> minecraft.gui.setScreen(new TacticalMapScreen())};
+		int need = 0;
+		for (Component c : labels) {
+			need = Math.max(need, font.width(c) + 14);
+		}
+		// One row of four if they fit, else two rows of two.
+		boolean oneRow = need * 4 + 12 <= total;
+		int bw = oneRow ? (total - 12) / 4 : (total - 4) / 2;
+		for (int i = 0; i < 4; i++) {
+			int col = oneRow ? i : i % 2;
+			int row = oneRow ? 0 : i / 2;
+			addRenderableWidget(Button.builder(labels[i], actions[i]).bounds(x0 + col * (bw + 4), 22 + row * 22, bw, 20).build());
+		}
+		top = oneRow ? 50 : 72;
+		alertW = font.width(Component.translatable("screen.airdefense.siren.alert")) + 10;
+		clearW = font.width(Component.translatable("screen.airdefense.siren.clear")) + 10;
+		modeW = 0;
+		for (int m = 0; m < 3; m++) {
+			modeW = Math.max(modeW, font.width(Component.translatable("screen.airdefense.siren.mode." + m)) + 8);
+		}
 		SirenClient.send(SirenNet.Action.REFRESH, 0, 0);
 	}
 
@@ -69,6 +86,23 @@ public class SirenScreen extends Screen {
 
 	private int rows() {
 		return Math.max(1, (height - top - 30) / ROW);
+	}
+
+	private int clearX() {
+		return x0 + colW - 2 - clearW;
+	}
+
+	private int alertX() {
+		return clearX() - 2 - alertW;
+	}
+
+	private int modeX(int m) {
+		return x0 + colW + 10 + colW - 2 - (3 - m) * (modeW + 2);
+	}
+
+	/** Where the "Alert" button of a town row is (gui coordinates of its centre; for the tests). */
+	public int[] townAlertCenter(int row) {
+		return new int[]{alertX() + alertW / 2, top + 14 + row * ROW + 2 + 8};
 	}
 
 	private List<SirenNet.Town> towns() {
@@ -103,12 +137,11 @@ public class SirenScreen extends Screen {
 		List<SirenNet.Town> towns = towns();
 		if (x >= x0 && x < x0 + colW && row + townScroll < towns.size()) {
 			SirenNet.Town t = towns.get(row + townScroll);
-			int bx = x0 + colW - 104;
-			if (x >= bx && x < bx + 50) {
+			if (x >= alertX() && x < alertX() + alertW) {
 				SirenClient.send(SirenNet.Action.TOWN, t.id(), 0);
 				return true;
 			}
-			if (x >= bx + 52 && x < bx + 102) {
+			if (x >= clearX() && x < clearX() + clearW) {
 				SirenClient.send(SirenNet.Action.TOWN_CLEAR, t.id(), 0);
 				return true;
 			}
@@ -117,9 +150,8 @@ public class SirenScreen extends Screen {
 		int sx = x0 + colW + 10;
 		if (x >= sx && x < sx + colW && row + sirenScroll < sirens.size()) {
 			SirenNet.Siren s = sirens.get(row + sirenScroll);
-			int bx = sx + colW - 150;
 			for (int m = 0; m < 3; m++) {
-				if (x >= bx + m * 50 && x < bx + m * 50 + 48) {
+				if (x >= modeX(m) && x < modeX(m) + modeW) {
 					SirenClient.send(SirenNet.Action.SIREN_MODE, m, s.pos());
 					return true;
 				}
@@ -138,6 +170,7 @@ public class SirenScreen extends Screen {
 		super.extractRenderState(g, mouseX, mouseY, partialTick);
 		boolean all = SirenClient.state != null && SirenClient.state.everywhere();
 		g.text(font, title, x0, 8, 0xFFFFFFFF);
+		int nameW = alertX() - x0 - 6;
 		if (all) {
 			Component c = Component.translatable("screen.airdefense.siren.everywhere");
 			g.text(font, c, x0 + colW * 2 + 10 - font.width(c), 8, blink() ? 0xFFFF5040 : 0xFFB03020);
@@ -151,13 +184,12 @@ public class SirenScreen extends Screen {
 			int y = top + 14 + i * ROW;
 			int bg = t.signal() == Sirens.ALERT ? (blink() ? 0x80802020 : 0x60601818) : t.signal() == Sirens.CLEAR ? 0x50206020 : 0x40303840;
 			g.fill(x0, y, x0 + colW, y + ROW - 2, bg);
-			g.text(font, (t.capital() ? "★ " : "") + t.name(), x0 + 4, y + 2, 0xFFFFFFFF);
+			g.text(font, fit((t.capital() ? "★ " : "") + t.name(), nameW), x0 + 4, y + 2, 0xFFFFFFFF);
 			Component sub = Component.translatable("screen.airdefense.siren.town_line",
 					Component.translatable("screen.airdefense.siren.signal." + signalName(t.signal())), t.sirens(), t.distance());
-			small(g, sub, x0 + 4, y + 12, 0xFFC0C8D0);
-			int bx = x0 + colW - 104;
-			button(g, bx, y + 2, 50, Component.translatable("screen.airdefense.siren.alert"), 0xFFB02818, mouseX, mouseY);
-			button(g, bx + 52, y + 2, 50, Component.translatable("screen.airdefense.siren.clear"), 0xFF287838, mouseX, mouseY);
+			small(g, fit(sub.getString(), (int) (nameW / 0.75f)), x0 + 4, y + 12, 0xFFC0C8D0);
+			button(g, alertX(), y + 2, alertW, Component.translatable("screen.airdefense.siren.alert"), 0xFFB02818, mouseX, mouseY);
+			button(g, clearX(), y + 2, clearW, Component.translatable("screen.airdefense.siren.clear"), 0xFF287838, mouseX, mouseY);
 		}
 		if (towns.isEmpty()) {
 			small(g, Component.translatable("screen.airdefense.siren.no_towns"), x0 + 4, top + 16, 0xFFA0A0A0);
@@ -173,19 +205,20 @@ public class SirenScreen extends Screen {
 			g.fill(sx, y, sx + colW, y + ROW - 2, bg);
 			BlockPos p = BlockPos.of(s.pos());
 			String where = s.town().isEmpty() ? Component.translatable("screen.airdefense.siren.field").getString() : s.town();
-			g.text(font, where, sx + 4, y + 2, 0xFFFFFFFF);
-			small(g, Component.translatable("screen.airdefense.siren.siren_line", p.getX(), p.getZ(), s.distance(),
-					Component.translatable("screen.airdefense.siren.signal." + signalName(s.signal()))), sx + 4, y + 12, 0xFFC0C8D0);
-			int bx = sx + colW - 150;
+			int sw = modeX(0) - sx - 6;
+			g.text(font, fit(where, sw), sx + 4, y + 2, 0xFFFFFFFF);
+			Component line = Component.translatable("screen.airdefense.siren.siren_line", p.getX(), p.getZ(), s.distance(),
+					Component.translatable("screen.airdefense.siren.signal." + signalName(s.signal())));
+			small(g, fit(line.getString(), (int) (sw / 0.75f)), sx + 4, y + 12, 0xFFC0C8D0);
 			for (int m = 0; m < 3; m++) {
 				int c = m == s.mode() ? (m == Sirens.MODE_ON ? 0xFFB02818 : m == Sirens.MODE_OFF ? 0xFF505860 : 0xFF2860A0) : 0xFF303840;
-				button(g, bx + m * 50, y + 2, 48, Component.translatable("screen.airdefense.siren.mode." + m), c, mouseX, mouseY);
+				button(g, modeX(m), y + 2, modeW, Component.translatable("screen.airdefense.siren.mode." + m), c, mouseX, mouseY);
 			}
 		}
 		if (sirens.isEmpty()) {
 			small(g, Component.translatable("screen.airdefense.siren.no_sirens"), sx + 4, top + 16, 0xFFA0A0A0);
 		}
-		small(g, Component.translatable("screen.airdefense.siren.hint"), x0, height - 14, 0xFF8090A0);
+		small(g, fit(Component.translatable("screen.airdefense.siren.hint").getString(), (int) ((colW * 2 + 10) / 0.75f)), x0, height - 14, 0xFF8090A0);
 	}
 
 	private static String signalName(int s) {
@@ -204,10 +237,22 @@ public class SirenScreen extends Screen {
 	}
 
 	private void small(GuiGraphicsExtractor g, Component text, int x, int y, int color) {
+		small(g, text.getString(), x, y, color);
+	}
+
+	private void small(GuiGraphicsExtractor g, String text, int x, int y, int color) {
 		g.pose().pushMatrix();
 		g.pose().translate(x, y);
 		g.pose().scale(0.75f, 0.75f);
 		g.text(font, text, 0, 0, color);
 		g.pose().popMatrix();
+	}
+
+	/** The text cut to fit the width, with an ellipsis. */
+	private String fit(String text, int w) {
+		if (font.width(text) <= w) {
+			return text;
+		}
+		return font.plainSubstrByWidth(text, Math.max(0, w - font.width("…"))) + "…";
 	}
 }

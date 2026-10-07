@@ -43,7 +43,8 @@ public final class ModItems {
 	public static final Item FACTORY_CONTROLLER = register("factory_controller", p -> new BlockItem(ModBlocks.FACTORY_CONTROLLER, p),
 			new Item.Properties().useBlockDescriptionPrefix());
 	/** 1.24: the air raid siren (a block on a pole). */
-	public static final Item SIREN = register("siren", p -> new BlockItem(ModBlocks.SIREN, p), new Item.Properties().useBlockDescriptionPrefix());
+	public static final Item SIREN = register("siren", p -> new com.stasdoto.airdefense.siren.SirenItem(ModBlocks.SIREN, p),
+			new Item.Properties().useBlockDescriptionPrefix());
 	/** 35 mm rounds for the Gepard: one box = ten bursts. */
 	public static final Item GEPARD_AMMO = register("gepard_ammo", Item::new, new Item.Properties().stacksTo(16));
 

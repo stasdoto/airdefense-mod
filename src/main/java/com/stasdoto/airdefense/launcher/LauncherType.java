@@ -36,6 +36,6 @@ public enum LauncherType {
 		this.launchHeight = launchHeight;
 		this.launchForward = launchForward;
 		this.sound = sound;
-		this.maxRange = maxRange;
+		this.maxRange = maxRange * MissileType.RANGE_SCALE;
 	}
 }

@@ -385,6 +385,46 @@ public class MissileEntity extends Entity {
 		return distance < 640 * 640;
 	}
 
+	// ------------------------------------------------------------------------------------------------
+	// Finding missiles far away: with the longer ranges (1.24) the air defence looks over thousands of blocks, so
+	// every flying missile is kept in a list instead of searching the whole area's entities.
+
+	private static final java.util.Set<MissileEntity> LIVE = java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
+	private boolean listed;
+
+	/** The missiles in this box that pass the test (a plain entity search for small boxes). */
+	public static List<MissileEntity> find(net.minecraft.world.level.Level level, AABB box, java.util.function.Predicate<MissileEntity> test) {
+		if (box.getXsize() < 260 && box.getZsize() < 260) {
+			return level.getEntitiesOfClass(MissileEntity.class, box, test);
+		}
+		List<MissileEntity> out = new java.util.ArrayList<>();
+		synchronized (LIVE) {
+			var it = LIVE.iterator();
+			while (it.hasNext()) {
+				MissileEntity m = it.next();
+				if (m.isRemoved()) {
+					it.remove();
+				} else if (m.level() == level && box.contains(m.position()) && test.test(m)) {
+					out.add(m);
+				}
+			}
+		}
+		return out;
+	}
+
+	private void list() {
+		if (!listed) {
+			listed = true;
+			synchronized (LIVE) {
+				LIVE.add(this);
+			}
+		}
+	}
+
+	public boolean hasDetonated() {
+		return detonated;
+	}
+
 	/** Destroyed in the air: warhead blows up where it is, nothing reaches the target. */
 	public void shotDown() {
 		if (level() instanceof ServerLevel && !detonated) {
@@ -398,6 +438,7 @@ public class MissileEntity extends Entity {
 	@Override
 	public void tick() {
 		super.tick();
+		list();
 		if (level() instanceof ServerLevel serverLevel) {
 			serverTick(serverLevel);
 		} else {
@@ -607,8 +648,8 @@ public class MissileEntity extends Entity {
 		double d = Math.sqrt(Mth.square(target.x - from.x) + Mth.square(target.z - from.z));
 		MissileType type = getMissileType();
 		arcApex = type.kind == MissileType.Kind.BALLISTIC
-				? Mth.clamp(d * 0.6, 90, 450)
-				: Mth.clamp(d * 0.45, 45, 260);
+				? Mth.clamp(d * 0.6, 120, 600)
+				: Mth.clamp(d * 0.45, 60, 340);
 	}
 
 	private Vec3 arcPoint(double s) {

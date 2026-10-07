@@ -346,8 +346,12 @@ public final class Sirens extends SavedData {
 			int how = (int) (e.getValue() >> 8);
 			BlockPos at = placeAt(level, p, facing, how);
 			if (at != null) {
-				level.setBlock(at, ModBlocks.SIREN.defaultBlockState().setValue(SirenBlock.FACING, facing), Block.UPDATE_ALL);
-				register(at);
+				// The siren six metres up on its mast, like the ones in real towns.
+				BlockPos head = at.above(SirenItem.MAST);
+				SirenItem.buildMast(level, head, facing);
+				level.setBlock(head, ModBlocks.SIREN.defaultBlockState().setValue(SirenBlock.FACING, facing), Block.UPDATE_ALL);
+				register(head);
+				at = head;
 				townSirensPlaced++;
 				AirDefense.LOGGER.info("[airdefense] siren put up at {}", at.toShortString());
 			}
@@ -383,17 +387,26 @@ public final class Sirens extends SavedData {
 		return null;
 	}
 
-	/** The place in this column (at the expected height or on the surface) where a siren fits: firm ground, two free blocks. */
+	/** The place in this column (at the expected height or on the surface) where a siren and its mast fit: firm ground, free above. */
 	@Nullable
 	private static BlockPos fit(ServerLevel level, BlockPos p) {
 		int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, p.getX(), p.getZ());
 		for (int y : new int[]{p.getY(), top}) {
 			BlockPos q = new BlockPos(p.getX(), y, p.getZ());
-			if (Math.abs(y - p.getY()) <= 3 && free(level, q) && free(level, q.above()) && firm(level, q.below())) {
+			if (Math.abs(y - p.getY()) <= 3 && firm(level, q.below()) && clear(level, q, SirenItem.MAST + 2)) {
 				return q;
 			}
 		}
 		return null;
+	}
+
+	private static boolean clear(ServerLevel level, BlockPos q, int height) {
+		for (int i = 0; i < height; i++) {
+			if (!free(level, q.above(i))) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private static boolean free(ServerLevel level, BlockPos p) {
@@ -404,7 +417,7 @@ public final class Sirens extends SavedData {
 	private static boolean firm(ServerLevel level, BlockPos p) {
 		BlockState s = level.getBlockState(p);
 		return !s.isAir() && s.getFluidState().isEmpty() && !s.is(BlockTags.LEAVES) && !s.getCollisionShape(level, p).isEmpty()
-				&& !s.is(ModBlocks.SIREN);
+				&& !s.is(ModBlocks.SIREN) && !s.is(ModBlocks.SIREN_MAST);
 	}
 
 	@Nullable

@@ -31,6 +31,8 @@ public final class ModBlocks {
 
 	/** 1.24: the air raid siren on its pole (its red lamp lights while it sounds). */
 	public static final Block SIREN = registerSiren();
+	/** Its steel mast (no item: it goes up with the siren). */
+	public static final Block SIREN_MAST = registerMast();
 
 	/** The factory's control desk (placed by the factory kit; it has an item so it can be picked up and put back). */
 	public static final Block FACTORY_CONTROLLER = register("factory_controller", FactoryControllerBlock::new, MapColor.METAL);
@@ -63,6 +65,18 @@ public final class ModBlocks {
 				.lightLevel(st -> st.getValue(com.stasdoto.airdefense.siren.SirenBlock.SIGNAL) == com.stasdoto.airdefense.siren.SirenBlock.Signal.OFF ? 0 : 6)
 				.setId(ids.block());
 		return Registry.register(BuiltInRegistries.BLOCK, ids.block(), new com.stasdoto.airdefense.siren.SirenBlock(props));
+	}
+
+	private static Block registerMast() {
+		Identifier id = AirDefense.id("siren_mast");
+		BlockItemId ids = BlockItemId.create(id, id);
+		BlockBehaviour.Properties props = BlockBehaviour.Properties.of()
+				.mapColor(MapColor.METAL)
+				.strength(2.5f, 6.0f)
+				.sound(SoundType.METAL)
+				.noOcclusion()
+				.setId(ids.block());
+		return Registry.register(BuiltInRegistries.BLOCK, ids.block(), new com.stasdoto.airdefense.siren.SirenMastBlock(props));
 	}
 
 	public static void init() {

@@ -72,7 +72,7 @@ public class DefenseBlockEntity extends BlockEntity {
 		Vec3 radar = Vec3.atCenterOf(worldPosition).add(0, 1.5, 0);
 		double range = type.range;
 		AABB box = new AABB(radar.x - range, radar.y - range, radar.z - range, radar.x + range, radar.y + range, radar.z + range);
-		List<MissileEntity> threats = level.getEntitiesOfClass(MissileEntity.class, box,
+		List<MissileEntity> threats = MissileEntity.find(level, box,
 				m -> m.getMissileType().threat && m.isAlive() && m.distanceToSqr(radar) < range * range);
 		if (threats.isEmpty()) {
 			return;

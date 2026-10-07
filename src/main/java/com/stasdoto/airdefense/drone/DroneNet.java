@@ -69,7 +69,7 @@ public final class DroneNet {
 					case 1 -> FlightPlan.LOW;
 					default -> FlightPlan.WEAVE;
 				};
-				plan = new FlightPlan(35 + r.nextInt(50), 100, maneuver, 16, false);
+				plan = new FlightPlan(55 + r.nextInt(50), 100, maneuver, 16, false);
 			}
 			if (v.commandStrike(target, null, plan)) {
 				ordered++;

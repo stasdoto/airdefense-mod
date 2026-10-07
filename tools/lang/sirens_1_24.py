@@ -6,6 +6,10 @@ LANG = os.path.join(os.path.dirname(__file__), '..', '..', 'src', 'main', 'resou
 
 S = {
     'block.airdefense.siren': ('Air raid siren', 'Сирена воздушной тревоги', 'Сирена повітряної тривоги'),
+    'block.airdefense.siren_mast': ('Siren mast', 'Мачта сирены', 'Щогла сирени'),
+    'tooltip.airdefense.siren': ('On the ground it goes up on a 6 m mast; sneak to put just the siren (on a roof)',
+                                 'На земле встаёт на мачту 6 м; с Shift — только сирена (например, на крышу)',
+                                 'На землі стає на щоглу 6 м; із Shift — лише сирена (наприклад, на дах)'),
     'message.airdefense.siren.status': ('Siren: %s · now: %s', 'Сирена: %s · сейчас: %s', 'Сирена: %s · зараз: %s'),
     'screen.airdefense.map.sirens': ('Air raid alert', 'Тревога', 'Тривога'),
     'screen.airdefense.siren.title': ('Air raid warning', 'Воздушная тревога', 'Повітряна тривога'),

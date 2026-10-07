@@ -55,6 +55,9 @@ public final class GunServer {
 	/** Debug counters read by the automated test. */
 	public static final AtomicInteger SHOTS = new AtomicInteger();
 	public static final AtomicInteger HITS = new AtomicInteger();
+	/** 1.24: rounds that hit a drone or a missile, and those brought down by rifle fire. */
+	public static final AtomicInteger MISSILE_HITS = new AtomicInteger();
+	public static final AtomicInteger MISSILES_DOWN = new AtomicInteger();
 	public static final AtomicInteger HEADSHOTS = new AtomicInteger();
 	public static final AtomicInteger RELOADS = new AtomicInteger();
 	public static final AtomicInteger ROCKETS = new AtomicInteger();
@@ -283,6 +286,25 @@ public final class GunServer {
 		EntityHitResult entity = ProjectileUtil.getEntityHitResult(level, shooter, from, stop, new AABB(from, stop).inflate(1.0),
 				e -> e != shooter && e.isAlive() && !e.isSpectator() && e.isPickable() && e != shooter.getVehicle()
 						&& !shooter.isPassengerOfSameVehicle(e), 0.0f);
+		// Drones and cruise missiles are bigger than their entity box (a Shahed is 2.5 m across the wings).
+		double best = entity != null ? from.distanceToSqr(entity.getLocation()) : from.distanceToSqr(stop);
+		MissileEntity drone = null;
+		Vec3 droneAt = null;
+		for (MissileEntity m : level.getEntitiesOfClass(MissileEntity.class, new AABB(from, stop).inflate(1.5), MissileEntity::isPickable)) {
+			double grow = m.getMissileType().hitGrow();
+			if (grow <= 0) {
+				continue;
+			}
+			var at = m.getBoundingBox().inflate(grow).clip(from, stop);
+			if (at.isPresent() && from.distanceToSqr(at.get()) < best) {
+				best = from.distanceToSqr(at.get());
+				drone = m;
+				droneAt = at.get();
+			}
+		}
+		if (drone != null) {
+			return new Trace(droneAt, drone, null);
+		}
 		if (entity != null) {
 			return new Trace(entity.getLocation(), entity.getEntity(), null);
 		}
@@ -299,9 +321,18 @@ public final class GunServer {
 	private static int damage(ServerLevel level, LivingEntity shooter, GunType gun, Entity target, Vec3 at, double dist) {
 		float dmg = gun.damageAt(dist);
 		int hit;
-		if (target instanceof MissileEntity) {
+		if (target instanceof MissileEntity m) {
 			dmg *= 0.25f;
 			hit = ShotPayload.HIT_METAL;
+			if (target.hurtServer(level, ModDamageTypes.bullet(level, shooter), dmg)) {
+				HITS.incrementAndGet();
+				MISSILE_HITS.incrementAndGet();
+				if (m.isRemoved() || !m.isAlive() || m.hasDetonated()) {
+					MISSILES_DOWN.incrementAndGet();
+					com.stasdoto.airdefense.missile.MissileStats.log("{} shot down by {} fire", m.getMissileType(), gun);
+				}
+			}
+			return hit;
 		} else if (target instanceof VehicleEntity) {
 			hit = ShotPayload.HIT_METAL;
 			if (gun.antiMateriel) {

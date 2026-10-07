@@ -90,7 +90,7 @@ public final class Raids {
 			Vec3 from = new Vec3(center.x + Math.cos(a) * d, center.y + 40 + r.nextInt(20), center.z + Math.sin(a) * d);
 			MissileType type = r.nextFloat() < 0.3f ? MissileType.GERBERA : MissileType.SHAHED;
 			int maneuver = r.nextFloat() < 0.25f ? FlightPlan.FLANK : r.nextFloat() < 0.15f ? FlightPlan.LOW : FlightPlan.WEAVE;
-			FlightPlan plan = new FlightPlan(40 + r.nextInt(40), 90 + r.nextInt(11), maneuver, 0, false);
+			FlightPlan plan = new FlightPlan(60 + r.nextInt(40), 90 + r.nextInt(11), maneuver, 0, false);
 			raid.shots.add(new Shot(t, type, from, aim(center, r, 40), plan, r.nextBoolean()));
 			t += 6 + r.nextInt(12);
 		}
@@ -98,7 +98,7 @@ public final class Raids {
 			double a = bearing + r.nextGaussian() * 0.15;
 			double d = 520 + r.nextDouble() * 60;
 			Vec3 from = new Vec3(center.x + Math.cos(a) * d, center.y + 30, center.z + Math.sin(a) * d);
-			FlightPlan plan = new FlightPlan(35 + r.nextInt(25), 100, r.nextBoolean() ? FlightPlan.LOW : FlightPlan.STRAIGHT, 0, false);
+			FlightPlan plan = new FlightPlan(50 + r.nextInt(30), 100, r.nextBoolean() ? FlightPlan.LOW : FlightPlan.STRAIGHT, 0, false);
 			raid.shots.add(new Shot(now + 60 + r.nextInt(200), MissileType.KALIBR, from, aim(center, r, 25), plan, r.nextBoolean()));
 		}
 		for (int i = 0; i < ballistic; i++) {
