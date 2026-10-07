@@ -286,10 +286,8 @@ public final class Arsenals extends SavedData {
 			for (Delivery d : List.copyOf(a.deliveries)) {
 				if (d.id() != 0 && d.arrives() - now <= SUPPLY_LEAD && !a.shown.contains(d.id())) {
 					Settlement s = p.settlements.get(d.to());
-					if (s != null && level.isLoaded(s.center) && level.getNearestPlayer(s.center.getX(), s.center.getY(), s.center.getZ(), 360,
-							pl -> true) != null) {
+					if (s != null && a.supplyLorry(level, p, s, d)) {
 						a.shown.add(d.id());
-						a.supplyLorry(level, p, s, d);
 					}
 				}
 			}
@@ -634,7 +632,11 @@ public final class Arsenals extends SavedData {
 	 * in - to the depot's gate when the city has one (its launchers stand there), else into the town. When it gets there
 	 * the load is in the stores (sooner than by the clock); if it is destroyed on the way, the load is lost.
 	 */
-	private void supplyLorry(ServerLevel level, Politics p, Settlement to, Delivery d) {
+	private boolean supplyLorry(ServerLevel level, Politics p, Settlement to, Delivery d) {
+		// Only when somebody is in the town or by its depot to see it come.
+		if (level.getNearestPlayer(to.center.getX(), to.center.getY(), to.center.getZ(), to.radius + 400, pl -> true) == null) {
+			return false;
+		}
 		Vec3 from = Vec3.atCenterOf(to.center).add(600, 0, 0);
 		for (Settlement o : p.settlementsOf(to.country)) {
 			if (o.id != to.id && o.city >= 0) {
@@ -644,7 +646,8 @@ public final class Arsenals extends SavedData {
 		}
 		List<Vec3> route = supplyRoute(level, to, from);
 		if (route.size() < 2) {
-			return;
+			// No road in: the load just turns up by the clock.
+			return true;
 		}
 		Vec3 start = route.getFirst();
 		Vec3 next = route.get(1);
@@ -663,7 +666,9 @@ public final class Arsenals extends SavedData {
 		v.cargoDelivery = d.id();
 		v.drive(route.subList(1, route.size()), 0.7f);
 		lorries++;
-		AirDefense.LOGGER.info("[airdefense] a lorry brings {} x{} to {}", d.type().name(), d.count(), to.name);
+		AirDefense.LOGGER.info("[airdefense] a lorry brings {} x{} to {} ({} points from {}, {})", d.type().name(), d.count(), to.name, route.size(),
+				(int) start.x, (int) start.z);
+		return true;
 	}
 
 	/** The road a lorry takes in: along the highway to the depot's access road and in at its gate, or into the town. */
@@ -813,8 +818,8 @@ public final class Arsenals extends SavedData {
 			return;
 		}
 		u.ammo = Math.max(0, u.ammo - salvo);
-		boolean seen = level.isLoaded(target.center) && level.getNearestPlayer(target.center.getX(), target.center.getY(), target.center.getZ(), 400,
-				pl -> true) != null;
+		boolean seen = level.isLoaded(target.center) && level.getNearestPlayer(target.center.getX(), target.center.getY(), target.center.getZ(),
+				target.radius + 350, pl -> true) != null;
 		if (seen && m != null) {
 			Vec3 tc = Vec3.atBottomCenterOf(aimAt);
 			Vec3 dir = Vec3.atCenterOf(from.center).subtract(tc);

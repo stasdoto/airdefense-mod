@@ -2559,11 +2559,13 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			return;
 		}
 		int[] before = counters();
+		// Watching from the east edge of the capital (the enemy is that way) when the strike comes.
+		camera(server, cx + half + 10, base + 30, cz + 20, 250, -10);
+		ctx.waitTicks(40);
 		boolean fired = server.computeOnServer(s -> {
 			var p = com.stasdoto.airdefense.nation.Politics.get(s);
 			return com.stasdoto.airdefense.nation.Arsenals.strikeNow(s.overworld(), p.settlements.get(ids[0]), p.settlements.get(ids[1]));
 		});
-		camera(server, cx + half + 10, base + 30, cz + 20, 250, -10);
 		ctx.waitTicks(80);
 		ctx.takeScreenshot("182_strike_incoming");
 		ctx.waitTicks(320);
@@ -2583,7 +2585,25 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		});
 		shot(ctx, server, ccam, "183_column", 30);
 		int arrived = waitUntil(ctx, () -> VehicleEntity.arrivals > 0, 1800);
-		ctx.waitTicks(40);
+		ctx.waitTicks(100);
+		// The men who got out, on their way in (from behind and above them).
+		float[] fcam = server.computeOnServer(s -> {
+			var list = s.overworld().getEntitiesOfClass(com.stasdoto.airdefense.nation.SoldierEntity.class, new net.minecraft.world.phys.AABB(cx - 600,
+					base - 40, cz - 600, cx + 600, base + 80, cz + 600), e -> e.isAlive());
+			com.stasdoto.airdefense.nation.SoldierEntity best = null;
+			for (var e : list) {
+				if (best == null || e.distanceToSqr(cx, base, cz) > best.distanceToSqr(cx, base, cz)) {
+					best = e;
+				}
+			}
+			if (best == null) {
+				return null;
+			}
+			Vec3 away = new Vec3(best.getX() - cx, 0, best.getZ() - cz).normalize();
+			return look(best.getX() + away.x * 14 + away.z * 6, best.getY() + 8, best.getZ() + away.z * 14 - away.x * 6, best.getX(), best.getY() + 1,
+					best.getZ());
+		});
+		shot(ctx, server, fcam, "184_column_men", 10);
 		camera(server, cap[4] + 0.5, base + 18, cap[5] + 30.5, 180, 25);
 		ctx.waitTicks(200);
 		ctx.takeScreenshot("184_column_fight");

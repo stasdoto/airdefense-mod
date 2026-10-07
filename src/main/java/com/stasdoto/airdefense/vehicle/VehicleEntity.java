@@ -1080,6 +1080,17 @@ public class VehicleEntity extends LivingEntity {
 		boolean grounded = onGround() && v.y <= 0.01;
 		float wantPitch = grounded || !powered ? 0 : fwdIn * 22f;
 		float wantRoll = grounded || !powered ? 0 : sideIn * 20f;
+		if (!grounded && powered) {
+			// Hands off the stick: the hover hold flares against the drift (nose up to stop, a bank against sideslip).
+			double along = v.x * forward().x + v.z * forward().z;
+			double across = v.x * right().x + v.z * right().z;
+			if (fwdIn == 0) {
+				wantPitch = (float) Mth.clamp(-along * 14, -15, 15);
+			}
+			if (sideIn == 0) {
+				wantRoll = (float) Mth.clamp(-across * 14, -12, 12);
+			}
+		}
 		// The body's attitude follows the stick with some weight (and a little more briskly back to level).
 		float pr = wantPitch == 0 ? 1.4f : 1.0f;
 		float rr = wantRoll == 0 ? 1.6f : 1.2f;
@@ -1117,9 +1128,13 @@ public class VehicleEntity extends LivingEntity {
 			heliPitch *= 0.95f;
 			heliRoll *= 0.95f;
 		}
-		// Drag: grows with speed, so the top speed comes by itself.
+		// Drag: a little that grows with speed and more with its square, sized so that the nose fully down gives
+		// the type's top speed (a Mi-24 about 150 km/h) after some ten seconds of building up.
 		double h = Math.hypot(vx, vz);
-		double drag = 0.012 + h * 0.0045 / Math.max(0.5, vtype.maxSpeed / 1.8);
+		double top = Math.max(0.8, vtype.maxSpeed);
+		double c1 = 0.003;
+		double c2 = Math.max(0.0005, (Math.tan(Math.toRadians(22)) * g - c1 * top) / (top * top));
+		double drag = c1 + c2 * h;
 		vx -= vx * drag;
 		vz -= vz * drag;
 		if (grounded) {

@@ -1,6 +1,7 @@
 package com.stasdoto.airdefense.nation;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Random;
 
 /** Made-up place names (in Russian: the player's language). */
@@ -26,7 +27,10 @@ public final class Names {
 			"Велария", "Борения", "Зарания", "Кремония", "Лиравия", "Мирания", "Норвалия", "Оргения", "Ровения",
 			"Светония", "Ульмания", "Фалькония", "Холмия", "Эстравия", "Ясония", "Белогория", "Златогория", "Лесогория",
 			"Новоземье", "Приречье", "Серебрания", "Одолания", "Вышеград", "Ладония", "Дубравия", "Каменея", "Полесия",
-			"Синегория", "Ветрания", "Тавелия",
+			"Синегория", "Ветрания", "Тавелия", "Арвения", "Бравония", "Гардания", "Доравия", "Ельмания", "Жемчужье",
+			"Залесье", "Ильмения", "Корвения", "Луговия", "Маревия", "Нарвения", "Озерия", "Порубежье", "Ратония", "Сармидия",
+			"Тальмира", "Угория", "Хельвардия", "Червония", "Шуравия", "Яргения", "Альвения", "Беловодье", "Велесия", "Грания",
+			"Даниславия", "Звенигория", "Красногория", "Медвежье", "Острения", "Ростения", "Сокольния", "Туровия",
 	};
 	private static final String[] FORMS = {"Республика", "Княжество", "Королевство", "Федерация", "Союз", "Земля"};
 
@@ -55,7 +59,22 @@ public final class Names {
 		return VILLAGES[r.nextInt(VILLAGES.length)][0] + " " + (taken.size() + 1);
 	}
 
+	/** A country's name: a land no other country is called after yet (only once they are all taken, another form of one). */
 	public static String country(Random r, Collection<String> taken) {
+		java.util.Set<String> lands = new java.util.HashSet<>();
+		for (String t : taken) {
+			int sp = t.indexOf(' ');
+			lands.add(sp < 0 ? t : t.substring(sp + 1));
+		}
+		List<String> free = new java.util.ArrayList<>();
+		for (String l : LANDS) {
+			if (!lands.contains(l)) {
+				free.add(l);
+			}
+		}
+		if (!free.isEmpty()) {
+			return FORMS[r.nextInt(FORMS.length)] + " " + free.get(r.nextInt(free.size()));
+		}
 		for (int attempt = 0; attempt < 40; attempt++) {
 			String name = FORMS[r.nextInt(FORMS.length)] + " " + LANDS[r.nextInt(LANDS.length)];
 			if (!taken.contains(name)) {
