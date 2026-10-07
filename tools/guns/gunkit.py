@@ -326,6 +326,7 @@ class Gun:
         self.id = id
         self.sight = sight          # height (cm) of the line of sight above the grip
         self.bore = sight - 3.75 if bore is None else bore   # height of the barrel's axis
+        self.sight_x = 0.0          # where the sight line is across the gun (launchers aim from the left side)
         self.R = R                  # texture pixels per centimetre
         self.seed = seed
         self.long_gun = long_gun
@@ -542,7 +543,7 @@ def element(b, bi, uvpos, W, H, k):
 # front. Aimed, the sight line runs AIM_DROP blocks under the eye (the front post just under the crosshair).
 HIP = [-5.6, 5.2, 6.4]
 HIP_ROT = [3, -5, 4]
-PISTOL_HIP = [-6.1, 4.8, 4.8]
+PISTOL_HIP = [-5.8, 5.0, 6.0]
 PISTOL_ROT = [0, -3, 0]
 AIM_DROP = 0.015
 
@@ -576,7 +577,9 @@ def export(g, real_length=None):
     # the eye with the grip 0.3 ahead (a pistol is held out at arm's length).
     hip_fp = {'rotation': HIP_ROT if g.long_gun else PISTOL_ROT, 'translation': HIP if g.long_gun else PISTOL_HIP, 'scale': [scale] * 3}
     sight = g.sight * k * scale / 16
-    aim_fp = {'rotation': [0, 0, 0], 'translation': [-8.96, round((0.52 - sight - AIM_DROP) * 16, 3), 6.72 if g.long_gun else 4.8],
+    side = g.sight_x * k * scale / 16
+    aim_fp = {'rotation': [0, 0, 0], 'translation': [round((-0.56 - side) * 16, 3), round((0.52 - sight - AIM_DROP) * 16, 3),
+                                                       6.72 if g.long_gun else 6.4],
               'scale': [scale] * 3}
     if g.scoped:
         aim_fp = {'rotation': [0, 0, 0], 'translation': [0, -40, 0], 'scale': [0.01] * 3}

@@ -42,6 +42,8 @@ public final class ModItems {
 	public static final Item FACTORY_KIT = register("factory_kit", FactoryKitItem::new, new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
 	public static final Item FACTORY_CONTROLLER = register("factory_controller", p -> new BlockItem(ModBlocks.FACTORY_CONTROLLER, p),
 			new Item.Properties().useBlockDescriptionPrefix());
+	/** 1.24: the air raid siren (a block on a pole). */
+	public static final Item SIREN = register("siren", p -> new BlockItem(ModBlocks.SIREN, p), new Item.Properties().useBlockDescriptionPrefix());
 	/** 35 mm rounds for the Gepard: one box = ten bursts. */
 	public static final Item GEPARD_AMMO = register("gepard_ammo", Item::new, new Item.Properties().stacksTo(16));
 
@@ -71,6 +73,8 @@ public final class ModItems {
 	public static final Item SHILKA = vehicle("shilka", VehicleType.SHILKA);
 	public static final Item TUNGUSKA = vehicle("tunguska", VehicleType.TUNGUSKA);
 	public static final Item SAMPT = vehicle("sampt", VehicleType.SAMPT);
+	public static final Item IRON_DOME = vehicle("iron_dome", VehicleType.IRON_DOME);
+	public static final Item ELM2084 = vehicle("elm2084", VehicleType.ELM2084);
 	public static final Item AVENGER = vehicle("avenger", VehicleType.AVENGER);
 	public static final Item MFG = vehicle("mfg", VehicleType.MFG);
 	public static final Item ZU23 = vehicle("zu23", VehicleType.ZU23);
@@ -127,6 +131,7 @@ public final class ModItems {
 	public static final Item IRIST_MISSILE = missile(MissileType.IRIST);
 	public static final Item AMRAAM_MISSILE = missile(MissileType.AMRAAM);
 	public static final Item STINGER_MISSILE = missile(MissileType.STINGER);
+	public static final Item TAMIR_MISSILE = missile(MissileType.TAMIR);
 	// Stage R9: drones you fly yourself.
 	public static final Item FPV_DRONE = register("fpv_drone", p -> new com.stasdoto.airdefense.drone.PilotedDroneItem(p, MissileType.FPV),
 			new Item.Properties().stacksTo(8));
@@ -189,6 +194,7 @@ public final class ModItems {
 			.displayItems((params, output) -> {
 				output.accept(com.stasdoto.airdefense.guide.Guide.book());
 				output.accept(DESIGNATOR);
+				output.accept(SIREN);
 				output.accept(ISKANDER);
 				output.accept(KALIBR);
 				output.accept(SHAHED);
@@ -212,6 +218,8 @@ public final class ModItems {
 				output.accept(SHILKA);
 				output.accept(TUNGUSKA);
 				output.accept(SAMPT);
+				output.accept(IRON_DOME);
+				output.accept(ELM2084);
 				output.accept(AVENGER);
 				output.accept(MFG);
 				output.accept(ZU23);
@@ -258,6 +266,7 @@ public final class ModItems {
 				output.accept(IRIST_MISSILE);
 				output.accept(AMRAAM_MISSILE);
 				output.accept(STINGER_MISSILE);
+				output.accept(TAMIR_MISSILE);
 				output.accept(FPV_DRONE);
 				output.accept(MAGURA_DRONE);
 			})

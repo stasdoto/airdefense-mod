@@ -50,7 +50,8 @@ def make_rpg7():
 
 def make_rpg22():
     Y = 3.8
-    g = Gun('rpg22', Y + 4.6, bore=Y, R=4, seed=22)
+    g = Gun('rpg22', Y + 4.8, bore=Y, R=4, seed=22)
+    g.sight_x = -3.0
     # Telescopic tube (pulled out): the slimmer front section, the rear one, end caps, yellow band, sling.
     tube(g, -42.0, -12.0, Y, 3.5, 'tube_green')
     tube(g, -12.0, 40.0, Y, 3.8, 'tube_green')
@@ -60,16 +61,24 @@ def make_rpg22():
     # Trigger lever and safety on top, the flip-up frame sights.
     g.bar(-8.0, 4.0, Y + 3.6, Y + 4.6, 2.2, 'black')
     g.bar(-6.0, -2.0, Y + 4.6, Y + 5.2, 1.0, 'red')
-    g.bar(-34.0, -33.4, Y + 3.4, Y + 6.2, 2.4, 'black')
-    g.bar(-34.0, -33.4, Y + 5.8, Y + 6.2, 2.4, 'black')
-    g.bar(-1.0, -0.4, Y + 4.6, Y + 6.0, 1.4, 'black')
+    # Flip-up sights on the left: the front frame with its post, the rear aperture.
+    for z in (-34.0,):
+        g.bar(z, z + 0.6, Y + 1.0, Y + 6.4, 0.5, 'black', x=-4.6)
+        g.bar(z, z + 0.6, Y + 1.0, Y + 6.4, 0.5, 'black', x=-1.4)
+        g.bar(z, z + 0.6, Y + 6.0, Y + 6.4, 3.7, 'black', x=-3.0)
+        g.bar(z, z + 0.6, Y + 1.0, Y + 4.8, 0.3, 'black', x=-3.0)
+    g.bar(-2.0, 1.0, Y + 1.0, Y + 4.0, 1.8, 'black', x=-3.0)
+    g.box((-3.25, Y + 4.6, -1.0), (-2.75, Y + 5.1, -0.5), 'rubber')
+    g.bar(-1.0, -0.4, Y + 4.0, Y + 5.6, 0.6, 'black', x=-3.6)
+    g.bar(-1.0, -0.4, Y + 4.0, Y + 5.6, 0.6, 'black', x=-2.4)
     g.box((-1.8, Y - 0.5, -36.0), (1.8, Y + 0.5, -35.0), 'canvas')
     return g
 
 
 def make_at4():
     Y = 6.0
-    g = Gun('at4', Y + 6.2, bore=Y, R=4, seed=4)
+    g = Gun('at4', Y + 6.8, bore=Y, R=4, seed=4)
+    g.sight_x = -4.0
     tube(g, -46.0, 52.0, Y, 4.2, 'tube_olive')
     # Rubber shock absorbers at both ends.
     tube(g, -50.0, -42.0, Y, 4.8, 'rubber')
@@ -80,8 +89,11 @@ def make_at4():
     g.bar(16.0, 30.0, 0.6, Y - 3.8, 3.0, 'poly')
     g.bar(-4.0, 12.0, Y + 4.0, Y + 5.6, 3.0, 'od_metal')
     g.bar(2.0, 6.0, Y + 5.6, Y + 6.4, 1.2, 'red')
-    g.bar(-28.0, -26.0, Y + 4.0, Y + 6.6, 2.4, 'black')
-    g.bar(10.0, 12.0, Y + 5.6, Y + 7.0, 2.2, 'black')
+    # Pop-up sights on the left of the tube: the front post on its blade, the rear aperture.
+    g.bar(-28.0, -26.6, Y + 2.0, Y + 6.0, 0.6, 'black', x=-4.0)
+    g.bar(-27.6, -27.0, Y + 6.0, Y + 6.8, 0.3, 'black', x=-4.0)
+    g.bar(8.0, 12.0, Y + 2.0, Y + 6.2, 0.8, 'black', x=-4.0)
+    g.box((-4.6, Y + 6.2, 9.4), (-3.4, Y + 7.4, 10.4), 'black')
     for z in (-36.0, 30.0):
         tube(g, z, z + 1.0, Y, 4.35, 'black')
     g.box((-2.0, Y - 0.6, -10.0), (2.0, Y + 0.6, 40.0), 'tube_olive', faces=('west',))

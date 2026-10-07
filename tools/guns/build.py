@@ -22,11 +22,16 @@ for name in ('ar', 'others', 'launchers'):
 JAVA = os.path.abspath(os.path.join(HERE, '..', '..', 'src', 'main', 'java', 'com', 'stasdoto', 'airdefense', 'weapon', 'GunModels.java'))
 
 
+# Guns aimed through optics: their scope picture covers the screen, so the aimed model is not drawn.
+SCOPED = {'svd', 'sv98', 'vss', 'm16a4', 'm110', 'm82', 'awm', 'javelin', 'rpg7', 'cg84', 'nlaw'}
+
+
 def guns(only=None):
     out = []
     for m in MODULES:
         for make in m.ALL:
             g = make()
+            g.scoped = g.id in SCOPED
             if only and g.id not in only:
                 continue
             out.append(g)

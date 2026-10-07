@@ -14,7 +14,9 @@ public enum RadarType {
 	TRML4D(250, 2, 360, 0, 0.3141f, 0.3, 60),
 	SENTINEL(200, 2, 360, 0, 0.1571f, 0.2, 30),
 	MPQ65(340, 3, 120, 180, 0f, 0.35, 0),
-	KUPOL(270, 4, 360, 0, 0.0628f, 0.15, 12);
+	KUPOL(270, 4, 360, 0, 0.0628f, 0.15, 12),
+	// 1.24: Iron Dome's multi-mission radar, a fast-turning AESA.
+	ELM2084(300, 2, 360, 0, 0.2094f, 0.3, 40);
 
 	public final double range;
 	public final double minAltitude;

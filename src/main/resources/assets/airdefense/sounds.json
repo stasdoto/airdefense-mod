@@ -736,5 +736,57 @@
       }
     ],
     "subtitle": "subtitles.airdefense.javelin_lock"
+  },
+  "siren_wail": {
+    "sounds": [
+      {
+        "name": "airdefense:siren_wail",
+        "attenuation_distance": 220
+      }
+    ],
+    "subtitle": "subtitles.airdefense.siren"
+  },
+  "siren_wail_far": {
+    "sounds": [
+      {
+        "name": "airdefense:siren_wail_far",
+        "attenuation_distance": 420
+      }
+    ]
+  },
+  "siren_clear": {
+    "sounds": [
+      {
+        "name": "airdefense:siren_clear",
+        "attenuation_distance": 220
+      }
+    ],
+    "subtitle": "subtitles.airdefense.siren_clear"
+  },
+  "siren_clear_far": {
+    "sounds": [
+      {
+        "name": "airdefense:siren_clear_far",
+        "attenuation_distance": 420
+      }
+    ]
+  },
+  "siren_start": {
+    "sounds": [
+      {
+        "name": "airdefense:siren_start",
+        "attenuation_distance": 220
+      }
+    ],
+    "subtitle": "subtitles.airdefense.siren_start"
+  },
+  "siren_stop": {
+    "sounds": [
+      {
+        "name": "airdefense:siren_stop",
+        "attenuation_distance": 260
+      }
+    ],
+    "subtitle": "subtitles.airdefense.siren_stop"
   }
 }

@@ -95,7 +95,7 @@ public enum Product {
 			case IRIS_T -> IRIST;
 			case NASAMS -> AMRAAM;
 			case GEPARD -> GEPARD_AMMO;
-			case PANTSIR, TOR, OSA, STRELA10, TUNGUSKA -> SAM_SHORT;
+			case PANTSIR, TOR, OSA, STRELA10, TUNGUSKA, IRON_DOME -> SAM_SHORT;
 			case BUK, S300, SAMPT -> SAM_LONG;
 			case SHILKA, ZU23 -> AMMO_23;
 			case MFG -> AMMO_127;

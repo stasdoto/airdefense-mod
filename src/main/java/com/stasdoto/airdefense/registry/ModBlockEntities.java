@@ -25,6 +25,11 @@ public final class ModBlockEntities {
 			AirDefense.id("factory"),
 			FabricBlockEntityTypeBuilder.<FactoryBlockEntity>create(FactoryBlockEntity::new, ModBlocks.FACTORY_CONTROLLER).build());
 
+	public static final BlockEntityType<com.stasdoto.airdefense.siren.SirenBlockEntity> SIREN = Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE,
+			AirDefense.id("siren"),
+			FabricBlockEntityTypeBuilder.<com.stasdoto.airdefense.siren.SirenBlockEntity>create(com.stasdoto.airdefense.siren.SirenBlockEntity::new,
+					ModBlocks.SIREN).build());
+
 	private ModBlockEntities() {
 	}
 

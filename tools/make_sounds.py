@@ -456,7 +456,98 @@ def arsenal():
     save('javelin_lock', tone * np.clip(t / 0.01, 0, 1) * np.clip((0.9 - t) / 0.05, 0, 1) * 0.6, peak=0.5)
 
 
+def circ_filter(x, lo=None, hi=None):
+    """Band filter by FFT (circular, so a loop stays seamless)."""
+    X = np.fft.rfft(x)
+    f = np.fft.rfftfreq(len(x), 1 / SR)
+    m = np.ones_like(f)
+    if lo:
+        m *= 1 / np.sqrt(1 + (lo / np.maximum(f, 1e-3)) ** 4)
+    if hi:
+        m *= 1 / np.sqrt(1 + (f / hi) ** 4)
+    return np.fft.irfft(X * m, len(x))
+
+
+def circ_reverb(x, tail, damp, mix):
+    """Reverb that wraps round the end of a loop."""
+    n = int(tail * SR)
+    ir = white(tail) * decay(n, tail / 5.5)
+    ir = lp(ir, damp, 2)
+    ir[: int(0.02 * SR)] = 0
+    ir /= np.sqrt(np.sum(ir ** 2)) + 1e-9
+    L = len(x)
+    wet = np.fft.irfft(np.fft.rfft(x) * np.fft.rfft(ir, L), L)
+    return x * (1 - mix) + wet * mix * 3
+
+
+def circ_echoes(x, taps):
+    out = x.copy()
+    for d, g, hi in taps:
+        out += np.roll(circ_filter(x, hi=hi), int(d * SR)) * g
+    return out
+
+
+def siren_voice(f, ports=10, seed=0):
+    """A motor siren's sound for a pitch curve f (Hz per sample): the rotor's ports chop the air - a buzzy tone
+    with strong harmonics, rushing air, and a slight wobble once per rotor turn."""
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    x = np.zeros_like(f)
+    for k in range(1, 9):
+        x += np.sin(k * ph + 0.3 * k) / k ** 0.85
+    x = np.tanh(x * 1.4)
+    r = np.random.default_rng(seed)
+    air = r.standard_normal(len(f))
+    air = circ_filter(air, lo=150, hi=2500) * (0.6 + 0.4 * np.sin(ph)) * 0.35
+    wob = 1 + 0.08 * np.sin(ph / ports)
+    return (x + air) * wob
+
+
+def sirens():
+    """1.24: the air raid siren, a real motor siren. The alert: the pitch climbs as the rotor spins up, then sinks
+    as it coasts down, again and again (a 12 s cycle, looped seamlessly); the all clear: one steady tone; the start
+    (spin-up from rest) and the stop (coasting down to silence). Near and far (muffled, echoing) layers."""
+    T = 12.0
+    t = t_axis(T)
+    up, rise_tau, fall_tau = 5.0, 1.6, 2.4
+    s = np.where(t < up, (1 - np.exp(-t / rise_tau)) / (1 - np.exp(-up / rise_tau)),
+                 (np.exp(-(t - up) / fall_tau) - np.exp(-(T - up) / fall_tau)) / (1 - np.exp(-(T - up) / fall_tau)))
+    lo, hi = 190.0, 470.0
+    f = lo + (hi - lo) * s
+    # Whole number of rotor turns over the loop (10 ports), so the end meets the start.
+    cycles = np.sum(f) / SR
+    want = round(cycles / 10) * 10
+    f *= want / cycles
+    x = siren_voice(f)
+    loud = 0.55 + 0.45 * s
+    near = circ_echoes(x * loud, [(0.35, 0.25, 3000), (0.9, 0.15, 1800)])
+    save('siren_wail', circ_reverb(near, 2.0, 4000, 0.25), peak=0.9, loop=True)
+    far = circ_filter(x * loud, hi=1100)
+    far = circ_echoes(far, [(0.6, 0.45, 900), (1.5, 0.3, 700), (2.7, 0.2, 500)])
+    save('siren_wail_far', circ_reverb(far, 4.0, 900, 0.55), peak=0.8, loop=True)
+    # All clear: a steady tone.
+    T2 = 4.0
+    f2 = np.full(int(T2 * SR), 430.0)
+    c2 = np.sum(f2) / SR
+    f2 *= round(c2 / 10) * 10 / c2
+    y = siren_voice(f2, seed=2)
+    save('siren_clear', circ_reverb(circ_echoes(y, [(0.35, 0.25, 3000)]), 2.0, 4000, 0.25), peak=0.85, loop=True)
+    save('siren_clear_far', circ_reverb(circ_echoes(circ_filter(y, hi=1100), [(0.6, 0.45, 900), (1.5, 0.3, 700)]), 4.0, 900, 0.55),
+         peak=0.75, loop=True)
+    # Spin-up from rest to the loop's lowest pitch; coasting down to nothing.
+    t3 = t_axis(2.6)
+    f3 = lo * (1 - np.exp(-t3 / 0.9)) / (1 - np.exp(-2.6 / 0.9))
+    z = siren_voice(f3, seed=3) * np.clip(t3 / 1.2, 0, 1) ** 1.5
+    save('siren_start', reverb(z, 3.6, 2.0, damp=4000, mix=0.25), peak=0.8)
+    t4 = t_axis(9.0)
+    f4 = 330 * np.exp(-t4 / 2.6)
+    w = siren_voice(f4, seed=4) * np.clip(1 - t4 / 9.0, 0, 1) ** 0.7
+    save('siren_stop', reverb(w, 10.0, 2.5, damp=3000, mix=0.3), peak=0.8)
+
+
 if __name__ == '__main__':
+    if len(sys.argv) > 2 and sys.argv[2] == 'sirens':
+        sirens()
+        sys.exit(0)
     if len(sys.argv) > 2 and sys.argv[2] == 'small_arms':
         small_arms()
         sys.exit(0)

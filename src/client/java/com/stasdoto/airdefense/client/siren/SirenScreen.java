@@ -1,0 +1,213 @@
+package com.stasdoto.airdefense.client.siren;
+
+import java.util.List;
+
+import com.mojang.blaze3d.platform.InputConstants;
+
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+
+import com.stasdoto.airdefense.client.map.TacticalMapScreen;
+import com.stasdoto.airdefense.item.DesignatorItem;
+import com.stasdoto.airdefense.siren.Sirens;
+import com.stasdoto.airdefense.siren.SirenNet;
+
+/**
+ * The tablet's air raid warning page (1.24): alert or all clear in every town at once, in one town, or one siren by
+ * hand. Towns on the left (nearest first), the sirens nearest to you on the right.
+ */
+public class SirenScreen extends Screen {
+	private static final int ROW = 22;
+	private int refresh;
+	private int townScroll;
+	private int sirenScroll;
+	private int x0;
+	private int top;
+	private int colW;
+
+	public SirenScreen() {
+		super(Component.translatable("screen.airdefense.siren.title"));
+	}
+
+	@Override
+	protected void init() {
+		colW = Math.min(240, (width - 30) / 2);
+		x0 = (width - colW * 2 - 10) / 2;
+		top = 52;
+		int bw = Math.min(130, (colW * 2 + 10 - 12) / 4);
+		int bx = x0;
+		addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.siren.all_alert"), b -> SirenClient.send(SirenNet.Action.ALL, 1, 0))
+				.bounds(bx, 22, bw, 20).build());
+		addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.siren.all_clear"), b -> SirenClient.send(SirenNet.Action.ALL, 0, 0))
+				.bounds(bx + bw + 4, 22, bw, 20).build());
+		addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.siren.silence"), b -> SirenClient.send(SirenNet.Action.SILENCE, 0, 0))
+				.bounds(bx + (bw + 4) * 2, 22, bw, 20).build());
+		addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.siren.back"), b -> minecraft.gui.setScreen(new TacticalMapScreen()))
+				.bounds(bx + (bw + 4) * 3, 22, bw, 20).build());
+		SirenClient.send(SirenNet.Action.REFRESH, 0, 0);
+	}
+
+	@Override
+	public boolean isPauseScreen() {
+		return false;
+	}
+
+	@Override
+	public void tick() {
+		if (minecraft.player == null || DesignatorItem.held(minecraft.player) == null && !minecraft.player.getAbilities().instabuild) {
+			onClose();
+			return;
+		}
+		if (++refresh % 10 == 0) {
+			SirenClient.send(SirenNet.Action.REFRESH, 0, 0);
+		}
+	}
+
+	private int rows() {
+		return Math.max(1, (height - top - 30) / ROW);
+	}
+
+	private List<SirenNet.Town> towns() {
+		return SirenClient.state == null ? List.of() : SirenClient.state.towns();
+	}
+
+	private List<SirenNet.Siren> sirens() {
+		return SirenClient.state == null ? List.of() : SirenClient.state.sirens();
+	}
+
+	@Override
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+		int d = (int) -Math.signum(scrollY);
+		if (mouseX < x0 + colW + 5) {
+			townScroll = Math.max(0, Math.min(Math.max(0, towns().size() - rows()), townScroll + d));
+		} else {
+			sirenScroll = Math.max(0, Math.min(Math.max(0, sirens().size() - rows()), sirenScroll + d));
+		}
+		return true;
+	}
+
+	@Override
+	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+		if (super.mouseClicked(event, doubleClick)) {
+			return true;
+		}
+		if (event.button() != InputConstants.MOUSE_BUTTON_LEFT || event.y() < top + 14) {
+			return false;
+		}
+		int row = (int) ((event.y() - top - 14) / ROW);
+		double x = event.x();
+		List<SirenNet.Town> towns = towns();
+		if (x >= x0 && x < x0 + colW && row + townScroll < towns.size()) {
+			SirenNet.Town t = towns.get(row + townScroll);
+			int bx = x0 + colW - 104;
+			if (x >= bx && x < bx + 50) {
+				SirenClient.send(SirenNet.Action.TOWN, t.id(), 0);
+				return true;
+			}
+			if (x >= bx + 52 && x < bx + 102) {
+				SirenClient.send(SirenNet.Action.TOWN_CLEAR, t.id(), 0);
+				return true;
+			}
+		}
+		List<SirenNet.Siren> sirens = sirens();
+		int sx = x0 + colW + 10;
+		if (x >= sx && x < sx + colW && row + sirenScroll < sirens.size()) {
+			SirenNet.Siren s = sirens.get(row + sirenScroll);
+			int bx = sx + colW - 150;
+			for (int m = 0; m < 3; m++) {
+				if (x >= bx + m * 50 && x < bx + m * 50 + 48) {
+					SirenClient.send(SirenNet.Action.SIREN_MODE, m, s.pos());
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+		g.fill(0, 0, width, height, 0xC0101418);
+	}
+
+	@Override
+	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+		super.extractRenderState(g, mouseX, mouseY, partialTick);
+		boolean all = SirenClient.state != null && SirenClient.state.everywhere();
+		g.text(font, title, x0, 8, 0xFFFFFFFF);
+		if (all) {
+			Component c = Component.translatable("screen.airdefense.siren.everywhere");
+			g.text(font, c, x0 + colW * 2 + 10 - font.width(c), 8, blink() ? 0xFFFF5040 : 0xFFB03020);
+		}
+		// Towns.
+		g.text(font, Component.translatable("screen.airdefense.siren.towns"), x0, top, 0xFFB8C8D8);
+		List<SirenNet.Town> towns = towns();
+		int rows = rows();
+		for (int i = 0; i < rows && i + townScroll < towns.size(); i++) {
+			SirenNet.Town t = towns.get(i + townScroll);
+			int y = top + 14 + i * ROW;
+			int bg = t.signal() == Sirens.ALERT ? (blink() ? 0x80802020 : 0x60601818) : t.signal() == Sirens.CLEAR ? 0x50206020 : 0x40303840;
+			g.fill(x0, y, x0 + colW, y + ROW - 2, bg);
+			g.text(font, (t.capital() ? "★ " : "") + t.name(), x0 + 4, y + 2, 0xFFFFFFFF);
+			Component sub = Component.translatable("screen.airdefense.siren.town_line",
+					Component.translatable("screen.airdefense.siren.signal." + signalName(t.signal())), t.sirens(), t.distance());
+			small(g, sub, x0 + 4, y + 12, 0xFFC0C8D0);
+			int bx = x0 + colW - 104;
+			button(g, bx, y + 2, 50, Component.translatable("screen.airdefense.siren.alert"), 0xFFB02818, mouseX, mouseY);
+			button(g, bx + 52, y + 2, 50, Component.translatable("screen.airdefense.siren.clear"), 0xFF287838, mouseX, mouseY);
+		}
+		if (towns.isEmpty()) {
+			small(g, Component.translatable("screen.airdefense.siren.no_towns"), x0 + 4, top + 16, 0xFFA0A0A0);
+		}
+		// Sirens.
+		int sx = x0 + colW + 10;
+		g.text(font, Component.translatable("screen.airdefense.siren.sirens"), sx, top, 0xFFB8C8D8);
+		List<SirenNet.Siren> sirens = sirens();
+		for (int i = 0; i < rows && i + sirenScroll < sirens.size(); i++) {
+			SirenNet.Siren s = sirens.get(i + sirenScroll);
+			int y = top + 14 + i * ROW;
+			int bg = s.signal() == Sirens.ALERT ? (blink() ? 0x80802020 : 0x60601818) : s.signal() == Sirens.CLEAR ? 0x50206020 : 0x40303840;
+			g.fill(sx, y, sx + colW, y + ROW - 2, bg);
+			BlockPos p = BlockPos.of(s.pos());
+			String where = s.town().isEmpty() ? Component.translatable("screen.airdefense.siren.field").getString() : s.town();
+			g.text(font, where, sx + 4, y + 2, 0xFFFFFFFF);
+			small(g, Component.translatable("screen.airdefense.siren.siren_line", p.getX(), p.getZ(), s.distance(),
+					Component.translatable("screen.airdefense.siren.signal." + signalName(s.signal()))), sx + 4, y + 12, 0xFFC0C8D0);
+			int bx = sx + colW - 150;
+			for (int m = 0; m < 3; m++) {
+				int c = m == s.mode() ? (m == Sirens.MODE_ON ? 0xFFB02818 : m == Sirens.MODE_OFF ? 0xFF505860 : 0xFF2860A0) : 0xFF303840;
+				button(g, bx + m * 50, y + 2, 48, Component.translatable("screen.airdefense.siren.mode." + m), c, mouseX, mouseY);
+			}
+		}
+		if (sirens.isEmpty()) {
+			small(g, Component.translatable("screen.airdefense.siren.no_sirens"), sx + 4, top + 16, 0xFFA0A0A0);
+		}
+		small(g, Component.translatable("screen.airdefense.siren.hint"), x0, height - 14, 0xFF8090A0);
+	}
+
+	private static String signalName(int s) {
+		return s == Sirens.ALERT ? "alert" : s == Sirens.CLEAR ? "clear" : "off";
+	}
+
+	private boolean blink() {
+		return minecraft.level != null && minecraft.level.getGameTime() / 10 % 2 == 0;
+	}
+
+	private void button(GuiGraphicsExtractor g, int x, int y, int w, Component text, int color, int mx, int my) {
+		boolean hover = mx >= x && mx < x + w && my >= y && my < y + 16;
+		g.fill(x, y, x + w, y + 16, hover ? 0xFFFFFFFF : 0xFF101010);
+		g.fill(x + 1, y + 1, x + w - 1, y + 15, color);
+		g.text(font, text, x + (w - font.width(text)) / 2, y + 4, 0xFFFFFFFF);
+	}
+
+	private void small(GuiGraphicsExtractor g, Component text, int x, int y, int color) {
+		g.pose().pushMatrix();
+		g.pose().translate(x, y);
+		g.pose().scale(0.75f, 0.75f);
+		g.text(font, text, 0, 0, color);
+		g.pose().popMatrix();
+	}
+}

@@ -81,6 +81,13 @@ public final class ModSounds {
 	public static final SoundEvent GRENADE_LAUNCH = register("grenade_launch", 64);
 	public static final SoundEvent JAVELIN_SEEK = register("javelin_seek", 8);
 	public static final SoundEvent JAVELIN_LOCK = register("javelin_lock", 8);
+	// 1.24: the air raid siren - the wail (near and far layers), the all clear, the spin-up and the coast-down.
+	public static final SoundEvent SIREN_WAIL = register("siren_wail", 220);
+	public static final SoundEvent SIREN_WAIL_FAR = register("siren_wail_far", 420);
+	public static final SoundEvent SIREN_CLEAR = register("siren_clear", 220);
+	public static final SoundEvent SIREN_CLEAR_FAR = register("siren_clear_far", 420);
+	public static final SoundEvent SIREN_START = register("siren_start", 220);
+	public static final SoundEvent SIREN_STOP = register("siren_stop", 260);
 	/** Handed to vanilla explosions: the client plays the real explosion sound itself, delayed by distance. */
 	public static final SoundEvent SILENT = register("silent", 16);
 

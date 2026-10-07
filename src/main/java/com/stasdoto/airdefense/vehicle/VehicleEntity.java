@@ -1763,6 +1763,8 @@ public class VehicleEntity extends LivingEntity {
 		if (sirenTimer == 0) {
 			level.playSound(null, radar.x, radar.y, radar.z, ModSounds.SIREN, SoundSource.BLOCKS, 3.0f, 1.0f);
 			sirenTimer = 130;
+			// The air defence is firing: the towns around sound the air raid alert.
+			com.stasdoto.airdefense.siren.Sirens.autoAlert(level, position(), 260);
 		}
 		if (gun) {
 			tickGun(level, type, tracked);
@@ -1835,7 +1837,41 @@ public class VehicleEntity extends LivingEntity {
 			// Guns cannot do anything against a ballistic missile coming down at Mach 6.
 			return m.getMissileType().kind != MissileType.Kind.BALLISTIC;
 		}
+		if (type.protectsOnly() && level() instanceof ServerLevel server && !threatensSomething(server, m)) {
+			return false;
+		}
 		return worthEngagingNow(m, radar, range);
+	}
+
+	/** Iron Dome: missiles judged to fall in empty country and let go (for the tests). */
+	public static final java.util.Set<Integer> IGNORED_HARMLESS = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
+
+	/**
+	 * Iron Dome's battle management: where will it come down? Only what falls on a town, near people or vehicles,
+	 * or near the battery itself is worth an interceptor.
+	 */
+	private boolean threatensSomething(ServerLevel level, MissileEntity m) {
+		Vec3 at = m.getTarget();
+		BlockPos p = BlockPos.containing(at);
+		com.stasdoto.airdefense.nation.Politics pol = com.stasdoto.airdefense.nation.Politics.get(level.getServer());
+		for (com.stasdoto.airdefense.nation.Settlement s : pol.settlements.values()) {
+			double r = s.radius + 24;
+			if (s.center.distSqr(p) < r * r) {
+				return true;
+			}
+		}
+		if (at.distanceToSqr(position()) < 40 * 40) {
+			return true;
+		}
+		AABB box = new AABB(at, at).inflate(25);
+		if (!level.getEntitiesOfClass(net.minecraft.world.entity.player.Player.class, box, e -> e.isAlive() && !e.isSpectator()).isEmpty()
+				|| !level.getEntitiesOfClass(VehicleEntity.class, box.deflate(5), VehicleEntity::isAlive).isEmpty()) {
+			return true;
+		}
+		if (IGNORED_HARMLESS.add(m.getId()) && IGNORED_HARMLESS.size() > 512) {
+			IGNORED_HARMLESS.clear();
+		}
+		return false;
 	}
 
 	/** Ballistic missiles and rockets are engaged on the way down (terminal phase), unless already close. */

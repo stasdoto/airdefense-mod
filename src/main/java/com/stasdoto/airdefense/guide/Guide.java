@@ -18,7 +18,7 @@ import net.minecraft.world.item.component.WrittenBookContent;
  * the mod's creative tab. The pages are translated, so the book reads in the player's own language.
  */
 public final class Guide {
-	public static final int PAGES = 19;
+	public static final int PAGES = 20;
 	private static final String TAG = "airdefense_guide";
 
 	private Guide() {

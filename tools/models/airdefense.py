@@ -433,6 +433,57 @@ def sampt():
     return m
 
 
+def iron_dome():
+    """Iron Dome: the launcher of twenty Tamir interceptors (a box of 4 x 5 cells) on a 6x6 truck, desert sand; the
+    box tilts up to 55 degrees to fire."""
+    m = Model('iron_dome', paint='sand', seed=1011)
+    m.width = 2.55
+    m.wheelbase = 4.6
+    m.camera = 13
+    body = m.part('body')
+    zc = cabover(body, 4.7, 2.55, 'sand', cab_len=1.9, cab_h=3.0, y0=1.1)
+    frame(body, -4.3, zc + 0.2, 0.8, 1.1, half=0.5)
+    body.box((-1.27, 1.1, -4.35), (1.27, 1.4, zc - 0.1), 'sand')
+    # Hydraulics and the hinge block at the back, the power unit and cable reels behind the cab.
+    body.box((-1.2, 1.4, zc - 1.1), (1.2, 2.5, zc - 0.15), 'sand')
+    body.box((-0.9, 2.5, zc - 0.9), (0.9, 2.7, zc - 0.3), 'dgrey')
+    body.box((-1.15, 1.4, -4.3), (1.15, 1.75, -3.7), 'dgrey')
+    lights(body, -4.35, 1.2, 1.0, front=False)
+    for s_ in (-1, 1):
+        for z in (-4.0, zc - 0.4):
+            body.box((s_ * 1.27 - (0.0 if s_ > 0 else 0.45), 0.0, z - 0.15), (s_ * 1.27 + (0.45 if s_ > 0 else 0.0), 0.15, z + 0.15), 'dark')
+            body.box((s_ * 1.4 - 0.06, 0.15, z - 0.06), (s_ * 1.4 + 0.06, 1.2, z + 0.06), 'dark')
+    piv = (0, 1.75, -4.0)
+    er = m.part('launcher', piv)
+    m.set_elevator(er, deploy=55)
+    zf = zc - 1.3
+    # The box: side walls, roof, the frame round the front; each cell a part with its cap (fired = open).
+    er.box((-1.12, 1.75, -4.05), (1.12, 1.95, zf), 'sand')
+    er.box((-1.12, 3.65, -4.05), (1.12, 3.85, zf), 'sand')
+    for x in (-1.12, 0.98):
+        er.box((x, 1.95, -4.05), (x + 0.14, 3.65, zf), 'sand')
+    er.box((-0.98, 1.95, -4.05), (0.98, 3.65, -3.9), 'dgrey')
+    er.box((-1.16, 1.71, zf), (1.16, 3.89, zf + 0.06), 'dgrey', faces=('front', 'back', 'left', 'right', 'top', 'bottom'))
+    # Lifting arms either side.
+    for x in (-1.2, 1.12):
+        er.box((x, 2.0, -3.6), (x + 0.08, 2.6, -1.0), 'dgrey')
+    n = 0
+    for row in range(5):
+        for col in range(4):
+            x = (col - 1.5) * 0.46
+            y = 2.15 + row * 0.33
+            name = 'cell_%d' % n
+            c = er.part(name, (x, y, -3.9))
+            c.box((x - 0.2, y - 0.14, -3.9), (x + 0.2, y + 0.14, zf + 0.02), 'sand', sides={'front': 'dark'})
+            c.box((x - 0.17, y - 0.12, zf + 0.02), (x + 0.17, y + 0.12, zf + 0.05), 'light' if (row + col) % 7 == 3 else 'lgrey')
+            m.rail(name, (x, y, zf + 0.3))
+            n += 1
+    axles(m, [3.6, -2.0, -3.4], 0.6, 1.0, steer=1)
+    m.seat('driver', -0.6, 1.9, 3.6)
+    m.seat('gunner', 0.6, 1.9, 3.6)
+    return m
+
+
 def hmmwv(body, z0, paint, cargo=True):
     """M1097 Humvee from z0 (back) forward 4.6 m. Returns the z of the windscreen."""
     z1 = z0 + 4.6
@@ -552,4 +603,4 @@ def zu23():
 
 
 def all_models():
-    return [pantsir(), tor(), buk(), s300(), osa(), strela10(), shilka(), tunguska(), sampt(), avenger(), mfg(), zu23()]
+    return [pantsir(), tor(), buk(), s300(), osa(), strela10(), shilka(), tunguska(), sampt(), avenger(), mfg(), zu23(), iron_dome()]

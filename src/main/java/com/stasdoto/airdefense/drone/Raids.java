@@ -169,6 +169,10 @@ public final class Raids {
 			if (raid.enemy && !raid.alerted && now % 10 == 0) {
 				checkAlert(level, raid);
 			}
+			if (raid.alerted && now % 200 == 0 && !raid.flying.isEmpty()) {
+				// Keep the alert on while the raid is still in the air (the all clear sounds when it is over).
+				com.stasdoto.airdefense.siren.Sirens.autoAlert(level, raid.center, 400);
+			}
 			if (raid.shots.isEmpty() && raid.flying.isEmpty()) {
 				it.remove();
 			}
@@ -192,6 +196,7 @@ public final class Raids {
 		}
 		raid.alerted = true;
 		alerts++;
+		com.stasdoto.airdefense.siren.Sirens.autoAlert(level, raid.center, 400);
 		Component title = Component.translatable("message.airdefense.raid.title");
 		Component sub = Component.translatable(seen ? "message.airdefense.raid.radar" : "message.airdefense.raid.late",
 				Component.translatable("message.airdefense.dir." + raid.direction), raid.total);

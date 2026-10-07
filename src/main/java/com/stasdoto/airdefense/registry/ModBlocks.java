@@ -29,6 +29,9 @@ public final class ModBlocks {
 	public static final Block NASAMS = register("nasams", p -> new DefenseBlock(DefenseType.NASAMS, p), MapColor.COLOR_GREEN);
 	public static final Block GEPARD = register("gepard", p -> new DefenseBlock(DefenseType.GEPARD, p), MapColor.COLOR_GREEN);
 
+	/** 1.24: the air raid siren on its pole (its red lamp lights while it sounds). */
+	public static final Block SIREN = registerSiren();
+
 	/** The factory's control desk (placed by the factory kit; it has an item so it can be picked up and put back). */
 	public static final Block FACTORY_CONTROLLER = register("factory_controller", FactoryControllerBlock::new, MapColor.METAL);
 
@@ -47,6 +50,19 @@ public final class ModBlocks {
 		// Old one-block launchers: kept so existing worlds load; each turns into a real vehicle on its first tick.
 		// Their item ids now belong to the vehicle items (see ModItems).
 		return Registry.register(BuiltInRegistries.BLOCK, ids.block(), factory.apply(props));
+	}
+
+	private static Block registerSiren() {
+		Identifier id = AirDefense.id("siren");
+		BlockItemId ids = BlockItemId.create(id, id);
+		BlockBehaviour.Properties props = BlockBehaviour.Properties.of()
+				.mapColor(MapColor.METAL)
+				.strength(3.0f, 6.0f)
+				.sound(SoundType.METAL)
+				.noOcclusion()
+				.lightLevel(st -> st.getValue(com.stasdoto.airdefense.siren.SirenBlock.SIGNAL) == com.stasdoto.airdefense.siren.SirenBlock.Signal.OFF ? 0 : 6)
+				.setId(ids.block());
+		return Registry.register(BuiltInRegistries.BLOCK, ids.block(), new com.stasdoto.airdefense.siren.SirenBlock(props));
 	}
 
 	public static void init() {

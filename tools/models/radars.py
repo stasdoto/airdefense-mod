@@ -134,6 +134,41 @@ def trml4d():
     return m
 
 
+def elm2084():
+    """ELTA EL/M-2084 MMR: Iron Dome's multi-mission radar - a big AESA face turning on an 8x8 truck, desert sand."""
+    m = Model('elm2084', paint='sand', seed=2084)
+    m.width = 2.55
+    m.wheelbase = 5.2
+    m.camera = 15
+    body = m.part('body')
+    frame(body, -4.6, 3.2, 0.75, 1.05)
+    zc = cabover(body, 4.7, 2.55, 'sand', cab_len=1.9, cab_h=3.05, y0=1.05)
+    van(body, -0.4, zc - 0.1, 1.15, 3.1, 2.5, 'sand', door=True, vents=2)
+    body.box((-1.25, 1.05, -4.65), (1.25, 1.3, -0.45), 'sand')
+    body.box((0.45, 1.3, -1.3), (1.2, 2.1, -0.55), 'dgrey')
+    lights(body, -4.65, 1.0, 1.0, front=False)
+    pz = -2.8
+    body.box((-0.6, 1.3, pz - 0.6), (0.6, 2.4, pz + 0.6), 'sand')
+    for s_ in (-1, 1):
+        for z in (pz - 1.2, pz + 1.2):
+            body.box((s_ * 1.25 - (0.0 if s_ > 0 else 0.5), 0.0, z - 0.15), (s_ * 1.25 + (0.5 if s_ > 0 else 0.0), 0.15, z + 0.15), 'dark')
+    ant = m.part('antenna', (0, 2.4, pz))
+    m.spinner = 'antenna'
+    ant.box((-0.45, 2.4, pz - 0.45), (0.45, 2.85, pz + 0.45), 'dgrey')
+    panel = ant.part('panel', (0, 2.85, pz), (15, 0, 0))
+    panel.box((-1.8, 2.85, pz - 0.12), (1.8, 5.3, pz + 0.3), 'sand', sides={'front': 'aesa_light'})
+    panel.box((-1.9, 2.8, pz - 0.18), (1.9, 2.9, pz + 0.36), 'dgrey')
+    panel.box((-1.9, 5.25, pz - 0.18), (1.9, 5.35, pz + 0.36), 'dgrey')
+    for x in (-1.9, 1.8):
+        panel.box((x, 2.85, pz - 0.18), (x + 0.1, 5.3, pz + 0.36), 'dgrey')
+    panel.box((-1.2, 3.2, pz - 0.6), (1.2, 4.9, pz - 0.12), 'sand')
+    panel.box((-1.5, 5.35, pz - 0.05), (1.5, 5.55, pz + 0.22), 'sand', sides={'front': 'aesa'})
+    axles(m, [3.6, 2.2, -2.2, -3.6], 0.6, 1.0, steer=2)
+    m.seat('driver', -0.6, 1.75, 3.5)
+    m.seat('gunner', 0.6, 1.75, 3.5)
+    return m
+
+
 def sentinel():
     """AN/MPQ-64 Sentinel: X-band radar on a trailer behind a Humvee (NASAMS' radar)."""
     m = Model('sentinel', paint='camo', seed=64)
@@ -259,4 +294,4 @@ def kupol():
 
 
 def all_models():
-    return [p18(), st68(), trml4d(), sentinel(), mpq65(), kupol()]
+    return [p18(), st68(), trml4d(), sentinel(), mpq65(), kupol(), elm2084()]

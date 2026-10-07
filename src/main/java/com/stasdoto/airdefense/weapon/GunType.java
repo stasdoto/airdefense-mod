@@ -25,8 +25,8 @@ public enum GunType {
 			.zoom(0.25f).report(Report.SNIPER).scope(Scope.PSO).bloc(Bloc.EAST)),
 	PM(new Spec("pm", "ammo_9mm").mag(8).interval(3).dmg(5.0f).spread(2.2f, 0.9f).range(60).reload(30).recoil(2.4f)
 			.zoom(0.85f).report(Report.PISTOL).pistol().bloc(Bloc.EAST)),
-	RPG7(new Spec("rpg7", "rpg_round").mag(1).interval(10).spread(2.5f, 0.6f).range(220).reload(70).recoil(3.0f).zoom(0.6f)
-			.report(Report.ROCKET).rocket(MissileType.RPG).bloc(Bloc.EAST)),
+	RPG7(new Spec("rpg7", "rpg_round").mag(1).interval(10).spread(2.5f, 0.6f).range(220).reload(70).recoil(3.0f).zoom(0.42f)
+			.report(Report.ROCKET).rocket(MissileType.RPG).scope(Scope.PGO).bloc(Bloc.EAST)),
 	// --- 1.24: the Kalashnikov family and the other Soviet / Russian / Ukrainian arms ---
 	AKM(new Spec("akm", "ammo_762x39").mag(30).rpm(600).auto().dmg(7.0f).spread(2.2f, 0.55f).range(140).reload(48).recoil(1.75f)
 			.zoom(0.78f).report(Report.RIFLE).bloc(Bloc.EAST)),
@@ -83,10 +83,10 @@ public enum GunType {
 			.report(Report.GRENADE).rocket(MissileType.G40).bloc(Bloc.WEST)),
 	AT4(new Spec("at4", null).mag(1).interval(10).spread(2.5f, 0.6f).range(200).recoil(3.5f).zoom(0.6f).report(Report.ROCKET)
 			.rocket(MissileType.AT4).disposable().bloc(Bloc.WEST)),
-	CG84(new Spec("cg84", "cg_round").mag(1).interval(10).spread(2.5f, 0.5f).range(260).reload(80).recoil(3.5f).zoom(0.5f)
-			.report(Report.ROCKET).rocket(MissileType.CG84).bloc(Bloc.WEST)),
-	NLAW(new Spec("nlaw", null).mag(1).interval(10).spread(2.5f, 0.4f).range(260).recoil(2.0f).zoom(0.45f).report(Report.ROCKET)
-			.rocket(MissileType.NLAW).disposable().bloc(Bloc.WEST)),
+	CG84(new Spec("cg84", "cg_round").mag(1).interval(10).spread(2.5f, 0.5f).range(260).reload(80).recoil(3.5f).zoom(0.33f)
+			.report(Report.ROCKET).rocket(MissileType.CG84).scope(Scope.LAUNCHER).bloc(Bloc.WEST)),
+	NLAW(new Spec("nlaw", null).mag(1).interval(10).spread(2.5f, 0.4f).range(260).recoil(2.0f).zoom(0.4f).report(Report.ROCKET)
+			.rocket(MissileType.NLAW).scope(Scope.LAUNCHER).disposable().bloc(Bloc.WEST)),
 	JAVELIN(new Spec("javelin", "javelin_missile").mag(1).interval(10).spread(2.0f, 0.3f).range(400).reload(120).recoil(1.5f)
 			.zoom(0.3f).report(Report.ROCKET).rocket(MissileType.JAVELIN).scope(Scope.JAVELIN).bloc(Bloc.WEST));
 
@@ -94,7 +94,7 @@ public enum GunType {
 	public enum Report { RIFLE, MG, SNIPER, PISTOL, ROCKET, CARBINE, SHOTGUN, SUPPRESSED, HEAVY, GRENADE }
 
 	/** The picture while aiming through optics (none = iron sights or a collimator on the model). */
-	public enum Scope { NONE, PSO, MILDOT, ACOG, JAVELIN }
+	public enum Scope { NONE, PSO, MILDOT, ACOG, JAVELIN, PGO, LAUNCHER }
 
 	/** A collimator's reticle drawn in the middle while aiming (the model's window cannot show it). */
 	public enum Dot { NONE, RED, HOLO }

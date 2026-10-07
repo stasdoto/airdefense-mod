@@ -27,7 +27,10 @@ public enum DefenseType {
 	SAMPT(MissileType.ASTER30, 230, 8, 800, 16, 0.6),
 	AVENGER(MissileType.STINGER, 55, 8, 360, 12, 0.3),
 	MFG(null, 32, 40, 200, 6, 0.5, 32, 0.5),
-	ZU23(null, 38, 25, 260, 8, 0.35, 38, 0.6);
+	ZU23(null, 38, 25, 260, 8, 0.35, 38, 0.6),
+	// 1.24: Iron Dome - twenty Tamirs, made for rockets, shells and drones; it only shoots at what would fall on
+	// something worth protecting (see {@link #protectsOnly()}).
+	IRON_DOME(MissileType.TAMIR, 160, 20, 700, 5, 0.5);
 
 	@Nullable
 	public final MissileType interceptor;
@@ -77,9 +80,23 @@ public enum DefenseType {
 		return heavy && (this == PATRIOT || this == S300 || this == SAMPT) ? 2 : 1;
 	}
 
+	/**
+	 * Iron Dome works out where each rocket or drone will come down and lets those that fall in empty fields go,
+	 * saving its interceptors for what threatens a town, people or vehicles.
+	 */
+	public boolean protectsOnly() {
+		return this == IRON_DOME;
+	}
+
 	/** Engagement priority: lower = shot first. Each system prefers what it was built for. */
 	public int priority(MissileType.Kind kind) {
 		return switch (this) {
+			case IRON_DOME -> switch (kind) {
+				case ROCKET -> 0;
+				case DRONE -> 1;
+				case CRUISE -> 2;
+				default -> 3;
+			};
 			case PATRIOT, S300, SAMPT, BUK -> switch (kind) {
 				case BALLISTIC -> 0;
 				case ROCKET -> 1;

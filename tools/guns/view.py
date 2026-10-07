@@ -133,13 +133,33 @@ def rasterize(tris, W, H, project, light=True, bg=None):
         u0, v0, u1, v1 = [c / 16.0 for c in uv]
         uvs = np.array([[u0, v0], [u1, v0], [u1, v1], [u0, v1]])
         P = np.array([project(p) for p in pts])
-        if np.any(P[:, 2] <= 0.01):
+        near = 0.05
+        if np.all(P[:, 2] <= near):
             continue
+        if np.any(P[:, 2] <= near):
+            # Clip the face against the near plane (in 3D, where depth is linear), like the game does.
+            poly = []
+            for i in range(4):
+                j = (i + 1) % 4
+                pi_, pj = pts[i], pts[j]
+                di, dj = P[i, 2], P[j, 2]
+                if di > near:
+                    poly.append((pi_, uvs[i]))
+                if (di > near) != (dj > near):
+                    t = (near - di) / (dj - di)
+                    poly.append((pi_ + (pj - pi_) * t, uvs[i] + (uvs[j] - uvs[i]) * t))
+            if len(poly) < 3:
+                continue
+            P = np.array([project(q[0]) for q in poly])
+            uvs = np.array([q[1] for q in poly])
+            tris_idx = [(0, k, k + 1) for k in range(1, len(poly) - 1)]
+        else:
+            tris_idx = [(0, 1, 2), (0, 2, 3)]
         nn = n / max(1e-9, np.linalg.norm(n))
         shade = 1.0
         if light:
             shade = min(1.0, 0.4 + 0.6 * (max(0, nn @ l1) + max(0, nn @ l2)) * 0.75 + 0.15)
-        for tri in ((0, 1, 2), (0, 2, 3)):
+        for tri in tris_idx:
             a, b, c = P[list(tri)]
             ua, ub, uc = uvs[list(tri)]
             xmin = max(0, int(math.floor(min(a[0], b[0], c[0]))))

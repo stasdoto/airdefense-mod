@@ -144,6 +144,9 @@ public class TacticalMapScreen extends Screen {
 				.bounds(mx0 + font.width(title) + 8, 2, 70, 13).build());
 		massButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.mass_strike"), b -> massStrike())
 				.bounds(mx0 + font.width(title) + 82, 2, 110, 13).build());
+		addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.sirens"),
+						b -> minecraft.gui.setScreen(new com.stasdoto.airdefense.client.siren.SirenScreen()))
+				.bounds(mx0 + font.width(title) + 196, 2, 80, 13).build());
 		planButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.plan"), b -> openPlan())
 				.bounds(px0 + 4 + pw / 2 + 1, my1 - 20, pw - pw / 2 - 1, 20).build());
 		meButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.me"), b -> follow = true)

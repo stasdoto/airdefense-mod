@@ -42,6 +42,7 @@ public class AirDefense implements ModInitializer {
 		com.stasdoto.airdefense.drone.DroneNet.init();
 		FactoryNet.init();
 		GunServer.init();
+		com.stasdoto.airdefense.siren.SirenNet.init();
 		com.stasdoto.airdefense.nation.Nations.init();
 		com.stasdoto.airdefense.nation.CityFeature.init();
 		com.stasdoto.airdefense.guide.Guide.init();

@@ -462,6 +462,8 @@ public final class GunClient {
 				case MILDOT -> mildot(g, w, h);
 				case ACOG -> acog(g, w, h);
 				case JAVELIN -> clu(g, mc, w, h, delta);
+				case PGO -> pgo7(g, mc, w, h);
+				case LAUNCHER -> launcherSight(g, w, h);
 				default -> scope(g, w, h);
 			}
 		} else if (dotSight()) {
@@ -623,6 +625,64 @@ public final class GunClient {
 		}
 		g.fill(cx - r, cy, cx - 12, cy + 1, 0xC0101010);
 		g.fill(cx + 12, cy, cx + r, cy + 1, 0xC0101010);
+	}
+
+	/** The RPG-7's PGO-7: the aiming chevrons for 200-500 m down the middle, the lead scale, the range finder. */
+	private static void pgo7(GuiGraphicsExtractor g, Minecraft mc, int w, int h) {
+		int cx = w / 2;
+		int cy = h / 2;
+		int r = (int) (Math.min(w, h) * 0.4);
+		tube(g, w, h, r);
+		int ink = 0xF0101010;
+		Font font = mc.font;
+		// The main chevron is the 200 m mark; 3, 4, 5 hundred below it.
+		for (int i = 0; i < 4; i++) {
+			int y = cy + i * 13;
+			for (int k = 0; k <= 4; k++) {
+				g.fill(cx - k, y + k, cx - k + 1, y + k + 1, ink);
+				g.fill(cx + k, y + k, cx + k + 1, y + k + 1, ink);
+			}
+			if (i > 0) {
+				small(g, font, String.valueOf(i + 2), cx + 7, y, ink);
+			}
+		}
+		// Lead marks either side of each chevron.
+		for (int i = 1; i <= 4; i++) {
+			g.fill(cx - i * 10, cy + 2, cx - i * 10 + 1, cy + 5, ink);
+			g.fill(cx + i * 10, cy + 2, cx + i * 10 + 1, cy + 5, ink);
+		}
+		g.fill(cx - 44, cy + 3, cx - 6, cy + 4, ink);
+		g.fill(cx + 6, cy + 3, cx + 44, cy + 4, ink);
+		// Range finder: a tank 2.7 m tall fits between the base line and the curve at its range.
+		for (int i = 0; i < 40; i++) {
+			int px = cx - r + 18 + i;
+			int py = cy + r / 2 - (int) (18 * Math.pow(1 - i / 40.0, 1.6));
+			g.fill(px, py, px + 1, py + 1, ink);
+		}
+		g.fill(cx - r + 18, cy + r / 2 + 1, cx - r + 58, cy + r / 2 + 2, ink);
+	}
+
+	/** A launcher's optic (Carl Gustaf, NLAW): a fine cross, a centre ring, range bars under it. */
+	private static void launcherSight(GuiGraphicsExtractor g, int w, int h) {
+		int cx = w / 2;
+		int cy = h / 2;
+		int r = (int) (Math.min(w, h) * 0.42);
+		tube(g, w, h, r);
+		int ink = 0xE0101010;
+		g.fill(cx - r, cy, cx - 8, cy + 1, ink);
+		g.fill(cx + 8, cy, cx + r, cy + 1, ink);
+		g.fill(cx, cy - r, cx + 1, cy - 8, ink);
+		for (int a = 0; a < 48; a++) {
+			double t = a * Math.PI * 2 / 48;
+			g.fill(cx + (int) Math.round(Math.cos(t) * 5), cy + (int) Math.round(Math.sin(t) * 5),
+					cx + (int) Math.round(Math.cos(t) * 5) + 1, cy + (int) Math.round(Math.sin(t) * 5) + 1, ink);
+		}
+		for (int i = 1; i <= 5; i++) {
+			int y = cy + 8 + i * 9;
+			int half = 9 - i;
+			g.fill(cx - half, y, cx + half + 1, y + 1, ink);
+		}
+		g.fill(cx, cy + 8, cx + 1, cy + 60, ink);
 	}
 
 	/** The Javelin's Command Launch Unit: a grey-green thermal picture, the seeker's track gates round the target. */

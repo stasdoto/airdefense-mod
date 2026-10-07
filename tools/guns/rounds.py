@@ -100,6 +100,21 @@ def javelin_missile():
     return g
 
 
+def tamir():
+    """Iron Dome's Tamir: 3 m, 16 cm across, four long strakes and the steering fins at the tail. Built at half size
+    (the missile is drawn at scale 2)."""
+    g = Gun('tamir_missile', 0, R=4, seed=78)
+    g.k = 0.08
+    cyl(g, 140.0, 150.0, 3.0, 'glass')
+    cyl(g, 120.0, 140.0, 7.0, 'white')
+    cyl(g, -150.0, 120.0, 8.0, 'white')
+    cyl(g, 60.0, 70.0, 8.1, 'mark_red')
+    fins(g, -60.0, 60.0, 14.0, 'white', t=0.5)
+    fins(g, -150.0, -125.0, 16.0, 'gunmetal', t=0.6)
+    cyl(g, -152.0, -150.0, 6.0, 'black')
+    return g
+
+
 def g40():
     g = Gun('ammo_40mm', 0, R=8, seed=77)
     cyl(g, 4.0, 6.0, 1.2, 'gunmetal')
@@ -109,17 +124,18 @@ def g40():
     return g
 
 
-PROJECTILES = [pg7v, rpg22_rocket, at4_rocket, cg_round, nlaw_missile, javelin_missile, g40]
+PROJECTILES = [pg7v, rpg22_rocket, at4_rocket, cg_round, nlaw_missile, javelin_missile, g40, tamir]
 
 
 def export_projectile(g):
     img, uvpos, W, H = gunkit.build_atlas(g)
     Image.fromarray(img, 'RGBA').save(gunkit.path('textures', 'item', 'round', g.id + '.png'), optimize=True)
-    els = [gunkit.element(b, bi, uvpos, W, H, K) for bi, b in enumerate(g.boxes)]
+    k = getattr(g, 'k', K)
+    els = [gunkit.element(b, bi, uvpos, W, H, k) for bi, b in enumerate(g.boxes)]
     tex = 'airdefense:item/round/' + g.id
     lo, hi = g.bounds()
-    s = round(12.0 / ((hi[2] - lo[2]) * K), 4)
-    cz = (lo[2] + hi[2]) / 2 * K
+    s = round(12.0 / ((hi[2] - lo[2]) * k), 4)
+    cz = (lo[2] + hi[2]) / 2 * k
     view = {'rotation': [0, 90, 0], 'translation': [round(-cz * s, 3), 0, 0], 'scale': [s] * 3}
     gunkit.write_json({'textures': {'t': tex, 'particle': tex}, 'elements': els,
                        'display': {'fixed': view, 'ground': {'rotation': [0, 90, 0], 'translation': [0, 2, 0], 'scale': [0.5] * 3},
@@ -279,6 +295,7 @@ ICONS = {
     'rpg22_rocket': lambda: icon_rocket(STEEL, GREEN, head_len=5, fat=3),
     'at4_rocket': lambda: icon_rocket(STEEL, BLACK, band=YELLOW, head_len=6, fat=3),
     'nlaw_missile': lambda: icon_rocket(OD, BLACK, head_len=3, fat=3),
+    'tamir_missile': lambda: icon_rocket((220, 222, 216, 255), (60, 90, 100, 255), band=RED, head_len=2, fat=3),
 }
 
 

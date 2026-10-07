@@ -1,0 +1,49 @@
+{
+ "variants": {
+  "facing=north,signal=off": {
+   "model": "airdefense:block/siren"
+  },
+  "facing=north,signal=alert": {
+   "model": "airdefense:block/siren_on"
+  },
+  "facing=north,signal=clear": {
+   "model": "airdefense:block/siren_on"
+  },
+  "facing=east,signal=off": {
+   "model": "airdefense:block/siren",
+   "y": 90
+  },
+  "facing=east,signal=alert": {
+   "model": "airdefense:block/siren_on",
+   "y": 90
+  },
+  "facing=east,signal=clear": {
+   "model": "airdefense:block/siren_on",
+   "y": 90
+  },
+  "facing=south,signal=off": {
+   "model": "airdefense:block/siren",
+   "y": 180
+  },
+  "facing=south,signal=alert": {
+   "model": "airdefense:block/siren_on",
+   "y": 180
+  },
+  "facing=south,signal=clear": {
+   "model": "airdefense:block/siren_on",
+   "y": 180
+  },
+  "facing=west,signal=off": {
+   "model": "airdefense:block/siren",
+   "y": 270
+  },
+  "facing=west,signal=alert": {
+   "model": "airdefense:block/siren_on",
+   "y": 270
+  },
+  "facing=west,signal=clear": {
+   "model": "airdefense:block/siren_on",
+   "y": 270
+  }
+ }
+}

@@ -53,6 +53,13 @@ public final class GenGeometry {
 			0F, 0F, new Rail[]{}, "antenna", new String[]{}, 14F,
 			1024, 352);
 
+	public static final Geometry ELM2084 = new Geometry("elm2084", 9.39F, 2.55F, 5.55F, 5.2F, false,
+			new Seat[]{new Seat("driver", -0.6F, 1.75F, 3.5F), new Seat("gunner", 0.6F, 1.75F, 3.5F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.6F, true), new Wheel("wheel_1_r", 0.6F, true), new Wheel("wheel_2_l", 0.6F, true), new Wheel("wheel_2_r", 0.6F, true), new Wheel("wheel_3_l", 0.6F, false), new Wheel("wheel_3_r", 0.6F, false), new Wheel("wheel_4_l", 0.6F, false), new Wheel("wheel_4_r", 0.6F, false)},
+			null, new float[]{0F, 0F, 0F}, null, new float[]{0F, 0F, 0F},
+			0F, 0F, new Rail[]{}, "antenna", new String[]{}, 15F,
+			1024, 176);
+
 	public static final Geometry PANTSIR = new Geometry("pantsir", 9.99F, 2.55F, 4.45F, 6.3F, false,
 			new Seat[]{new Seat("driver", -0.6F, 1.8F, 3.8F), new Seat("gunner", 0.6F, 1.8F, 3.8F)},
 			new Wheel[]{new Wheel("wheel_1_l", 0.62F, true), new Wheel("wheel_1_r", 0.62F, true), new Wheel("wheel_2_l", 0.62F, true), new Wheel("wheel_2_r", 0.62F, true), new Wheel("wheel_3_l", 0.62F, false), new Wheel("wheel_3_r", 0.62F, false), new Wheel("wheel_4_l", 0.62F, false), new Wheel("wheel_4_r", 0.62F, false)},
@@ -136,6 +143,13 @@ public final class GenGeometry {
 			"mount", new float[]{0F, 1.2F, -1.4F}, "guns", new float[]{0F, 0.75F, 0F},
 			0F, 0F, new Rail[]{new Rail("barrel_l", -0.22F, 0F, 2.3F), new Rail("barrel_r", 0.22F, 0F, 2.3F)}, null, new String[]{}, 10F,
 			1024, 128);
+
+	public static final Geometry IRON_DOME = new Geometry("iron_dome", 9.09F, 2.55F, 3.89F, 4.6F, false,
+			new Seat[]{new Seat("driver", -0.6F, 1.9F, 3.6F), new Seat("gunner", 0.6F, 1.9F, 3.6F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.6F, true), new Wheel("wheel_1_r", 0.6F, true), new Wheel("wheel_2_l", 0.6F, false), new Wheel("wheel_2_r", 0.6F, false), new Wheel("wheel_3_l", 0.6F, false), new Wheel("wheel_3_r", 0.6F, false)},
+			null, new float[]{0F, 0F, 0F}, "launcher", new float[]{0F, 1.75F, -4F},
+			55F, 0F, new Rail[]{new Rail("cell_0", -0.69F, 0.4F, 5.8F), new Rail("cell_1", -0.23F, 0.4F, 5.8F), new Rail("cell_2", 0.23F, 0.4F, 5.8F), new Rail("cell_3", 0.69F, 0.4F, 5.8F), new Rail("cell_4", -0.69F, 0.73F, 5.8F), new Rail("cell_5", -0.23F, 0.73F, 5.8F), new Rail("cell_6", 0.23F, 0.73F, 5.8F), new Rail("cell_7", 0.69F, 0.73F, 5.8F), new Rail("cell_8", -0.69F, 1.06F, 5.8F), new Rail("cell_9", -0.23F, 1.06F, 5.8F), new Rail("cell_10", 0.23F, 1.06F, 5.8F), new Rail("cell_11", 0.69F, 1.06F, 5.8F), new Rail("cell_12", -0.69F, 1.39F, 5.8F), new Rail("cell_13", -0.23F, 1.39F, 5.8F), new Rail("cell_14", 0.23F, 1.39F, 5.8F), new Rail("cell_15", 0.69F, 1.39F, 5.8F), new Rail("cell_16", -0.69F, 1.72F, 5.8F), new Rail("cell_17", -0.23F, 1.72F, 5.8F), new Rail("cell_18", 0.23F, 1.72F, 5.8F), new Rail("cell_19", 0.69F, 1.72F, 5.8F)}, null, new String[]{}, 13F,
+			1024, 240);
 
 	public static final Geometry T72 = new Geometry("t72", 10.8F, 3.6F, 2.62F, 0F, true,
 			new Seat[]{new Seat("driver", 0F, 1F, 2.3F), new Seat("gunner", 0.6F, 2.2F, -0.4F)},

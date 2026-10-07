@@ -62,7 +62,10 @@ public enum VehicleType {
 	F16("f16", GenGeometry.F16, 2, Weapon.AUTO_25, Ordnance.AIM9, 0.75f, 380, 4.2f, 0.035f, 3.0f, 3.0f, 3.0f),
 	// Logistics (stage R7): what they carry, and how much.
 	FUEL_TRUCK("fuel_truck", GenGeometry.FUEL_TRUCK, 1, 5000, 160, 0.85f, 0.013f, 30, 2.5f, 3.2f),
-	SUPPLY_TRUCK("supply_truck", GenGeometry.SUPPLY_TRUCK, 2, 400, 160, 0.85f, 0.013f, 30, 2.5f, 3.2f);
+	SUPPLY_TRUCK("supply_truck", GenGeometry.SUPPLY_TRUCK, 2, 400, 160, 0.85f, 0.013f, 30, 2.5f, 3.2f),
+	// 1.24: Israel's Iron Dome - the launcher of twenty Tamirs and its EL/M-2084 radar.
+	IRON_DOME("iron_dome", GenGeometry.IRON_DOME, null, DefenseType.IRON_DOME, 220, 0.9f, 0.014f, 32, 0, 1.6f, 0, 2.55f, 3.3f),
+	ELM2084("elm2084", GenGeometry.ELM2084, RadarType.ELM2084, 200, 0.82f, 0.012f, 30, 0, 0, 2.55f, 3.3f);
 
 	public static final int HELI = 1;
 	public static final int PLANE = 2;

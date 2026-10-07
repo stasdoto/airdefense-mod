@@ -48,7 +48,9 @@ public enum MissileType {
 	CG84("cg_round", Kind.DIRECT, false, 4.2, 0.0, 2.6f, false, 1f, 1.0f, 0, 100, 0.0, Trail.SMALL, null),
 	NLAW("nlaw_missile", Kind.DIRECT, false, 3.4, 0.3, 2.4f, false, 1f, 1.0f, 0, 120, 0.0, Trail.SMALL, null),
 	JAVELIN("javelin_missile", Kind.DIRECT, false, 2.4, 0.12, 3.2f, false, 1f, 1.0f, 0, 400, 0.18, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
-	G40("ammo_40mm", Kind.DIRECT, false, 2.4, 0.0, 1.6f, false, 1f, 1.0f, 0, 200, 0.0, Trail.NONE, null);
+	G40("ammo_40mm", Kind.DIRECT, false, 3.2, 0.0, 1.6f, false, 1f, 1.0f, 0, 200, 0.0, Trail.NONE, null),
+	// 1.24: Iron Dome's Tamir - quick, very agile, a proximity fuse (the model is drawn at half size, so scale 2).
+	TAMIR("tamir_missile", Kind.INTERCEPTOR, false, 4.6, 0.38, 2.0f, false, 2f, 2.0f, 3.6, 170, 0.36, Trail.WHITE, ModSounds.MISSILE_FLIGHT);
 
 	public enum Kind { BALLISTIC, ROCKET, CRUISE, DRONE, INTERCEPTOR, DIRECT }
 
@@ -138,6 +140,7 @@ public enum MissileType {
 			case M9M317, M48N6 -> 0.06;
 			case ASTER30 -> 0.04;
 			case AIM9 -> 0.08;
+			case TAMIR -> 0.04;
 			default -> 0;
 		};
 	}
@@ -200,6 +203,12 @@ public enum MissileType {
 				case BALLISTIC -> 0.05;
 				case ROCKET -> 0.3;
 				case CRUISE -> 0.8;
+				default -> 0.9;
+			};
+			case TAMIR -> switch (target) {
+				case BALLISTIC -> 0.12;
+				case ROCKET -> 0.92;
+				case CRUISE -> 0.85;
 				default -> 0.9;
 			};
 			case ASTER30 -> switch (target) {
