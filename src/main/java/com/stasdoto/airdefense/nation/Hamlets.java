@@ -84,6 +84,9 @@ public final class Hamlets {
 		}
 	}
 
+	/** For the tests: sites turned down for water, slope, a road, another hamlet. */
+	public static final int[] REJECTED = new int[4];
+
 	private Hamlets() {
 	}
 
@@ -94,13 +97,14 @@ public final class Hamlets {
 		List<Hamlet> out = new ArrayList<>();
 		double a0 = r.nextDouble() * Math.PI * 2;
 		for (int k = 0; k < count; k++) {
-			for (int tries = 0; tries < 8; tries++) {
-				double a = a0 + k * Math.PI * 2 / count + (r.nextDouble() - 0.5) * 0.9;
-				int dist = c.half() + 100 + r.nextInt(120);
+			for (int tries = 0; tries < 16; tries++) {
+				double a = a0 + k * Math.PI * 2 / count + (r.nextDouble() - 0.5) * (0.9 + tries * 0.1);
+				int dist = c.half() + 90 + r.nextInt(130);
 				int hx = c.x + (int) Math.round(Math.cos(a) * dist);
 				int hz = c.z + (int) Math.round(Math.sin(a) * dist);
 				int y = t.top(hx, hz);
 				if (y <= t.sea()) {
+					REJECTED[0]++;
 					continue;
 				}
 				int lo = y;
@@ -114,19 +118,22 @@ public final class Hamlets {
 						wet++;
 					}
 				}
-				if (hi - lo > 16 || wet > 1) {
+				if (hi - lo > 22 + tries || wet > 2) {
+					REJECTED[1]++;
 					continue;
 				}
 				boolean clash = false;
 				for (Cities.Road road : main) {
 					double along = road.along(hx, hz);
-					if (along > -70 && along < road.length + 70 && Math.abs(road.across(hx, hz)) < 75) {
+					if (along > -60 && along < road.length + 60 && Math.abs(road.across(hx, hz)) < 70) {
 						clash = true;
+						REJECTED[2]++;
 					}
 				}
 				for (Hamlet h : out) {
 					if (Math.hypot(h.x - hx, h.z - hz) < 130) {
 						clash = true;
+						REJECTED[3]++;
 					}
 				}
 				if (clash) {

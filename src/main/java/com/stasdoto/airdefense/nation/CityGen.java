@@ -200,26 +200,30 @@ public final class CityGen {
 		if (cities.isEmpty() && roads.isEmpty() && hamlets.isEmpty()) {
 			return;
 		}
+		// The logs of our own buildings (timber frames, barns) stay.
+		java.util.Set<Long> keep = new java.util.HashSet<>();
+		for (Cities.City c : cities) {
+			for (Building b : c.buildings()) {
+				if (near(b, x0, z0)) {
+					keepLogs(keep, plan(c, b), x0, z0);
+				}
+			}
+		}
+		for (Hamlets.Hamlet h : hamlets) {
+			for (Building b : h.buildings) {
+				if (near(b, x0, z0)) {
+					keepLogs(keep, hamletPlan(h, b), x0, z0);
+				}
+			}
+		}
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 		for (int x = x0; x < x0 + 16; x++) {
 			for (int z = z0; z < z0 + 16; z++) {
 				int from = Integer.MIN_VALUE;
-				boolean built = false;
 				for (Hamlets.Hamlet h : hamlets) {
-					for (int i = 0; i < h.pads.size(); i++) {
-						if (h.pads.get(i).out(x, z) == 0) {
-							from = h.pads.get(i).y() + 1;
-							built |= h.buildings.get(i).covers(x, z, 1);
-						}
-					}
-				}
-				for (Cities.City c : cities) {
-					if (!built && c.inside(x, z)) {
-						for (Building b : c.buildings()) {
-							if (Math.abs(b.origin.getX() - x) < 40 && Math.abs(b.origin.getZ() - z) < 40 && b.covers(x, z, 1)) {
-								built = true;
-								break;
-							}
+					for (Hamlets.Pad pd : h.pads) {
+						if (pd.out(x, z) == 0) {
+							from = pd.y() + 1;
 						}
 					}
 				}
@@ -255,7 +259,7 @@ public final class CityGen {
 					if (st.is(BlockTags.LEAVES) && st.hasProperty(BlockStateProperties.PERSISTENT) && st.getValue(BlockStateProperties.PERSISTENT)) {
 						continue;
 					}
-					if (st.is(BlockTags.LOGS) && (built || ours(cities, pos))) {
+					if (st.is(BlockTags.LOGS) && (keep.contains(pos.asLong()) || ours(cities, pos))) {
 						continue;
 					}
 					if (st.is(BlockTags.LEAVES) || st.is(BlockTags.LOGS) || st.is(Blocks.VINE) || st.is(Blocks.BEE_NEST) || st.is(Blocks.SNOW)
@@ -530,26 +534,43 @@ public final class CityGen {
 
 	private static final ConcurrentHashMap<Long, CityDecor.Result> HAMLET_DECOR = new ConcurrentHashMap<>();
 
+	private static List<Blueprints.Placement> hamletPlan(Hamlets.Hamlet h, Building b) {
+		long key = -(h.key() * 64 + b.id) - 1;
+		List<Blueprints.Placement> plan = PLANS.get(key);
+		if (plan == null) {
+			if (PLANS.size() > 160) {
+				PLANS.clear();
+			}
+			plan = Blueprints.placements(b, DyeColor.byId(h.city.color));
+			PLANS.put(key, plan);
+		}
+		return plan;
+	}
+
+	/** Positions in this chunk where the building's plan puts a log. */
+	private static boolean near(Building b, int x0, int z0) {
+		int reach = Math.max(b.type.width, b.type.depth) + 3;
+		return !(b.origin.getX() + reach < x0 || b.origin.getX() - reach > x0 + 15 || b.origin.getZ() + reach < z0 || b.origin.getZ() - reach > z0 + 15);
+	}
+
+	private static void keepLogs(java.util.Set<Long> keep, List<Blueprints.Placement> plan, int x0, int z0) {
+		for (Blueprints.Placement pl : plan) {
+			if (pl.state().is(BlockTags.LOGS) && in(pl.pos(), x0, z0)) {
+				keep.add(pl.pos().asLong());
+			}
+		}
+	}
+
 	/** The hamlet's buildings, wells, fences, crops, people and animals that fall in this chunk. */
 	private static void hamlet(Writer w, Hamlets.Hamlet h, ChunkPos cp) {
 		int x0 = cp.getMinBlockX();
 		int z0 = cp.getMinBlockZ();
-		DyeColor flag = DyeColor.byId(h.city.color);
 		for (Building b : h.buildings) {
 			int reach = Math.max(b.type.width, b.type.depth) + 3;
 			if (b.origin.getX() + reach < x0 || b.origin.getX() - reach > x0 + 15 || b.origin.getZ() + reach < z0 || b.origin.getZ() - reach > z0 + 15) {
 				continue;
 			}
-			long key = -(h.key() * 64 + b.id) - 1;
-			List<Blueprints.Placement> plan = PLANS.get(key);
-			if (plan == null) {
-				if (PLANS.size() > 96) {
-					PLANS.clear();
-				}
-				plan = Blueprints.placements(b, flag);
-				PLANS.put(key, plan);
-			}
-			for (Blueprints.Placement pl : plan) {
+			for (Blueprints.Placement pl : hamletPlan(h, b)) {
 				boolean mine = in(pl.pos(), x0, z0);
 				if (pl.pair()) {
 					if (mine || in(pl.pos2(), x0, z0)) {
@@ -613,7 +634,7 @@ public final class CityGen {
 		long key = c.key() * 4096 + b.id;
 		List<Blueprints.Placement> p = PLANS.get(key);
 		if (p == null) {
-			if (PLANS.size() > 96) {
+			if (PLANS.size() > 160) {
 				PLANS.clear();
 			}
 			p = Blueprints.placements(b, DyeColor.byId(c.color));

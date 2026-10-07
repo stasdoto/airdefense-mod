@@ -221,7 +221,7 @@ public class SettlementScreen extends Screen {
 		// Market: buy and sell a lot of each kind.
 		for (int k = 0; k < 8; k++) {
 			int kind = k;
-			int y = top + 24 + k * ROW;
+			int y = top + 29 + k * ROW;
 			marketButtons.add(addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.market.buy"),
 					b -> send(NationActionPayload.MARKET, kind, 1)).bounds(x0 + w - 112, y, 52, 14).build()));
 			marketButtons.add(addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.market.sell"),
@@ -615,7 +615,7 @@ public class SettlementScreen extends Screen {
 		int[] cap = {eco.cap(), eco.cap(), eco.cap(), ex.get(3), ex.get(3), ex.get(4), ex.get(7), ex.get(8)};
 		int[] lot = com.stasdoto.airdefense.nation.Market.LOT;
 		for (int k = 0; k < 8; k++) {
-			int y = top + 24 + k * ROW;
+			int y = top + 29 + k * ROW;
 			g.item(GOODS_ICONS[k], x0 + 8, y - 1);
 			g.text(font, Component.translatable("nation.airdefense.goods." + k), x0 + 28, y + 3, C_TEXT);
 			String amount = eco.free() ? "∞" : have[k] + " / " + cap[k];

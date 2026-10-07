@@ -832,7 +832,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				sb.append(String.format(java.util.Locale.ROOT, "#%d at %d %d y%d (%d from city) %s fields %d road %d; ", h.index, h.x, h.z, h.base,
 						(int) Math.hypot(h.x - c.x, h.z - c.z), kinds, h.fields.size(), (int) h.road.length));
 			}
-			AirDefense.LOGGER.info("[airdefense-test] RESULT hamlets: {} | {}", hs.size(), sb);
+			AirDefense.LOGGER.info("[airdefense-test] RESULT hamlets: {} | {} (sites turned down: water/slope/road/near {})", hs.size(), sb,
+					java.util.Arrays.toString(com.stasdoto.airdefense.nation.Hamlets.REJECTED));
 			if (!hs.isEmpty()) {
 				var h = hs.getFirst();
 				out[3] = new float[]{h.x + 0.5f, h.base + 38, h.z + 55.5f, 180, 34};
