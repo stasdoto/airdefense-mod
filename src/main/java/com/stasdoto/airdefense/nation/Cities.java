@@ -3,7 +3,9 @@ package com.stasdoto.airdefense.nation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -51,8 +53,9 @@ public final class Cities {
 			this.villagers = villagers;
 		}
 
+		/** About how far a city of this size reaches from its centre. */
 		public int half() {
-			return n * PITCH / 2;
+			return (n + 2) * PITCH / 2;
 		}
 	}
 
@@ -119,42 +122,66 @@ public final class Cities {
 			return cellKey(cx, cz) * 4 + index;
 		}
 
-		public int half() {
-			return size.half();
-		}
+		private volatile CityShape shape;
+		private volatile List<Hamlets.Hamlet> hamlets;
 
-		/** Inside the city square, streets on its edge included. */
-		public boolean inside(int px, int pz) {
-			int h = half() + STREET_HALF;
-			return Math.abs(px - x) <= h && Math.abs(pz - z) <= h;
-		}
-
-		/** On a street or its pavement (inside the square). */
-		public boolean isStreet(int px, int pz) {
-			if (!inside(px, pz)) {
-				return false;
+		/** The hamlets round the city (planned on first use). */
+		public List<Hamlets.Hamlet> hamlets(long seed, Terrain t) {
+			List<Hamlets.Hamlet> h = hamlets;
+			if (h == null) {
+				h = Hamlets.plan(seed, t, this);
+				hamlets = h;
 			}
-			int ox = Math.floorMod(px - x + half(), PITCH);
-			int oz = Math.floorMod(pz - z + half(), PITCH);
-			int dx = Math.min(ox, PITCH - ox);
-			int dz = Math.min(oz, PITCH - oz);
-			return dx <= STREET_HALF + 1 || dz <= STREET_HALF + 1;
+			return h;
 		}
 
-		/** Distance outside the city square (0 inside). */
+		/** The hamlets if they are planned already, else an empty list. */
+		public List<Hamlets.Hamlet> plannedHamlets() {
+			List<Hamlets.Hamlet> h = hamlets;
+			return h == null ? List.of() : h;
+		}
+
+		/** The street plan. */
+		public CityShape shape() {
+			CityShape sh = shape;
+			if (sh == null) {
+				sh = new CityShape(this);
+				shape = sh;
+			}
+			return sh;
+		}
+
+		/** How far the city reaches from its centre (the bigger way). */
+		public int half() {
+			CityShape sh = shape();
+			return Math.max(Math.max(x - sh.minX, sh.maxX - x), Math.max(z - sh.minZ, sh.maxZ - z));
+		}
+
+		/** Part of the city: a street, a pavement or a lot. */
+		public boolean inside(int px, int pz) {
+			return shape().inside(px, pz);
+		}
+
+		/** On a street or its pavement. */
+		public boolean isStreet(int px, int pz) {
+			CityShape.Probe p = shape().probe(px, pz);
+			return p.street || p.kerb;
+		}
+
+		/** Distance outside the city (0 inside). */
 		public int outside(int px, int pz) {
-			int h = half() + STREET_HALF;
-			return Math.max(0, Math.max(Math.abs(px - x), Math.abs(pz - z)) - h);
+			return shape().outside(px, pz);
 		}
 
-		/** The bell of the central square: the settlement's centre. */
+		/** The bell of the central square (next to the city hall): the settlement's centre. */
 		public BlockPos bell() {
-			return new BlockPos(x + 12, base + 1, z + 11);
+			CityShape.Lot hall = shape().hallLot();
+			return new BlockPos(hall.cx() + 12, base + 1, hall.z1 - 1);
 		}
 
-		/** The settlement's reach (a circle round the square). */
+		/** The settlement's reach (a circle round the city). */
 		public int radius() {
-			return (int) (half() * 1.2) + 4;
+			return (int) (half() * 1.05) + 4;
 		}
 
 		/** Every building of the city as planned (ids are only their order). */
@@ -183,8 +210,17 @@ public final class Cities {
 		public final int maxX;
 		public final int minZ;
 		public final int maxZ;
+		/** Half the width of the carriageway; a country track (a hamlet's) is a narrow dirt road. */
+		public final int half;
+		public final boolean dirt;
 
 		Road(int x0, int z0, int x1, int z1, float[] heights) {
+			this(x0, z0, x1, z1, heights, ROAD_HALF, false);
+		}
+
+		Road(int x0, int z0, int x1, int z1, float[] heights, int half, boolean dirt) {
+			this.half = half;
+			this.dirt = dirt;
 			this.x0 = x0;
 			this.z0 = z0;
 			this.x1 = x1;
@@ -193,7 +229,7 @@ public final class Cities {
 			this.ux = (x1 - x0) / length;
 			this.uz = (z1 - z0) / length;
 			this.heights = heights;
-			int pad = ROAD_HALF + 2;
+			int pad = half + 2;
 			minX = Math.min(x0, x1) - pad;
 			maxX = Math.max(x0, x1) + pad;
 			minZ = Math.min(z0, z1) - pad;
@@ -290,8 +326,39 @@ public final class Cities {
 		return ROADS.computeIfAbsent(cellKey(cx, cz), k -> planRoads(seed, t, cx, cz));
 	}
 
-	/** Every road that may pass through the cell of (x, z): its own, and those coming in from the west and the north. */
+	/** A hamlet already planned whose square is within {@code reach} of (x, z), or null (never plans anything). */
+	@Nullable
+	public static Hamlets.Hamlet plannedHamletAt(long seed, int x, int z, int reach) {
+		if (cacheSeed != seed) {
+			return null;
+		}
+		List<City> list = CITIES.get(cellKey(Math.floorDiv(x, CELL), Math.floorDiv(z, CELL)));
+		if (list == null) {
+			return null;
+		}
+		for (City c : list) {
+			for (Hamlets.Hamlet h : c.plannedHamlets()) {
+				if (Math.abs(h.x - x) <= reach && Math.abs(h.z - z) <= reach) {
+					return h;
+				}
+			}
+		}
+		return null;
+	}
+
+	/** Every road that may pass through the cell of (x, z), the hamlets' tracks too. */
 	public static List<Road> roadsNear(long seed, Terrain t, int x, int z) {
+		List<Road> out = mainRoadsNear(seed, t, x, z);
+		for (City c : citiesAround(seed, t, x, z)) {
+			for (Hamlets.Hamlet h : c.hamlets(seed, t)) {
+				out.add(h.road);
+			}
+		}
+		return out;
+	}
+
+	/** The roads between cities that may pass through the cell of (x, z): its own, and those coming in from the west and the north. */
+	static List<Road> mainRoadsNear(long seed, Terrain t, int x, int z) {
 		int cx = Math.floorDiv(x, CELL);
 		int cz = Math.floorDiv(z, CELL);
 		List<Road> out = new ArrayList<>(roads(seed, t, cx, cz));
@@ -329,10 +396,10 @@ public final class Cities {
 			int[] best = null;
 			for (int tries = 0; tries < 4 && best == null; tries++) {
 				double a = a0 + (k == 1 ? 0 : Math.PI * (0.65 + r.nextDouble() * 0.7)) + (r.nextDouble() - 0.5) * 0.5;
-				double d = 650 + r.nextDouble() * 200;
+				double d = 600 + r.nextDouble() * 250;
 				int tx = cap[0] + (int) (Math.cos(a) * d);
 				int tz = cap[1] + (int) (Math.sin(a) * d);
-				int lim = size.half() + MARGIN + 60;
+				int lim = size.half() + 260;
 				tx = Math.max(x0 + lim, Math.min(x0 + CELL - lim, tx));
 				tz = Math.max(z0 + lim, Math.min(z0 + CELL - lim, tz));
 				if (Math.hypot(tx - cap[0], tz - cap[1]) < 450) {
@@ -416,20 +483,32 @@ public final class Cities {
 		return out;
 	}
 
-	/** From the edge of one city square to the edge of the other, following the land, smoothed. */
-	private static Road road(Terrain t, City a, City b) {
-		double dx = b.x - a.x;
-		double dz = b.z - a.z;
+	/** The last point of the city on the way from its centre towards (tx, tz): where a road out of it starts. */
+	static int[] edge(City c, double tx, double tz) {
+		double dx = tx - c.x;
+		double dz = tz - c.z;
 		double len = Math.hypot(dx, dz);
 		double ux = dx / len;
 		double uz = dz / len;
-		double m = Math.max(Math.abs(ux), Math.abs(uz));
-		double ta = (a.half() + STREET_HALF) / m;
-		double tb = (b.half() + STREET_HALF) / m;
-		int x0 = (int) Math.round(a.x + ux * ta);
-		int z0 = (int) Math.round(a.z + uz * ta);
-		int x1 = (int) Math.round(b.x - ux * tb);
-		int z1 = (int) Math.round(b.z - uz * tb);
+		int last = 0;
+		int reach = c.half() + 10;
+		for (int t = 0; t <= reach; t++) {
+			if (c.inside((int) Math.round(c.x + ux * t), (int) Math.round(c.z + uz * t))) {
+				last = t;
+			}
+		}
+		return new int[]{(int) Math.round(c.x + ux * (last + 1)), (int) Math.round(c.z + uz * (last + 1))};
+	}
+
+	/** From the edge of one city to the edge of the other, following the land, smoothed. */
+	private static Road road(Terrain t, City a, City b) {
+		int[] ea = edge(a, b.x, b.z);
+		int[] eb = edge(b, a.x, a.z);
+		return between(t, ea[0], ea[1], a.base, eb[0], eb[1], b.base, ROAD_HALF, false);
+	}
+
+	/** A road from (x0, z0) at level y0 to (x1, z1) at y1, following the land in between, smoothed. */
+	static Road between(Terrain t, int x0, int z0, int y0, int x1, int z1, int y1, int half, boolean dirt) {
 		double l = Math.hypot(x1 - x0, z1 - z0);
 		int n = Math.max(2, (int) Math.ceil(l / Road.STEP) + 1);
 		float[] hs = new float[n];
@@ -450,35 +529,107 @@ public final class Cities {
 			double s = i * (double) Road.STEP;
 			double fa = Math.max(0, 1 - s / 64.0);
 			double fb = Math.max(0, 1 - (l - s) / 64.0);
-			hs[i] = (float) (hs[i] * (1 - fa - fb) + a.base * fa + b.base * fb);
+			hs[i] = (float) (hs[i] * (1 - fa - fb) + y0 * fa + y1 * fb);
 			if (fa + fb > 1) {
-				hs[i] = (float) ((a.base * fa + b.base * fb) / (fa + fb));
+				hs[i] = (float) ((y0 * fa + y1 * fb) / (fa + fb));
 			}
 		}
-		hs[0] = a.base;
-		hs[n - 1] = b.base;
-		return new Road(x0, z0, x1, z1, hs);
+		hs[0] = y0;
+		hs[n - 1] = y1;
+		return new Road(x0, z0, x1, z1, hs, half, dirt);
 	}
 
 	// ------------------------------------------------------------------------------------------------
-	// The buildings of a city
+	// The buildings of a city: rows along the streets round each lot, chosen by district
 
-	/** One way to fill a city block. */
-	private record Lot(BuildingType a, BuildingType b, boolean quad) {
-		static Lot one(BuildingType t) {
-			return new Lot(t, null, false);
+	private static final Object[] DOWNTOWN = {BuildingType.TOWER, 4, BuildingType.OFFICE, 3, BuildingType.SHOP, 3, BuildingType.PANEL9, 2};
+	private static final Object[] MID = {BuildingType.PANEL9, 3, BuildingType.PANEL5, 4, BuildingType.SHOP, 2, BuildingType.APARTMENTS, 1};
+	private static final Object[] OUTER = {BuildingType.COTTAGE, 5, BuildingType.HOUSE, 3, BuildingType.SMALL_HOUSE, 2, BuildingType.GARAGES, 1,
+			BuildingType.SHOP, 1};
+	private static final Object[] INDUSTRY = {BuildingType.WAREHOUSE, 3, BuildingType.GARAGES, 2, BuildingType.HANGAR, 1, BuildingType.REFINERY, 1,
+			BuildingType.LOGISTICS_HUB, 1};
+
+	/** A lot being filled: which of its cells are taken. */
+	private static final class Filling {
+		final CityShape.Lot lot;
+		final boolean[][] taken;
+
+		Filling(CityShape.Lot lot) {
+			this.lot = lot;
+			this.taken = new boolean[lot.width()][lot.depth()];
 		}
 
-		static Lot two(BuildingType a, BuildingType b) {
-			return new Lot(a, b, false);
+		boolean free(int x, int z) {
+			int a = x - lot.x0;
+			int b = z - lot.z0;
+			return a >= 0 && b >= 0 && a < taken.length && b < taken[0].length && !taken[a][b];
 		}
 
-		static Lot cottages() {
-			return new Lot(BuildingType.COTTAGE, null, true);
+		void take(int x, int z) {
+			int a = x - lot.x0;
+			int b = z - lot.z0;
+			if (a >= 0 && b >= 0 && a < taken.length && b < taken[0].length) {
+				taken[a][b] = true;
+			}
 		}
 	}
 
-	private static Lot pick(Random r, Object... weighted) {
+	/** The building with its front on {@code side} of the lot, {@code pos} blocks along it, set back {@code back}; null if it won't fit. */
+	private static Building fit(Filling f, BuildingType type, Direction side, int pos, int back, int y) {
+		CityShape.Lot l = f.lot;
+		Direction facing = side.getOpposite();
+		int hw = type.halfWidth();
+		int ox;
+		int oz;
+		switch (side) {
+			case SOUTH -> {
+				ox = l.x0 + pos + hw;
+				oz = l.z1 - 1 - back;
+			}
+			case NORTH -> {
+				ox = l.x1 - pos - hw;
+				oz = l.z0 + 1 + back;
+			}
+			case WEST -> {
+				ox = l.x0 + 1 + back;
+				oz = l.z0 + pos + hw;
+			}
+			default -> {
+				ox = l.x1 - 1 - back;
+				oz = l.z1 - pos - hw;
+			}
+		}
+		Building b = new Building(0, type, new BlockPos(ox, y, oz), facing, true);
+		for (int lx = -hw - 1; lx <= hw + 1; lx++) {
+			for (int lz = -1; lz <= type.depth; lz++) {
+				BlockPos at = b.at(lx, 0, lz);
+				boolean inner = Math.abs(lx) <= hw && lz >= 0 && lz < type.depth;
+				if (inner && !f.free(at.getX(), at.getZ())) {
+					return null;
+				}
+				if (!inner && lz >= 0 && f.free(at.getX(), at.getZ()) == false && inLot(l, at)) {
+					return null;
+				}
+			}
+		}
+		return b;
+	}
+
+	private static boolean inLot(CityShape.Lot l, BlockPos p) {
+		return p.getX() >= l.x0 && p.getX() <= l.x1 && p.getZ() >= l.z0 && p.getZ() <= l.z1;
+	}
+
+	private static void claim(Filling f, Building b) {
+		int hw = b.type.halfWidth();
+		for (int lx = -hw - 1; lx <= hw + 1; lx++) {
+			for (int lz = -1; lz <= b.type.depth; lz++) {
+				BlockPos at = b.at(lx, 0, lz);
+				f.take(at.getX(), at.getZ());
+			}
+		}
+	}
+
+	private static BuildingType pickType(Random r, Object[] weighted) {
 		int total = 0;
 		for (int i = 1; i < weighted.length; i += 2) {
 			total += (Integer) weighted[i];
@@ -487,113 +638,140 @@ public final class Cities {
 		for (int i = 0; i < weighted.length; i += 2) {
 			roll -= (Integer) weighted[i + 1];
 			if (roll < 0) {
-				return (Lot) weighted[i];
+				return (BuildingType) weighted[i];
 			}
 		}
-		return (Lot) weighted[0];
+		return (BuildingType) weighted[0];
 	}
 
-	private static Lot fill(Size size, int ring, Random r) {
-		BuildingType P5 = BuildingType.PANEL5;
-		BuildingType P9 = BuildingType.PANEL9;
-		BuildingType SH = BuildingType.SHOP;
-		BuildingType GA = BuildingType.GARAGES;
-		return switch (size) {
-			case LARGE -> switch (ring) {
-				case 1 -> pick(r, Lot.one(BuildingType.TOWER), 4, Lot.one(BuildingType.OFFICE), 3, Lot.one(P9), 3, Lot.two(P5, SH), 2, Lot.two(SH, SH), 2);
-				case 2 -> pick(r, Lot.one(P9), 4, Lot.two(P5, P5), 2, Lot.two(P5, SH), 3, Lot.two(SH, SH), 1, Lot.one(BuildingType.OFFICE), 1, Lot.one(BuildingType.PARK), 1);
-				default -> pick(r, Lot.cottages(), 7, Lot.two(GA, GA), 1, Lot.two(P5, P5), 2, Lot.two(GA, P5), 1);
-			};
-			case MEDIUM -> ring == 1
-					? pick(r, Lot.one(P9), 3, Lot.two(P5, SH), 3, Lot.two(SH, SH), 2, Lot.two(P5, P5), 2, Lot.one(BuildingType.OFFICE), 1, Lot.one(BuildingType.PARK), 1)
-					: pick(r, Lot.cottages(), 7, Lot.two(GA, P5), 1, Lot.two(P5, SH), 1);
-			case SMALL -> pick(r, Lot.cottages(), 6, Lot.two(P5, SH), 2, Lot.two(SH, SH), 1, Lot.two(GA, P5), 1);
-		};
+	private static int sideLength(CityShape.Lot l, Direction side) {
+		return side.getAxis() == Direction.Axis.Z ? l.width() : l.depth();
+	}
+
+	/** Tries to put one building of this type anywhere along the lot's sides. */
+	private static Building placeAnywhere(Filling f, Random r, BuildingType type, int y) {
+		List<Direction> sides = new ArrayList<>(List.of(Direction.SOUTH, Direction.NORTH, Direction.WEST, Direction.EAST));
+		Collections.shuffle(sides, r);
+		for (Direction side : sides) {
+			int len = sideLength(f.lot, side);
+			for (int pos = 0; pos + type.width <= len; pos += 2) {
+				Building b = fit(f, type, side, pos, 0, y);
+				if (b != null) {
+					claim(f, b);
+					return b;
+				}
+			}
+		}
+		return null;
+	}
+
+	/** Rows of buildings along every side of the lot, picked from the district's mix, with gaps and set-backs. */
+	private static void rows(Filling f, Random r, Object[] mix, int y, List<Building> out) {
+		List<Direction> sides = new ArrayList<>(List.of(Direction.SOUTH, Direction.NORTH, Direction.WEST, Direction.EAST));
+		Collections.shuffle(sides, r);
+		for (Direction side : sides) {
+			int len = sideLength(f.lot, side);
+			int pos = r.nextInt(3);
+			while (pos < len - 6) {
+				Building placed = null;
+				for (int tries = 0; tries < 6 && placed == null; tries++) {
+					BuildingType t = pickType(r, mix);
+					if (pos + t.width > len) {
+						continue;
+					}
+					placed = fit(f, t, side, pos, r.nextInt(4) == 0 ? 1 + r.nextInt(2) : 0, y);
+				}
+				if (placed == null) {
+					pos += 2;
+					continue;
+				}
+				claim(f, placed);
+				placed.variant = r.nextInt(97);
+				out.add(placed);
+				pos += placed.type.width + 1 + r.nextInt(3);
+			}
+		}
 	}
 
 	private static List<Building> layout(City c) {
 		Random r = new Random(c.seed);
-		int n = c.size.n;
-		int mid = n / 2;
-		List<int[]> blocks = new ArrayList<>();
-		for (int i = 0; i < n; i++) {
-			for (int j = 0; j < n; j++) {
-				if (i != mid || j != mid) {
-					blocks.add(new int[]{i, j, Math.max(Math.abs(i - mid), Math.abs(j - mid))});
-				}
-			}
+		CityShape sh = c.shape();
+		int y = c.base;
+		List<Building> out = new ArrayList<>();
+		Map<Integer, Filling> fills = new HashMap<>();
+		for (CityShape.Lot l : sh.lots) {
+			fills.put(l.id, new Filling(l));
 		}
-		Collections.shuffle(blocks, r);
-		Lot[] lots = new Lot[n * n];
-		// What every town has: a gas station and a logistics hub at the edge; bigger towns a school, a hospital, an
-		// army base (barracks and a hangar).
-		List<Lot> needOuter = new ArrayList<>(List.of(Lot.one(BuildingType.GAS_STATION), Lot.one(BuildingType.LOGISTICS_HUB)));
-		List<Lot> needAny = new ArrayList<>();
+		// The city hall in the middle of the central square, facing south, its portico to the pavement.
+		CityShape.Lot hallLot = sh.hallLot();
+		Building hall = new Building(0, BuildingType.CITY_HALL, new BlockPos(hallLot.cx(), y, hallLot.z1 - 4), Direction.NORTH, true);
+		hall.variant = r.nextInt(97);
+		claim(fills.get(hallLot.id), hall);
+		out.add(hall);
+		// What every town has: a gas station and a logistics hub towards the edge; bigger towns a school, a hospital,
+		// an army base (barracks and a hangar).
+		List<BuildingType> needOuter = new ArrayList<>(List.of(BuildingType.GAS_STATION, BuildingType.LOGISTICS_HUB));
+		List<BuildingType> needAny = new ArrayList<>(List.of(BuildingType.SCHOOL));
 		if (c.size != Size.SMALL) {
-			needOuter.add(Lot.one(BuildingType.HANGAR));
-			needOuter.add(Lot.two(BuildingType.BARRACKS, BuildingType.WAREHOUSE));
-			needAny.add(Lot.one(BuildingType.SCHOOL));
-			needAny.add(Lot.two(BuildingType.HOSPITAL, BuildingType.SHOP));
-		} else {
-			needAny.add(Lot.two(BuildingType.SCHOOL, BuildingType.GARAGES));
+			needOuter.add(BuildingType.HANGAR);
+			needOuter.add(BuildingType.BARRACKS);
+			needOuter.add(BuildingType.WAREHOUSE);
+			needAny.add(BuildingType.HOSPITAL);
 		}
 		if (c.size == Size.LARGE) {
-			needAny.add(Lot.one(BuildingType.PARK));
-			needAny.add(Lot.one(BuildingType.SCHOOL));
-			needOuter.add(Lot.two(BuildingType.HOSPITAL, BuildingType.WAREHOUSE));
+			needAny.add(BuildingType.SCHOOL);
+			needAny.add(BuildingType.HOSPITAL);
 		}
-		for (int[] b : blocks) {
-			if (b[2] == mid && !needOuter.isEmpty()) {
-				lots[b[0] * n + b[1]] = needOuter.removeFirst();
-			}
+		List<CityShape.Lot> order = new ArrayList<>(sh.lots);
+		Collections.shuffle(order, r);
+		for (BuildingType t : needOuter) {
+			placeIn(order, fills, r, t, y, out, CityShape.INDUSTRY, CityShape.OUTER, CityShape.MID);
 		}
-		for (int[] b : blocks) {
-			if (lots[b[0] * n + b[1]] == null && b[2] < mid && !needAny.isEmpty()) {
-				lots[b[0] * n + b[1]] = needAny.removeFirst();
-			}
+		for (BuildingType t : needAny) {
+			placeIn(order, fills, r, t, y, out, CityShape.MID, CityShape.OUTER, CityShape.DOWNTOWN);
 		}
-		for (int[] b : blocks) {
-			if (lots[b[0] * n + b[1]] == null && !needAny.isEmpty()) {
-				lots[b[0] * n + b[1]] = needAny.removeFirst();
-			}
-		}
-		List<Building> out = new ArrayList<>();
-		int y = c.base;
-		// The city hall on the central square, its front to the south.
-		Building hall = new Building(out.size(), BuildingType.CITY_HALL, new BlockPos(c.x, y, c.z + 8), Direction.NORTH, true);
-		hall.variant = r.nextInt(97);
-		out.add(hall);
-		for (int i = 0; i < n; i++) {
-			for (int j = 0; j < n; j++) {
-				if (i == mid && j == mid) {
-					continue;
+		for (CityShape.Lot l : sh.lots) {
+			Filling f = fills.get(l.id);
+			switch (l.district) {
+				case CityShape.HALL, CityShape.VACANT -> {
 				}
-				int ring = Math.max(Math.abs(i - mid), Math.abs(j - mid));
-				Lot lot = lots[i * n + j] != null ? lots[i * n + j] : fill(c.size, ring, r);
-				int bx = c.x + (i - mid) * PITCH;
-				int bz = c.z + (j - mid) * PITCH;
-				if (lot.quad) {
-					BuildingType[] small = {BuildingType.COTTAGE, BuildingType.COTTAGE, BuildingType.HOUSE, BuildingType.SMALL_HOUSE};
-					for (int q = 0; q < 4; q++) {
-						int sx = q % 2 == 0 ? -7 : 7;
-						boolean south = q < 2;
-						add(out, r, small[r.nextInt(small.length)], bx + sx, y, bz + (south ? FRONT : -FRONT), south ? Direction.NORTH : Direction.SOUTH);
+				case CityShape.PARK -> {
+					Building park = new Building(0, BuildingType.PARK, new BlockPos(l.cx(), y, l.cz() + 10), Direction.NORTH, true);
+					if (fit(f, BuildingType.PARK, Direction.SOUTH, (l.width() - 21) / 2, Math.max(0, l.z1 - 1 - (l.cz() + 10)), y) != null) {
+						claim(f, park);
+						park.variant = r.nextInt(97);
+						out.add(park);
 					}
-				} else if (lot.b != null) {
-					add(out, r, lot.a, bx, y, bz + FRONT, Direction.NORTH);
-					add(out, r, lot.b, bx, y, bz - FRONT, Direction.SOUTH);
-				} else {
-					Direction f = Direction.Plane.HORIZONTAL.getRandomDirection(net.minecraft.util.RandomSource.create(r.nextLong()));
-					add(out, r, lot.a, bx - f.getStepX() * FRONT, y, bz - f.getStepZ() * FRONT, f);
 				}
+				case CityShape.DOWNTOWN -> rows(f, r, DOWNTOWN, y, out);
+				case CityShape.MID -> rows(f, r, MID, y, out);
+				case CityShape.INDUSTRY -> rows(f, r, INDUSTRY, y, out);
+				default -> rows(f, r, OUTER, y, out);
 			}
 		}
-		return out;
+		List<Building> numbered = new ArrayList<>();
+		for (Building b : out) {
+			Building nb = new Building(numbered.size(), b.type, b.origin, b.facing, true);
+			nb.variant = b.variant;
+			numbered.add(nb);
+		}
+		return numbered;
 	}
 
-	private static void add(List<Building> out, Random r, BuildingType type, int x, int y, int z, Direction facing) {
-		Building b = new Building(out.size(), type, new BlockPos(x, y, z), facing, true);
-		b.variant = r.nextInt(97);
-		out.add(b);
+	private static void placeIn(List<CityShape.Lot> order, Map<Integer, Filling> fills, Random r, BuildingType t, int y, List<Building> out,
+			int... districts) {
+		for (int d : districts) {
+			for (CityShape.Lot l : order) {
+				if (l.district != d) {
+					continue;
+				}
+				Building b = placeAnywhere(fills.get(l.id), r, t, y);
+				if (b != null) {
+					b.variant = r.nextInt(97);
+					out.add(b);
+					return;
+				}
+			}
+		}
 	}
 }

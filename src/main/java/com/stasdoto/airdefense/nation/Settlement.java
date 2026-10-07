@@ -37,12 +37,14 @@ public final class Settlement {
 			Codec.LONG.optionalFieldOf("calm_until", 0L).forGetter(s -> s.calmUntil),
 			Codec.BOOL.optionalFieldOf("riot", false).forGetter(s -> s.riot),
 			Codec.LONG.listOf().optionalFieldOf("city", List.of()).forGetter(s -> s.city < 0 ? List.of() : List.of(s.city, (long) s.radius,
-					(long) s.citizens, s.capitalCity ? 1L : 0L))
-	).apply(i, (id, name, center, flag, country, elder, population, bonus, guards, soldiers, eco, capturedAt, calmUntil, riot, city) -> {
+					(long) s.citizens, s.capitalCity ? 1L : 0L)),
+			Codec.LONG.optionalFieldOf("hamlet", -1L).forGetter(s -> s.hamlet)
+	).apply(i, (id, name, center, flag, country, elder, population, bonus, guards, soldiers, eco, capturedAt, calmUntil, riot, city, hamlet) -> {
 		Settlement s = new Settlement(id, name, center, flag, country, elder, population, bonus, guards, soldiers, eco);
 		s.capturedAt = capturedAt;
 		s.calmUntil = calmUntil;
 		s.riot = riot;
+		s.hamlet = hamlet;
 		if (city.size() >= 4) {
 			s.city = city.get(0);
 			s.radius = (int) (long) city.get(1);
@@ -77,6 +79,8 @@ public final class Settlement {
 	public boolean riot;
 	/** A planned city ({@link Cities.City#key()}), or -1 for a village found in the wild. */
 	public long city = -1;
+	/** A planned hamlet round a city ({@link Hamlets.Hamlet#key()}), or -1. */
+	public long hamlet = -1;
 	/** How far the settlement reaches. */
 	public int radius = RADIUS;
 	/** People living here (cities: a number; only some of them walk the streets). */

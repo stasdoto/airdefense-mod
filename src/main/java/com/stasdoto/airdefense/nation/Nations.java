@@ -138,6 +138,10 @@ public final class Nations {
 			if (planned != null && level.isLoaded(planned.bell()) && level.getBlockState(planned.bell()).is(Blocks.BELL)) {
 				continue;
 			}
+			Hamlets.Hamlet hamlet = Cities.plannedHamletAt(level.getSeed(), v.getBlockX(), v.getBlockZ(), 60);
+			if (hamlet != null && level.isLoaded(hamlet.bell()) && level.getBlockState(hamlet.bell()).is(Blocks.BELL)) {
+				continue;
+			}
 			// The town square: the bell nearest to this villager, or where he stands.
 			BlockPos center = level.getPoiManager().findClosest(h -> h.is(PoiTypes.MEETING), v.blockPosition(), 48, PoiManager.Occupancy.ANY)
 					.orElse(v.blockPosition());
@@ -159,9 +163,13 @@ public final class Nations {
 		Cities.Terrain t = Cities.terrain(level);
 		long seed = level.getSeed();
 		Set<Long> have = new HashSet<>();
+		Set<Long> haveHamlets = new HashSet<>();
 		for (Settlement s : p.settlements.values()) {
 			if (s.city >= 0) {
 				have.add(s.city);
+			}
+			if (s.hamlet >= 0) {
+				haveHamlets.add(s.hamlet);
 			}
 		}
 		for (ServerPlayer pl : level.players()) {
@@ -170,6 +178,13 @@ public final class Nations {
 			for (int cx = Math.floorDiv(px - 300, Cities.CELL); cx <= Math.floorDiv(px + 300, Cities.CELL); cx++) {
 				for (int cz = Math.floorDiv(pz - 300, Cities.CELL); cz <= Math.floorDiv(pz + 300, Cities.CELL); cz++) {
 					for (Cities.City c : Cities.cities(seed, t, cx, cz)) {
+						for (Hamlets.Hamlet h : c.hamlets(seed, t)) {
+							BlockPos hb = h.bell();
+							if (!haveHamlets.contains(h.key()) && level.isLoaded(hb) && level.getBlockState(hb).is(Blocks.BELL)) {
+								foundHamlet(level, p, h);
+								haveHamlets.add(h.key());
+							}
+						}
 						BlockPos bell = c.bell();
 						if (have.contains(c.key()) || !level.isLoaded(bell) || !level.getBlockState(bell).is(Blocks.BELL)) {
 							continue;
@@ -224,6 +239,48 @@ public final class Nations {
 		citiesFounded++;
 		AirDefense.LOGGER.info("[airdefense] city {} ({}, {} people, {} buildings) at {} -> {}{}", s.name, c.size, c.citizens, s.eco.buildings.size(),
 				bell.toShortString(), country.name, c.capital() ? " (capital)" : "");
+		return s;
+	}
+
+	public static int hamletsFounded;
+
+	/** A hamlet round a planned city: a village of the city's country, with its houses and farm. */
+	public static Settlement foundHamlet(ServerLevel level, Politics p, Hamlets.Hamlet h) {
+		Random r = new Random(h.seed() ^ 0x5EED4321L);
+		Set<String> names = new HashSet<>();
+		p.settlements.values().forEach(s -> names.add(s.name));
+		int id = p.newId();
+		BlockPos bell = h.bell();
+		Settlement s = new Settlement(id, Names.village(r, names), bell, flagSpot(level, bell), -1, Optional.empty(), 0,
+				Map.of(), List.of(), List.of());
+		s.hamlet = h.key();
+		s.radius = 56;
+		for (Building b : h.buildings) {
+			Building nb = new Building(p.newId(), b.type, b.origin, b.facing, true);
+			nb.variant = b.variant;
+			nb.done = true;
+			s.eco.buildings.add(nb);
+		}
+		p.settlements.put(id, s);
+		Cities.City c = h.city;
+		long cell = Cities.cellKey(c.cx, c.cz);
+		Country country = null;
+		for (Country k : p.countries.values()) {
+			if (k.cell == cell) {
+				country = k;
+			}
+		}
+		if (country == null) {
+			country = newCountry(p, r, null, "", id, false);
+			country.color = c.color;
+			country.cell = cell;
+		}
+		s.country = country.id;
+		placeFlag(level, p, s);
+		p.setDirty();
+		discovered++;
+		hamletsFounded++;
+		AirDefense.LOGGER.info("[airdefense] hamlet {} ({} buildings) at {} -> {}", s.name, s.eco.buildings.size(), bell.toShortString(), country.name);
 		return s;
 	}
 

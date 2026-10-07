@@ -52,7 +52,7 @@ public class SettlementScreen extends Screen {
 	/** What can be ordered on the building tab, homes first; the list scrolls. */
 	private static final BuildingType[] BUILD_ORDER = {BuildingType.ROADS, BuildingType.COTTAGE, BuildingType.SMALL_HOUSE, BuildingType.HOUSE,
 			BuildingType.APARTMENTS, BuildingType.PANEL5, BuildingType.PANEL9, BuildingType.TOWER, BuildingType.SHOP, BuildingType.OFFICE,
-			BuildingType.SCHOOL, BuildingType.HOSPITAL, BuildingType.PARK, BuildingType.WAREHOUSE, BuildingType.GARAGES, BuildingType.GAS_STATION,
+			BuildingType.SCHOOL, BuildingType.HOSPITAL, BuildingType.PARK, BuildingType.WAREHOUSE, BuildingType.GARAGES, BuildingType.FARM, BuildingType.GAS_STATION,
 			BuildingType.LOGISTICS_HUB, BuildingType.OIL_WELL, BuildingType.REFINERY, BuildingType.BARRACKS, BuildingType.HANGAR,
 			BuildingType.FACTORY, BuildingType.CITY_HALL};
 	private int buildScroll;

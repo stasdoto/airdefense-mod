@@ -113,47 +113,93 @@ final class CityDecor {
 	// ------------------------------------------------------------------------------------------------
 	// The lots
 
-	private int n() {
-		return c.size.n;
-	}
+	/** A lot with what stands on each of its cells (its inside plus the pavement round it). */
+	private final class View {
+		final CityShape.Lot lot;
+		final int[][] g;
+		final List<Building> here = new ArrayList<>();
 
-	private int[] blockCentre(int i, int j) {
-		int mid = n() / 2;
-		return new int[]{c.x + (i - mid) * Cities.PITCH, c.z + (j - mid) * Cities.PITCH};
-	}
-
-	/** What stands on each cell of a lot (25 x 25 round its centre). */
-	private int[][] occupancy(int bx, int bz, List<Building> here) {
-		int[][] g = new int[25][25];
-		for (Building b : here) {
-			int hw = b.type.halfWidth();
-			Direction right = b.facing.getClockWise();
-			int front = b.type == BuildingType.CITY_HALL ? 4 : 2;
-			List<Integer> doors = doors(b);
-			for (int x = bx - 12; x <= bx + 12; x++) {
-				for (int z = bz - 12; z <= bz + 12; z++) {
-					int dx = x - b.origin.getX();
-					int dz = z - b.origin.getZ();
-					int lx = dx * right.getStepX() + dz * right.getStepZ();
-					int lz = dx * b.facing.getStepX() + dz * b.facing.getStepZ();
-					int k = 0;
-					if (Math.abs(lx) <= hw + 1 && lz >= 0 && lz <= b.type.depth) {
-						k = BUILDING;
-					} else if (Math.abs(lx) <= hw + 1 && lz >= -front && lz < 0) {
-						k = FRONT;
-						for (int dxs : doors) {
-							if (Math.abs(lx - dxs) <= 2) {
-								k = DOOR;
+		View(CityShape.Lot lot, List<Building> all) {
+			this.lot = lot;
+			this.g = new int[lot.width() + 2][lot.depth() + 2];
+			for (Building b : all) {
+				int reach = Math.max(b.type.width, b.type.depth) + 4;
+				if (b.origin.getX() >= lot.x0 - reach && b.origin.getX() <= lot.x1 + reach && b.origin.getZ() >= lot.z0 - reach
+						&& b.origin.getZ() <= lot.z1 + reach) {
+					here.add(b);
+				}
+			}
+			for (Building b : here) {
+				int hw = b.type.halfWidth();
+				Direction right = b.facing.getClockWise();
+				int front = b.type == BuildingType.CITY_HALL ? 4 : 2;
+				List<Integer> doors = doors(b);
+				for (int x = lot.x0 - 1; x <= lot.x1 + 1; x++) {
+					for (int z = lot.z0 - 1; z <= lot.z1 + 1; z++) {
+						int dx = x - b.origin.getX();
+						int dz = z - b.origin.getZ();
+						int lx = dx * right.getStepX() + dz * right.getStepZ();
+						int lz = dx * b.facing.getStepX() + dz * b.facing.getStepZ();
+						int k = 0;
+						if (Math.abs(lx) <= hw + 1 && lz >= 0 && lz <= b.type.depth) {
+							k = BUILDING;
+						} else if (Math.abs(lx) <= hw + 1 && lz >= -front && lz < 0) {
+							k = FRONT;
+							for (int dxs : doors) {
+								if (Math.abs(lx - dxs) <= 2) {
+									k = DOOR;
+								}
 							}
 						}
+						int gi = x - lot.x0 + 1;
+						int gj = z - lot.z0 + 1;
+						g[gi][gj] = Math.max(g[gi][gj], k);
 					}
-					int gi = x - bx + 12;
-					int gj = z - bz + 12;
-					g[gi][gj] = Math.max(g[gi][gj], k);
 				}
 			}
 		}
-		return g;
+
+		int at(int x, int z) {
+			int gi = x - lot.x0 + 1;
+			int gj = z - lot.z0 + 1;
+			if (gi < 0 || gj < 0 || gi >= g.length || gj >= g[0].length) {
+				return BUILDING;
+			}
+			return g[gi][gj];
+		}
+
+		boolean free(int x, int z) {
+			return at(x, z) == FREE && !used.contains(BlockPos.asLong(x, 0, z));
+		}
+
+		/** A free w x h rectangle inside the lot (off its garden edge), or null. */
+		int[] rect(int w, int h) {
+			int ax = lot.x0 + 1;
+			int az = lot.z0 + 1;
+			int sx = lot.x1 - 1 - w + 2 - ax;
+			int sz = lot.z1 - 1 - h + 2 - az;
+			if (sx <= 0 || sz <= 0) {
+				return null;
+			}
+			int total = sx * sz;
+			int start = r.nextInt(total);
+			for (int k = 0; k < total; k++) {
+				int idx = (start + k) % total;
+				int x0 = ax + idx % sx;
+				int z0 = az + idx / sx;
+				boolean ok = true;
+				for (int x = x0; x < x0 + w && ok; x++) {
+					for (int z = z0; z < z0 + h && ok; z++) {
+						ok = free(x, z);
+					}
+				}
+				if (ok) {
+					use(x0, z0, x0 + w - 1, z0 + h - 1);
+					return new int[]{x0, z0};
+				}
+			}
+			return null;
+		}
 	}
 
 	/** Local x of a building's doors (all of the front for those that vehicles drive into). */
@@ -187,56 +233,6 @@ final class CityDecor {
 		return d;
 	}
 
-	private void all() {
-		int n = n();
-		int mid = n / 2;
-		List<Building> buildings = c.buildings();
-		for (int i = 0; i < n; i++) {
-			for (int j = 0; j < n; j++) {
-				int[] bc = blockCentre(i, j);
-				int bx = bc[0];
-				int bz = bc[1];
-				List<Building> here = new ArrayList<>();
-				for (Building b : buildings) {
-					if (Math.abs(b.origin.getX() - bx) <= 14 && Math.abs(b.origin.getZ() - bz) <= 14) {
-						here.add(b);
-					}
-				}
-				int[][] g = occupancy(bx, bz, here);
-				boolean quad = false;
-				boolean park = false;
-				boolean hall = false;
-				for (Building b : here) {
-					quad |= b.type == BuildingType.COTTAGE || b.type == BuildingType.HOUSE || b.type == BuildingType.SMALL_HOUSE;
-					park |= b.type == BuildingType.PARK;
-					hall |= b.type == BuildingType.CITY_HALL;
-				}
-				streets(i, j, bx, bz, g, quad);
-				if (hall) {
-					square(bx, bz, g);
-				} else if (quad) {
-					villas(bx, bz, here, g);
-				} else if (!park) {
-					yard(i, j, bx, bz, g, Math.max(Math.abs(i - mid), Math.abs(j - mid)));
-				}
-			}
-		}
-		manholes();
-	}
-
-	private int at(int[][] g, int bx, int bz, int x, int z) {
-		int gi = x - bx + 12;
-		int gj = z - bz + 12;
-		if (gi < 0 || gj < 0 || gi >= 25 || gj >= 25) {
-			return BUILDING;
-		}
-		return g[gi][gj];
-	}
-
-	private boolean free(int[][] g, int bx, int bz, int x, int z) {
-		return at(g, bx, bz, x, z) == FREE && !used.contains(BlockPos.asLong(x, 0, z));
-	}
-
 	private void use(int x0, int z0, int x1, int z1) {
 		for (int x = x0 - 1; x <= x1 + 1; x++) {
 			for (int z = z0 - 1; z <= z1 + 1; z++) {
@@ -245,63 +241,70 @@ final class CityDecor {
 		}
 	}
 
-	/** A free w x h rectangle in the yard (inside the front gardens), or null. */
-	private int[] findRect(int[][] g, int bx, int bz, int w, int h) {
-		int span = 21;
-		int start = r.nextInt(span * span);
-		for (int k = 0; k < span * span; k++) {
-			int idx = (start + k) % (span * span);
-			int x0 = bx - 10 + idx % span;
-			int z0 = bz - 10 + idx / span;
-			if (x0 + w - 1 > bx + 10 || z0 + h - 1 > bz + 10) {
-				continue;
-			}
-			boolean ok = true;
-			for (int x = x0; x < x0 + w && ok; x++) {
-				for (int z = z0; z < z0 + h && ok; z++) {
-					ok = free(g, bx, bz, x, z);
+	private void all() {
+		CityShape sh = c.shape();
+		List<Building> buildings = c.buildings();
+		for (CityShape.Lot lot : sh.lots) {
+			View v = new View(lot, buildings);
+			streets(sh, v);
+			switch (lot.district) {
+				case CityShape.HALL -> square(v);
+				case CityShape.PARK -> parkEdge(v);
+				case CityShape.VACANT -> vacant(v);
+				case CityShape.INDUSTRY -> industry(v);
+				case CityShape.OUTER -> {
+					villas(v);
+					yard(v);
 				}
-			}
-			if (ok) {
-				use(x0, z0, x0 + w - 1, z0 + h - 1);
-				return new int[]{x0, z0};
+				default -> yard(v);
 			}
 		}
-		return null;
+		manholes(sh);
 	}
 
 	// ------------------------------------------------------------------------------------------------
 	// Streets: lamps, traffic lights, trees and benches along the pavement, bus stops
 
-	private void streets(int i, int j, int bx, int bz, int[][] g, boolean quad) {
-		int mid = n() / 2;
+	private void streets(CityShape sh, View v) {
+		CityShape.Lot l = v.lot;
 		boolean lights = c.size != Cities.Size.SMALL;
-		Direction[] sides = {Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST};
-		for (Direction side : sides) {
-			Direction along = side.getClockWise();
-			boolean busSide = (side.getAxis() == Direction.Axis.Z ? j == mid : i == mid) && (i + j) % 2 == 0;
-			for (int s = -12; s <= 12; s++) {
-				int kx = bx + side.getStepX() * 13 + along.getStepX() * s;
-				int kz = bz + side.getStepZ() * 13 + along.getStepZ() * s;
-				int gx = bx + side.getStepX() * 12 + along.getStepX() * s;
-				int gz = bz + side.getStepZ() * 12 + along.getStepZ() * s;
-				int inner = at(g, bx, bz, gx, gz);
-				if (busSide && s == -2 && inner != DOOR && inner != BUILDING && at(g, bx, bz, gx + along.getStepX() * 3, gz + along.getStepZ() * 3) != DOOR) {
+		boolean villas = l.district == CityShape.OUTER;
+		for (Direction side : new Direction[]{Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST}) {
+			Direction along = side.getAxis() == Direction.Axis.Z ? Direction.EAST : Direction.SOUTH;
+			int len = side.getAxis() == Direction.Axis.Z ? l.width() : l.depth();
+			int sx0 = side.getAxis() == Direction.Axis.Z ? l.x0 : (side == Direction.WEST ? l.x0 : l.x1);
+			int sz0 = side.getAxis() == Direction.Axis.Z ? (side == Direction.NORTH ? l.z0 : l.z1) : l.z0;
+			// A bus stop on the main streets (the ones round the central square), once per side.
+			int line = side == Direction.NORTH ? sh.gz[l.j0] : side == Direction.SOUTH ? sh.gz[l.j1 + 1] : side == Direction.WEST ? sh.gx[l.i0]
+					: sh.gx[l.i1 + 1];
+			boolean main = side.getAxis() == Direction.Axis.Z ? line == sh.gz[sh.cj] || line == sh.gz[sh.cj + 1]
+					: line == sh.gx[sh.ci] || line == sh.gx[sh.ci + 1];
+			int busAt = main && l.district != CityShape.HALL ? len / 2 - 2 : -100;
+			for (int s = 0; s < len; s++) {
+				int gx = sx0 + along.getStepX() * s;
+				int gz = sz0 + along.getStepZ() * s;
+				int kx = gx + side.getStepX();
+				int kz = gz + side.getStepZ();
+				int inner = v.at(gx, gz);
+				if (s == busAt && inner != DOOR && inner != BUILDING && v.at(gx + along.getStepX() * 3, gz + along.getStepZ() * 3) != DOOR) {
 					busStop(kx, kz, side, along);
 					s += 4;
 					continue;
 				}
+				if (s < 2 || s > len - 3) {
+					continue;
+				}
 				if (Math.floorMod(s, 8) == 4 && inner != DOOR) {
 					lamp(kx, kz, side);
-				} else if (Math.floorMod(s, 8) == 0 && s != 0 && !quad && (inner == FREE || inner == FRONT) && !used.contains(BlockPos.asLong(gx, 0, gz))) {
+				} else if (Math.floorMod(s, 8) == 0 && !villas && (inner == FREE || inner == FRONT) && !used.contains(BlockPos.asLong(gx, 0, gz))) {
 					streetTree(gx, gz, inner == FRONT);
-					if (r.nextInt(3) == 0 && at(g, bx, bz, gx + along.getStepX(), gz + along.getStepZ()) != DOOR) {
+					if (r.nextInt(3) == 0 && v.at(gx + along.getStepX() * 3, gz + along.getStepZ() * 3) != DOOR) {
 						put(gx + along.getStepX(), base + 1, gz + along.getStepZ(), stairs(Blocks.SPRUCE_STAIRS, side.getOpposite()));
 						put(gx + along.getStepX() * 2, base + 1, gz + along.getStepZ() * 2, stairs(Blocks.SPRUCE_STAIRS, side.getOpposite()));
 						put(gx + along.getStepX() * 3, base + 1, gz + along.getStepZ() * 3, b(Blocks.COMPOSTER));
-						used.add(BlockPos.asLong(gx + along.getStepX(), 0, gz + along.getStepZ()));
-						used.add(BlockPos.asLong(gx + along.getStepX() * 2, 0, gz + along.getStepZ() * 2));
-						used.add(BlockPos.asLong(gx + along.getStepX() * 3, 0, gz + along.getStepZ() * 3));
+						for (int k = 1; k <= 3; k++) {
+							used.add(BlockPos.asLong(gx + along.getStepX() * k, 0, gz + along.getStepZ() * k));
+						}
 					}
 				}
 			}
@@ -309,8 +312,8 @@ final class CityDecor {
 		// The corners: traffic lights at two of each crossing's four, lamps at the others.
 		for (int sx = -1; sx <= 1; sx += 2) {
 			for (int sz = -1; sz <= 1; sz += 2) {
-				int x = bx + sx * 13;
-				int z = bz + sz * 13;
+				int x = sx < 0 ? l.x0 - 1 : l.x1 + 1;
+				int z = sz < 0 ? l.z0 - 1 : l.z1 + 1;
 				if (lights && sx == sz) {
 					trafficLight(x, z, sx, sz);
 				} else {
@@ -319,6 +322,406 @@ final class CityDecor {
 			}
 		}
 	}
+
+	/** Manhole covers in the middle of the lanes every so often. */
+	private void manholes(CityShape sh) {
+		BlockState cover = Blocks.IRON_TRAPDOOR.defaultBlockState().setValue(BlockStateProperties.HALF, Half.TOP);
+		for (int k = 0; k <= sh.n; k++) {
+			for (int j = 0; j < sh.n; j++) {
+				if (sh.segV(k, j)) {
+					for (int z = sh.gz[j] + 6; z <= sh.gz[j + 1] - 6; z += 11) {
+						force(sh.gx[k] + 1, base, z, cover);
+					}
+				}
+				if (sh.segH(k, j)) {
+					for (int x = sh.gx[j] + 6; x <= sh.gx[j + 1] - 6; x += 11) {
+						force(x, base, sh.gz[k] - 1, cover);
+					}
+				}
+			}
+		}
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Yards
+
+	private void yard(View v) {
+		int[] q;
+		if ((q = v.rect(12, 6)) != null) {
+			parking(q[0], q[1], 0);
+		} else if ((q = v.rect(6, 12)) != null) {
+			parking(q[0], q[1], 1);
+		}
+		if (r.nextInt(3) > 0 && (q = v.rect(7, 7)) != null) {
+			playground(q[0], q[1]);
+		}
+		if (c.size == Cities.Size.LARGE && r.nextInt(3) == 0 && (q = v.rect(7, 11)) != null) {
+			court(q[0], q[1]);
+		}
+		int fun = 1 + r.nextInt(3);
+		for (int k = 0; k < fun; k++) {
+			switch (r.nextInt(5)) {
+				case 0 -> {
+					if ((q = v.rect(3, 3)) != null) {
+						kiosk(q[0], q[1]);
+					}
+				}
+				case 1 -> {
+					if ((q = v.rect(3, 3)) != null) {
+						iceCream(q[0] + 1, q[1] + 1);
+					}
+				}
+				case 2 -> {
+					if ((q = v.rect(5, 2)) != null) {
+						billboard(q[0], q[1]);
+					}
+				}
+				case 3 -> {
+					if ((q = v.rect(2, 2)) != null) {
+						vending(q[0], q[1]);
+					}
+				}
+				default -> {
+					if ((q = v.rect(4, 1)) != null) {
+						bikeRack(q[0], q[1]);
+					}
+				}
+			}
+		}
+		for (int k = 0; k < 4; k++) {
+			if ((q = v.rect(3, 2)) != null) {
+				flowerBed(q[0], q[1]);
+			}
+		}
+		for (int k = 0; k < 3; k++) {
+			if ((q = v.rect(3, 3)) != null) {
+				streetTree(q[0] + 1, q[1] + 1, false);
+			}
+		}
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Villas: a fence round each house's garden with a gate at the door, a driveway with a car, a cat
+
+	private void villas(View v) {
+		Block[] fences = {Blocks.OAK_FENCE, Blocks.SPRUCE_FENCE, Blocks.BIRCH_FENCE, Blocks.DARK_OAK_FENCE, Blocks.IRON_BARS, Blocks.AZALEA_LEAVES};
+		for (Building b : v.here) {
+			if (b.type != BuildingType.COTTAGE && b.type != BuildingType.HOUSE && b.type != BuildingType.SMALL_HOUSE) {
+				continue;
+			}
+			if (!(b.origin.getX() >= v.lot.x0 && b.origin.getX() <= v.lot.x1 && b.origin.getZ() >= v.lot.z0 && b.origin.getZ() <= v.lot.z1)) {
+				continue;
+			}
+			Block fb = fences[r.nextInt(fences.length)];
+			BlockState fence = fb == Blocks.AZALEA_LEAVES ? fb.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, true) : fb.defaultBlockState();
+			int hw = b.type.halfWidth() + 2;
+			int back = b.type.depth + 1;
+			for (int lx = -hw; lx <= hw; lx++) {
+				for (int lz = -1; lz <= back; lz++) {
+					boolean edge = Math.abs(lx) == hw || lz == -1 || lz == back;
+					if (!edge) {
+						continue;
+					}
+					BlockPos at = b.at(lx, 0, lz);
+					if (v.at(at.getX(), at.getZ()) == BUILDING || at.getX() < v.lot.x0 || at.getX() > v.lot.x1 || at.getZ() < v.lot.z0
+							|| at.getZ() > v.lot.z1) {
+						continue;
+					}
+					if (lz == -1 && lx >= -1 && lx <= 3) {
+						force(at.getX(), base, at.getZ(), b(Blocks.POLISHED_ANDESITE));
+						continue;
+					}
+					put(at.getX(), base + 1, at.getZ(), fence);
+				}
+			}
+			// A car beside the house, a cat now and then.
+			BlockPos side = b.at(b.type.halfWidth() + 1 + 1, 0, 1);
+			boolean alongZ = b.facing.getAxis() == Direction.Axis.Z;
+			int cx = side.getX() - (alongZ ? 0 : 0);
+			int cz = side.getZ();
+			if (r.nextInt(3) > 0 && v.free(cx, cz) && v.free(alongZ ? cx + 1 : cx + 3, alongZ ? cz + 3 : cz + 1)) {
+				car(Math.min(cx, cx), Math.min(cz, cz), alongZ, CAR_COLORS[r.nextInt(CAR_COLORS.length)]);
+				use(cx, cz, alongZ ? cx + 1 : cx + 3, alongZ ? cz + 3 : cz + 1);
+			}
+			if (r.nextInt(4) == 0) {
+				BlockPos p = b.at(-b.type.halfWidth() - 1, 0, b.type.depth / 2);
+				spawn(p.getX(), p.getZ(), 0);
+			}
+		}
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// The central square behind the city hall: a lit fountain, flags, benches, lamps
+
+	private void square(View v) {
+		int[] q = v.rect(9, 5);
+		if (q == null) {
+			return;
+		}
+		int x0 = q[0];
+		int z0 = q[1];
+		for (int x = x0; x < x0 + 9; x++) {
+			for (int z = z0; z < z0 + 5; z++) {
+				force(x, base, z, (x + z) % 2 == 0 ? b(Blocks.POLISHED_ANDESITE) : b(Blocks.POLISHED_DIORITE));
+			}
+		}
+		int fx = x0 + 4;
+		int fz = z0 + 2;
+		for (int dx = -2; dx <= 2; dx++) {
+			for (int dz = -2; dz <= 2; dz++) {
+				boolean rim = Math.abs(dx) == 2 || Math.abs(dz) == 2;
+				if (rim) {
+					put(fx + dx, base + 1, fz + dz, b(Blocks.STONE_BRICK_SLAB));
+				} else {
+					force(fx + dx, base - 1, fz + dz, b(Blocks.SEA_LANTERN));
+					force(fx + dx, base, fz + dz, Blocks.WATER.defaultBlockState());
+				}
+			}
+		}
+		put(fx, base + 1, fz, b(Blocks.STONE_BRICK_WALL));
+		put(fx, base + 2, fz, b(Blocks.STONE_BRICK_WALL));
+		put(fx, base + 3, fz, b(Blocks.SEA_LANTERN));
+		for (int x : new int[]{x0, x0 + 8}) {
+			for (int y = 1; y <= 5; y++) {
+				put(x, base + y, z0, b(Blocks.IRON_BARS));
+			}
+			put(x, base + 6, z0, Blocks.BANNER.pick(DyeColor.byId(c.color)).defaultBlockState());
+			put(x, base + 1, z0 + 4, stairs(Blocks.DARK_OAK_STAIRS, Direction.SOUTH));
+			put(x, base + 1, z0 + 2, b(Blocks.OAK_FENCE));
+			put(x, base + 2, z0 + 2, b(Blocks.LANTERN));
+		}
+	}
+
+	/** Round a park: more trees, benches. */
+	private void parkEdge(View v) {
+		int[] q;
+		for (int k = 0; k < 4; k++) {
+			if ((q = v.rect(3, 3)) != null) {
+				streetTree(q[0] + 1, q[1] + 1, false);
+			}
+		}
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Industry: a fence round the yard, stacked shipping containers, tanks, pipes, chimneys, lorries
+
+	private void industry(View v) {
+		CityShape.Lot l = v.lot;
+		// A steel fence along the garden edge, gaps at the gates.
+		for (int x = l.x0; x <= l.x1; x++) {
+			for (int z : new int[]{l.z0, l.z1}) {
+				if (v.at(x, z) == FREE) {
+					put(x, base + 1, z, b(Blocks.IRON_BARS));
+					put(x, base + 2, z, b(Blocks.IRON_BARS));
+				}
+			}
+		}
+		for (int z = l.z0; z <= l.z1; z++) {
+			for (int x : new int[]{l.x0, l.x1}) {
+				if (v.at(x, z) == FREE) {
+					put(x, base + 1, z, b(Blocks.IRON_BARS));
+					put(x, base + 2, z, b(Blocks.IRON_BARS));
+				}
+			}
+		}
+		// The yard is concrete.
+		for (int x = l.x0 + 1; x < l.x1; x++) {
+			for (int z = l.z0 + 1; z < l.z1; z++) {
+				if (v.at(x, z) == FREE) {
+					force(x, base, z, r.nextInt(9) == 0 ? b(Blocks.GRAVEL) : c(DyeColor.LIGHT_GRAY));
+				}
+			}
+		}
+		int[] q;
+		for (int k = 0; k < 2 + r.nextInt(3); k++) {
+			if ((q = v.rect(6, 3)) != null) {
+				containers(q[0], q[1]);
+			}
+		}
+		for (int k = 0; k < 1 + r.nextInt(2); k++) {
+			if ((q = v.rect(4, 4)) != null) {
+				tank(q[0] + 1, q[1] + 1);
+			}
+		}
+		if ((q = v.rect(3, 3)) != null) {
+			chimney(q[0] + 1, q[1] + 1, 14 + r.nextInt(10));
+		}
+		for (int k = 0; k < 2; k++) {
+			if ((q = v.rect(3, 7)) != null) {
+				lorry(q[0] + 1, q[1] + 1);
+			}
+		}
+		if ((q = v.rect(10, 1)) != null) {
+			pipe(q[0], q[1], 10);
+		}
+	}
+
+	private static final DyeColor[] BOX_COLORS = {DyeColor.RED, DyeColor.BLUE, DyeColor.ORANGE, DyeColor.GREEN, DyeColor.LIGHT_BLUE, DyeColor.BROWN,
+			DyeColor.GRAY, DyeColor.WHITE};
+
+	/** Shipping containers two high: 6 long, coloured, ribbed with trapdoors. */
+	private void containers(int x0, int z0) {
+		for (int row = 0; row < 2; row++) {
+			for (int level = 0; level < (row == 0 ? 2 : 1 + r.nextInt(2)); level++) {
+				BlockState box = Blocks.DYED_TERRACOTTA.pick(BOX_COLORS[r.nextInt(BOX_COLORS.length)]).defaultBlockState();
+				for (int x = x0; x < x0 + 6; x++) {
+					put(x, base + 1 + level * 2, z0 + row * 2 - (row), box);
+					put(x, base + 2 + level * 2, z0 + row * 2 - (row), box);
+				}
+			}
+		}
+	}
+
+	/** A round tank on legs with a ladder. */
+	private void tank(int x, int z) {
+		for (int y = 1; y <= 2; y++) {
+			put(x - 1, base + y, z - 1, b(Blocks.IRON_BARS));
+			put(x + 1, base + y, z + 1, b(Blocks.IRON_BARS));
+			put(x - 1, base + y, z + 1, b(Blocks.IRON_BARS));
+			put(x + 1, base + y, z - 1, b(Blocks.IRON_BARS));
+		}
+		for (int y = 3; y <= 7; y++) {
+			for (int dx = -1; dx <= 1; dx++) {
+				for (int dz = -1; dz <= 1; dz++) {
+					put(x + dx, base + y, z + dz, y == 5 ? c(DyeColor.RED) : c(DyeColor.WHITE));
+				}
+			}
+		}
+		put(x, base + 8, z, b(Blocks.SMOOTH_STONE_SLAB));
+	}
+
+	/** A factory chimney, smoking, with red and white bands and a light on top. */
+	private void chimney(int x, int z, int h) {
+		for (int y = 1; y <= h; y++) {
+			BlockState s = (y / 3) % 2 == 0 ? c(DyeColor.RED) : c(DyeColor.WHITE);
+			put(x, base + y, z, s);
+		}
+		put(x, base + h + 1, z, b(Blocks.CAMPFIRE));
+		put(x + 1, base + h, z, b(Blocks.SEA_LANTERN));
+	}
+
+	/** A lorry: cab and box on six wheels. */
+	private void lorry(int x, int z) {
+		DyeColor col = BOX_COLORS[r.nextInt(BOX_COLORS.length)];
+		for (int dz = 0; dz < 6; dz++) {
+			for (int dx = 0; dx <= 1; dx++) {
+				put(x + dx, base + 1, z + dz, c(DyeColor.GRAY));
+				if (dz < 2) {
+					put(x + dx, base + 2, z + dz, dz == 0 ? Blocks.STAINED_GLASS.pick(DyeColor.BLACK).defaultBlockState() : c(col));
+				} else {
+					put(x + dx, base + 2, z + dz, c(DyeColor.WHITE));
+					put(x + dx, base + 3, z + dz, c(DyeColor.WHITE));
+				}
+			}
+		}
+	}
+
+	/** A pipe on supports. */
+	private void pipe(int x0, int z, int len) {
+		for (int x = x0; x < x0 + len; x++) {
+			put(x, base + 3, z, b(Blocks.IRON_BLOCK));
+			if ((x - x0) % 4 == 0) {
+				put(x, base + 1, z, b(Blocks.IRON_BARS));
+				put(x, base + 2, z, b(Blocks.IRON_BARS));
+			}
+		}
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Wasteland and building sites
+
+	private void vacant(View v) {
+		CityShape.Lot l = v.lot;
+		boolean site = r.nextBoolean();
+		if (site) {
+			// A building site: a fence, the frame of a block going up, a tower crane, sand and bricks.
+			for (int x = l.x0; x <= l.x1; x++) {
+				put(x, base + 1, l.z0, b(Blocks.BIRCH_FENCE));
+				put(x, base + 1, l.z1, b(Blocks.BIRCH_FENCE));
+			}
+			for (int z = l.z0; z <= l.z1; z++) {
+				put(l.x0, base + 1, z, b(Blocks.BIRCH_FENCE));
+				put(l.x1, base + 1, z, b(Blocks.BIRCH_FENCE));
+			}
+			int fx0 = l.x0 + 3;
+			int fz0 = l.z0 + 3;
+			int fw = Math.min(13, l.width() - 8);
+			int fd = Math.min(9, l.depth() - 8);
+			int floors = 2 + r.nextInt(3);
+			for (int f = 0; f <= floors; f++) {
+				for (int x = fx0; x <= fx0 + fw; x++) {
+					for (int z = fz0; z <= fz0 + fd; z++) {
+						boolean column = (x - fx0) % 4 == 0 && (z - fz0) % 4 == 0;
+						if (f < floors && column) {
+							put(x, base + f * 3 + 1, z, c(DyeColor.GRAY));
+							put(x, base + f * 3 + 2, z, c(DyeColor.GRAY));
+						}
+						if (f > 0 && (f < floors || r.nextInt(2) == 0)) {
+							put(x, base + f * 3, z, c(DyeColor.LIGHT_GRAY));
+						}
+					}
+				}
+			}
+			// The crane: a lattice mast, the jib, the counterweight, the hook.
+			int mx = Math.min(fx0 + fw + 2, l.x1 - 2);
+			int mz = Math.min(fz0 + fd + 2, l.z1 - 2);
+			int h = 22 + r.nextInt(8);
+			for (int y = 1; y <= h; y++) {
+				put(mx, base + y, mz, y % 2 == 0 ? c(DyeColor.YELLOW) : b(Blocks.IRON_BARS));
+			}
+			for (int k = -4; k <= 12; k++) {
+				put(mx - k, base + h + 1, mz, c(DyeColor.YELLOW));
+			}
+			put(mx + 4, base + h, mz, c(DyeColor.GRAY));
+			put(mx + 3, base + h, mz, c(DyeColor.GRAY));
+			put(mx, base + h + 2, mz, c(DyeColor.YELLOW));
+			put(mx, base + h + 3, mz, b(Blocks.REDSTONE_LAMP).setValue(BlockStateProperties.LIT, true));
+			for (int y = h; y >= h - 8; y--) {
+				put(mx - 9, base + y, mz, b(Blocks.IRON_CHAIN));
+			}
+			int[] q;
+			if ((q = v.rect(3, 3)) != null) {
+				for (int dx = 0; dx < 3; dx++) {
+					for (int dz = 0; dz < 3; dz++) {
+						put(q[0] + dx, base + 1, q[1] + dz, b(Blocks.SAND));
+					}
+				}
+				put(q[0] + 1, base + 2, q[1] + 1, b(Blocks.SAND));
+			}
+			if ((q = v.rect(2, 2)) != null) {
+				put(q[0], base + 1, q[1], b(Blocks.BRICKS));
+				put(q[0] + 1, base + 1, q[1], b(Blocks.BRICKS));
+				put(q[0], base + 2, q[1], b(Blocks.BRICKS));
+			}
+		} else {
+			// Wasteland: rough ground, bushes, an abandoned car.
+			for (int x = l.x0; x <= l.x1; x++) {
+				for (int z = l.z0; z <= l.z1; z++) {
+					int k = r.nextInt(10);
+					if (k < 3) {
+						force(x, base, z, b(Blocks.COARSE_DIRT));
+					} else if (k < 5) {
+						put(x, base + 1, z, b(Blocks.SHORT_GRASS));
+					} else if (k == 5) {
+						put(x, base + 1, z, b(Blocks.AZALEA));
+					}
+				}
+			}
+			int[] q;
+			if ((q = v.rect(3, 5)) != null) {
+				car(q[0], q[1], true, DyeColor.BROWN);
+			}
+			for (int k = 0; k < 2; k++) {
+				if ((q = v.rect(3, 3)) != null) {
+					streetTree(q[0] + 1, q[1] + 1, false);
+				}
+			}
+		}
+	}
+
+	private static final DyeColor[] CAR_COLORS = {DyeColor.WHITE, DyeColor.BLACK, DyeColor.GRAY, DyeColor.LIGHT_GRAY, DyeColor.RED, DyeColor.BLUE,
+			DyeColor.YELLOW, DyeColor.GREEN, DyeColor.ORANGE, DyeColor.LIGHT_BLUE};
+
 
 	private void lamp(int x, int z, Direction out) {
 		for (int y = 1; y <= 4; y++) {
@@ -425,83 +828,6 @@ final class CityDecor {
 		put(px, base + 2, pz, b(Blocks.IRON_BARS));
 		put(px, base + 3, pz, c(DyeColor.YELLOW));
 	}
-
-	/** Manhole covers in the middle of the lanes every so often. */
-	private void manholes() {
-		int half = c.half();
-		for (int k = 0; k <= n(); k++) {
-			int line = -half + k * Cities.PITCH;
-			for (int s = -half + 7; s <= half - 7; s += 11) {
-				if (Math.floorMod(s + half, Cities.PITCH) < 4 || Math.floorMod(s + half, Cities.PITCH) > Cities.PITCH - 4) {
-					continue;
-				}
-				BlockState cover = Blocks.IRON_TRAPDOOR.defaultBlockState().setValue(BlockStateProperties.HALF, Half.TOP);
-				force(c.x + line + 1, base, c.z + s, cover);
-				force(c.x + s, base, c.z + line - 1, cover);
-			}
-		}
-	}
-
-	// ------------------------------------------------------------------------------------------------
-	// Yards
-
-	private void yard(int i, int j, int bx, int bz, int[][] g, int ring) {
-		int[] q;
-		if ((q = findRect(g, bx, bz, 12, 6)) != null) {
-			parking(q[0], q[1], 0);
-		} else if ((q = findRect(g, bx, bz, 6, 12)) != null) {
-			parking(q[0], q[1], 1);
-		}
-		if (r.nextInt(3) > 0 && (q = findRect(g, bx, bz, 7, 7)) != null) {
-			playground(q[0], q[1]);
-		}
-		if (c.size == Cities.Size.LARGE && ring <= 2 && r.nextInt(3) == 0 && (q = findRect(g, bx, bz, 7, 11)) != null) {
-			court(q[0], q[1]);
-		}
-		int fun = 1 + r.nextInt(3);
-		for (int k = 0; k < fun; k++) {
-			switch (r.nextInt(5)) {
-				case 0 -> {
-					if ((q = findRect(g, bx, bz, 3, 3)) != null) {
-						kiosk(q[0], q[1]);
-					}
-				}
-				case 1 -> {
-					if ((q = findRect(g, bx, bz, 3, 3)) != null) {
-						iceCream(q[0] + 1, q[1] + 1);
-					}
-				}
-				case 2 -> {
-					if ((q = findRect(g, bx, bz, 5, 2)) != null) {
-						billboard(q[0], q[1]);
-					}
-				}
-				case 3 -> {
-					if ((q = findRect(g, bx, bz, 2, 2)) != null) {
-						vending(q[0], q[1]);
-					}
-				}
-				default -> {
-					if ((q = findRect(g, bx, bz, 4, 1)) != null) {
-						bikeRack(q[0], q[1]);
-					}
-				}
-			}
-		}
-		for (int k = 0; k < 4; k++) {
-			if ((q = findRect(g, bx, bz, 3, 2)) != null) {
-				flowerBed(q[0], q[1]);
-			}
-		}
-		for (int k = 0; k < 3; k++) {
-			if ((q = findRect(g, bx, bz, 3, 3)) != null) {
-				streetTree(q[0] + 1, q[1] + 1, false);
-			}
-		}
-	}
-
-	private static final DyeColor[] CAR_COLORS = {DyeColor.WHITE, DyeColor.BLACK, DyeColor.GRAY, DyeColor.LIGHT_GRAY, DyeColor.RED, DyeColor.BLUE,
-			DyeColor.YELLOW, DyeColor.GREEN, DyeColor.ORANGE, DyeColor.LIGHT_BLUE};
 
 	/** Four places with white lines, most of them taken. */
 	private void parking(int x0, int z0, int dir) {
@@ -691,108 +1017,6 @@ final class CityDecor {
 	private void bikeRack(int x0, int z0) {
 		for (int x = x0; x < x0 + 4; x++) {
 			put(x, base + 1, z0, b(Blocks.IRON_BARS));
-		}
-	}
-
-	// ------------------------------------------------------------------------------------------------
-	// Villas: fences round each garden, a driveway with a car, flowers, cats
-
-	private void villas(int bx, int bz, List<Building> here, int[][] g) {
-		Block[] fences = {Blocks.OAK_FENCE, Blocks.SPRUCE_FENCE, Blocks.BIRCH_FENCE, Blocks.DARK_OAK_FENCE, Blocks.IRON_BARS, Blocks.AZALEA_LEAVES};
-		for (int qx = -1; qx <= 1; qx += 2) {
-			for (int qz = -1; qz <= 1; qz += 2) {
-				Block fb = fences[r.nextInt(fences.length)];
-				BlockState fence = fb == Blocks.AZALEA_LEAVES ? fb.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, true)
-						: fb.defaultBlockState();
-				int x0 = qx < 0 ? bx - 12 : bx + 1;
-				int x1 = qx < 0 ? bx - 1 : bx + 12;
-				int z0 = qz < 0 ? bz - 12 : bz + 1;
-				int z1 = qz < 0 ? bz - 1 : bz + 12;
-				Building home = null;
-				for (Building b : here) {
-					if (b.origin.getX() >= x0 - 1 && b.origin.getX() <= x1 + 1 && b.origin.getZ() >= z0 - 1 && b.origin.getZ() <= z1 + 1) {
-						home = b;
-					}
-				}
-				// The fence along the street side, with the gate in front of the door.
-				int edgeZ = qz < 0 ? bz - 12 : bz + 12;
-				for (int x = x0; x <= x1; x++) {
-					if (home != null && Math.abs(x - home.origin.getX()) <= 2) {
-						force(x, base, edgeZ, b(Blocks.POLISHED_ANDESITE));
-						continue;
-					}
-					put(x, base + 1, edgeZ, fence);
-				}
-				int edgeX = qx < 0 ? bx - 12 : bx + 12;
-				for (int z = z0; z <= z1; z++) {
-					put(edgeX, base + 1, z, fence);
-				}
-				// The driveway between the house and the middle of the block, a car on it.
-				int dx = qx < 0 ? bx - 2 : bx + 1;
-				int dz0 = qz < 0 ? bz - 6 : bz + 3;
-				if (free(g, bx, bz, dx, dz0) && free(g, bx, bz, dx + 1, dz0 + 3)) {
-					for (int z = dz0; z <= dz0 + 3; z++) {
-						force(dx, base, z, c(DyeColor.GRAY));
-						force(dx + 1, base, z, c(DyeColor.GRAY));
-					}
-					if (r.nextInt(3) > 0) {
-						car(dx, dz0, true, CAR_COLORS[r.nextInt(CAR_COLORS.length)]);
-					}
-					use(dx, dz0, dx + 1, dz0 + 3);
-				}
-				// A hedge on the inner sides, flowers, maybe a cat.
-				for (int z = z0; z <= z1; z++) {
-					int x = qx < 0 ? bx - 1 : bx + 1;
-					if (free(g, bx, bz, x, z) && r.nextInt(3) == 0) {
-						put(x, base + 1, z, b(r.nextBoolean() ? Blocks.FLOWERING_AZALEA : Blocks.AZALEA));
-					}
-				}
-				if (r.nextInt(4) == 0) {
-					spawn(qx < 0 ? bx - 3 : bx + 3, qz < 0 ? bz - 2 : bz + 2, 0);
-				}
-			}
-		}
-	}
-
-	// ------------------------------------------------------------------------------------------------
-	// The central square behind the city hall: a lit fountain, flags, benches, lamps
-
-	private void square(int bx, int bz, int[][] g) {
-		int[] q = findRect(g, bx, bz, 9, 5);
-		if (q == null) {
-			return;
-		}
-		int x0 = q[0];
-		int z0 = q[1];
-		for (int x = x0; x < x0 + 9; x++) {
-			for (int z = z0; z < z0 + 5; z++) {
-				force(x, base, z, (x + z) % 2 == 0 ? b(Blocks.POLISHED_ANDESITE) : b(Blocks.POLISHED_DIORITE));
-			}
-		}
-		int fx = x0 + 4;
-		int fz = z0 + 2;
-		for (int dx = -2; dx <= 2; dx++) {
-			for (int dz = -2; dz <= 2; dz++) {
-				boolean rim = Math.abs(dx) == 2 || Math.abs(dz) == 2;
-				if (rim) {
-					put(fx + dx, base + 1, fz + dz, b(Blocks.STONE_BRICK_SLAB));
-				} else {
-					force(fx + dx, base - 1, fz + dz, b(Blocks.SEA_LANTERN));
-					force(fx + dx, base, fz + dz, Blocks.WATER.defaultBlockState());
-				}
-			}
-		}
-		put(fx, base + 1, fz, b(Blocks.STONE_BRICK_WALL));
-		put(fx, base + 2, fz, b(Blocks.STONE_BRICK_WALL));
-		put(fx, base + 3, fz, b(Blocks.SEA_LANTERN));
-		for (int x : new int[]{x0, x0 + 8}) {
-			for (int y = 1; y <= 5; y++) {
-				put(x, base + y, z0, b(Blocks.IRON_BARS));
-			}
-			put(x, base + 6, z0, Blocks.BANNER.pick(DyeColor.byId(c.color)).defaultBlockState());
-			put(x, base + 1, z0 + 4, stairs(Blocks.DARK_OAK_STAIRS, Direction.SOUTH));
-			put(x, base + 1, z0 + 2, b(Blocks.OAK_FENCE));
-			put(x, base + 2, z0 + 2, b(Blocks.LANTERN));
 		}
 	}
 }

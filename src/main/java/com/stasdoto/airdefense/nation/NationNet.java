@@ -228,7 +228,7 @@ public final class NationNet {
 			villages.add(new NationMapPayload.Village(s.id, s.name, s.center.getX(), s.center.getY(), s.center.getZ(),
 					c == null ? 0xFFE8E8E8 : c.argb(), c == null ? "" : c.name, c != null && own != null && c.id == own.id,
 					s.people(), s.guardsAlive, s.soldiers.size(), s.flag.getX(), s.flag.getZ(), c != null && own != null && own.atWarWith(c.id),
-					mapBuildings(s), s.radius, s.isCity() ? Math.max(0, (int) ((s.radius - 4) / 1.2)) : 0, c != null && c.capital == s.id));
+					mapBuildings(s), s.radius, 0, c != null && c.capital == s.id));
 			if (villages.size() >= 64) {
 				break;
 			}

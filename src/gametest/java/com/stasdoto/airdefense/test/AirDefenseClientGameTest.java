@@ -216,15 +216,19 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			camera(server, cx + 0.5, base + 140, cz + 0.5, 0, 90);
 			ctx.waitTicks(100);
 			ctx.takeScreenshot("141_real_capital_top");
-			camera(server, cx + 0.5, base + 6, cz + 34.5, 180, 8);
-			ctx.waitTicks(60);
-			ctx.takeScreenshot("142_real_city_hall");
+			float[][] cc = cityCams(server);
+			shot(ctx, server, cc[0], "142_real_city_hall", 60);
 			camera(server, cx - cap[2] - 30.5, base + 25, cz + 0.5, 270, 20);
 			ctx.waitTicks(80);
 			ctx.takeScreenshot("143_real_city_edge");
-			camera(server, cx + 16.5, base + 2.8, cz + cap[2] - 4.5, 180, 3);
-			ctx.waitTicks(80);
-			ctx.takeScreenshot("144_real_street");
+			shot(ctx, server, cc[1], "144_real_street", 80);
+			if (cc[3] != null) {
+				shot(ctx, server, cc[3], "145_real_hamlet", 300);
+				int hw = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Nations.hamletsFounded > 0, 600);
+				AirDefense.LOGGER.info("[airdefense-test] RESULT real_hamlet: founded {} after {} ticks", com.stasdoto.airdefense.nation.Nations.hamletsFounded, hw);
+				shot(ctx, server, cc[4], "146_real_hamlet_farm", 60);
+				shot(ctx, server, cc[5], "147_real_hamlet_field", 60);
+			}
 			AirDefense.LOGGER.info("[airdefense-test] RESULT real_profile_ms: {} tick {} ms", java.util.Arrays.toString(
 					java.util.Arrays.stream(com.stasdoto.airdefense.nation.Nations.PROFILE).map(v -> v / 1_000_000).toArray()),
 					server.computeOnServer(s -> s.getAverageTickTimeNanos() / 1_000_000f));
@@ -797,6 +801,75 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		});
 	}
 
+	/** Cameras on the capital of cell (0, 0): hall, street, street from above, its first hamlet from above, the farm, a field; then that hamlet's area. */
+	private static float[][] cityCams(TestServerContext server) {
+		return server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var t = com.stasdoto.airdefense.nation.Cities.terrain(l);
+			var list = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), t, 0, 0);
+			if (list.isEmpty()) {
+				return null;
+			}
+			var c = list.getFirst();
+			var sh = c.shape();
+			float[][] out = new float[7][];
+			for (var b : c.buildings()) {
+				if (b.type == com.stasdoto.airdefense.nation.BuildingType.CITY_HALL) {
+					out[0] = look(b, 24, 7, c.base);
+				}
+			}
+			int sx = sh.gx[sh.ci + 1];
+			int sz = sh.gz[sh.cj + 1];
+			out[1] = new float[]{sx + 1.5f, c.base + 2.6f, sz - 3.5f, 180, 2};
+			out[2] = new float[]{sh.gx[sh.ci] - 0.5f, c.base + 16, sz + 8.5f, 160, 22};
+			var hs = c.hamlets(l.getSeed(), t);
+			StringBuilder sb = new StringBuilder();
+			for (var h : hs) {
+				java.util.Map<String, Integer> kinds = new java.util.TreeMap<>();
+				for (var b : h.buildings) {
+					kinds.merge(b.type.id, 1, Integer::sum);
+				}
+				sb.append(String.format(java.util.Locale.ROOT, "#%d at %d %d y%d (%d from city) %s fields %d road %d; ", h.index, h.x, h.z, h.base,
+						(int) Math.hypot(h.x - c.x, h.z - c.z), kinds, h.fields.size(), (int) h.road.length));
+			}
+			AirDefense.LOGGER.info("[airdefense-test] RESULT hamlets: {} | {}", hs.size(), sb);
+			if (!hs.isEmpty()) {
+				var h = hs.getFirst();
+				out[3] = new float[]{h.x + 0.5f, h.base + 38, h.z + 55.5f, 180, 34};
+				for (var b : h.buildings) {
+					if (b.type == com.stasdoto.airdefense.nation.BuildingType.FARM) {
+						out[4] = look(b, 17, 6, b.origin.getY());
+					}
+				}
+				if (out[4] == null && !h.buildings.isEmpty()) {
+					out[4] = look(h.buildings.getFirst(), 12, 4, h.buildings.getFirst().origin.getY());
+				}
+				if (!h.fields.isEmpty()) {
+					var f = h.fields.get(h.fields.size() > 1 ? 1 : 0).pad();
+					out[5] = new float[]{(f.x0() + f.x1()) / 2f + 0.5f, f.y() + 7, f.z1() + 10.5f, 180, 30};
+				}
+				out[6] = new float[]{h.minX, h.minZ, h.maxX, h.maxZ};
+			}
+			return out;
+		});
+	}
+
+	/** A camera in front of a building, looking at its middle. */
+	private static float[] look(com.stasdoto.airdefense.nation.Building b, double dist, double up, int y) {
+		var f = b.facing;
+		double mx = b.origin.getX() + 0.5 + f.getStepX() * b.type.depth / 2.0;
+		double mz = b.origin.getZ() + 0.5 + f.getStepZ() * b.type.depth / 2.0;
+		double cx = b.origin.getX() + 0.5 - f.getStepX() * dist;
+		double cz = b.origin.getZ() + 0.5 - f.getStepZ() * dist;
+		double cy = y + up;
+		double dx = mx - cx;
+		double dz = mz - cz;
+		double dy = y + Math.min(b.type.height, 14) * 0.45 - cy;
+		float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+		float pitch = (float) -Math.toDegrees(Math.atan2(dy, Math.hypot(dx, dz)));
+		return new float[]{(float) cx, (float) cy, (float) cz, yaw, pitch};
+	}
+
 	private void shot(ClientGameTestContext ctx, TestServerContext server, float[] cam, String name, int wait) {
 		if (cam == null) {
 			AirDefense.LOGGER.info("[airdefense-test] no camera for {}", name);
@@ -840,8 +913,10 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.HOUSE, 0, 9, 3, -4));
 		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.SCHOOL, 0, 11, 8, 0));
 		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.HOSPITAL, 0, 9, 6, 2));
-		cams.add(new float[]{cx + 16.5f + 1, base + 2.6f, cz + half - 2.5f, 180, 2});
-		cams.add(new float[]{cx - 16.5f, base + 14, cz + 40.5f, 160, 20});
+		float[][] cc = cityCams(server);
+		cams.set(1, cc[0]);
+		cams.add(cc[1]);
+		cams.add(cc[2]);
 		for (int i = 0; i < names.length; i++) {
 			shot(ctx, server, cams.get(i), names[i], i == 0 ? 60 : 30);
 		}
@@ -853,6 +928,15 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		int[] which = {0, 1, 2, 4, 6, 12, 13};
 		for (int i = 0; i < night.length; i++) {
 			shot(ctx, server, cams.get(which[i]), night[i], 40);
+		}
+		// A hamlet out of town: the houses round the well, the farm, a field.
+		server.runCommand("time set 5000");
+		if (cc[6] != null) {
+			generateCity(server, (int) cc[6][0] - 8, (int) cc[6][1] - 8, (int) cc[6][2] + 8, (int) cc[6][3] + 8);
+			ctx.waitTicks(60);
+			shot(ctx, server, cc[3], "240_hamlet", 80);
+			shot(ctx, server, cc[4], "241_hamlet_farm", 40);
+			shot(ctx, server, cc[5], "242_hamlet_field", 40);
 		}
 		server.runCommand("time set 1000");
 	}
@@ -930,16 +1014,11 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(60);
 		ctx.takeScreenshot("130b_capital_top");
 		// The city hall and the square.
-		camera(server, cx + 0.5, base + 6, cz + 34.5, 180, 8);
-		ctx.waitTicks(40);
-		ctx.takeScreenshot("131_city_hall");
+		float[][] cc = cityCams(server);
+		shot(ctx, server, cc[0], "131_city_hall", 40);
 		// Along a street.
-		camera(server, cx - half + 64 + 1.5, base + 2.8, cz + half - 6.5, 180, 2);
-		ctx.waitTicks(40);
-		ctx.takeScreenshot("132_street");
-		camera(server, cx - half + 96 + 0.5, base + 30, cz + half - 2.5, 180, 25);
-		ctx.waitTicks(40);
-		ctx.takeScreenshot("132b_street_above");
+		shot(ctx, server, cc[1], "132_street", 40);
+		shot(ctx, server, cc[2], "132b_street_above", 40);
 		// Where the road leaves the city.
 		float yaw = (float) Math.toDegrees(Math.atan2(-cap[6], cap[7]));
 		camera(server, cap[4] - cap[6] * 0.2 + 0.5, base + 14, cap[5] - cap[7] * 0.2 + 0.5, yaw, 20);
@@ -1073,7 +1152,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				com.stasdoto.airdefense.nation.BuildingType.HOSPITAL, com.stasdoto.airdefense.nation.BuildingType.WAREHOUSE,
 				com.stasdoto.airdefense.nation.BuildingType.BARRACKS, com.stasdoto.airdefense.nation.BuildingType.HANGAR,
 				com.stasdoto.airdefense.nation.BuildingType.APARTMENTS, com.stasdoto.airdefense.nation.BuildingType.HOUSE,
-				com.stasdoto.airdefense.nation.BuildingType.SMALL_HOUSE};
+				com.stasdoto.airdefense.nation.BuildingType.SMALL_HOUSE, com.stasdoto.airdefense.nation.BuildingType.FARM};
 		int cx = x0;
 		for (int i = 0; i < types.length; i += 3) {
 			int gx0 = cx;

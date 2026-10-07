@@ -44,7 +44,13 @@ final class ModernDesigns {
 		return Blocks.STAINED_GLASS_PANE.pick(c).defaultBlockState();
 	}
 
+	/** Variants from this up are the old country designs (timber and stone houses of the hamlets). */
+	static final int RUSTIC = 1000;
+
 	static boolean design(Plan p, int variant, DyeColor flag) {
+		if (variant >= RUSTIC && (p.b.type == BuildingType.HOUSE || p.b.type == BuildingType.SMALL_HOUSE)) {
+			return false;
+		}
 		switch (p.b.type) {
 			case PANEL5 -> Architecture.panel(p, 5, variant);
 			case PANEL9 -> Architecture.panel(p, 9, variant);
@@ -63,6 +69,7 @@ final class ModernDesigns {
 			case OIL_WELL -> oilWell(p);
 			case REFINERY -> refinery(p);
 			case GARAGES -> garages(p, variant);
+			case FARM -> Rural.farm(p, variant);
 			case HOSPITAL -> Architecture.hospital(p);
 			case WAREHOUSE -> warehouse(p, variant);
 			case BARRACKS -> barracks(p, flag);

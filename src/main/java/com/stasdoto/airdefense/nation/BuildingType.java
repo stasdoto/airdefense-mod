@@ -45,7 +45,9 @@ public enum BuildingType {
 	OIL_WELL("oil_well", 7, 9, 8, 10, 30, 60, 0),
 	/** Turns crude oil into fuel. */
 	REFINERY("refinery", 19, 17, 22, 30, 200, 160, 0),
-	GARAGES("garages", 17, 7, 5, 10, 80, 10, 0);
+	GARAGES("garages", 17, 7, 5, 10, 80, 10, 0),
+	/** A barn with a silo and a pen: the heart of a farm. */
+	FARM("farm", 15, 11, 14, 140, 60, 6, 0);
 
 	public final String id;
 	public final int width;

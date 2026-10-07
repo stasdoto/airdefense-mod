@@ -65,6 +65,7 @@ public final class CityGen {
 	static void clearCache() {
 		DECOR.clear();
 		PLANS.clear();
+		HAMLET_DECOR.clear();
 	}
 
 	/** Builds whatever of the cities and roads falls into this chunk. */
@@ -87,7 +88,15 @@ public final class CityGen {
 				roads.add(r);
 			}
 		}
-		if (cities.isEmpty() && roads.isEmpty()) {
+		List<Hamlets.Hamlet> hamlets = new ArrayList<>();
+		for (Cities.City c : Cities.citiesAround(seed, t, mx, mz)) {
+			for (Hamlets.Hamlet h : c.hamlets(seed, t)) {
+				if (h.near(mx, mz, 10)) {
+					hamlets.add(h);
+				}
+			}
+		}
+		if (cities.isEmpty() && roads.isEmpty() && hamlets.isEmpty()) {
 			return;
 		}
 		Writer w = new Writer(level);
@@ -114,19 +123,30 @@ public final class CityGen {
 					if (along < -1 || along > r.length + 1) {
 						continue;
 					}
-					double d = Math.abs(r.across(x + 0.5, z + 0.5));
+					double d = Math.abs(r.across(x + 0.5, z + 0.5)) - r.half;
 					if (d < best) {
 						best = d;
 						road = r;
 					}
 				}
-				if (road != null && best <= Cities.ROAD_HALF + 3.5) {
+				if (road != null && best <= 0.5) {
 					roadColumn(w, t, road, x, z, pos);
-					if (best <= Cities.ROAD_HALF + 0.5) {
-						continue;
+					continue;
+				}
+				boolean done = false;
+				for (Hamlets.Hamlet h : hamlets) {
+					if (h.near(x, z, 0) && hamletColumn(w, t, h, x, z, pos)) {
+						done = true;
+						break;
 					}
 				}
-				if (near != null && (road == null || best > Cities.ROAD_HALF + 3.5)) {
+				if (done) {
+					continue;
+				}
+				if (road != null && best <= 3.5) {
+					roadColumn(w, t, road, x, z, pos);
+				}
+				if (near != null && (road == null || best > 3.5)) {
 					marginColumn(w, t, near, x, z, pos);
 				}
 			}
@@ -135,6 +155,9 @@ public final class CityGen {
 			buildings(w, c, cp);
 			decor(w, c, cp);
 			details(w, c, cp, seed);
+		}
+		for (Hamlets.Hamlet h : hamlets) {
+			hamlet(w, h, cp);
 		}
 		w.finish();
 		chunks++;
@@ -166,13 +189,40 @@ public final class CityGen {
 				roads.add(r);
 			}
 		}
-		if (cities.isEmpty() && roads.isEmpty()) {
+		List<Hamlets.Hamlet> hamlets = new ArrayList<>();
+		for (Cities.City c : Cities.citiesAround(seed, t, cp.getMiddleBlockX(), cp.getMiddleBlockZ())) {
+			for (Hamlets.Hamlet h : c.hamlets(seed, t)) {
+				if (h.near(x0 + 8, z0 + 8, 10)) {
+					hamlets.add(h);
+				}
+			}
+		}
+		if (cities.isEmpty() && roads.isEmpty() && hamlets.isEmpty()) {
 			return;
 		}
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 		for (int x = x0; x < x0 + 16; x++) {
 			for (int z = z0; z < z0 + 16; z++) {
 				int from = Integer.MIN_VALUE;
+				boolean built = false;
+				for (Hamlets.Hamlet h : hamlets) {
+					for (int i = 0; i < h.pads.size(); i++) {
+						if (h.pads.get(i).out(x, z) == 0) {
+							from = h.pads.get(i).y() + 1;
+							built |= h.buildings.get(i).covers(x, z, 1);
+						}
+					}
+				}
+				for (Cities.City c : cities) {
+					if (!built && c.inside(x, z)) {
+						for (Building b : c.buildings()) {
+							if (Math.abs(b.origin.getX() - x) < 40 && Math.abs(b.origin.getZ() - z) < 40 && b.covers(x, z, 1)) {
+								built = true;
+								break;
+							}
+						}
+					}
+				}
 				int span = 28;
 				for (Cities.City c : cities) {
 					if (c.inside(x, z)) {
@@ -192,7 +242,7 @@ public final class CityGen {
 				if (from == Integer.MIN_VALUE) {
 					for (Cities.Road r : roads) {
 						double along = r.along(x + 0.5, z + 0.5);
-						if (along >= 0 && along <= r.length && Math.abs(r.across(x + 0.5, z + 0.5)) <= Cities.ROAD_HALF + 0.5) {
+						if (along >= 0 && along <= r.length && Math.abs(r.across(x + 0.5, z + 0.5)) <= r.half + 0.5) {
 							from = (int) Math.floor(r.height(along)) + 1;
 						}
 					}
@@ -202,6 +252,12 @@ public final class CityGen {
 				}
 				for (int y = from; y < from + span; y++) {
 					BlockState st = chunk.getBlockState(pos.set(x, y, z));
+					if (st.is(BlockTags.LEAVES) && st.hasProperty(BlockStateProperties.PERSISTENT) && st.getValue(BlockStateProperties.PERSISTENT)) {
+						continue;
+					}
+					if (st.is(BlockTags.LOGS) && (built || ours(cities, pos))) {
+						continue;
+					}
 					if (st.is(BlockTags.LEAVES) || st.is(BlockTags.LOGS) || st.is(Blocks.VINE) || st.is(Blocks.BEE_NEST) || st.is(Blocks.SNOW)
 							|| st.is(Blocks.RED_MUSHROOM_BLOCK) || st.is(Blocks.BROWN_MUSHROOM_BLOCK) || st.is(Blocks.MUSHROOM_STEM)) {
 						chunk.setBlockState(pos, AIR, 0);
@@ -264,28 +320,21 @@ public final class CityGen {
 
 	private static void cityColumn(Writer w, Cities.Terrain t, Cities.City c, int x, int z, BlockPos.MutableBlockPos pos) {
 		int[] g = ground(w, x, z, pos);
-		int lx = x - c.x;
-		int lz = z - c.z;
-		int half = c.half();
-		int ox = Math.floorMod(lx + half, Cities.PITCH);
-		int oz = Math.floorMod(lz + half, Cities.PITCH);
-		int dx = Math.min(ox, Cities.PITCH - ox);
-		int dz = Math.min(oz, Cities.PITCH - oz);
-		boolean sx = dx <= Cities.STREET_HALF;
-		boolean sz = dz <= Cities.STREET_HALF;
+		CityShape.Probe p = c.shape().probe(x, z);
+		int zebra = Cities.STREET_HALF + 2;
 		BlockState surface;
-		if (sx || sz) {
+		if (p.street) {
 			surface = ASPHALT;
-			if (sx && !sz) {
-				if (dx == 0 && Math.floorMod(lz, 6) < 3 || dz >= 4 && dz <= 5 && (lx & 1) == 0) {
+			if (p.onV && !p.onH) {
+				if (p.dv == 0 && Math.floorMod(z, 6) < 3 || p.node && p.dh >= zebra && p.dh <= zebra + 1 && (x & 1) == 0) {
 					surface = MARK;
 				}
-			} else if (sz && !sx) {
-				if (dz == 0 && Math.floorMod(lx, 6) < 3 || dx >= 4 && dx <= 5 && (lz & 1) == 0) {
+			} else if (p.onH && !p.onV) {
+				if (p.dh == 0 && Math.floorMod(x, 6) < 3 || p.node && p.dv >= zebra && p.dv <= zebra + 1 && (z & 1) == 0) {
 					surface = MARK;
 				}
 			}
-		} else if (dx == Cities.STREET_HALF + 1 || dz == Cities.STREET_HALF + 1) {
+		} else if (p.kerb) {
 			surface = KERB;
 		} else {
 			surface = Blocks.GRASS_BLOCK.defaultBlockState();
@@ -323,9 +372,9 @@ public final class CityGen {
 		int y = (int) Math.floor(h);
 		boolean slab = h - y >= 0.5f;
 		int[] g = ground(w, x, z, pos);
-		if (d > Cities.ROAD_HALF + 0.5) {
+		if (d > r.half + 0.5) {
 			// The embankment or the cutting next to the road.
-			double side = d - Cities.ROAD_HALF - 0.5;
+			double side = d - r.half - 0.5;
 			if (g[2] == 1) {
 				return;
 			}
@@ -346,30 +395,214 @@ public final class CityGen {
 		boolean bridge = g[2] == 1 || g[0] < y - 6;
 		if (bridge) {
 			int deck = Math.max(y, t.sea() + 2);
-			w.set(pos.set(x, deck, z), ASPHALT);
+			w.set(pos.set(x, deck, z), r.dirt ? Blocks.SPRUCE_PLANKS.defaultBlockState() : ASPHALT);
 			for (int yy = deck + 1; yy <= Math.max(deck + 4, g[1] + 1); yy++) {
 				if (!w.get(pos.set(x, yy, z)).isAir()) {
 					w.set(pos, AIR);
 				}
 			}
-			if (d > Cities.ROAD_HALF - 0.5) {
-				w.set(pos.set(x, deck + 1, z), RAIL);
+			if (d > r.half - 0.5) {
+				w.set(pos.set(x, deck + 1, z), r.dirt ? Blocks.SPRUCE_FENCE.defaultBlockState() : RAIL);
 			}
-			if (Math.floorMod((int) along, 24) < 2 && d <= Cities.ROAD_HALF - 0.5) {
+			if (Math.floorMod((int) along, 24) < 2 && d <= r.half - 0.5) {
 				for (int yy = deck - 1; yy > w.level.getMinY(); yy--) {
 					BlockState s = w.get(pos.set(x, yy, z));
 					if (!s.isAir() && s.getFluidState().isEmpty() && !s.canBeReplaced()) {
 						break;
 					}
-					w.set(pos, PILLAR);
+					w.set(pos, r.dirt ? Blocks.SPRUCE_LOG.defaultBlockState() : PILLAR);
 				}
 			}
+			return;
+		}
+		if (r.dirt) {
+			int yy = (int) Math.round(h);
+			long hsh = mix(x * 31L + z);
+			BlockState dirt = Math.floorMod(hsh, 7) == 0 ? Blocks.COARSE_DIRT.defaultBlockState() : Math.floorMod(hsh, 11) == 0
+					? Blocks.GRAVEL.defaultBlockState() : Blocks.DIRT_PATH.defaultBlockState();
+			shape(w, x, z, yy, dirt, g, pos);
 			return;
 		}
 		BlockState surface = d < 0.5 && !slab && Math.floorMod((int) along, 8) < 4 ? MARK : ASPHALT;
 		shape(w, x, z, y, surface, g, pos);
 		if (slab) {
 			w.set(pos.set(x, y + 1, z), ASPHALT_SLAB.setValue(BlockStateProperties.SLAB_TYPE, SlabType.BOTTOM));
+		}
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Hamlets
+
+	private static final BlockState FARMLAND = Blocks.FARMLAND.defaultBlockState().setValue(BlockStateProperties.MOISTURE, 7);
+	private static final BlockState GRASS = Blocks.GRASS_BLOCK.defaultBlockState();
+
+	/** The ground of a hamlet: house pads, fields, the square, blended into the land; dirt paths. False if none of it is here. */
+	private static boolean hamletColumn(Writer w, Cities.Terrain t, Hamlets.Hamlet h, int x, int z, BlockPos.MutableBlockPos pos) {
+		int blend = Integer.MAX_VALUE;
+		int blendY = 0;
+		int reach = 1;
+		for (Hamlets.Pad p : h.pads) {
+			int o = p.out(x, z);
+			if (o == 0) {
+				int[] g = ground(w, x, z, pos);
+				shape(w, x, z, p.y(), GRASS, g, pos);
+				return true;
+			}
+			if (o <= 5 && o < blend) {
+				blend = o;
+				blendY = p.y();
+				reach = 5;
+			}
+		}
+		for (Hamlets.Field f : h.fields) {
+			Hamlets.Pad p = f.pad();
+			int o = p.out(x, z);
+			if (o <= 1) {
+				int[] g = ground(w, x, z, pos);
+				BlockState surface = GRASS;
+				if (o == 0 && f.crop() != Hamlets.PADDOCK) {
+					boolean channel = f.alongX() ? z == (p.z0() + p.z1()) / 2 : x == (p.x0() + p.x1()) / 2;
+					surface = channel ? Blocks.WATER.defaultBlockState() : FARMLAND;
+				} else if (o == 1) {
+					surface = Blocks.COARSE_DIRT.defaultBlockState();
+				}
+				shape(w, x, z, p.y(), surface, g, pos);
+				if (surface.is(Blocks.WATER)) {
+					w.set(pos.set(x, p.y() - 1, z), Blocks.DIRT.defaultBlockState());
+				}
+				return true;
+			}
+			if (o - 1 <= 3 && o - 1 < blend) {
+				blend = o - 1;
+				blendY = p.y();
+				reach = 3;
+			}
+		}
+		int sq = Math.max(Math.abs(x - h.x), Math.abs(z - h.z));
+		if (sq <= Hamlets.Hamlet.SQUARE) {
+			int[] g = ground(w, x, z, pos);
+			long hsh = mix(x * 0x9E3779B1L ^ z * 0x85EBCA77L);
+			BlockState s = switch ((int) Math.floorMod(hsh, 6)) {
+				case 0 -> Blocks.COARSE_DIRT.defaultBlockState();
+				case 1 -> Blocks.GRAVEL.defaultBlockState();
+				case 2 -> Blocks.COBBLESTONE.defaultBlockState();
+				default -> Blocks.DIRT_PATH.defaultBlockState();
+			};
+			shape(w, x, z, h.base, s, g, pos);
+			return true;
+		}
+		if (sq - Hamlets.Hamlet.SQUARE <= 4 && sq - Hamlets.Hamlet.SQUARE < blend) {
+			blend = sq - Hamlets.Hamlet.SQUARE;
+			blendY = h.base;
+			reach = 4;
+		}
+		boolean path = h.paths.contains(BlockPos.asLong(x, 0, z));
+		if (blend == Integer.MAX_VALUE && !path) {
+			return false;
+		}
+		int[] g = ground(w, x, z, pos);
+		if (g[2] == 1 && blend == Integer.MAX_VALUE) {
+			return false;
+		}
+		int target = g[0];
+		if (blend != Integer.MAX_VALUE) {
+			double f = blend / (double) (reach + 1);
+			f = f * f * (3 - 2 * f);
+			target = (int) Math.round(blendY * (1 - f) + g[0] * f);
+		}
+		BlockState top = w.get(pos.set(x, g[0], z));
+		BlockState surface = path ? Blocks.DIRT_PATH.defaultBlockState()
+				: top.is(BlockTags.DIRT) || top.is(BlockTags.SAND) || top.is(Blocks.SNOW_BLOCK) || top.is(Blocks.GRAVEL) ? top : GRASS;
+		if (target == g[0] && !path) {
+			return true;
+		}
+		if (target == g[0]) {
+			w.set(pos.set(x, g[0], z), surface);
+			BlockState above = w.get(pos.set(x, g[0] + 1, z));
+			if (!above.isAir() && above.canBeReplaced()) {
+				w.set(pos, AIR);
+			}
+			return true;
+		}
+		shape(w, x, z, target, surface, g, pos);
+		return true;
+	}
+
+	private static final ConcurrentHashMap<Long, CityDecor.Result> HAMLET_DECOR = new ConcurrentHashMap<>();
+
+	/** The hamlet's buildings, wells, fences, crops, people and animals that fall in this chunk. */
+	private static void hamlet(Writer w, Hamlets.Hamlet h, ChunkPos cp) {
+		int x0 = cp.getMinBlockX();
+		int z0 = cp.getMinBlockZ();
+		DyeColor flag = DyeColor.byId(h.city.color);
+		for (Building b : h.buildings) {
+			int reach = Math.max(b.type.width, b.type.depth) + 3;
+			if (b.origin.getX() + reach < x0 || b.origin.getX() - reach > x0 + 15 || b.origin.getZ() + reach < z0 || b.origin.getZ() - reach > z0 + 15) {
+				continue;
+			}
+			long key = -(h.key() * 64 + b.id) - 1;
+			List<Blueprints.Placement> plan = PLANS.get(key);
+			if (plan == null) {
+				if (PLANS.size() > 96) {
+					PLANS.clear();
+				}
+				plan = Blueprints.placements(b, flag);
+				PLANS.put(key, plan);
+			}
+			for (Blueprints.Placement pl : plan) {
+				boolean mine = in(pl.pos(), x0, z0);
+				if (pl.pair()) {
+					if (mine || in(pl.pos2(), x0, z0)) {
+						w.set(pl.pos(), pl.state());
+						w.set(pl.pos2(), pl.state2());
+					}
+				} else if (mine) {
+					w.set(pl.pos(), pl.state());
+				}
+			}
+		}
+		CityDecor.Result d = HAMLET_DECOR.get(h.key());
+		if (d == null) {
+			if (HAMLET_DECOR.size() > 16) {
+				HAMLET_DECOR.clear();
+			}
+			d = HamletDecor.build(h);
+			HAMLET_DECOR.put(h.key(), d);
+		}
+		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+		List<CityDecor.D> list = d.blocks.get(cp.pack());
+		if (list != null) {
+			for (CityDecor.D b : list) {
+				pos.set(b.x(), b.y(), b.z());
+				BlockState cur = w.get(pos);
+				if (b.force() || cur.isAir() || cur.canBeReplaced()) {
+					w.set(pos, b.s());
+				}
+			}
+		}
+		List<CityDecor.Spawn> spawns = d.spawns.get(cp.pack());
+		if (spawns != null) {
+			for (CityDecor.Spawn s : spawns) {
+				if (!w.get(pos.set(s.x(), s.y(), s.z())).isAir()) {
+					continue;
+				}
+				var type = switch (s.kind()) {
+					case 1 -> EntityTypes.VILLAGER;
+					case 2 -> EntityTypes.COW;
+					case 3 -> EntityTypes.SHEEP;
+					case 4 -> EntityTypes.CHICKEN;
+					case 5 -> EntityTypes.PIG;
+					default -> EntityTypes.CAT;
+				};
+				var e = type.create(w.level.getLevel(), EntitySpawnReason.STRUCTURE);
+				if (e != null) {
+					e.snapTo(s.x() + 0.5, s.y(), s.z() + 0.5, (float) Math.floorMod(s.x() * 37 + s.z() * 11, 360), 0);
+					if (e instanceof net.minecraft.world.entity.Mob m) {
+						m.setPersistenceRequired();
+					}
+					w.level.addFreshEntity(e);
+				}
+			}
 		}
 	}
 
@@ -448,23 +681,22 @@ public final class CityGen {
 		int z0 = cp.getMinBlockZ();
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 		int half = c.half();
+		CityShape sh = c.shape();
 		BlockPos bell = c.bell();
 		if (in(bell, x0, z0)) {
 			w.set(bell.below(), Blocks.POLISHED_ANDESITE.defaultBlockState());
 			w.set(bell, Blocks.BELL.defaultBlockState());
 		}
 		// People: about size.villagers in all, one in a chunk here and there, standing in a street.
-		int side = (2 * half + 2 * Cities.STREET_HALF + 1) / 16 + 1;
-		int chunksIn = side * side;
+		int chunksIn = Math.max(1, (sh.maxX - sh.minX) / 16 + 1) * Math.max(1, (sh.maxZ - sh.minZ) / 16 + 1);
 		long h = mix(seed ^ c.key() * 31 ^ cp.pack());
 		if (Math.floorMod(h, chunksIn) >= c.size.villagers || !c.inside(cp.getMiddleBlockX(), cp.getMiddleBlockZ())) {
 			return;
 		}
 		for (int x = x0; x < x0 + 16; x++) {
 			for (int z = z0; z < z0 + 16; z++) {
-				int ox = Math.floorMod(x - c.x + half, Cities.PITCH);
-				int dx = Math.min(ox, Cities.PITCH - ox);
-				if (dx == 1 && c.inside(x, z) && w.get(pos.set(x, c.base + 1, z)).isAir() && w.get(pos.set(x, c.base + 2, z)).isAir()) {
+				CityShape.Probe p = sh.probe(x, z);
+				if (p.street && (p.onV && p.dv == 1 || p.onH && p.dh == 1) &&w.get(pos.set(x, c.base + 1, z)).isAir() && w.get(pos.set(x, c.base + 2, z)).isAir()) {
 					var v = EntityTypes.VILLAGER.create(w.level.getLevel(), EntitySpawnReason.STRUCTURE);
 					if (v != null) {
 						v.snapTo(x + 0.5, c.base + 1, z + 0.5, (float) Math.floorMod(h >>> 8, 360), 0);

@@ -706,5 +706,6 @@
   "guide.airdefense.page.14": "TANKS, BOATS, AIRCRAFT\n\nGet in (RMB), aim with the mouse, LMB fires.\nBoats: RMB on water.\nHelicopter: Space up, Ctrl down.\nPlane: W/S throttle, flies where you look.\nAll need fuel: a jerrycan, RMB on the vehicle.",
   "guide.airdefense.page.15": "FUEL AND LOGISTICS\n\nOil wells pump oil, the refinery makes fuel, the hub makes ammunition.\nVehicles fill up at a gas station; at a hub they are rearmed too.\nTrucks: R switches the mode (load, unload, serve).",
   "guide.airdefense.page.16": "CITIES AND COUNTRIES\n\nEvery country has a capital and two more towns joined by asphalt roads.\nBuy a charter or take the flag and a town is yours.\nOn the tablet map (Army tab) click a building to pull it down or rebuild it.",
-  "guide.airdefense.page.17": "FPV AND MAGURA\n\nFPV drone: RMB to take off, flies where you look, blows up on impact.\nMagura: RMB on water, goes where you look, sinks boats.\nSneak to let go."
+  "guide.airdefense.page.17": "FPV AND MAGURA\n\nFPV drone: RMB to take off, flies where you look, blows up on impact.\nMagura: RMB on water, goes where you look, sinks boats.\nSneak to let go.",
+  "building.airdefense.farm": "Farm"
 }

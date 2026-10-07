@@ -985,6 +985,7 @@ public class TacticalMapScreen extends Screen {
 				case LOGISTICS_HUB -> 0xFF4A7AC0;
 				case OIL_WELL, REFINERY -> 0xFF303030;
 				case GARAGES -> 0xFF9A9A9A;
+				case FARM -> 0xFFB04A3A;
 				default -> 0xFF808080;
 			};
 			if (picked) {
