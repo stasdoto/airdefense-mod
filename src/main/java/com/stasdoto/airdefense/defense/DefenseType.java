@@ -75,14 +75,13 @@ public enum DefenseType {
 		return gunRange > 0;
 	}
 
-	/** How many interceptors this system sends at one target of the given kind (two at ballistic missiles for the big ones). */
+	/**
+	 * Interceptors that may be on their way to one target at a time - from this battery and every other one around
+	 * (the count is the target's). One: the batteries share the targets out, and fire again only once a missile has
+	 * missed and blown itself up (shoot - look - shoot), never a salvo at a single drone.
+	 */
 	public int shotsPerTarget(MissileType.Kind kind) {
-		boolean heavy = kind == MissileType.Kind.BALLISTIC || kind == MissileType.Kind.ROCKET;
-		if (this == IRON_DOME) {
-			// Iron Dome sends two Tamirs at a rocket aimed at a town (one is the spare in case the first misses).
-			return kind == MissileType.Kind.ROCKET ? 2 : 1;
-		}
-		return heavy && (this == PATRIOT || this == S300 || this == SAMPT) ? 2 : 1;
+		return 1;
 	}
 
 	/**

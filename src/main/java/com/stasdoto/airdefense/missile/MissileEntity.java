@@ -73,6 +73,12 @@ public class MissileEntity extends Entity {
 	private MissileEntity targetMissile;
 	private int engagedBy;
 	private int noTargetTicks;
+	/** Interceptors: the closest it has been to its target so far (to tell when it has gone past: a miss). */
+	private double closestSoFar = Double.MAX_VALUE;
+	/** Game time until which an air defence gun is shooting at this (missile batteries leave it to the gun). */
+	private long gunEngagedUntil;
+	/** For the tests: interceptors that went past their target and blew themselves up, or lost it. */
+	public static final java.util.concurrent.atomic.AtomicInteger SELF_DESTRUCTS = new java.util.concurrent.atomic.AtomicInteger();
 	private boolean detonated;
 	/** Interceptors: the tick at which the seeker will lose its target (-1 = it won't); threats: decoys already let go. */
 	private int seekerFailAt = -1;
@@ -308,6 +314,15 @@ public class MissileEntity extends Entity {
 
 	public int getEngagedBy() {
 		return engagedBy;
+	}
+
+	/** An air defence gun is firing at this now. */
+	public void markGunEngaged(long until) {
+		gunEngagedUntil = Math.max(gunEngagedUntil, until);
+	}
+
+	public boolean gunEngaged(long now) {
+		return gunEngagedUntil > now;
 	}
 
 	public Vec3 getTarget() {
@@ -843,7 +858,8 @@ public class MissileEntity extends Entity {
 				MissileStats.SEEKER_FAILURES.incrementAndGet();
 				MissileStats.log("{} lost its target at {}", type, fmt(position()));
 			}
-			if (++noTargetTicks > 30) {
+			if (++noTargetTicks > 12) {
+				SELF_DESTRUCTS.incrementAndGet();
 				detonate(position(), true);
 				return null;
 			}
@@ -853,19 +869,17 @@ public class MissileEntity extends Entity {
 		if (tgt == null || tgt.isRemoved() || tgt.detonated) {
 			if (tgt != null) {
 				tgt.engagedBy = Math.max(0, tgt.engagedBy - 1);
+				targetMissile = null;
 			}
-			tgt = findNewTarget(level, dir);
-			targetMissile = tgt;
-			if (tgt == null) {
-				// Lost the target and nothing else around: self-destruct after a moment, like real SAMs do.
-				if (++noTargetTicks > 30) {
-					detonate(position(), true);
-					return null;
-				}
-				return avoidGround(level, position(), dir, turn).scale(speed);
+			// Its target is gone (shot down by another, or fallen): it does not go hunting for another one (that is
+			// how a whole battery's missiles end up on one drone) - it blows itself up a moment later.
+			if (++noTargetTicks > 8) {
+				SELF_DESTRUCTS.incrementAndGet();
+				MissileStats.log("{} lost its target, self-destruct at {}", type, fmt(position()));
+				detonate(position(), true);
+				return null;
 			}
-			noTargetTicks = 0;
-			tgt.engagedBy++;
+			return avoidGround(level, position(), dir, turn).scale(speed);
 		}
 
 		Vec3 pos = position();
@@ -876,6 +890,20 @@ public class MissileEntity extends Entity {
 		Vec3 relVel = tv.subtract(dir.scale(speed));
 		double t = relVel.lengthSqr() > 1e-6 ? Mth.clamp(-rel.dot(relVel) / relVel.lengthSqr(), 0, 1) : 0;
 		double closest = rel.add(relVel.scale(t)).length();
+		// Gone past it: the gap opens again after the closest pass and the fuse never went off - a miss. The missile
+		// blows itself up in the air (rather than fall somewhere), and the battery may fire again.
+		double gap = rel.length();
+		if (closest > type.proximity && life > 12) {
+			if (gap < closestSoFar) {
+				closestSoFar = gap;
+			} else if (closestSoFar < 45 && gap > closestSoFar + 6 && rel.dot(relVel) > 0) {
+				SELF_DESTRUCTS.incrementAndGet();
+				MissileStats.log("{} missed {} by {} m, self-destruct at {}", type, tgt.getMissileType(), String.format("%.1f", closestSoFar),
+						fmt(pos));
+				detonate(pos, true);
+				return null;
+			}
+		}
 		if (closest <= type.proximity) {
 			Vec3 at = pos.add(dir.scale(speed * t));
 			boolean kill = random.nextDouble() < type.killChance(tgt.getMissileType().kind);
@@ -936,12 +964,6 @@ public class MissileEntity extends Entity {
 		}
 		Vec3 climb = new Vec3(dir.x, Math.max(dir.y, 0.3), dir.z);
 		return turnTowards(dir, climb.normalize(), Math.max(turn, 0.35));
-	}
-
-	private MissileEntity findNewTarget(ServerLevel level, Vec3 dir) {
-		List<MissileEntity> list = level.getEntitiesOfClass(MissileEntity.class, getBoundingBox().inflate(70),
-				m -> m != this && m.getMissileType().threat && !m.detonated && m.position().subtract(position()).normalize().dot(dir) > 0.2);
-		return list.stream().min(Comparator.comparingDouble((MissileEntity m) -> m.engagedBy * 400 + m.distanceToSqr(this))).orElse(null);
 	}
 
 	// --- Helpers ---

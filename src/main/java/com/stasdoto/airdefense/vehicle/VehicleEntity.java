@@ -2007,6 +2007,10 @@ public class VehicleEntity extends LivingEntity {
 		if (tracked != null && !gun && tracked.getEngagedBy() >= type.shotsPerTarget(tracked.getMissileType().kind)) {
 			tracked = null;
 		}
+		// ...and a pure missile battery leaves a target to a gun that is already firing at it.
+		if (tracked != null && !gun && !hybrid && tracked.gunEngaged(level.getGameTime())) {
+			tracked = null;
+		}
 		if (tracked == null) {
 			burstLeft = 0;
 			if ((tickCount + getId()) % 3 == 0) {
@@ -2074,9 +2078,11 @@ public class VehicleEntity extends LivingEntity {
 	private MissileEntity pickThreat(ServerLevel level, DefenseType type, Vec3 radar) {
 		double range = type.range * (radarLinked ? RADAR_RANGE_BONUS : 1.0);
 		AABB box = new AABB(radar.x - range, radar.y - range, radar.z - range, radar.x + range, radar.y + range, radar.z + range);
+		long now = level.getGameTime();
 		List<MissileEntity> threats = MissileEntity.find(level, box,
 				m -> canEngage(type, m, radar)
-						&& (type.interceptor == null || m.getEngagedBy() < type.shotsPerTarget(m.getMissileType().kind)));
+						&& (type.interceptor == null || m.getEngagedBy() < type.shotsPerTarget(m.getMissileType().kind)
+						&& (type.gunOnly() || type.hybrid() || !m.gunEngaged(now))));
 		return threats.stream()
 				.min(Comparator.comparingDouble((MissileEntity m) -> type.priority(m.getMissileType().kind) * 1e6 + m.distanceToSqr(radar)))
 				.orElse(null);
@@ -2233,6 +2239,8 @@ public class VehicleEntity extends LivingEntity {
 
 	/** One round from each barrel. The closer the guns are on the lead point, the better the chance to hit. */
 	private void fireRounds(ServerLevel level, MissileEntity target, Vec3 aim, float yawErr, float elevErr) {
+		// The missile batteries around leave this one to the guns while they are on it.
+		target.markGunEngaged(level.getGameTime() + 30);
 		RandomSource r = level.getRandom();
 		MissileType.Kind kind = target.getMissileType().kind;
 		double aimFactor = 1.0 / (1.0 + (yawErr * yawErr + elevErr * elevErr) / 40.0);

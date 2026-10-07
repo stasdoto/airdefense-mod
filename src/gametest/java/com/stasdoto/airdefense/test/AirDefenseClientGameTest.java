@@ -22,6 +22,8 @@ import com.stasdoto.airdefense.AirDefense;
 import com.stasdoto.airdefense.item.DesignatorItem;
 import net.minecraft.world.item.ItemStack;
 import com.stasdoto.airdefense.missile.MissileStats;
+import com.stasdoto.airdefense.missile.MissileEntity;
+import com.stasdoto.airdefense.missile.MissileType;
 import com.stasdoto.airdefense.vehicle.VehicleEntity;
 import com.stasdoto.airdefense.vehicle.VehicleType;
 
@@ -182,6 +184,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				droneVsNasams(ctx, server);
 				cruiseVsIrisT(ctx, server);
 				droneVsIrisT(ctx, server);
+			}
+			if (scene("threeVsOne")) {
+				threeVsOne(ctx, server);
 			}
 			if (scene("manual")) {
 				manualDefense(ctx, server, VehicleType.GEPARD, 16500, "manual_gepard");
@@ -1768,6 +1773,36 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.takeScreenshot("52_kalibr_iris");
 		ctx.waitTicks(260);
 		report("iris_t_vs_2_kalibr", before);
+	}
+
+	/**
+	 * 1.25: three batteries side by side (NASAMS, IRIS-T, Buk) and a single target flying at them - a cruise missile,
+	 * then one Shahed. One interceptor should go up for it (another only after a miss), not one from each.
+	 */
+	private void threeVsOne(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 21000;
+		prepareDefense(ctx, server, VehicleType.NASAMS, x, 50, 180);
+		spawnVehicle(server, VehicleType.IRIS_T, x + 14, 56, 180);
+		spawnVehicle(server, VehicleType.BUK, x - 14, 56, 180);
+		ctx.waitTicks(100);
+		for (MissileType kind : new MissileType[]{MissileType.KALIBR, MissileType.SHAHED}) {
+			int[] before = counters();
+			int sd = MissileEntity.SELF_DESTRUCTS.get();
+			server.runOnServer(s -> {
+				ServerLevel l = s.overworld();
+				Vec3 from = new Vec3(x + 5, ground + 60, -380);
+				Vec3 aim = new Vec3(x + 5, ground, 60);
+				MissileEntity m = MissileEntity.launchStrike(l, kind, from, aim, aim.subtract(from).normalize());
+				m.setCountry(900);
+			});
+			camera(server, x + 26, ground + 8, 72, 160, -8);
+			ctx.waitTicks(140);
+			ctx.takeScreenshot("54_three_vs_one_" + kind.name().toLowerCase());
+			ctx.waitTicks(320);
+			report("three_vs_one_" + kind.name().toLowerCase(), before);
+			AirDefense.LOGGER.info("[airdefense-test] RESULT three_vs_one_{}_selfdestruct: {}", kind.name().toLowerCase(),
+					MissileEntity.SELF_DESTRUCTS.get() - sd);
+		}
 	}
 
 	private void droneVsIrisT(ClientGameTestContext ctx, TestServerContext server) {
