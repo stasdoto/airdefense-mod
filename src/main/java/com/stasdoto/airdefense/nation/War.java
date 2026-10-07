@@ -337,9 +337,12 @@ public final class War {
 			ap.waypoints.add(new Vec3(pt[0], 0, pt[1]));
 		}
 		if (city != null) {
+			// On the way the road was going (it runs on into a street), not straight at the centre through the houses.
 			double[] e = road.pointAt(ap.fromTown(0));
-			Vec3 into = new Vec3(city.x - e[0], 0, city.z - e[1]).normalize().scale(22);
-			ap.waypoints.add(new Vec3(e[0], 0, e[1]).add(into));
+			double[] b = road.pointAt(ap.fromTown(Math.min(10, road.length)));
+			Vec3 into = new Vec3(e[0] - b[0], 0, e[1] - b[1]).normalize();
+			ap.waypoints.add(new Vec3(e[0], 0, e[1]).add(into.scale(12)));
+			ap.waypoints.add(new Vec3(e[0], 0, e[1]).add(into.scale(24)));
 		}
 		return ap;
 	}

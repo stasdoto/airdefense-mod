@@ -783,6 +783,8 @@ public class VehicleEntity extends LivingEntity {
 	private float routeSpeed = 0.75f;
 	private int stuckTicks;
 	private int backingTicks;
+	/** Times it has had to back off since the last point it reached (four, and it gives that point up). */
+	private int stuckTries;
 	/** Soldiers on board (they are only a number while they ride) and where they are going. */
 	public int troops;
 	@Nullable
@@ -800,6 +802,7 @@ public class VehicleEntity extends LivingEntity {
 		routeIndex = 0;
 		routeSpeed = speedShare;
 		stuckTicks = 0;
+		stuckTries = 0;
 		if (!canDrive() && vtype.isLauncher()) {
 			fold();
 		}
@@ -819,7 +822,9 @@ public class VehicleEntity extends LivingEntity {
 		double dz = to.z - getZ();
 		double dist = Math.sqrt(dx * dx + dz * dz);
 		boolean last = routeIndex == route.size() - 1;
-		if (dist < (last ? 5 : 8)) {
+		if (dist < (last ? 5 : 8) || stuckTries >= 4) {
+			// Reached (or, blocked again and again, given up and taken as reached: the men get out where it stands).
+			stuckTries = 0;
 			routeIndex++;
 			if (routeIndex >= route.size()) {
 				route = null;
@@ -840,6 +845,7 @@ public class VehicleEntity extends LivingEntity {
 			if (++stuckTicks > 50) {
 				stuckTicks = 0;
 				backingTicks = 25;
+				stuckTries++;
 			}
 		} else {
 			stuckTicks = 0;

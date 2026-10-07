@@ -2514,7 +2514,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			return null;
 		});
 		shot(ctx, server, lcam, "181b_supply_lorry", 30);
-		int lorryIn = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Arsenals.lorryLoads > 0, 1600);
+		int lorryIn = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Arsenals.lorryArrivals > 0, 1600);
 		float[] ucam = server.computeOnServer(s -> {
 			for (VehicleEntity v : s.overworld().getEntitiesOfClass(VehicleEntity.class, new net.minecraft.world.phys.AABB(cx - 700, base - 40, cz - 700,
 					cx + 700, base + 80, cz + 700), v -> v.getVehicleType() == com.stasdoto.airdefense.vehicle.VehicleType.SUPPLY_TRUCK && !v.driving())) {
@@ -2523,8 +2523,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			return null;
 		});
 		shot(ctx, server, ucam, "181c_lorry_unloaded", 20);
-		AirDefense.LOGGER.info("[airdefense-test] RESULT supply_lorry: load {} lorry out after {} ticks, unloaded after {} ticks (lorries {}, loads {})",
-				load, lorryOut, lorryIn, com.stasdoto.airdefense.nation.Arsenals.lorries, com.stasdoto.airdefense.nation.Arsenals.lorryLoads);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT supply_lorry: load {} lorry out after {} ticks, at the depot after {} ticks (lorries {}, arrived {},"
+						+ " loads into the stores {})", load, lorryOut, lorryIn, com.stasdoto.airdefense.nation.Arsenals.lorries,
+				com.stasdoto.airdefense.nation.Arsenals.lorryArrivals, com.stasdoto.airdefense.nation.Arsenals.lorryLoads);
 		// The enemy: a town of another country 1.5 km to the east, at war with the capital's country.
 		int[] ids = server.computeOnServer(s -> {
 			ServerLevel l = s.overworld();

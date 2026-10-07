@@ -123,9 +123,13 @@ public final class Economy {
 
 	private static void construct(ServerLevel level, Politics p, Settlement s, Building b, long t) {
 		BlockPos site = siteCenter(b, s);
+		boolean owned = owned(p, s);
+		if (!owned && !level.isLoaded(b.type == BuildingType.ROADS ? site : b.origin)) {
+			// The world's own towns build only where somebody is around (and there is nobody to count out there).
+			return;
+		}
 		// On a road the builders spread out along it; on a building they have to be there.
 		int builders = b.free ? 0 : b.type == BuildingType.ROADS ? jobCounts(level, s)[WorkerEntity.BUILD] : buildersAt(level, s, site);
-		boolean owned = owned(p, s);
 		if ((b.free || builders > 0) && t % 20 == 0 && owned) {
 			// Keeps going while the owner is away (the made-up countries build only where somebody is around).
 			level.getChunkSource().addTicketWithRadius(ModTickets.VEHICLE, ChunkPos.containing(site), 2);

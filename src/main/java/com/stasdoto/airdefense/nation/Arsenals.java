@@ -161,6 +161,7 @@ public final class Arsenals extends SavedData {
 	public static int lorries;
 	public static int lorryLoads;
 	public static int lorryLosses;
+	public static int lorryArrivals;
 
 	public Arsenals() {
 		this(List.of(), List.of());
@@ -665,6 +666,12 @@ public final class Arsenals extends SavedData {
 		v.setUnlimited(false);
 		v.cargoDelivery = d.id();
 		v.drive(route.subList(1, route.size()), 0.7f);
+		// The lorry has the load now: the clock only brings it in if the lorry never gets there (two minutes).
+		int idx = deliveries.indexOf(d);
+		if (idx >= 0) {
+			deliveries.set(idx, new Delivery(d.id(), d.to(), d.type(), d.count(), Math.max(d.arrives(), level.getGameTime() + 2400)));
+			setDirty();
+		}
 		lorries++;
 		AirDefense.LOGGER.info("[airdefense] a lorry brings {} x{} to {} ({} points from {}, {})", d.type().name(), d.count(), to.name, route.size(),
 				(int) start.x, (int) start.z);
@@ -716,6 +723,7 @@ public final class Arsenals extends SavedData {
 
 	/** A lorry got to the end of its road: the load goes into the town's stores (if the clock has not put it there already). */
 	public static void lorryArrived(ServerLevel level, VehicleEntity v) {
+		lorryArrivals++;
 		Arsenals a = get(level.getServer());
 		Politics p = Politics.get(level.getServer());
 		var it = a.deliveries.iterator();
@@ -818,8 +826,13 @@ public final class Arsenals extends SavedData {
 			return;
 		}
 		u.ammo = Math.max(0, u.ammo - salvo);
-		boolean seen = level.isLoaded(target.center) && level.getNearestPlayer(target.center.getX(), target.center.getY(), target.center.getZ(),
-				target.radius + 350, pl -> true) != null;
+		var watcher = level.getNearestPlayer(target.center.getX(), target.center.getY(), target.center.getZ(), target.radius + 350, pl -> true);
+		boolean seen = watcher != null;
+		if (!seen && !level.players().isEmpty()) {
+			var pl = level.players().getFirst();
+			AirDefense.LOGGER.info("[airdefense] strike on {} unseen: nearest player {} blocks off (reach {})", target.name,
+					(int) Math.sqrt(pl.distanceToSqr(Vec3.atCenterOf(target.center))), target.radius + 350);
+		}
 		if (seen && m != null) {
 			Vec3 tc = Vec3.atBottomCenterOf(aimAt);
 			Vec3 dir = Vec3.atCenterOf(from.center).subtract(tc);
@@ -836,6 +849,10 @@ public final class Arsenals extends SavedData {
 					default -> 70;
 				};
 				Vec3 pos = tc.add(dir.scale(start + k * 12)).add(side).add(0, h, 0);
+				// Out there beyond the loaded ground perhaps: load it, the missile keeps its way loaded from then on.
+				ChunkPos cp = ChunkPos.containing(BlockPos.containing(pos));
+				level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, cp, 2);
+				level.getChunk(cp.x(), cp.z());
 				int ground = level.getHeight(Heightmap.Types.MOTION_BLOCKING, Mth.floor(pos.x), Mth.floor(pos.z));
 				pos = new Vec3(pos.x, Math.max(pos.y, ground + 20), pos.z);
 				Vec3 aim = tc.add(level.getRandom().nextGaussian() * 3, 1, level.getRandom().nextGaussian() * 3);
