@@ -891,9 +891,21 @@ final class Architecture {
 		for (int y = 14; y <= 17; y++) {
 			p.ring(-3, cz - 3, 3, cz + 3, y, wall);
 		}
-		p.set(0, 16, cz - 3, c(DyeColor.BLACK));
-		p.set(0, 15, cz - 3, c(DyeColor.BLACK));
-		p.set(1, 15, cz - 3, c(DyeColor.BLACK));
+		// The clock: a white face in a dark rim, the hands at ten past twelve, lit from behind.
+		for (int zz : new int[]{cz - 3, cz + 3}) {
+			for (int x = -2; x <= 2; x++) {
+				for (int y = 14; y <= 18; y++) {
+					boolean rim = Math.abs(x) == 2 || y == 14 || y == 18;
+					if (!(Math.abs(x) == 2 && (y == 14 || y == 18))) {
+						p.set(x, y, zz, rim ? c(DyeColor.BLACK) : c(DyeColor.WHITE));
+					}
+				}
+			}
+			p.set(0, 16, zz, c(DyeColor.BLACK));
+			p.set(0, 17, zz, c(DyeColor.BLACK));
+			p.set(1, 16, zz, c(DyeColor.GRAY));
+			p.set(0, 16, zz + (zz < cz ? 1 : -1), WARM);
+		}
 		for (int k = 0; k <= 3; k++) {
 			BlockState dome = k < 3 ? b(Blocks.PRISMARINE_BRICKS) : b(Blocks.DARK_PRISMARINE);
 			p.ring(-3 + k, cz - 3 + k, 3 - k, cz + 3 - k, 18 + k, dome);
