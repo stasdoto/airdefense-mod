@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:copper_ingot",
+    "minecraft:copper_ingot",
+    "minecraft:gunpowder"
+  ],
+  "result": {
+    "id": "airdefense:ammo_762x39",
+    "count": 15
+  }
+}

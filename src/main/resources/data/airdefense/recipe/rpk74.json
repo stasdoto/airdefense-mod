@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "III",
+    "TWW",
+    "IIW"
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "T": "minecraft:tripwire_hook",
+    "W": "#minecraft:planks"
+  },
+  "result": {
+    "id": "airdefense:rpk74",
+    "count": 1
+  }
+}

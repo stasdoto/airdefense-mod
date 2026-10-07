@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:copper_ingot",
+    "minecraft:gunpowder",
+    "minecraft:iron_nugget",
+    "minecraft:iron_nugget"
+  ],
+  "result": {
+    "id": "airdefense:ammo_556",
+    "count": 15
+  }
+}

@@ -136,6 +136,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("sounds")) {
 				sounds(ctx, server);
 			}
+			if (scene("arsenal")) {
+				arsenal(ctx, server);
+			}
 			if (scene("smallArms")) {
 				smallArms(ctx, server);
 			}
@@ -2241,6 +2244,265 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.weapon.GunClient.otherShotsSeen));
 
 		server.runCommand("kill @e[type=minecraft:husk]");
+		server.runCommand("clear @a");
+		server.runCommand("effect clear @a");
+		server.runCommand("gamemode spectator @a");
+	}
+
+	/**
+	 * 1.24: the arsenal. Every gun on a wall in item frames and in a soldier's hands; each one in first person at
+	 * the hip and aimed (with its scope or collimator picture); then the new mechanics: shotgun pellets, the M16A4's
+	 * burst, the Barrett against light armour, AT4 / Carl Gustaf / NLAW / Javelin against vehicles (the one-shot tube
+	 * is gone after firing, the Javelin needs a lock and dives on the roof), 40 mm grenades.
+	 */
+	private void arsenal(ClientGameTestContext ctx, TestServerContext server) {
+		int x0 = 30000;
+		int g = ground;
+		final int left = com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT;
+		final int right = com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT;
+		com.stasdoto.airdefense.weapon.GunType[] all = com.stasdoto.airdefense.weapon.GunType.values();
+		server.runCommand("difficulty normal");
+		server.runCommand("gamemode survival @a");
+		server.runCommand("clear @a");
+		server.runCommand("effect give @a minecraft:resistance 600 4 true");
+		// A wall of item frames: seven guns a row.
+		server.runCommand(String.format("fill %d %d -11 %d %d -10 minecraft:spruce_planks", x0 - 5, g, x0 + 5, g + 6));
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			for (int i = 0; i < all.length; i++) {
+				int col = i % 7;
+				int row = i / 7;
+				var frame = new net.minecraft.world.entity.decoration.ItemFrame(l, new BlockPos(x0 - 3 + col, g + 5 - row, -9), net.minecraft.core.Direction.SOUTH);
+				frame.setItem(new ItemStack(com.stasdoto.airdefense.registry.ModItems.GUNS.get(all[i])), false);
+				l.addFreshEntity(frame);
+			}
+		});
+		camera(server, x0 + 0.5, g + 2.0, -5.4, 180, -8);
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("150_arsenal_wall");
+		camera(server, x0 - 1.5, g + 4.5, -7.6, 180, 0);
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("150b_arsenal_wall_close");
+
+		// Soldiers holding them (third person, from the side), twelve at a time.
+		List<Integer> men = new ArrayList<>();
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			for (int i = 0; i < 12; i++) {
+				var m = com.stasdoto.airdefense.nation.SoldierEntity.create(l, com.stasdoto.airdefense.nation.SoldierEntity.SOLDIER, -1, 5, -1,
+						new Vec3(x0 - 13 + i * 2.2, g, -24.5), i);
+				m.setNoAi(true);
+				m.snapTo(x0 - 13 + i * 2.2, g, -24.5, -90f, 0f);
+				m.setYHeadRot(-90f);
+				m.setYBodyRot(-90f);
+				l.addFreshEntity(m);
+				men.add(m.getId());
+			}
+		});
+		for (int batch = 0; batch * 12 < all.length; batch++) {
+			int b = batch;
+			server.runOnServer(s -> {
+				for (int i = 0; i < men.size(); i++) {
+					int k = b * 12 + i;
+					if (s.overworld().getEntity(men.get(i)) instanceof net.minecraft.world.entity.LivingEntity m) {
+						m.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, k < all.length
+								? com.stasdoto.airdefense.weapon.GunItem.loaded(com.stasdoto.airdefense.registry.ModItems.GUNS.get(all[k])) : ItemStack.EMPTY);
+					}
+				}
+			});
+			camera(server, x0 - 1.0, g + 1.6, -17.0, 180, 4);
+			ctx.waitTicks(20);
+			ctx.takeScreenshot("151_arsenal_soldiers_" + batch);
+		}
+		for (int id : men) {
+			server.runOnServer(s -> {
+				if (s.overworld().getEntity(id) != null) {
+					s.overworld().getEntity(id).discard();
+				}
+			});
+		}
+
+		// First person: every gun at the hip and aimed, looking out over the field at a tank.
+		int tank = spawnVehicle(server, VehicleType.T72, x0, -60, 90);
+		camera(server, x0 + 0.5, g, 10.5, 180, 0);
+		ctx.waitTicks(20);
+		for (com.stasdoto.airdefense.weapon.GunType t : all) {
+			server.runOnServer(s -> s.getPlayerList().getPlayers().getFirst().getInventory().setItem(0,
+					com.stasdoto.airdefense.weapon.GunItem.loaded(com.stasdoto.airdefense.registry.ModItems.GUNS.get(t))));
+			selectSlot(ctx, 0);
+			aimAt(ctx, entityPos(server, tank).add(0, 1.2, 0));
+			ctx.waitTicks(6);
+			ctx.takeScreenshot("152_fp_" + t.id + "_hip");
+			ctx.getInput().holdMouse(right);
+			ctx.waitTicks(t.needsLock() ? 50 : 12);
+			ctx.takeScreenshot("153_fp_" + t.id + "_aim");
+			ctx.getInput().releaseMouse(right);
+			ctx.waitTicks(3);
+		}
+		AirDefense.LOGGER.info("[airdefense-test] RESULT arsenal_fp: {} guns shown, javelin locks {}", all.length,
+				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.weapon.GunClient.locksMade));
+
+		// Ammunition for the firing tests.
+		server.runOnServer(s -> {
+			var inv = s.getPlayerList().getPlayers().getFirst().getInventory();
+			inv.clearContent();
+			inv.setItem(0, com.stasdoto.airdefense.weapon.GunItem.loaded(com.stasdoto.airdefense.registry.ModItems.GUNS.get(com.stasdoto.airdefense.weapon.GunType.M870)));
+			inv.setItem(1, com.stasdoto.airdefense.weapon.GunItem.loaded(com.stasdoto.airdefense.registry.ModItems.GUNS.get(com.stasdoto.airdefense.weapon.GunType.M16A4)));
+			inv.setItem(2, com.stasdoto.airdefense.weapon.GunItem.loaded(com.stasdoto.airdefense.registry.ModItems.GUNS.get(com.stasdoto.airdefense.weapon.GunType.M82)));
+			inv.setItem(3, com.stasdoto.airdefense.weapon.GunItem.loaded(com.stasdoto.airdefense.registry.ModItems.GUNS.get(com.stasdoto.airdefense.weapon.GunType.AT4)));
+			inv.setItem(4, com.stasdoto.airdefense.weapon.GunItem.loaded(com.stasdoto.airdefense.registry.ModItems.GUNS.get(com.stasdoto.airdefense.weapon.GunType.CG84)));
+			inv.setItem(5, com.stasdoto.airdefense.weapon.GunItem.loaded(com.stasdoto.airdefense.registry.ModItems.GUNS.get(com.stasdoto.airdefense.weapon.GunType.NLAW)));
+			inv.setItem(6, com.stasdoto.airdefense.weapon.GunItem.loaded(com.stasdoto.airdefense.registry.ModItems.GUNS.get(com.stasdoto.airdefense.weapon.GunType.JAVELIN)));
+			inv.setItem(7, com.stasdoto.airdefense.weapon.GunItem.loaded(com.stasdoto.airdefense.registry.ModItems.GUNS.get(com.stasdoto.airdefense.weapon.GunType.M32)));
+			inv.setItem(9, new ItemStack(com.stasdoto.airdefense.registry.ModItems.AMMO_12G, 24));
+			inv.setItem(10, new ItemStack(com.stasdoto.airdefense.registry.ModItems.AMMO_556, 60));
+			inv.setItem(11, new ItemStack(com.stasdoto.airdefense.registry.ModItems.AMMO_127, 10));
+			inv.setItem(12, new ItemStack(com.stasdoto.airdefense.registry.ModItems.CG_ROUND, 2));
+			inv.setItem(13, new ItemStack(com.stasdoto.airdefense.registry.ModItems.JAVELIN_MISSILE, 2));
+			inv.setItem(14, new ItemStack(com.stasdoto.airdefense.registry.ModItems.AMMO_40MM, 6));
+		});
+
+		// Shotgun at three husks eight blocks out.
+		camera(server, x0 + 0.5, g, 10.5, 180, 0);
+		selectSlot(ctx, 0);
+		List<Integer> trio = new ArrayList<>();
+		for (int i = 0; i < 3; i++) {
+			trio.add(husk(server, x0 - 0.5 + i, g, 2.5, false, false));
+		}
+		ctx.waitTicks(10);
+		int pel0 = com.stasdoto.airdefense.weapon.GunServer.PELLETS.get();
+		for (int i = 0; i < 3; i++) {
+			int id = trio.get(i);
+			if (alive(server, id)) {
+				aimAt(ctx, entityPos(server, id).add(0, 1.2, 0));
+				ctx.waitTicks(2);
+				ctx.getInput().pressMouse(left);
+				ctx.waitTicks(i == 0 ? 3 : 18);
+				if (i == 0) {
+					ctx.takeScreenshot("154_shotgun");
+					ctx.waitTicks(15);
+				}
+			}
+		}
+		int sk = 0;
+		for (int id : trio) {
+			sk += alive(server, id) ? 0 : 1;
+		}
+		AirDefense.LOGGER.info("[airdefense-test] RESULT shotgun: pellets {} killed {}/3", com.stasdoto.airdefense.weapon.GunServer.PELLETS.get() - pel0, sk);
+
+		// M16A4: one click, one three-round burst.
+		selectSlot(ctx, 1);
+		aimAt(ctx, new Vec3(x0 + 0.5, g + 1.5, -20));
+		ctx.waitTicks(5);
+		int sh0 = com.stasdoto.airdefense.weapon.GunServer.SHOTS.get();
+		ctx.getInput().pressMouse(left);
+		ctx.waitTicks(15);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT burst: one pull fired {} rounds", com.stasdoto.airdefense.weapon.GunServer.SHOTS.get() - sh0);
+
+		// Barrett M82 against a BTR-82 forty blocks away.
+		int btr = spawnVehicle(server, VehicleType.BTR82, x0 + 12, -28, 90);
+		selectSlot(ctx, 2);
+		ctx.waitTicks(15);
+		float b0 = server.computeOnServer(s -> s.overworld().getEntity(btr) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		for (int i = 0; i < 3; i++) {
+			aimAt(ctx, entityPos(server, btr).add(0, 1.4, 0));
+			ctx.waitTicks(3);
+			ctx.getInput().pressMouse(left);
+			ctx.waitTicks(14);
+		}
+		float b1 = server.computeOnServer(s -> s.overworld().getEntity(btr) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT m82: btr health {} -> {}", b0, b1);
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(btr), Entity::discard));
+
+		// AT4, then the Carl Gustaf, at a BMP-2.
+		int bmp = spawnVehicle(server, VehicleType.BMP2, x0 - 10, -22, 90);
+		ctx.waitTicks(15);
+		for (int slot : new int[]{3, 4}) {
+			selectSlot(ctx, slot);
+			float h0 = server.computeOnServer(s -> s.overworld().getEntity(bmp) instanceof VehicleEntity v ? v.getHealth() : -1f);
+			aimAt(ctx, entityPos(server, bmp).add(0, 1.3, 0));
+			ctx.waitTicks(4);
+			ctx.getInput().pressMouse(left);
+			ctx.waitTicks(4);
+			ctx.takeScreenshot(slot == 3 ? "155_at4_fired" : "156_cg84_fired");
+			ctx.waitTicks(30);
+			float h1 = server.computeOnServer(s -> s.overworld().getEntity(bmp) instanceof VehicleEntity v ? v.getHealth() : -1f);
+			String inHand = server.computeOnServer(s -> s.getPlayerList().getPlayers().getFirst().getMainHandItem().getItem().toString());
+			AirDefense.LOGGER.info("[airdefense-test] RESULT {}: bmp health {} -> {}, in hand after: {}", slot == 3 ? "at4" : "cg84", h0, h1, inHand);
+		}
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(bmp), Entity::discard));
+
+		// NLAW at a fresh BMP-2: it flies over and strikes down.
+		int bmp2 = spawnVehicle(server, VehicleType.BMP2, x0 + 6, -32, 90);
+		selectSlot(ctx, 5);
+		ctx.waitTicks(15);
+		int top0 = com.stasdoto.airdefense.missile.MissileEntity.TOP_ATTACKS.get();
+		float n0 = server.computeOnServer(s -> s.overworld().getEntity(bmp2) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		aimAt(ctx, entityPos(server, bmp2).add(0, 1.0, 0));
+		ctx.getInput().holdMouse(right);
+		ctx.waitTicks(10);
+		ctx.getInput().pressMouse(left);
+		ctx.waitTicks(6);
+		ctx.getInput().releaseMouse(right);
+		ctx.takeScreenshot("157_nlaw_flight");
+		ctx.waitTicks(40);
+		float n1 = server.computeOnServer(s -> s.overworld().getEntity(bmp2) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT nlaw: bmp health {} -> {}, top attacks {}", n0, n1,
+				com.stasdoto.airdefense.missile.MissileEntity.TOP_ATTACKS.get() - top0);
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(bmp2), Entity::discard));
+
+		// Javelin at the T-72, seventy blocks away: no lock - no launch; two seconds in the sight - lock, launch, dive.
+		selectSlot(ctx, 6);
+		ctx.waitTicks(10);
+		int noLock0 = com.stasdoto.airdefense.weapon.GunServer.NO_LOCK.get();
+		int topJ = com.stasdoto.airdefense.missile.MissileEntity.TOP_ATTACKS.get();
+		int guided0 = com.stasdoto.airdefense.weapon.GunServer.GUIDED.get();
+		aimAt(ctx, new Vec3(x0 + 20, g + 2, -40));
+		ctx.getInput().pressMouse(left);
+		ctx.waitTicks(10);
+		float t0 = server.computeOnServer(s -> s.overworld().getEntity(tank) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		aimAt(ctx, entityPos(server, tank).add(0, 1.2, 0));
+		ctx.getInput().holdMouse(right);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("158_javelin_seek");
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("158b_javelin_locked");
+		ctx.getInput().pressMouse(left);
+		ctx.waitTicks(4);
+		ctx.getInput().releaseMouse(right);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("159_javelin_climb");
+		int jw = waitUntil(ctx, () -> com.stasdoto.airdefense.missile.MissileEntity.TOP_ATTACKS.get() > topJ, 160);
+		ctx.takeScreenshot("159b_javelin_hit");
+		float t1 = server.computeOnServer(s -> s.overworld().getEntity(tank) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT javelin: refused without lock {}, launched {}, locks {}, top attacks {}, t72 health {} -> {} after {} ticks",
+				com.stasdoto.airdefense.weapon.GunServer.NO_LOCK.get() - noLock0, com.stasdoto.airdefense.weapon.GunServer.GUIDED.get() - guided0,
+				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.weapon.GunClient.locksMade),
+				com.stasdoto.airdefense.missile.MissileEntity.TOP_ATTACKS.get() - topJ, t0, t1, jw);
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(tank), Entity::discard));
+
+		// M32: two grenades at husks eighteen blocks away.
+		selectSlot(ctx, 7);
+		List<Integer> grp = new ArrayList<>();
+		for (int i = 0; i < 3; i++) {
+			grp.add(husk(server, x0 - 1 + i * 1.2, g, -8.0, false, false));
+		}
+		ctx.waitTicks(10);
+		aimAt(ctx, new Vec3(x0 + 0.5, g + 3.2, -8.0));
+		for (int i = 0; i < 2; i++) {
+			ctx.getInput().pressMouse(left);
+			ctx.waitTicks(i == 0 ? 8 : 40);
+			if (i == 0) {
+				ctx.takeScreenshot("160_m32_grenade");
+			}
+		}
+		int gk = 0;
+		for (int id : grp) {
+			gk += alive(server, id) ? 0 : 1;
+		}
+		AirDefense.LOGGER.info("[airdefense-test] RESULT m32: killed {}/3", gk);
+		server.runCommand("kill @e[type=minecraft:husk]");
+		server.runCommand("kill @e[type=minecraft:item_frame]");
 		server.runCommand("clear @a");
 		server.runCommand("effect clear @a");
 		server.runCommand("gamemode spectator @a");

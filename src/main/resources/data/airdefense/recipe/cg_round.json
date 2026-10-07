@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:iron_ingot",
+    "minecraft:iron_ingot",
+    "minecraft:tnt",
+    "minecraft:gunpowder",
+    "minecraft:copper_ingot"
+  ],
+  "result": {
+    "id": "airdefense:cg_round",
+    "count": 1
+  }
+}

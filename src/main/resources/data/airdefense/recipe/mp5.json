@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "IIQ",
+    "TA ",
+    "I  "
+  ],
+  "key": {
+    "A": "minecraft:iron_bars",
+    "I": "minecraft:iron_ingot",
+    "Q": "minecraft:quartz",
+    "T": "minecraft:tripwire_hook"
+  },
+  "result": {
+    "id": "airdefense:mp5",
+    "count": 1
+  }
+}

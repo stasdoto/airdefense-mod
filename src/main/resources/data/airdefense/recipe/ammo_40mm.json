@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:iron_ingot",
+    "minecraft:gunpowder",
+    "minecraft:tnt"
+  ],
+  "result": {
+    "id": "airdefense:ammo_40mm",
+    "count": 3
+  }
+}

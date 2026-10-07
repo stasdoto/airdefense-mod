@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "IXI",
+    "TA ",
+    "K  "
+  ],
+  "key": {
+    "A": "minecraft:iron_bars",
+    "I": "minecraft:iron_ingot",
+    "K": "minecraft:black_dye",
+    "T": "minecraft:tripwire_hook",
+    "X": "minecraft:tnt"
+  },
+  "result": {
+    "id": "airdefense:cg84",
+    "count": 1
+  }
+}

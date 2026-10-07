@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "SII",
+    "TEE",
+    "IEE"
+  ],
+  "key": {
+    "E": "minecraft:green_dye",
+    "I": "minecraft:iron_ingot",
+    "S": "minecraft:spyglass",
+    "T": "minecraft:tripwire_hook"
+  },
+  "result": {
+    "id": "airdefense:awm",
+    "count": 1
+  }
+}

@@ -425,9 +425,43 @@ def small_arms():
     save('medkit', m, peak=0.6)
 
 
+def arsenal():
+    """1.24: a short carbine's sharper crack, a shotgun's deep boom, the suppressed rifle's muffled thud with its
+    action clatter, the 12.7 mm rifle's huge blast; the pump, the 40 mm launcher's pop, the Javelin's seeker tones."""
+    gun_pair('carbine', 1.15, 170, 0.03, 1.0, 0.9, 0.7, 2.4, [(0.38, 0.5, 500), (0.95, 0.3, 320)])
+    gun_pair('shotgun', 0.8, 85, 0.07, 1.2, 1.1, 0.9, 2.6, [(0.4, 0.55, 380), (1.0, 0.3, 260)])
+    gun_pair('heavy', 1.4, 60, 0.09, 1.2, 2.6, 2.0, 5.0, [(0.5, 0.65, 360), (1.3, 0.45, 260), (2.6, 0.3, 200)])
+    for v in range(2):
+        # Suppressed: no sharp blast, a low "thup", the bolt carrier's clatter is what you hear most.
+        x = np.zeros(int(0.6 * SR))
+        place(x, lp(white(0.08), 900) * decay(int(0.08 * SR), 0.02), 0, 0.9)
+        place(x, np.sin(2 * np.pi * (120 + 20 * v) * t_axis(0.15)) * decay(int(0.15 * SR), 0.025), 0, 0.6)
+        place(x, mechanism(0.5), 0, 1.0)
+        save(f'suppressed_near_{v}', reverb(x, 0.6, 0.25, damp=3000, mix=0.15), peak=0.75)
+        f = lp(white(0.1), 500) * decay(int(0.1 * SR), 0.03)
+        save(f'suppressed_far_{v}', reverb(pad(f, 0.6), 0.6, 0.3, damp=600, mix=0.4), peak=0.4)
+    pump = rub(0.0, 0.14, 600, 2500, 0.6, 0.7) + clicks([(0.15, 1000, 5000, 0.004, 1.0)], 0.7) \
+        + rub(0.22, 0.14, 700, 2800, 0.5, 0.7) + clicks([(0.37, 1500, 6000, 0.003, 0.9)], 0.7)
+    save('gun_pump', pump, peak=0.8)
+    # The 40 mm grenade launcher: a hollow "thoonk".
+    x = np.zeros(int(1.2 * SR))
+    place(x, np.sin(2 * np.pi * np.cumsum(np.linspace(260, 110, int(0.2 * SR))) / SR) * decay(int(0.2 * SR), 0.05), 0, 1.0)
+    place(x, lp(white(0.06), 1500) * decay(int(0.06 * SR), 0.012), 0, 0.6)
+    save('grenade_launch', reverb(x, 1.2, 0.6, damp=2500, mix=0.3), peak=0.85)
+    # Javelin seeker: a short beep while it acquires, a steady two-tone when it has locked.
+    t = t_axis(0.12)
+    save('javelin_seek', np.sin(2 * np.pi * 1450 * t) * np.clip(t / 0.005, 0, 1) * np.clip((0.12 - t) / 0.02, 0, 1) * 0.6, peak=0.5)
+    t = t_axis(0.9)
+    tone = np.sin(2 * np.pi * 1850 * t) * (np.sin(2 * np.pi * 9 * t) > 0) + np.sin(2 * np.pi * 1200 * t) * (np.sin(2 * np.pi * 9 * t) <= 0)
+    save('javelin_lock', tone * np.clip(t / 0.01, 0, 1) * np.clip((0.9 - t) / 0.05, 0, 1) * 0.6, peak=0.5)
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 2 and sys.argv[2] == 'small_arms':
         small_arms()
+        sys.exit(0)
+    if len(sys.argv) > 2 and sys.argv[2] == 'arsenal':
+        arsenal()
         sys.exit(0)
     explosions()
     guns()

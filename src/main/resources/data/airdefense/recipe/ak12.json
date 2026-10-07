@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "GII",
+    "TKK",
+    "I  "
+  ],
+  "key": {
+    "G": "minecraft:glass_pane",
+    "I": "minecraft:iron_ingot",
+    "K": "minecraft:black_dye",
+    "T": "minecraft:tripwire_hook"
+  },
+  "result": {
+    "id": "airdefense:ak12",
+    "count": 1
+  }
+}

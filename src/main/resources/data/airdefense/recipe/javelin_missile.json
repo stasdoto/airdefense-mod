@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:iron_ingot",
+    "minecraft:tnt",
+    "minecraft:redstone",
+    "minecraft:redstone",
+    "minecraft:gold_ingot",
+    "minecraft:glass_pane"
+  ],
+  "result": {
+    "id": "airdefense:javelin_missile",
+    "count": 1
+  }
+}

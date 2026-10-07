@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "GII",
+    "TKA",
+    "I  "
+  ],
+  "key": {
+    "A": "minecraft:iron_bars",
+    "G": "minecraft:glass_pane",
+    "I": "minecraft:iron_ingot",
+    "K": "minecraft:black_dye",
+    "T": "minecraft:tripwire_hook"
+  },
+  "result": {
+    "id": "airdefense:m4a1",
+    "count": 1
+  }
+}

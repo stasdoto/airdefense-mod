@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "SII",
+    "TKK",
+    "IK "
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "K": "minecraft:black_dye",
+    "S": "minecraft:spyglass",
+    "T": "minecraft:tripwire_hook"
+  },
+  "result": {
+    "id": "airdefense:m110",
+    "count": 1
+  }
+}

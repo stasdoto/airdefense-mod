@@ -42,7 +42,16 @@ public enum Product {
 	AMMO_30("ammo_30_box", 200, 15, cost(Items.COPPER_INGOT, 5, Items.GUNPOWDER, 4, Items.IRON_NUGGET, 4)),
 	// Stage R6: aircraft rockets and bombs.
 	S8_ROCKETS("s8_rockets", 300, 8, cost(Items.IRON_INGOT, 4, Items.GUNPOWDER, 6, Items.COPPER_INGOT, 2)),
-	FAB250("fab250", 400, 1, cost(Items.IRON_INGOT, 10, Items.TNT, 4));
+	FAB250("fab250", 400, 1, cost(Items.IRON_INGOT, 10, Items.TNT, 4)),
+	// 1.24: ammunition of the new small arms and launchers (one item = one round).
+	AMMO_556("ammo_556", 160, 1, 60, cost(Items.COPPER_INGOT, 4, Items.GUNPOWDER, 4, Items.IRON_NUGGET, 6)),
+	AMMO_762X39("ammo_762x39", 170, 1, 60, cost(Items.COPPER_INGOT, 5, Items.GUNPOWDER, 5)),
+	AMMO_9X39("ammo_9x39", 180, 1, 40, cost(Items.COPPER_INGOT, 4, Items.GUNPOWDER, 4, Items.IRON_INGOT, 1)),
+	ROUND_127("ammo_127", 220, 1, 20, cost(Items.COPPER_INGOT, 6, Items.GUNPOWDER, 6, Items.IRON_INGOT, 2)),
+	AMMO_12G("ammo_12g", 140, 1, 24, cost(Items.PAPER, 4, Items.GUNPOWDER, 4, Items.IRON_NUGGET, 8)),
+	AMMO_40MM("ammo_40mm", 240, 1, 6, cost(Items.IRON_INGOT, 2, Items.GUNPOWDER, 3, Items.TNT, 1)),
+	CG_ROUND("cg_round", 320, 1, 2, cost(Items.IRON_INGOT, 3, Items.GUNPOWDER, 3, Items.TNT, 1, Items.COPPER_INGOT, 2)),
+	JAVELIN_MISSILE("javelin_missile", 700, 1, 1, cost(Items.IRON_INGOT, 6, Items.TNT, 2, Items.REDSTONE, 4, Items.GOLD_INGOT, 2));
 
 	public record Cost(Item item, int count) {
 	}

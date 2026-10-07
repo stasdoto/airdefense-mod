@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "SOI",
+    "TWW",
+    "I  "
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "O": "minecraft:obsidian",
+    "S": "minecraft:spyglass",
+    "T": "minecraft:tripwire_hook",
+    "W": "#minecraft:planks"
+  },
+  "result": {
+    "id": "airdefense:vss",
+    "count": 1
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:red_dye",
+    "minecraft:gunpowder",
+    "minecraft:iron_nugget",
+    "minecraft:paper"
+  ],
+  "result": {
+    "id": "airdefense:ammo_12g",
+    "count": 8
+  }
+}

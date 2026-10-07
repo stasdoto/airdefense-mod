@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "EXE",
+    "TE "
+  ],
+  "key": {
+    "E": "minecraft:green_dye",
+    "T": "minecraft:tripwire_hook",
+    "X": "minecraft:tnt"
+  },
+  "result": {
+    "id": "airdefense:at4",
+    "count": 1
+  }
+}

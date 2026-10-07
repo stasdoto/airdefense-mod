@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "GIE",
+    "TEE",
+    "I  "
+  ],
+  "key": {
+    "E": "minecraft:green_dye",
+    "G": "minecraft:glass_pane",
+    "I": "minecraft:iron_ingot",
+    "T": "minecraft:tripwire_hook"
+  },
+  "result": {
+    "id": "airdefense:fort221",
+    "count": 1
+  }
+}

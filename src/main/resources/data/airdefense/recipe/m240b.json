@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "III",
+    "TBB",
+    "I K"
+  ],
+  "key": {
+    "B": "minecraft:iron_block",
+    "I": "minecraft:iron_ingot",
+    "K": "minecraft:black_dye",
+    "T": "minecraft:tripwire_hook"
+  },
+  "result": {
+    "id": "airdefense:m240b",
+    "count": 1
+  }
+}
