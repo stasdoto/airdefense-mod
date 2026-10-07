@@ -2122,10 +2122,7 @@ public class VehicleEntity extends LivingEntity {
 		if (kind != MissileType.Kind.BALLISTIC && kind != MissileType.Kind.ROCKET) {
 			return true;
 		}
-		// (Within a fixed distance, not a share of the range: the long-range systems would otherwise chase rockets
-		// still climbing away on their boost.)
-		double close = Math.min(range * 0.55, 170);
-		return m.getFlightVelocity().y < 0 || m.distanceToSqr(radar) < close * close;
+		return m.getFlightVelocity().y < 0 || m.distanceToSqr(radar) < range * range * 0.3;
 	}
 
 	private static boolean isAboutToLeave(MissileEntity m, Vec3 radar, double range) {
