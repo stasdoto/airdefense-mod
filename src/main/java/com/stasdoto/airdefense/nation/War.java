@@ -395,8 +395,9 @@ public final class War {
 			double[] ahead = road.pointAt(atFromTown.applyAsDouble(Math.max(0, s - 6)));
 			BlockPos at = BlockPos.containing(pt[0], 0, pt[1]);
 			if (!level.isLoaded(at)) {
+				// Out on the road beyond sight: load its ground now (and keep it running) rather than skip the vehicle.
 				level.getChunkSource().addTicketWithRadius(net.minecraft.server.level.TicketType.ENDER_PEARL, net.minecraft.world.level.ChunkPos.containing(at), 2);
-				continue;
+				level.getChunk(at.getX() >> 4, at.getZ() >> 4);
 			}
 			int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, at.getX(), at.getZ());
 			float yaw = (float) Math.toDegrees(Math.atan2(-(ahead[0] - pt[0]), ahead[1] - pt[1]));

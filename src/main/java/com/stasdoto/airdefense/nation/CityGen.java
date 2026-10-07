@@ -39,6 +39,8 @@ public final class CityGen {
 
 	private static final BlockState ASPHALT = Blocks.CONCRETE.pick(DyeColor.GRAY).defaultBlockState();
 	private static final BlockState ASPHALT_SLAB = Blocks.CONCRETE_SLAB.pick(DyeColor.GRAY).defaultBlockState();
+	/** Markings on the half-block steps of a road on a slope. */
+	private static final BlockState MARK_SLAB = Blocks.CONCRETE_SLAB.pick(DyeColor.WHITE).defaultBlockState();
 	private static final BlockState MARK = Blocks.CONCRETE.pick(DyeColor.WHITE).defaultBlockState();
 	private static final BlockState KERB = Blocks.SMOOTH_STONE.defaultBlockState();
 	private static final BlockState WALKWAY = Blocks.POLISHED_ANDESITE.defaultBlockState();
@@ -170,7 +172,8 @@ public final class CityGen {
 				if (done) {
 					continue;
 				}
-				if (road != null && best <= 3.5) {
+				// The embankment or cutting beside the road: wide enough out in the country that deep cuttings get slopes, not walls.
+				if (road != null && (best <= 3.5 || near == null && best <= 7.5)) {
 					roadColumn(w, t, road, spot, x, z, pos);
 				}
 				if (near != null && (road == null || best > 3.5)) {
@@ -444,7 +447,7 @@ public final class CityGen {
 		boolean bridge = g[2] == 1 || g[0] < y - 6;
 		if (bridge) {
 			int deck = Math.max(y, t.sea() + 2);
-			w.set(pos.set(x, deck, z), r.dirt ? Blocks.SPRUCE_PLANKS.defaultBlockState() : surface(r, along, d, half, false));
+			w.set(pos.set(x, deck, z), r.dirt ? Blocks.SPRUCE_PLANKS.defaultBlockState() : surface(r, along, d, half));
 			for (int yy = deck + 1; yy <= Math.max(deck + 4, g[1] + 1); yy++) {
 				if (!w.get(pos.set(x, yy, z)).isAir()) {
 					w.set(pos, AIR);
@@ -472,9 +475,11 @@ public final class CityGen {
 			shape(w, x, z, yy, dirt, g, pos);
 			return;
 		}
-		shape(w, x, z, y, surface(r, along, d, half, slab), g, pos);
+		BlockState top = surface(r, along, d, half);
+		shape(w, x, z, y, slab ? ASPHALT : top, g, pos);
 		if (slab) {
-			w.set(pos.set(x, y + 1, z), ASPHALT_SLAB.setValue(BlockStateProperties.SLAB_TYPE, SlabType.BOTTOM));
+			// The markings go on the half-block step, so they run on unbroken up and down the slopes.
+			w.set(pos.set(x, y + 1, z), (top == MARK ? MARK_SLAB : ASPHALT_SLAB).setValue(BlockStateProperties.SLAB_TYPE, SlabType.BOTTOM));
 		}
 		// Crash barriers along a highway where it runs high on an embankment.
 		if (r.highway && d > half - 0.5 && g[0] < y - 2 && !slab) {
@@ -483,10 +488,7 @@ public final class CityGen {
 	}
 
 	/** The road surface with its markings: a highway's centre line, lane lines and edge lines; a town road's dashes. */
-	private static BlockState surface(Cities.Road r, double along, double d, double half, boolean slab) {
-		if (slab) {
-			return ASPHALT;
-		}
+	private static BlockState surface(Cities.Road r, double along, double d, double half) {
 		if (r.highway) {
 			boolean full = half > r.half - 0.6;
 			if (d < 0.5) {

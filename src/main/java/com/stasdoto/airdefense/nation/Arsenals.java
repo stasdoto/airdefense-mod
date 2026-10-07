@@ -269,7 +269,7 @@ public final class Arsenals extends SavedData {
 		for (Settlement s : p.settlements.values()) {
 			Arsenal ar = a.of(p, s);
 			boolean near = level.isLoaded(s.center) && level.getNearestPlayer(s.center.getX(), s.center.getY(), s.center.getZ(), 240,
-					pl -> !pl.isSpectator()) != null;
+					pl -> true) != null;
 			if ((sec + s.id) % 2 == 0 && incoming(level, s)) {
 				ar.alertUntil = now + 600;
 			}
@@ -651,8 +651,7 @@ public final class Arsenals extends SavedData {
 		BlockPos at = BlockPos.containing(start.x, 0, start.z);
 		if (!level.isLoaded(at)) {
 			level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, ChunkPos.containing(at), 2);
-			shown.remove(d.id());
-			return;
+			level.getChunk(at.getX() >> 4, at.getZ() >> 4);
 		}
 		int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, at.getX(), at.getZ());
 		float yaw = (float) Math.toDegrees(Math.atan2(-(next.x - start.x), next.z - start.z));
@@ -815,7 +814,7 @@ public final class Arsenals extends SavedData {
 		}
 		u.ammo = Math.max(0, u.ammo - salvo);
 		boolean seen = level.isLoaded(target.center) && level.getNearestPlayer(target.center.getX(), target.center.getY(), target.center.getZ(), 400,
-				pl -> !pl.isSpectator()) != null;
+				pl -> true) != null;
 		if (seen && m != null) {
 			Vec3 tc = Vec3.atBottomCenterOf(aimAt);
 			Vec3 dir = Vec3.atCenterOf(from.center).subtract(tc);

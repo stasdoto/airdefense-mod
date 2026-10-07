@@ -106,7 +106,8 @@ public final class Atlas {
 		Path file = server.getWorldPath(LevelResource.DATA).resolve("airdefense_atlas.bin");
 		busy = true;
 		ROWS.set(0);
-		pool = Executors.newFixedThreadPool(2, r -> {
+		int threads = Math.max(2, Math.min(4, Runtime.getRuntime().availableProcessors() / 2));
+		pool = Executors.newFixedThreadPool(threads, r -> {
 			Thread th = new Thread(r, "airdefense-atlas");
 			th.setDaemon(true);
 			th.setPriority(Thread.MIN_PRIORITY);
@@ -118,14 +119,17 @@ public final class Atlas {
 				long t0 = System.nanoTime();
 				Ground g = loadGround(file, o, seed);
 				if (g == null) {
-					g = ground(level, t, o, p);
+					g = ground(level, t, o, p, threads);
 					saveGround(file, o, seed, g);
 				}
+				long t1 = System.nanoTime();
 				Plan plan = plan(seed, t, o);
+				long t2 = System.nanoTime();
 				byte[] bytes = pack(o, g, plan, seed, t, t.sea());
-				long ms = (System.nanoTime() - t0) / 1_000_000;
-				AirDefense.LOGGER.info("[airdefense] atlas ready: {} cities, {} hamlets, {} roads, {} KB, {} ms", plan.cities.size(), plan.hamlets.size(),
-						plan.roads.size(), bytes.length / 1024, ms);
+				long t3 = System.nanoTime();
+				AirDefense.LOGGER.info("[airdefense] atlas ready: {} cities, {} hamlets, {} roads, {} KB, {} ms (land {}, plan {}, pack {}; {} threads)",
+						plan.cities.size(), plan.hamlets.size(), plan.roads.size(), bytes.length / 1024, (t3 - t0) / 1_000_000, (t1 - t0) / 1_000_000,
+						(t2 - t1) / 1_000_000, (t3 - t2) / 1_000_000, threads);
 				server.execute(() -> {
 					packed = bytes;
 					ready = true;
@@ -213,7 +217,7 @@ public final class Atlas {
 	record Ground(byte[] heights, byte[] kinds, List<String> palette, int[] colors) {
 	}
 
-	private static Ground ground(ServerLevel level, Cities.Terrain t, int[] o, ExecutorService p) {
+	private static Ground ground(ServerLevel level, Cities.Terrain t, int[] o, ExecutorService p, int threads) {
 		byte[] heights = new byte[SIZE * SIZE];
 		byte[] kinds = new byte[SIZE * SIZE];
 		Map<String, Integer> index = new HashMap<>();
@@ -221,8 +225,35 @@ public final class Atlas {
 		List<Integer> colors = new ArrayList<>();
 		var gen = level.getChunkSource().getGenerator();
 		var rs = level.getChunkSource().randomState();
+		// The rows shared out between the atlas threads (every n-th row each); the biome names are numbered under a lock.
+		List<java.util.concurrent.Future<?>> parts = new ArrayList<>();
+		for (int part = 1; part < threads; part++) {
+			final int first = part;
+			parts.add(p.submit(() -> groundRows(gen, rs, t, o, first, threads, heights, kinds, index, palette, colors)));
+		}
+		groundRows(gen, rs, t, o, 0, threads, heights, kinds, index, palette, colors);
+		for (var f : parts) {
+			try {
+				f.get();
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				throw new IllegalStateException("atlas stopped");
+			} catch (java.util.concurrent.ExecutionException e) {
+				throw new IllegalStateException("atlas land failed", e.getCause());
+			}
+		}
+		int[] c = new int[colors.size()];
+		for (int i = 0; i < c.length; i++) {
+			c[i] = colors.get(i);
+		}
+		return new Ground(heights, kinds, palette, c);
+	}
+
+	/** Every {@code step}-th row of the land from {@code first}: the height and the kind of land (biome) of each square. */
+	private static void groundRows(net.minecraft.world.level.chunk.ChunkGenerator gen, net.minecraft.world.level.levelgen.RandomState rs, Cities.Terrain t,
+			int[] o, int first, int step, byte[] heights, byte[] kinds, Map<String, Integer> index, List<String> palette, List<Integer> colors) {
 		BiomeResolver biomes = gen.getBiomeSource().createUncachedResolver(rs);
-		for (int j = 0; j < SIZE; j++) {
+		for (int j = first; j < SIZE; j += step) {
 			if (Thread.currentThread().isInterrupted()) {
 				throw new IllegalStateException("atlas stopped");
 			}
@@ -233,22 +264,21 @@ public final class Atlas {
 				heights[j * SIZE + i] = (byte) Math.max(0, Math.min(255, y + 128));
 				Holder<Biome> b = biomes.getNoiseBiome(QuartPos.fromBlock(x), QuartPos.fromBlock(Math.max(y, t.sea())), QuartPos.fromBlock(z));
 				String id = b.unwrapKey().map(k -> k.identifier().getPath()).orElse("plains");
-				Integer k = index.get(id);
-				if (k == null) {
-					k = palette.size();
-					index.put(id, k);
-					palette.add(id);
-					colors.add(colorOf(id, b.value()));
+				int k;
+				synchronized (index) {
+					Integer known = index.get(id);
+					if (known == null) {
+						known = palette.size();
+						index.put(id, known);
+						palette.add(id);
+						colors.add(colorOf(id, b.value()));
+					}
+					k = known;
 				}
-				kinds[j * SIZE + i] = (byte) (int) k;
+				kinds[j * SIZE + i] = (byte) k;
 			}
 			ROWS.incrementAndGet();
 		}
-		int[] c = new int[colors.size()];
-		for (int i = 0; i < c.length; i++) {
-			c[i] = colors.get(i);
-		}
-		return new Ground(heights, kinds, palette, c);
 	}
 
 	/** The colour of a kind of land on the map (water is drawn by height). */
