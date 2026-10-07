@@ -2576,6 +2576,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		});
 		shot(ctx, server, ccam, "183_column", 30);
 		int arrived = waitUntil(ctx, () -> VehicleEntity.arrivals > 0, 1800);
+		waitUntil(ctx, () -> VehicleEntity.dismounted > 0, 1200);
 		ctx.waitTicks(100);
 		// The men who got out, on their way in (from behind and above them).
 		float[] fcam = server.computeOnServer(s -> {

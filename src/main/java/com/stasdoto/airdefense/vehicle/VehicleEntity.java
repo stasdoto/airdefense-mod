@@ -464,7 +464,8 @@ public class VehicleEntity extends LivingEntity {
 
 	/** Gepard can shoot on the move; launchers and missile batteries must fold up first. */
 	public boolean canDrive() {
-		return isAlive() && (vtype.gunOnly() || vtype.isArmed() || isFolded());
+		// Lorries have nothing to fold (their "deployed" is only the load bed being open).
+		return isAlive() && (vtype.gunOnly() || vtype.isArmed() || vtype.isTruck() || isFolded());
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -822,7 +823,9 @@ public class VehicleEntity extends LivingEntity {
 		double dz = to.z - getZ();
 		double dist = Math.sqrt(dx * dx + dz * dz);
 		boolean last = routeIndex == route.size() - 1;
-		if (dist < (last ? 5 : 8) || stuckTries >= 4) {
+		// Near the end the column bunches up: the ones behind stop where they can (sooner given up when blocked).
+		boolean nearEnd = routeIndex >= route.size() - 2;
+		if (dist < (last ? 6 : 8) || stuckTries >= (nearEnd ? 2 : 4) || last && dist < 14 && Math.abs(speed) < 0.02f && stuckTicks > 30) {
 			// Reached (or, blocked again and again, given up and taken as reached: the men get out where it stands).
 			stuckTries = 0;
 			routeIndex++;
