@@ -1149,12 +1149,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		});
 		String trade = server.computeOnServer(s -> {
 			var p = com.stasdoto.airdefense.nation.Politics.get(s);
-			com.stasdoto.airdefense.nation.Settlement capital = null;
-			for (var st : p.settlements.values()) {
-				if (st.isCity() && st.capitalCity) {
-					capital = st;
-				}
-			}
+			com.stasdoto.airdefense.nation.Settlement capital = testCapital(s);
 			if (capital == null) {
 				return "no capital";
 			}
@@ -1196,8 +1191,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		// Take the capital, pick a panel block on the map and rebuild it as a tower.
 		int[] target = server.computeOnServer(s -> {
 			var p = com.stasdoto.airdefense.nation.Politics.get(s);
-			for (var st : p.settlements.values()) {
-				if (st.isCity() && st.capitalCity) {
+			for (var st : java.util.Collections.singletonList(testCapital(s))) {
+				if (st != null) {
 					com.stasdoto.airdefense.nation.Nations.takeOver(s.overworld(), s.getPlayerList().getPlayers().getFirst(), st);
 					for (int i = 0; i < st.eco.buildings.size(); i++) {
 						var b = st.eco.buildings.get(i);
@@ -2501,8 +2496,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		int lorriesBefore = com.stasdoto.airdefense.nation.Arsenals.lorries;
 		String load = server.computeOnServer(s -> {
 			var p = com.stasdoto.airdefense.nation.Politics.get(s);
-			for (var st : p.settlements.values()) {
-				if (st.city >= 0 && st.capitalCity) {
+			for (var st : java.util.Collections.singletonList(testCapital(s))) {
+				if (st != null) {
 					var mt = com.stasdoto.airdefense.nation.Arsenals.testDelivery(s.overworld(), st);
 					return mt == null ? "none" : mt.name();
 				}
@@ -2534,12 +2529,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		int[] ids = server.computeOnServer(s -> {
 			ServerLevel l = s.overworld();
 			var p = com.stasdoto.airdefense.nation.Politics.get(s);
-			com.stasdoto.airdefense.nation.Settlement capital = null;
-			for (var st : p.settlements.values()) {
-				if (st.city >= 0 && st.capitalCity) {
-					capital = st;
-				}
-			}
+			com.stasdoto.airdefense.nation.Settlement capital = testCapital(s);
 			if (capital == null) {
 				return null;
 			}
@@ -2612,6 +2602,26 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				com.stasdoto.airdefense.nation.SoldierEntity.tookCover, com.stasdoto.airdefense.nation.SoldierEntity.fellBack,
 				com.stasdoto.airdefense.nation.SoldierEntity.grenadesThrown);
 		server.runCommand("kill @e[type=airdefense:soldier,distance=..10000]");
+	}
+
+	/**
+	 * The town founded on the first city of the plan (the scenes' capital); the atlas founds every other town of the
+	 * 10 km round it too, so "a capital" is not enough to find it.
+	 */
+	@org.jetbrains.annotations.Nullable
+	private static com.stasdoto.airdefense.nation.Settlement testCapital(net.minecraft.server.MinecraftServer s) {
+		ServerLevel l = s.overworld();
+		var c = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), com.stasdoto.airdefense.nation.Cities.terrain(l), 0, 0).getFirst();
+		com.stasdoto.airdefense.nation.Settlement best = null;
+		double bestD = 300.0 * 300.0;
+		for (var st : com.stasdoto.airdefense.nation.Politics.get(s).settlements.values()) {
+			double d = Math.pow(st.center.getX() - c.x, 2) + Math.pow(st.center.getZ() - c.z, 2);
+			if (st.city >= 0 && d < bestD) {
+				bestD = d;
+				best = st;
+			}
+		}
+		return best;
 	}
 
 	/** The sirens standing within {@code r} of (x, z), nearest first. */

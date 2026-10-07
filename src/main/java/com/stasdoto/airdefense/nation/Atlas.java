@@ -123,7 +123,7 @@ public final class Atlas {
 					saveGround(file, o, seed, g);
 				}
 				long t1 = System.nanoTime();
-				Plan plan = plan(seed, t, o);
+				Plan plan = plan(seed, t, o, p, threads);
 				long t2 = System.nanoTime();
 				byte[] bytes = pack(o, g, plan, seed, t, t.sea());
 				long t3 = System.nanoTime();
@@ -367,7 +367,7 @@ public final class Atlas {
 	record Plan(List<Cities.City> cities, List<Hamlets.Hamlet> hamlets, List<Cities.Road> roads) {
 	}
 
-	private static Plan plan(long seed, Cities.Terrain t, int[] o) {
+	private static Plan plan(long seed, Cities.Terrain t, int[] o, ExecutorService pool, int threads) {
 		List<Cities.City> cities = new ArrayList<>();
 		List<Hamlets.Hamlet> hamlets = new ArrayList<>();
 		List<Cities.Road> roads = new ArrayList<>();
@@ -377,6 +377,26 @@ public final class Atlas {
 		int cz0 = Math.floorDiv(o[1] - 700, Cities.CELL);
 		int cx1 = Math.floorDiv(o[0] + SIZE * RES + 700, Cities.CELL);
 		int cz1 = Math.floorDiv(o[1] + SIZE * RES + 700, Cities.CELL);
+		// Planned on all the atlas threads first (the cells' towns, then their roads, then the towns' hamlets and
+		// depots); what follows only collects it from the caches.
+		List<int[]> cells = new ArrayList<>();
+		for (int cx = cx0; cx <= cx1; cx++) {
+			for (int cz = cz0; cz <= cz1; cz++) {
+				cells.add(new int[]{cx, cz});
+			}
+		}
+		shared(pool, threads, cells, c -> Cities.cities(seed, t, c[0], c[1]));
+		shared(pool, threads, cells, c -> Cities.roads(seed, t, c[0], c[1]));
+		List<Cities.City> all = new ArrayList<>();
+		for (int[] c : cells) {
+			all.addAll(Cities.cities(seed, t, c[0], c[1]));
+		}
+		shared(pool, threads, all, c -> {
+			if (in(o, c.x, c.z, 0)) {
+				c.hamlets(seed, t);
+				c.depot(seed, t);
+			}
+		});
 		// Capitals first (each founds its country), then the other towns, then the hamlets.
 		List<Cities.City> others = new ArrayList<>();
 		for (int cx = cx0; cx <= cx1; cx++) {
@@ -409,6 +429,34 @@ public final class Atlas {
 		// Only what lies in the atlas (with a margin for the borders) is founded.
 		cities.removeIf(c -> !in(o, c.x, c.z, 600));
 		return new Plan(cities, hamlets, roads);
+	}
+
+	/** Does {@code job} for every item, the items shared out between the atlas threads (this one among them). */
+	private static <T> void shared(ExecutorService pool, int threads, List<T> items, java.util.function.Consumer<T> job) {
+		java.util.concurrent.atomic.AtomicInteger next = new java.util.concurrent.atomic.AtomicInteger();
+		Runnable worker = () -> {
+			for (int i = next.getAndIncrement(); i < items.size(); i = next.getAndIncrement()) {
+				if (Thread.currentThread().isInterrupted()) {
+					throw new IllegalStateException("atlas stopped");
+				}
+				job.accept(items.get(i));
+			}
+		};
+		List<java.util.concurrent.Future<?>> parts = new ArrayList<>();
+		for (int k = 1; k < threads; k++) {
+			parts.add(pool.submit(worker));
+		}
+		worker.run();
+		for (var f : parts) {
+			try {
+				f.get();
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				throw new IllegalStateException("atlas stopped");
+			} catch (java.util.concurrent.ExecutionException e) {
+				throw new IllegalStateException("atlas plan failed", e.getCause());
+			}
+		}
 	}
 
 	private static boolean in(int[] o, int x, int z, int margin) {
