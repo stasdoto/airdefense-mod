@@ -1716,11 +1716,11 @@ public class VehicleEntity extends LivingEntity {
 		}
 		boolean onTheMove = marchTicks > 0 || (!gun && stationaryTicks < DEPLOY_STILL_TICKS);
 		boolean active = getMode() != MODE_OFF && !onTheMove;
-		if (tickCount % 40 == 0 && MissileStats.debug()) {
+		if (tickCount % 40 == 0 && com.stasdoto.airdefense.missile.MissileStats.debug()) {
 			Vec3 r0 = position().add(0, 3.0, 0);
 			double rr = type.range;
 			List<MissileEntity> near = MissileEntity.find(level, new AABB(r0, r0).inflate(rr), m -> m.isAlive() && m.getMissileType().threat);
-			MissileStats.log("AD {} active={} moving={} still={} march={} mode={} ammo={} fireTimer={} tracked={} threats in range {}{}", vtype, active, onTheMove,
+			com.stasdoto.airdefense.missile.MissileStats.log("AD {} active={} moving={} still={} march={} mode={} ammo={} fireTimer={} tracked={} threats in range {}{}", vtype, active, onTheMove,
 					stationaryTicks, marchTicks, getMode(), getAmmo(), fireTimer, tracked == null ? "-" : tracked.getMissileType(), near.size(),
 					near.isEmpty() ? "" : " first engage=" + canEngage(type, near.getFirst(), r0) + " engagedBy=" + near.getFirst().getEngagedBy());
 		}
