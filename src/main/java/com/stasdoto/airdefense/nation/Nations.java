@@ -357,6 +357,11 @@ public final class Nations {
 		return s;
 	}
 
+	/** For the tests: a new country of the world with this town as its capital. */
+	public static Country newWorldCountry(Politics p, int capital) {
+		return newCountry(p, new Random(capital * 31L), null, "", capital, false);
+	}
+
 	private static Country newCountry(Politics p, Random r, @Nullable Player owner, String ownerName, int capital, boolean cityState) {
 		Set<String> names = new HashSet<>();
 		Set<Integer> colors = new HashSet<>();

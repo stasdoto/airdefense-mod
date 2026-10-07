@@ -601,6 +601,24 @@ public final class Arsenals extends SavedData {
 		}
 	}
 
+	/** For the tests: this town fires its first loaded launcher at that town now. */
+	public static boolean strikeNow(ServerLevel level, Settlement from, Settlement target) {
+		Politics p = Politics.get(level.getServer());
+		Arsenals a = get(level.getServer());
+		Arsenal ar = a.of(p, from);
+		for (Unit u : ar.units) {
+			if (!u.lost && u.type.isLauncher()) {
+				VehicleEntity v = u.entity == null ? null : level.getEntity(u.entity) instanceof VehicleEntity ve ? ve : null;
+				int loaded = v != null ? Integer.bitCount(v.getLoadedMask()) : u.ammo;
+				if (loaded > 0) {
+					a.fire(level, p, from, ar, u, v, target, Math.min(loaded, u.type.launcher.salvo));
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	/** The nearest enemy town in reach of this launcher. */
 	@Nullable
 	private static Settlement target(Politics p, Country c, Settlement from, VehicleType launcher) {

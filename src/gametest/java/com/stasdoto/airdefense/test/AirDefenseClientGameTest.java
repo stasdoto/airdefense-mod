@@ -148,6 +148,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("rifleDrone")) {
 				rifleVsShahed(ctx, server);
 			}
+			if (scene("townWar")) {
+				townWar(ctx, server);
+			}
 			if (scene("nations")) {
 				nations(ctx, server);
 			}
@@ -729,11 +732,26 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.getInput().holdKey(o -> o.keyJump);
 		ctx.waitTicks(80);
 		ctx.getInput().releaseKey(o -> o.keyJump);
+		double alt0 = server.computeOnServer(s -> s.overworld().getEntity(heli).getY() - ground);
 		ctx.getInput().holdKey(o -> o.keyUp);
 		ctx.waitTicks(60);
 		ctx.takeScreenshot("b2_mi24_flying");
+		// 1.25: the flight model - nose down, speed builds up; bank sideways; let go and it levels out and holds height.
+		String flying = ctx.computeOnClient(mc -> mc.player.getVehicle() instanceof VehicleEntity v
+				? String.format(java.util.Locale.ROOT, "speed %.2f pitch %.1f", v.getDeltaMovement().horizontalDistance(), v.heliPitch) : "-");
 		ctx.getInput().releaseKey(o -> o.keyUp);
+		ctx.getInput().holdKey(o -> o.keyRight);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("b2b_mi24_bank");
+		String bank = ctx.computeOnClient(mc -> mc.player.getVehicle() instanceof VehicleEntity v
+				? String.format(java.util.Locale.ROOT, "roll %.1f", v.heliRoll) : "-");
+		ctx.getInput().releaseKey(o -> o.keyRight);
+		ctx.waitTicks(120);
+		String level = ctx.computeOnClient(mc -> mc.player.getVehicle() instanceof VehicleEntity v
+				? String.format(java.util.Locale.ROOT, "speed %.2f pitch %.1f roll %.1f", v.getDeltaMovement().horizontalDistance(), v.heliPitch, v.heliRoll) : "-");
 		double alt = server.computeOnServer(s -> s.overworld().getEntity(heli).getY() - ground);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT heli_flight: climbed to {}, forward: {}, bank: {}, let go: {}, height now {}",
+				String.format(java.util.Locale.ROOT, "%.1f", alt0), flying, bank, level, String.format(java.util.Locale.ROOT, "%.1f", alt));
 		int ord0 = server.computeOnServer(s -> s.overworld().getEntity(heli) instanceof VehicleEntity v ? v.getOrdnance() : -1);
 		ctx.getInput().lookAt(0, 25);
 		ctx.waitTicks(10);
@@ -2397,6 +2415,150 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				com.stasdoto.airdefense.weapon.GunServer.MISSILES_DOWN.get() - downBefore, alive(server, drone));
 		server.runCommand("clear @a");
 		server.runCommand("gamemode spectator @a");
+	}
+
+	/**
+	 * 1.25: towns at war. The capital's garrison stands round it (air defence at the edge, launchers in the depot's
+	 * yard); an enemy town 1.5 km off fires at it - the missiles come in from its side and the garrison shoots at them;
+	 * then the enemy sends a column by road: the vehicles drive in, the men get out at the edge of town and fight.
+	 */
+	private void townWar(ClientGameTestContext ctx, TestServerContext server) {
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 5000");
+		server.runCommand("difficulty normal");
+		int[] cap = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var t = com.stasdoto.airdefense.nation.Cities.terrain(l);
+			var c = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), t, 0, 0).getFirst();
+			var d = c.depot(l.getSeed(), t);
+			BlockPos bell = c.bell();
+			return d == null ? new int[]{c.x, c.z, c.half(), c.base, bell.getX(), bell.getZ(), 0, 0, 0, 0}
+					: new int[]{c.x, c.z, c.half(), c.base, bell.getX(), bell.getZ(), d.x0, d.z0, d.x1, d.z1};
+		});
+		int cx = cap[0];
+		int cz = cap[1];
+		int half = cap[2];
+		int base = cap[3];
+		camera(server, cx + 0.5, base + 70, cz + half + 90, 180, 35);
+		ctx.waitTicks(60);
+		int m = half + 60;
+		generateCity(server, cx - m, cz - m, cx + m, cz + m);
+		if (cap[6] != 0 || cap[8] != 0) {
+			generateCity(server, cap[6] - 16, cap[7] - 16, cap[8] + 16, cap[9] + 16);
+		}
+		// The roads out of the capital, their first 260 blocks (the flat test world does not build them by itself).
+		List<int[]> roadPts = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var t = com.stasdoto.airdefense.nation.Cities.terrain(l);
+			var c = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), t, 0, 0).getFirst();
+			List<int[]> pts = new ArrayList<>();
+			for (var r : com.stasdoto.airdefense.nation.Cities.roadsNear(l.getSeed(), t, c.x, c.z)) {
+				boolean start = c.outside(r.x0, r.z0) <= 12;
+				boolean end = c.outside(r.x1, r.z1) <= 12;
+				if (!start && !end) {
+					continue;
+				}
+				for (double a = 0; a <= Math.min(260, r.length); a += 12) {
+					double[] q = r.pointAt(start ? a : r.length - a);
+					pts.add(new int[]{(int) q[0], (int) q[1]});
+				}
+			}
+			return pts;
+		});
+		java.util.Set<Long> done = new java.util.HashSet<>();
+		for (int[] q : roadPts) {
+			if (done.add(net.minecraft.world.level.ChunkPos.pack(q[0] >> 4, q[1] >> 4))) {
+				generateCity(server, q[0] - 12, q[1] - 12, q[0] + 12, q[1] + 12);
+			}
+		}
+		camera(server, cx + 0.5, base + 40, cz + 0.5, 180, 40);
+		waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Nations.citiesFounded > 0, 400);
+		int garrison = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Arsenals.spawned >= 3, 600);
+		ctx.waitTicks(60);
+		String units = server.computeOnServer(s -> {
+			StringBuilder sb = new StringBuilder();
+			for (VehicleEntity v : s.overworld().getEntitiesOfClass(VehicleEntity.class, new net.minecraft.world.phys.AABB(cx - 400, base - 40, cz - 400,
+					cx + 400, base + 60, cz + 400), v -> v.garrison)) {
+				sb.append(v.getVehicleType().id).append('@').append(v.getBlockX()).append(',').append(v.getBlockZ()).append(' ');
+			}
+			return sb.toString();
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT garrison: {} vehicles after {} ticks: {}", com.stasdoto.airdefense.nation.Arsenals.spawned,
+				garrison, units);
+		float[] gcam = server.computeOnServer(s -> {
+			for (VehicleEntity v : s.overworld().getEntitiesOfClass(VehicleEntity.class, new net.minecraft.world.phys.AABB(cx - 400, base - 40, cz - 400,
+					cx + 400, base + 60, cz + 400), v -> v.garrison && v.getVehicleType().isDefense())) {
+				return look(v.getX() + 12, v.getY() + 6, v.getZ() + 12, v.getX(), v.getY() + 1.5, v.getZ());
+			}
+			return null;
+		});
+		shot(ctx, server, gcam, "180_garrison_ad", 40);
+		if (cap[6] != 0 || cap[8] != 0) {
+			shot(ctx, server, look((cap[6] + cap[8]) / 2.0 + 40, base + 40, (cap[7] + cap[9]) / 2.0 + 40, (cap[6] + cap[8]) / 2.0, base, (cap[7] + cap[9]) / 2.0),
+					"181_depot", 80);
+		}
+		// The enemy: a town of another country 1.5 km to the east, at war with the capital's country.
+		int[] ids = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			com.stasdoto.airdefense.nation.Settlement capital = null;
+			for (var st : p.settlements.values()) {
+				if (st.city >= 0 && st.capitalCity) {
+					capital = st;
+				}
+			}
+			if (capital == null) {
+				return null;
+			}
+			int id = p.newId();
+			BlockPos at = new BlockPos(cx + 1500, base, cz);
+			var enemyTown = new com.stasdoto.airdefense.nation.Settlement(id, "Вражеск", at, at.above(2), -1, java.util.Optional.empty(), 0,
+					java.util.Map.of(), List.of(), List.of());
+			p.settlements.put(id, enemyTown);
+			var enemy = com.stasdoto.airdefense.nation.Nations.newWorldCountry(p, id);
+			enemyTown.country = enemy.id;
+			var mine = p.country(capital.country);
+			com.stasdoto.airdefense.nation.War.declare(l, p, enemy, mine, net.minecraft.network.chat.Component.literal("test"));
+			return new int[]{id, capital.id, enemy.id};
+		});
+		if (ids == null) {
+			AirDefense.LOGGER.info("[airdefense-test] RESULT town_war: no capital");
+			return;
+		}
+		int[] before = counters();
+		boolean fired = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			return com.stasdoto.airdefense.nation.Arsenals.strikeNow(s.overworld(), p.settlements.get(ids[0]), p.settlements.get(ids[1]));
+		});
+		camera(server, cx + half + 10, base + 30, cz + 20, 250, -10);
+		ctx.waitTicks(80);
+		ctx.takeScreenshot("182_strike_incoming");
+		ctx.waitTicks(320);
+		report("town_strike", before);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT town_strike_fired: {}", fired);
+		// A column by road.
+		int sent = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			return com.stasdoto.airdefense.nation.War.sendColumn(s.overworld(), p, p.country(ids[2]), p.settlements.get(ids[1]), 10).size();
+		});
+		float[] ccam = server.computeOnServer(s -> {
+			for (VehicleEntity v : s.overworld().getEntitiesOfClass(VehicleEntity.class, new net.minecraft.world.phys.AABB(cx - 600, base - 40, cz - 600,
+					cx + 600, base + 60, cz + 600), v -> v.driving())) {
+				return look(v.getX() + 14, v.getY() + 7, v.getZ() + 14, v.getX(), v.getY() + 1, v.getZ());
+			}
+			return null;
+		});
+		shot(ctx, server, ccam, "183_column", 30);
+		int arrived = waitUntil(ctx, () -> VehicleEntity.arrivals > 0, 1800);
+		ctx.waitTicks(40);
+		camera(server, cap[4] + 0.5, base + 18, cap[5] + 30.5, 180, 25);
+		ctx.waitTicks(200);
+		ctx.takeScreenshot("184_column_fight");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT column: {} vehicles sent, first arrived after {} ticks ({} arrived), {} men got out;"
+						+ " cover {} fell back {} grenades {}", sent, arrived, VehicleEntity.arrivals, VehicleEntity.dismounted,
+				com.stasdoto.airdefense.nation.SoldierEntity.tookCover, com.stasdoto.airdefense.nation.SoldierEntity.fellBack,
+				com.stasdoto.airdefense.nation.SoldierEntity.grenadesThrown);
+		server.runCommand("kill @e[type=airdefense:soldier,distance=..10000]");
 	}
 
 	/** The sirens standing within {@code r} of (x, z), nearest first. */
