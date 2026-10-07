@@ -11,8 +11,8 @@ M = {
     'B': 'minecraft:iron_block', 'S': 'minecraft:spyglass', 'K': 'minecraft:black_dye', 'G': 'minecraft:glass_pane',
     'R': 'minecraft:redstone', 'C': 'minecraft:copper_ingot', 'L': 'minecraft:leather', 'Y': 'minecraft:string',
     'O': 'minecraft:obsidian', 'D': 'minecraft:diamond', 'P': 'minecraft:piston', 'X': 'minecraft:tnt', 'Q': 'minecraft:quartz',
-    'H': 'minecraft:chain', 'E': 'minecraft:green_dye', 'U': 'minecraft:brown_dye', 'Z': 'minecraft:gold_ingot',
-    'A': 'minecraft:iron_bars', 'F': 'minecraft:flint_and_steel', 'V': 'minecraft:wool',
+    'H': 'minecraft:iron_chain', 'E': 'minecraft:green_dye', 'U': 'minecraft:brown_dye', 'Z': 'minecraft:gold_ingot',
+    'A': 'minecraft:iron_bars', 'F': 'minecraft:flint_and_steel',
 }
 
 GUNS = {
