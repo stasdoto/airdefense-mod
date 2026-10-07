@@ -118,6 +118,12 @@ public final class Cities {
 			return index == 0;
 		}
 
+		/** What the city has none of (1.23): one of {@link #LACKS}, different for each city of a country. */
+		public BuildingType lack() {
+			int base = (int) Math.floorMod(mix(cellKey(cx, cz) ^ 0x1AC4L), (long) LACKS.length);
+			return LACKS[(base + index) % LACKS.length];
+		}
+
 		public long key() {
 			return cellKey(cx, cz) * 4 + index;
 		}
@@ -546,8 +552,9 @@ public final class Cities {
 	private static final Object[] MID = {BuildingType.PANEL9, 3, BuildingType.PANEL5, 4, BuildingType.SHOP, 2, BuildingType.APARTMENTS, 1};
 	private static final Object[] OUTER = {BuildingType.COTTAGE, 5, BuildingType.HOUSE, 3, BuildingType.SMALL_HOUSE, 2, BuildingType.GARAGES, 1,
 			BuildingType.SHOP, 1};
-	private static final Object[] INDUSTRY = {BuildingType.WAREHOUSE, 3, BuildingType.GARAGES, 2, BuildingType.HANGAR, 1, BuildingType.REFINERY, 1,
-			BuildingType.LOGISTICS_HUB, 1};
+	private static final Object[] INDUSTRY = {BuildingType.WAREHOUSE, 3, BuildingType.GARAGES, 2, BuildingType.HANGAR, 1, BuildingType.LOGISTICS_HUB, 1};
+	/** Industries a city may lack: crude oil, the refinery, weapons, food. */
+	static final BuildingType[] LACKS = {BuildingType.OIL_WELL, BuildingType.REFINERY, BuildingType.ARMS_FACTORY, BuildingType.FOOD_PLANT};
 
 	/** A lot being filled: which of its cells are taken. */
 	private static final class Filling {
@@ -710,8 +717,11 @@ public final class Cities {
 		out.add(hall);
 		// What every town has: a gas station and a logistics hub towards the edge; bigger towns a school, a hospital,
 		// an army base (barracks and a hangar).
-		List<BuildingType> needOuter = new ArrayList<>(List.of(BuildingType.GAS_STATION, BuildingType.LOGISTICS_HUB));
-		List<BuildingType> needAny = new ArrayList<>(List.of(BuildingType.SCHOOL));
+		List<BuildingType> needIndustry = new ArrayList<>(List.of(BuildingType.REFINERY, BuildingType.ARMS_FACTORY, BuildingType.FOOD_PLANT,
+				BuildingType.OIL_WELL, BuildingType.OIL_WELL));
+		needIndustry.removeIf(t -> t == c.lack());
+		List<BuildingType> needOuter = new ArrayList<>(List.of(BuildingType.GAS_STATION, BuildingType.LOGISTICS_HUB, BuildingType.FARM));
+		List<BuildingType> needAny = new ArrayList<>(List.of(BuildingType.MARKET, BuildingType.SCHOOL));
 		if (c.size != Size.SMALL) {
 			needOuter.add(BuildingType.HANGAR);
 			needOuter.add(BuildingType.BARRACKS);
@@ -724,8 +734,12 @@ public final class Cities {
 		}
 		List<CityShape.Lot> order = new ArrayList<>(sh.lots);
 		Collections.shuffle(order, r);
-		for (BuildingType t : needOuter) {
+		for (BuildingType t : needIndustry) {
 			placeIn(order, fills, r, t, y, out, CityShape.INDUSTRY, CityShape.OUTER, CityShape.MID);
+		}
+		for (BuildingType t : needOuter) {
+			placeIn(order, fills, r, t, y, out, t == BuildingType.FARM ? new int[]{CityShape.OUTER, CityShape.INDUSTRY, CityShape.MID}
+					: new int[]{CityShape.INDUSTRY, CityShape.OUTER, CityShape.MID});
 		}
 		for (BuildingType t : needAny) {
 			placeIn(order, fills, r, t, y, out, CityShape.MID, CityShape.OUTER, CityShape.DOWNTOWN);

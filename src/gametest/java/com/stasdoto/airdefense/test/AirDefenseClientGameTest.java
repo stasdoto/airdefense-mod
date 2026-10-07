@@ -975,8 +975,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				for (var b : c.buildings()) {
 					kinds.merge(b.type.id, 1, Integer::sum);
 				}
-				AirDefense.LOGGER.info("[airdefense-test] RESULT city_plan: #{} {} at {} {} ground {} people {} buildings {} {}", c.index, c.size, c.x, c.z,
-						c.base, c.citizens, c.buildings().size(), kinds);
+				AirDefense.LOGGER.info("[airdefense-test] RESULT city_plan: #{} {} at {} {} ground {} people {} lacks {} buildings {} {}", c.index, c.size, c.x,
+						c.z, c.base, c.citizens, c.lack().id, c.buildings().size(), kinds);
 			}
 			StringBuilder rs = new StringBuilder();
 			for (var r : roads) {
@@ -1041,6 +1041,32 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 			return sb.toString();
 		});
+		String trade = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			com.stasdoto.airdefense.nation.Settlement capital = null;
+			for (var st : p.settlements.values()) {
+				if (st.isCity() && st.capitalCity) {
+					capital = st;
+				}
+			}
+			if (capital == null) {
+				return "no capital";
+			}
+			int food = com.stasdoto.airdefense.nation.VillageEconomy.FOOD;
+			var town = new com.stasdoto.airdefense.nation.Settlement(p.newId(), "Test", capital.center.offset(600, 0, 0), capital.center.offset(600, 0, 0),
+					capital.country, java.util.Optional.empty(), 0, java.util.Map.of(), List.of(), List.of());
+			town.city = 999_999;
+			town.citizens = 300;
+			p.settlements.put(town.id, town);
+			int before = capital.eco.stock[food];
+			com.stasdoto.airdefense.nation.Market.tradeNow(p);
+			String r = "capital food " + before + " -> " + capital.eco.stock[food] + " (needs " + com.stasdoto.airdefense.nation.Supply.foodNeed(capital)
+					+ "/min), hungry town 0 -> " + town.eco.stock[food] + ", caravans " + com.stasdoto.airdefense.nation.Market.caravans
+					+ " | capital stock " + java.util.Arrays.toString(capital.eco.stock);
+			p.settlements.remove(town.id);
+			return r;
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT caravan: {}", trade);
 		AirDefense.LOGGER.info("[airdefense-test] RESULT city_founded after {} ticks: {} | avg {} ms per chunk", waited, founded,
 				com.stasdoto.airdefense.nation.CityGen.chunks == 0 ? 0 : com.stasdoto.airdefense.nation.CityGen.nanos / 1_000_000 / com.stasdoto.airdefense.nation.CityGen.chunks);
 		ctx.waitTicks(20);
@@ -1152,7 +1178,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				com.stasdoto.airdefense.nation.BuildingType.HOSPITAL, com.stasdoto.airdefense.nation.BuildingType.WAREHOUSE,
 				com.stasdoto.airdefense.nation.BuildingType.BARRACKS, com.stasdoto.airdefense.nation.BuildingType.HANGAR,
 				com.stasdoto.airdefense.nation.BuildingType.APARTMENTS, com.stasdoto.airdefense.nation.BuildingType.HOUSE,
-				com.stasdoto.airdefense.nation.BuildingType.SMALL_HOUSE, com.stasdoto.airdefense.nation.BuildingType.FARM};
+				com.stasdoto.airdefense.nation.BuildingType.SMALL_HOUSE, com.stasdoto.airdefense.nation.BuildingType.FARM,
+				com.stasdoto.airdefense.nation.BuildingType.FOOD_PLANT, com.stasdoto.airdefense.nation.BuildingType.ARMS_FACTORY,
+				com.stasdoto.airdefense.nation.BuildingType.MARKET};
 		int cx = x0;
 		for (int i = 0; i < types.length; i += 3) {
 			int gx0 = cx;
@@ -1317,6 +1345,69 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		});
 		ctx.waitTicks(30);
 		ctx.takeScreenshot("128_fuel_truck_hud");
+		server.runOnServer(s -> s.getPlayerList().getPlayers().getFirst().stopRiding());
+		// 1.23: a farm, a food plant, an arms factory and a market in the town; trade; a truck of food.
+		String industry = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var st = p.settlements.get(id);
+			var pl = s.getPlayerList().getPlayers().getFirst();
+			int off = 0;
+			for (var t : new com.stasdoto.airdefense.nation.BuildingType[]{com.stasdoto.airdefense.nation.BuildingType.FARM,
+					com.stasdoto.airdefense.nation.BuildingType.FOOD_PLANT, com.stasdoto.airdefense.nation.BuildingType.ARMS_FACTORY,
+					com.stasdoto.airdefense.nation.BuildingType.MARKET}) {
+				var b = new com.stasdoto.airdefense.nation.Building(p.newId(), t, new BlockPos(vx - 40 + off, g - 1, vz + 110), net.minecraft.core.Direction.SOUTH, true);
+				b.done = true;
+				st.eco.buildings.add(b);
+				off += 30;
+			}
+			int[] k = st.eco.stock;
+			k[com.stasdoto.airdefense.nation.VillageEconomy.IRON] = 200;
+			k[com.stasdoto.airdefense.nation.VillageEconomy.FUEL] = Math.max(k[com.stasdoto.airdefense.nation.VillageEconomy.FUEL], 2000);
+			int food0 = k[com.stasdoto.airdefense.nation.VillageEconomy.FOOD];
+			for (int i = 0; i < 3; i++) {
+				com.stasdoto.airdefense.nation.Supply.produce(p, st);
+			}
+			int em0 = pl.getInventory().countItem(net.minecraft.world.item.Items.EMERALD);
+			int arms0 = k[com.stasdoto.airdefense.nation.VillageEconomy.ARMS];
+			boolean sold = com.stasdoto.airdefense.nation.Market.trade(s.overworld(), pl, st, com.stasdoto.airdefense.nation.VillageEconomy.ARMS, false);
+			int food1 = k[com.stasdoto.airdefense.nation.VillageEconomy.FOOD];
+			boolean bought = com.stasdoto.airdefense.nation.Market.trade(s.overworld(), pl, st, com.stasdoto.airdefense.nation.VillageEconomy.FOOD, true);
+			int em1 = pl.getInventory().countItem(net.minecraft.world.item.Items.EMERALD);
+			int[] pf = com.stasdoto.airdefense.nation.Market.price(p, st, com.stasdoto.airdefense.nation.VillageEconomy.FOOD);
+			int[] pa = com.stasdoto.airdefense.nation.Market.price(p, st, com.stasdoto.airdefense.nation.VillageEconomy.ARMS);
+			return String.format(java.util.Locale.ROOT,
+					"food %d -> %d (made %d/min), arms %d (made %d), ammo %d, iron %d, fuel %d | sold arms %s (%d -> %d) bought food %s (%d -> %d) emeralds %d -> %d | prices food %d/%d arms %d/%d",
+					food0, food1, com.stasdoto.airdefense.nation.Supply.foodMade(st), arms0, com.stasdoto.airdefense.nation.Supply.armsMade,
+					k[com.stasdoto.airdefense.nation.VillageEconomy.AMMO], k[com.stasdoto.airdefense.nation.VillageEconomy.IRON],
+					k[com.stasdoto.airdefense.nation.VillageEconomy.FUEL], sold, arms0, k[com.stasdoto.airdefense.nation.VillageEconomy.ARMS], bought, food1,
+					k[com.stasdoto.airdefense.nation.VillageEconomy.FOOD], em0, em1, pf[0], pf[1], pa[0], pa[1]);
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT industry: {}", industry);
+		ecoScreen(ctx, server, id, com.stasdoto.airdefense.client.nation.SettlementScreen.MARKET);
+		ctx.takeScreenshot("129_market_tab");
+		ecoScreen(ctx, server, id, com.stasdoto.airdefense.client.nation.SettlementScreen.WORK);
+		ctx.takeScreenshot("129a_store_food_arms");
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		ctx.waitTicks(5);
+		server.runOnServer(s -> {
+			if (s.overworld().getEntity(ammoTruck) instanceof VehicleEntity t) {
+				t.teleportTo(vx - 6.5, g, vz + 34.5);
+				t.setCargo(0);
+				t.setTruckMode(VehicleEntity.TRUCK_LOAD_OTHER);
+			}
+		});
+		ctx.waitTicks(80);
+		String foodTruck = server.computeOnServer(s -> s.overworld().getEntity(ammoTruck) instanceof VehicleEntity t
+				? t.getCargo() + " of kind " + t.getCargoKind() + " mode " + t.truckModeKey() : "gone");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT food_truck: {}", foodTruck);
+		server.runOnServer(s -> {
+			var pl = s.getPlayerList().getPlayers().getFirst();
+			if (s.overworld().getEntity(ammoTruck) instanceof VehicleEntity t) {
+				pl.startRiding(t);
+			}
+		});
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("129b_food_truck_hud");
 		server.runOnServer(s -> s.getPlayerList().getPlayers().getFirst().stopRiding());
 		server.runCommand("gamemode spectator @a");
 		server.runCommand("time set 1000");

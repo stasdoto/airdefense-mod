@@ -36,6 +36,9 @@ public final class Unrest {
 	public static final int CONQUERED = 8;
 	public static final int WAR = 9;
 	public static final int CALMED = 10;
+	/** Short of food (cities), or plenty of it. */
+	public static final int HUNGRY = 11;
+	public static final int FED = 12;
 
 	/** A day: how long a village remembers being conquered, and how long gifts keep it calm. */
 	public static final long DAY = 24000;
@@ -112,6 +115,14 @@ public final class Unrest {
 		}
 		if (s.calmUntil > now) {
 			reasons.add(new int[]{CALMED, 15});
+		}
+		int need = Supply.foodNeed(s);
+		if (need > 0) {
+			if (e.hungry > 0) {
+				reasons.add(new int[]{HUNGRY, -Math.min(25, 5 + 5 * e.hungry)});
+			} else if (e.stock[VillageEconomy.FOOD] >= need * 10) {
+				reasons.add(new int[]{FED, 4});
+			}
 		}
 		int value = 0;
 		for (int[] r : reasons) {

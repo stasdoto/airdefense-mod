@@ -23,6 +23,10 @@ public final class VillageEconomy {
 	public static final int OIL = 3;
 	public static final int FUEL = 4;
 	public static final int AMMO = 5;
+	/** Food (from the farms and the food plant) and weapons (from the arms factory), stage 1.23. */
+	public static final int FOOD = 6;
+	public static final int ARMS = 7;
+	public static final int KINDS = 8;
 	/** How much the village keeps of each without a warehouse, and how much more each warehouse holds. */
 	public static final int BASE_CAP = 300;
 	public static final int WAREHOUSE_CAP = 600;
@@ -36,8 +40,9 @@ public final class VillageEconomy {
 			Codec.INT.listOf().optionalFieldOf("hangar", List.of()).forGetter(e -> new ArrayList<>(e.hangar)),
 			Codec.INT.optionalFieldOf("hangar_progress", 0).forGetter(e -> e.hangarProgress),
 			Codec.INT.optionalFieldOf("births", 0).forGetter(e -> e.births),
-			Codec.INT.listOf().optionalFieldOf("liquids", List.of()).forGetter(e -> List.of(e.stock[OIL], e.stock[FUEL], e.stock[AMMO]))
-	).apply(i, (wood, stone, iron, buildings, workers, hangar, progress, births, liquids) -> {
+			Codec.INT.listOf().optionalFieldOf("liquids", List.of()).forGetter(e -> List.of(e.stock[OIL], e.stock[FUEL], e.stock[AMMO])),
+			Codec.INT.listOf().optionalFieldOf("goods", List.of()).forGetter(e -> List.of(e.stock[FOOD], e.stock[ARMS], e.hungry))
+	).apply(i, (wood, stone, iron, buildings, workers, hangar, progress, births, liquids, goods) -> {
 		VillageEconomy e = new VillageEconomy();
 		e.stock[WOOD] = wood;
 		e.stock[STONE] = stone;
@@ -50,10 +55,19 @@ public final class VillageEconomy {
 		for (int k = 0; k < Math.min(3, liquids.size()); k++) {
 			e.stock[OIL + k] = liquids.get(k);
 		}
+		if (goods.size() >= 2) {
+			e.stock[FOOD] = goods.get(0);
+			e.stock[ARMS] = goods.get(1);
+		}
+		if (goods.size() >= 3) {
+			e.hungry = goods.get(2);
+		}
 		return e;
 	}));
 
-	public final int[] stock = new int[6];
+	public final int[] stock = new int[KINDS];
+	/** Minutes in a row the people have gone short of food (0 = fed). */
+	public int hungry;
 	public final List<Building> buildings = new ArrayList<>();
 	/** Villagers sent to work (they are {@link WorkerEntity}s while at it). */
 	public final List<UUID> workers = new ArrayList<>();
@@ -77,8 +91,22 @@ public final class VillageEconomy {
 		return 300 + 600 * count(BuildingType.LOGISTICS_HUB);
 	}
 
+	public int foodCap() {
+		return cap() + 400 * (count(BuildingType.FARM) + count(BuildingType.FOOD_PLANT) + count(BuildingType.MARKET));
+	}
+
+	public int armsCap() {
+		return 100 + 300 * (count(BuildingType.ARMS_FACTORY) + count(BuildingType.BARRACKS));
+	}
+
 	public int capOf(int kind) {
-		return kind <= IRON ? cap() : kind == AMMO ? ammoCap() : liquidCap();
+		return switch (kind) {
+			case WOOD, STONE, IRON -> cap();
+			case AMMO -> ammoCap();
+			case FOOD -> foodCap();
+			case ARMS -> armsCap();
+			default -> liquidCap();
+		};
 	}
 
 	/** Finished buildings of this type. */
@@ -124,6 +152,6 @@ public final class VillageEconomy {
 	}
 
 	public boolean isEmpty() {
-		return stock[0] == 0 && stock[1] == 0 && stock[2] == 0 && stock[OIL] == 0 && stock[FUEL] == 0 && stock[AMMO] == 0 && buildings.isEmpty() && workers.isEmpty() && hangar.isEmpty();
+		return java.util.Arrays.stream(stock).allMatch(v -> v == 0) && hungry == 0 && buildings.isEmpty() && workers.isEmpty() && hangar.isEmpty();
 	}
 }

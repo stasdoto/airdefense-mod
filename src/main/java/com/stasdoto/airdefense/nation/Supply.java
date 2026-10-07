@@ -42,17 +42,37 @@ public final class Supply {
 				serve(level, s);
 			}
 		}
+		Market.tick(level, p);
 	}
 
-	/** Once a minute: pump, refine, make ammunition. */
+	public static final int FARM_FOOD = 15;
+	public static final int PLANT_FOOD = 30;
+	public static final int PLANT_FUEL = 6;
+	public static final int ARMS_BATCHES = 3;
+	/** For the tests. */
+	public static int foodMade;
+	public static int armsMade;
+	public static int eaten;
+
+	/** Food the people of a city eat in a minute (villages and hamlets live off their own gardens). */
+	public static int foodNeed(Settlement s) {
+		return s.isCity() ? Math.max(1, (s.citizens + 39) / 40) : 0;
+	}
+
+	/** Food made in a minute (farms and food plants, the plants only while there is fuel for them). */
+	public static int foodMade(Settlement s) {
+		VillageEconomy e = s.eco;
+		int plants = e.count(BuildingType.FOOD_PLANT);
+		int fuelled = Math.min(plants, e.stock[VillageEconomy.FUEL] / PLANT_FUEL);
+		return e.count(BuildingType.FARM) * FARM_FOOD + fuelled * PLANT_FOOD + (plants - fuelled) * PLANT_FOOD / 3;
+	}
+
+	/** Once a minute: pump, refine, make ammunition and weapons, harvest; the people eat. */
 	public static void produce(Politics p, Settlement s) {
 		VillageEconomy e = s.eco;
 		int wells = e.count(BuildingType.OIL_WELL);
 		int refineries = e.count(BuildingType.REFINERY);
 		int hubs = e.count(BuildingType.LOGISTICS_HUB);
-		if (wells + refineries + hubs == 0) {
-			return;
-		}
 		int cap = e.liquidCap();
 		int oil = Math.min(cap - e.stock[VillageEconomy.OIL], wells * WELL_OIL);
 		e.stock[VillageEconomy.OIL] += Math.max(0, oil);
@@ -64,10 +84,40 @@ public final class Supply {
 			e.stock[VillageEconomy.FUEL] += fuel;
 			refined += fuel;
 		}
-		int batches = Math.min(hubs * 5, Math.min(e.stock[VillageEconomy.IRON] / 2, (e.ammoCap() - e.stock[VillageEconomy.AMMO]) / 10));
+		// Weapons: iron and fuel into arms.
+		int factories = e.count(BuildingType.ARMS_FACTORY);
+		int armsBatches = Math.min(factories * ARMS_BATCHES, Math.min(e.stock[VillageEconomy.IRON] / 4, Math.min(e.stock[VillageEconomy.FUEL] / 3,
+				(e.armsCap() - e.stock[VillageEconomy.ARMS]) / 2)));
+		if (armsBatches > 0) {
+			e.stock[VillageEconomy.IRON] -= armsBatches * 4;
+			e.stock[VillageEconomy.FUEL] -= armsBatches * 3;
+			e.stock[VillageEconomy.ARMS] += armsBatches * 2;
+			armsMade += armsBatches * 2;
+		}
+		// Ammunition at the hub: from iron (2 for 10), and when the iron runs out, from weapons (1 for 10).
+		int room = (e.ammoCap() - e.stock[VillageEconomy.AMMO]) / 10;
+		int batches = Math.min(hubs * 5, Math.min(e.stock[VillageEconomy.IRON] / 2, room));
 		if (batches > 0) {
 			e.stock[VillageEconomy.IRON] -= batches * 2;
 			e.stock[VillageEconomy.AMMO] += batches * 10;
+		}
+		int fromArms = Math.min(hubs * 5 - batches, Math.min(e.stock[VillageEconomy.ARMS], room - batches));
+		if (fromArms > 0) {
+			e.stock[VillageEconomy.ARMS] -= fromArms;
+			e.stock[VillageEconomy.AMMO] += fromArms * 10;
+		}
+		// Food: the harvest in, the plants burn fuel; then everybody eats.
+		int made = foodMade(s);
+		int plants = e.count(BuildingType.FOOD_PLANT);
+		e.stock[VillageEconomy.FUEL] -= Math.min(plants, e.stock[VillageEconomy.FUEL] / PLANT_FUEL) * PLANT_FUEL;
+		e.stock[VillageEconomy.FOOD] = Math.min(e.foodCap(), e.stock[VillageEconomy.FOOD] + made);
+		foodMade += made;
+		int need = foodNeed(s);
+		if (need > 0) {
+			int eat = Math.min(need, e.stock[VillageEconomy.FOOD]);
+			e.stock[VillageEconomy.FOOD] -= eat;
+			eaten += eat;
+			e.hungry = eat < need ? Math.min(60, e.hungry + 1) : 0;
 		}
 		p.setDirty();
 	}

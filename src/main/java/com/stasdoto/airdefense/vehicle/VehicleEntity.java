@@ -239,6 +239,7 @@ public class VehicleEntity extends LivingEntity {
 		builder.define(DATA_FUEL, -1f);
 		builder.define(DATA_ORDNANCE, 0);
 		builder.define(DATA_CARGO, 0);
+		builder.define(DATA_CARGO_KIND, -1);
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -1156,9 +1157,51 @@ public class VehicleEntity extends LivingEntity {
 	public static final int TRUCK_SUPPLY = 0;
 	public static final int TRUCK_LOAD = 1;
 	public static final int TRUCK_UNLOAD = 2;
+	/** Loading something else (1.23): oil (fuel truck) or food (supply truck); weapons (supply truck). */
+	public static final int TRUCK_LOAD_OTHER = 3;
+	public static final int TRUCK_LOAD_ARMS = 4;
+	private static final EntityDataAccessor<Integer> DATA_CARGO_KIND = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
 
 	public int getCargo() {
 		return entityData.get(DATA_CARGO);
+	}
+
+	/** What the truck carries: a {@link com.stasdoto.airdefense.nation.VillageEconomy} kind (fuel or ammunition unless loaded with something else). */
+	public int getCargoKind() {
+		int k = entityData.get(DATA_CARGO_KIND);
+		return k >= 0 ? k : defaultCargo();
+	}
+
+	private int defaultCargo() {
+		return vtype.cargo == 1 ? com.stasdoto.airdefense.nation.VillageEconomy.FUEL : com.stasdoto.airdefense.nation.VillageEconomy.AMMO;
+	}
+
+	public void setCargoKind(int kind) {
+		entityData.set(DATA_CARGO_KIND, kind);
+	}
+
+	/** How many modes the truck has: serve, load, unload, load oil (or food), load weapons. */
+	public int truckModes() {
+		return vtype.cargo == 1 ? 4 : 5;
+	}
+
+	/** The language key suffix of the truck's mode. */
+	public String truckModeKey() {
+		int m = getMode();
+		if (m == TRUCK_LOAD_OTHER) {
+			return vtype.cargo == 1 ? "mode_3_oil" : "mode_3_food";
+		}
+		return m == TRUCK_LOAD_ARMS ? "mode_4_arms" : "mode_" + m;
+	}
+
+	/** What a loading mode takes on board, -1 if it is not one. */
+	private int loadKind(int mode) {
+		return switch (mode) {
+			case TRUCK_LOAD -> defaultCargo();
+			case TRUCK_LOAD_OTHER -> vtype.cargo == 1 ? com.stasdoto.airdefense.nation.VillageEconomy.OIL : com.stasdoto.airdefense.nation.VillageEconomy.FOOD;
+			case TRUCK_LOAD_ARMS -> com.stasdoto.airdefense.nation.VillageEconomy.ARMS;
+			default -> -1;
+		};
 	}
 
 	public void setCargo(int amount) {
@@ -1172,6 +1215,12 @@ public class VehicleEntity extends LivingEntity {
 		}
 		boolean fuel = vtype.cargo == 1;
 		int mode = getMode();
+		if (getCargo() <= 0 && entityData.get(DATA_CARGO_KIND) >= 0) {
+			setCargoKind(-1);
+		}
+		if (mode == TRUCK_SUPPLY && getCargoKind() != defaultCargo()) {
+			return;
+		}
 		if (mode == TRUCK_SUPPLY) {
 			// Vehicles round the truck get what it carries.
 			for (VehicleEntity v : level.getEntitiesOfClass(VehicleEntity.class, getBoundingBox().inflate(12, 6, 12), v -> v != this && v.isAlive())) {
@@ -1201,14 +1250,19 @@ public class VehicleEntity extends LivingEntity {
 		if (town == null) {
 			return;
 		}
-		int kind = fuel ? com.stasdoto.airdefense.nation.VillageEconomy.FUEL : com.stasdoto.airdefense.nation.VillageEconomy.AMMO;
+		int load = loadKind(mode);
+		int kind = load >= 0 ? load : getCargoKind();
 		int[] stock = town.eco.stock;
 		int rate = fuel ? 250 : 25;
-		if (mode == TRUCK_LOAD) {
+		if (load >= 0) {
+			if (getCargo() > 0 && getCargoKind() != load) {
+				return;
+			}
 			int k = Math.min(rate, Math.min(stock[kind], vtype.cargoCapacity - getCargo()));
 			if (k > 0) {
 				stock[kind] -= k;
 				setCargo(getCargo() + k);
+				setCargoKind(kind);
 				p.setDirty();
 			}
 		} else {
@@ -1223,14 +1277,14 @@ public class VehicleEntity extends LivingEntity {
 
 	public void setTruckMode(int mode) {
 		if (vtype.isTruck()) {
-			setMode(Math.floorMod(mode, 3));
+			setMode(Math.floorMod(mode, truckModes()));
 		}
 	}
 
 	private void cycleTruckMode(Player player) {
-		int mode = (getMode() + 1) % 3;
+		int mode = (getMode() + 1) % truckModes();
 		setMode(mode);
-		player.sendOverlayMessage(Component.translatable("message.airdefense.truck.mode_" + mode));
+		player.sendOverlayMessage(Component.translatable("message.airdefense.truck." + truckModeKey()));
 	}
 
 	// --- Aircraft weapons ---
@@ -2223,7 +2277,8 @@ public class VehicleEntity extends LivingEntity {
 		}
 		if (vtype.isTruck()) {
 			return Component.translatable("message.airdefense.vehicle.status_truck", name, hp, getCargo(), vtype.cargoCapacity,
-					Component.translatable("message.airdefense.truck.mode_" + getMode()));
+					Component.translatable("message.airdefense.truck." + truckModeKey()))
+					.append(" (").append(Component.translatable("nation.airdefense.goods." + getCargoKind())).append(")");
 		}
 		if (vtype.isArmed()) {
 			return Component.translatable("message.airdefense.vehicle.status_armed", name, hp, Math.max(0, getAmmo()), vtype.weapon.caliber,
@@ -2492,6 +2547,7 @@ public class VehicleEntity extends LivingEntity {
 		output.putFloat("vehicle_fuel", entityData.get(DATA_FUEL));
 		output.putInt("vehicle_ordnance", getOrdnance());
 		output.putInt("vehicle_cargo", getCargo());
+		output.putInt("vehicle_cargo_kind", entityData.get(DATA_CARGO_KIND));
 	}
 
 	@Override
@@ -2508,6 +2564,7 @@ public class VehicleEntity extends LivingEntity {
 		entityData.set(DATA_FUEL, input.getFloatOr("vehicle_fuel", -1f));
 		entityData.set(DATA_ORDNANCE, input.getIntOr("vehicle_ordnance", vtype.ordnance != null ? vtype.ordnance.count : 0));
 		entityData.set(DATA_CARGO, input.getIntOr("vehicle_cargo", 0));
+		entityData.set(DATA_CARGO_KIND, input.getIntOr("vehicle_cargo_kind", -1));
 		fold();
 	}
 }

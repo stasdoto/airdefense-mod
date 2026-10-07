@@ -160,6 +160,11 @@ public class SoldierEntity extends PathfinderMob {
 		setItemSlot(EquipmentSlot.MAINHAND, GunItem.loaded(gun));
 	}
 
+	/** Weapons from the town's arsenal (1.23): a machine gun or a marksman's rifle instead of what he got. */
+	public void issueArms(int roll) {
+		setItemSlot(EquipmentSlot.MAINHAND, GunItem.loaded(roll < 55 ? ModItems.PKM : ModItems.SVD));
+	}
+
 	public Component title() {
 		Politics p = level() instanceof ServerLevel sl ? Politics.get(sl.getServer()) : null;
 		Country c = p == null ? null : p.country(country);

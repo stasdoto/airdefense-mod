@@ -1056,6 +1056,9 @@ public final class Economy {
 	 * beds (no food or fuss needed), every maternity hospital adds one in about 80 seconds.
 	 */
 	static float birthChance(Politics p, Settlement s) {
+		if (s.eco.hungry > 0) {
+			return 0;
+		}
 		int hospitals = s.eco.count(BuildingType.HOSPITAL);
 		float chance = (owned(p, s) ? 0.045f : 0f) + 0.12f * hospitals;
 		return Math.min(0.6f, chance);

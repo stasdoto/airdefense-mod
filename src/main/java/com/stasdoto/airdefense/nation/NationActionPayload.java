@@ -43,6 +43,8 @@ public record NationActionPayload(int action, int settlement, int a, int x, int 
 	public static final int REBUILD = 18;
 	/** Pull a building down: a = its index. */
 	public static final int DEMOLISH = 19;
+	/** Buy (x = 1) or sell (x = 0) a lot of goods at the town's market: a = the kind. */
+	public static final int MARKET = 20;
 
 	public static final Type<NationActionPayload> TYPE = new Type<>(AirDefense.id("nation_action"));
 	public static final StreamCodec<ByteBuf, NationActionPayload> CODEC = StreamCodec.composite(

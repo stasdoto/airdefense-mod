@@ -217,6 +217,7 @@ public final class Nations {
 			s.eco.buildings.add(nb);
 		}
 		p.settlements.put(id, s);
+		stockUp(s, c, r);
 		long cell = Cities.cellKey(c.cx, c.cz);
 		Country country = null;
 		for (Country k : p.countries.values()) {
@@ -242,6 +243,23 @@ public final class Nations {
 		return s;
 	}
 
+	/** A new city's stores: some of everything, little of what it cannot make itself. */
+	static void stockUp(Settlement s, Cities.City c, Random r) {
+		VillageEconomy e = s.eco;
+		BuildingType lack = c.lack();
+		e.stock[VillageEconomy.WOOD] = 120 + r.nextInt(120);
+		e.stock[VillageEconomy.STONE] = 120 + r.nextInt(120);
+		e.stock[VillageEconomy.IRON] = 100 + r.nextInt(120);
+		e.stock[VillageEconomy.OIL] = lack == BuildingType.OIL_WELL ? 0 : 1500;
+		e.stock[VillageEconomy.FUEL] = lack == BuildingType.REFINERY ? 400 : 3000;
+		e.stock[VillageEconomy.AMMO] = 150;
+		e.stock[VillageEconomy.FOOD] = Supply.foodNeed(s) * 25;
+		e.stock[VillageEconomy.ARMS] = lack == BuildingType.ARMS_FACTORY ? 0 : 40;
+		for (int k = 0; k < VillageEconomy.KINDS; k++) {
+			e.stock[k] = Math.min(e.stock[k], e.capOf(k));
+		}
+	}
+
 	public static int hamletsFounded;
 
 	/** A hamlet round a planned city: a village of the city's country, with its houses and farm. */
@@ -261,6 +279,7 @@ public final class Nations {
 			nb.done = true;
 			s.eco.buildings.add(nb);
 		}
+		s.eco.stock[VillageEconomy.FOOD] = 60 + r.nextInt(40);
 		p.settlements.put(id, s);
 		Cities.City c = h.city;
 		long cell = Cities.cellKey(c.cx, c.cz);
@@ -750,6 +769,9 @@ public final class Nations {
 		return Math.max(0, Math.min(adults - 2, (adults + s.soldiers.size()) / 2 - s.soldiers.size() + Economy.barracksBonus(s)));
 	}
 
+	/** Soldiers called up with weapons from the arsenal (for the tests). */
+	public static int armed;
+
 	public static int mobilize(ServerLevel level, ServerPlayer player, Settlement s, int count) {
 		Politics p = Politics.get(level.getServer());
 		Country c = p.country(s.country);
@@ -770,6 +792,11 @@ public final class Nations {
 			e.setOrigin(v.getVillagerData(), v.getUUID());
 			e.setVillagerTag(WorkerEntity.save(level, v));
 			e.setHomeTo(s.flag, 16);
+			if (s.eco.stock[VillageEconomy.ARMS] > 0) {
+				s.eco.stock[VillageEconomy.ARMS]--;
+				e.issueArms(level.getRandom().nextInt(100));
+				armed++;
+			}
 			v.discard();
 			level.addFreshEntity(e);
 			s.soldiers.add(e.getUUID());

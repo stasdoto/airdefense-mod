@@ -134,6 +134,11 @@ public final class NationNet {
 					Economy.rebuild(level, player, s, p.a(), BuildingType.byId(p.x()));
 				}
 			}
+			case NationActionPayload.MARKET -> {
+				if (near || tablet) {
+					Market.trade(level, player, s, p.a(), p.x() == 1);
+				}
+			}
 			case NationActionPayload.DEMOLISH -> {
 				if (near || tablet) {
 					Economy.demolish(level, player, s, p.a());
@@ -215,7 +220,24 @@ public final class NationNet {
 				e.births, built, queue, builders, e.count(BuildingType.HANGAR) > 0, hangar, Economy.hangarPercent(s),
 				Economy.birthEvery(level, Politics.get(level.getServer()), s), mood.value(), reasons,
 				s.riot ? Unrest.rebels(level, s).size() : 0, Unrest.calmPrice(s),
-				List.of(e.stock[VillageEconomy.OIL], e.stock[VillageEconomy.FUEL], e.stock[VillageEconomy.AMMO], e.liquidCap(), e.ammoCap())));
+				extra(Politics.get(level.getServer()), s)));
+	}
+
+	/**
+	 * The rest of the store for the village screen: oil, fuel, ammunition and their caps; food, weapons and their caps;
+	 * food eaten and made a minute, minutes gone hungry; then the market's buy and sell price of every kind.
+	 */
+	static List<Integer> extra(Politics p, Settlement s) {
+		VillageEconomy e = s.eco;
+		List<Integer> out = new ArrayList<>(List.of(e.stock[VillageEconomy.OIL], e.stock[VillageEconomy.FUEL], e.stock[VillageEconomy.AMMO],
+				e.liquidCap(), e.ammoCap(), e.stock[VillageEconomy.FOOD], e.stock[VillageEconomy.ARMS], e.foodCap(), e.armsCap(),
+				Supply.foodNeed(s), Supply.foodMade(s), e.hungry));
+		for (int k = 0; k < VillageEconomy.KINDS; k++) {
+			int[] pr = Market.price(p, s, k);
+			out.add(pr[0]);
+			out.add(pr[1]);
+		}
+		return out;
 	}
 
 	/** Villages within 2000 blocks and the soldiers that are loaded within 700. */

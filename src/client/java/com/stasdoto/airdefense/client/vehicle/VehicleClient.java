@@ -123,8 +123,8 @@ public final class VehicleClient {
 			l2 = Component.translatable(type.air == VehicleType.PLANE ? "hud.airdefense.vehicle.plane" : "hud.airdefense.vehicle.heli",
 					Math.max(0, (int) (v.getY() - ground)), (int) (v.throttle * 100), weapons);
 		} else if (type.isTruck()) {
-			l2 = Component.translatable(type.cargo == 1 ? "hud.airdefense.vehicle.cargo_fuel" : "hud.airdefense.vehicle.cargo_ammo",
-					v.getCargo(), type.cargoCapacity, Component.translatable("hud.airdefense.truck.mode_" + v.getMode()));
+			l2 = Component.translatable("hud.airdefense.vehicle.cargo_goods", Component.translatable("nation.airdefense.goods." + v.getCargoKind()),
+					v.getCargo(), type.cargoCapacity, Component.translatable("hud.airdefense.truck." + v.truckModeKey()));
 		} else if (type.isArmed()) {
 			l2 = Component.translatable("hud.airdefense.vehicle.weapon", type.weapon.caliber, Math.max(0, v.getAmmo()));
 		} else if (type.isRadar()) {

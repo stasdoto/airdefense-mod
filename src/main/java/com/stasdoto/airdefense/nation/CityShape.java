@@ -139,10 +139,10 @@ public final class CityShape {
 			case MEDIUM -> new int[]{12, 22};
 			case LARGE -> new int[]{24, 42};
 		};
-		while (count() < range[0]) {
+		for (int guard = 0; guard < 200 && count() < range[0]; guard++) {
 			grow(r);
 		}
-		while (count() > range[1]) {
+		for (int guard = 0; guard < 200 && count() > range[1]; guard++) {
 			shrink(r);
 		}
 		// Joined blocks.
@@ -294,9 +294,20 @@ public final class CityShape {
 			}
 		}
 		if (leaves.isEmpty()) {
-			for (int i = 0; i < n && leaves.isEmpty(); i++) {
+			// A compact blob: nibble at the outermost cells with the fewest neighbours.
+			int best = Integer.MIN_VALUE;
+			for (int i = 0; i < n; i++) {
 				for (int j = 0; j < n; j++) {
-					if (isOn(i, j) && Math.max(Math.abs(i - ci), Math.abs(j - cj)) == n / 2) {
+					if (!isOn(i, j) || i == ci && j == cj) {
+						continue;
+					}
+					int k = (isOn(i + 1, j) ? 1 : 0) + (isOn(i - 1, j) ? 1 : 0) + (isOn(i, j + 1) ? 1 : 0) + (isOn(i, j - 1) ? 1 : 0);
+					int score = (Math.abs(i - ci) + Math.abs(j - cj)) * 4 - k;
+					if (score > best) {
+						best = score;
+						leaves.clear();
+					}
+					if (score == best) {
 						leaves.add(new int[]{i, j});
 					}
 				}
@@ -333,11 +344,12 @@ public final class CityShape {
 			l.district = norm <= downtown ? DOWNTOWN : norm <= 0.67 ? MID : OUTER;
 		}
 		// Every town has some industry: the outermost lot on that side, if the sector caught none.
-		if (industry.isEmpty()) {
+		int minIndustry = c.size == Cities.Size.LARGE ? 3 : c.size == Cities.Size.MEDIUM ? 2 : 1;
+		while (industry.size() < Math.min(minIndustry, lots.size() / 3 + 1)) {
 			Lot best = null;
 			double bestScore = -1e9;
 			for (Lot l : lots) {
-				if (l.district == HALL) {
+				if (l.district == HALL || l.district == INDUSTRY) {
 					continue;
 				}
 				double score = Math.cos(Math.atan2(l.cz() - c.z, l.cx() - c.x) - sector) * 10 + ring(l);
@@ -346,9 +358,11 @@ public final class CityShape {
 					best = l;
 				}
 			}
-			if (best != null) {
-				best.district = INDUSTRY;
+			if (best == null) {
+				break;
 			}
+			best.district = INDUSTRY;
+			industry.add(best);
 		}
 		// Parks in the middle belt, a patch of wasteland or two at the edge.
 		int parks = c.size == Cities.Size.LARGE ? 1 + r.nextInt(2) : c.size == Cities.Size.MEDIUM ? r.nextInt(2) : 0;

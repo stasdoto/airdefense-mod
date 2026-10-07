@@ -70,6 +70,9 @@ final class ModernDesigns {
 			case REFINERY -> refinery(p);
 			case GARAGES -> garages(p, variant);
 			case FARM -> Rural.farm(p, variant);
+			case FOOD_PLANT -> Industry.foodPlant(p, variant);
+			case ARMS_FACTORY -> Industry.armsFactory(p, variant);
+			case MARKET -> Industry.market(p, variant);
 			case HOSPITAL -> Architecture.hospital(p);
 			case WAREHOUSE -> warehouse(p, variant);
 			case BARRACKS -> barracks(p, flag);

@@ -31,6 +31,12 @@ public class SettlementScreen extends Screen {
 	public static final int WORK = 1;
 	public static final int BUILD = 2;
 	public static final int HANGAR = 3;
+	public static final int MARKET = 4;
+	private static final int TABS = 5;
+	/** Icons of the eight kinds of goods (wood, stone, iron, oil, fuel, ammunition, food, weapons). */
+	private static final ItemStack[] GOODS_ICONS = {new ItemStack(Items.OAK_LOG), new ItemStack(Items.COBBLESTONE), new ItemStack(Items.IRON_INGOT),
+			new ItemStack(Items.COAL), new ItemStack(com.stasdoto.airdefense.registry.ModItems.JERRYCAN), new ItemStack(Items.IRON_NUGGET),
+			new ItemStack(Items.BREAD), new ItemStack(Items.CROSSBOW)};
 
 	private static final int C_TEXT = 0xFFE6E9EC;
 	private static final int C_DIM = 0xFF9AA4AE;
@@ -52,7 +58,8 @@ public class SettlementScreen extends Screen {
 	/** What can be ordered on the building tab, homes first; the list scrolls. */
 	private static final BuildingType[] BUILD_ORDER = {BuildingType.ROADS, BuildingType.COTTAGE, BuildingType.SMALL_HOUSE, BuildingType.HOUSE,
 			BuildingType.APARTMENTS, BuildingType.PANEL5, BuildingType.PANEL9, BuildingType.TOWER, BuildingType.SHOP, BuildingType.OFFICE,
-			BuildingType.SCHOOL, BuildingType.HOSPITAL, BuildingType.PARK, BuildingType.WAREHOUSE, BuildingType.GARAGES, BuildingType.FARM, BuildingType.GAS_STATION,
+			BuildingType.SCHOOL, BuildingType.HOSPITAL, BuildingType.PARK, BuildingType.WAREHOUSE, BuildingType.GARAGES, BuildingType.FARM, BuildingType.FOOD_PLANT,
+			BuildingType.MARKET, BuildingType.ARMS_FACTORY, BuildingType.GAS_STATION,
 			BuildingType.LOGISTICS_HUB, BuildingType.OIL_WELL, BuildingType.REFINERY, BuildingType.BARRACKS, BuildingType.HANGAR,
 			BuildingType.FACTORY, BuildingType.CITY_HALL};
 	private int buildScroll;
@@ -73,7 +80,8 @@ public class SettlementScreen extends Screen {
 	private Button callAll;
 	private Button recall;
 	private Button dismiss;
-	private final Button[] tabs = new Button[4];
+	private final Button[] tabs = new Button[TABS];
+	private final List<Button> marketButtons = new ArrayList<>();
 	private final List<Button> workButtons = new ArrayList<>();
 	private final List<Button> buildButtons = new ArrayList<>();
 	private final List<Button> hangarButtons = new ArrayList<>();
@@ -138,6 +146,7 @@ public class SettlementScreen extends Screen {
 		workButtons.clear();
 		buildButtons.clear();
 		hangarButtons.clear();
+		marketButtons.clear();
 		int bw = (w - 18) / 2;
 		int by = y0 + h - 48;
 		buy = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.buy", info.price()),
@@ -161,9 +170,9 @@ public class SettlementScreen extends Screen {
 		calm = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.calm", 0),
 				b -> send(NationActionPayload.CALM, 0, 0)).bounds(x0 + w - 136, y0 + 54, 128, 14).build());
 		// Tabs.
-		int tw = (w - 16 - 9) / 4;
-		String[] names = {"overview", "work", "build", "hangar"};
-		for (int i = 0; i < 4; i++) {
+		int tw = (w - 16 - 3 * (TABS - 1)) / TABS;
+		String[] names = {"overview", "work", "build", "hangar", "market"};
+		for (int i = 0; i < TABS; i++) {
 			int t = i;
 			tabs[i] = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.tab." + names[i]), b -> setTab(t))
 					.bounds(x0 + 8 + i * (tw + 3), y0 + 32, tw, 16).build());
@@ -208,6 +217,15 @@ public class SettlementScreen extends Screen {
 					send(NationActionPayload.VEHICLE, HANGAR_ORDER[k].ordinal(), 0);
 				}
 			}).bounds(x0 + w - 74, rows + i * ROW, 66, 14).build()));
+		}
+		// Market: buy and sell a lot of each kind.
+		for (int k = 0; k < 8; k++) {
+			int kind = k;
+			int y = top + 24 + k * ROW;
+			marketButtons.add(addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.market.buy"),
+					b -> send(NationActionPayload.MARKET, kind, 1)).bounds(x0 + w - 112, y, 52, 14).build()));
+			marketButtons.add(addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.market.sell"),
+					b -> send(NationActionPayload.MARKET, kind, 0)).bounds(x0 + w - 58, y, 52, 14).build()));
 		}
 		updateButtons();
 	}
@@ -292,6 +310,18 @@ public class SettlementScreen extends Screen {
 		for (Button b : hangarButtons) {
 			b.visible = mine && tab == HANGAR && eco != null && eco.hangar();
 		}
+		boolean market = eco != null && eco.builtCount(BuildingType.MARKET) > 0 && eco.extra().size() >= 28;
+		for (int i = 0; i < marketButtons.size(); i++) {
+			Button b = marketButtons.get(i);
+			b.visible = mine && tab == MARKET;
+			b.active = market;
+			if (market) {
+				int kind = i / 2;
+				int price = eco.extra().get(12 + kind * 2 + (i % 2 == 0 ? 0 : 1));
+				b.setMessage(Component.translatable(i % 2 == 0 ? "screen.airdefense.village.market.buy_for" : "screen.airdefense.village.market.sell_for",
+						price));
+			}
+		}
 		if (eco != null) {
 			for (int j = 0; j < WorkerEntity.JOBS; j++) {
 				workButtons.get(j * 2).active = j < eco.jobs().size() && eco.jobs().get(j) > 0;
@@ -360,13 +390,14 @@ public class SettlementScreen extends Screen {
 			g.text(font, c, x + 13, y, info.mine() ? C_OK : C_TEXT);
 		}
 		if (info.mine()) {
-			int tw = (w - 16 - 9) / 4;
+			int tw = (w - 16 - 3 * (TABS - 1)) / TABS;
 			g.fill(x0 + 8 + tab * (tw + 3), y0 + 49, x0 + 8 + tab * (tw + 3) + tw, y0 + 51, C_GOLD);
 		}
 		switch (info.mine() ? tab : OVERVIEW) {
 			case WORK -> work(g);
 			case BUILD -> build(g);
 			case HANGAR -> hangar(g);
+			case MARKET -> market(g);
 			default -> overview(g);
 		}
 		super.extractRenderState(g, mouseX, mouseY, partialTick);
@@ -505,6 +536,13 @@ public class SettlementScreen extends Screen {
 						+ (eco.free() ? "∞" : eco.extra().get(k) + " / " + cap);
 				small(g, line, sx, ry + k * 8, k == 0 ? 0xFF9A8A70 : k == 1 ? 0xFFE8C860 : 0xFFC8A070);
 			}
+			if (eco.extra().size() >= 9) {
+				for (int k = 0; k < 2; k++) {
+					String line = Component.translatable("screen.airdefense.village.res2." + (3 + k)).getString() + ": "
+							+ (eco.free() ? "∞" : eco.extra().get(5 + k) + " / " + eco.extra().get(7 + k));
+					small(g, line, sx, ry + (3 + k) * 8, k == 0 ? 0xFFB0D070 : 0xFFA0A8B0);
+				}
+			}
 		}
 	}
 
@@ -549,6 +587,41 @@ public class SettlementScreen extends Screen {
 			} else {
 				cost(g, x0 + 128, y + 1, t.wood, t.stone, t.iron);
 			}
+		}
+	}
+
+	/** All the town's goods, food made and eaten, and the market's prices. */
+	private void market(GuiGraphicsExtractor g) {
+		int top = contentTop();
+		if (eco == null || eco.extra().size() < 28) {
+			g.text(font, Component.translatable("screen.airdefense.village.loading"), x0 + 8, top, C_DIM);
+			return;
+		}
+		List<Integer> ex = eco.extra();
+		int need = ex.get(9);
+		int made = ex.get(10);
+		int hungry = ex.get(11);
+		Component food = need > 0 ? Component.translatable("screen.airdefense.village.food_line", made, need)
+				: Component.translatable("screen.airdefense.village.food_line_village", made);
+		g.text(font, food, x0 + 8, top, hungry > 0 ? C_BAD : made >= need ? C_OK : 0xFFFFB04A);
+		if (hungry > 0) {
+			g.text(font, Component.translatable("screen.airdefense.village.hungry", hungry), x0 + 8, top + 11, C_BAD);
+		} else if (eco.builtCount(BuildingType.MARKET) == 0) {
+			small(g, Component.translatable("screen.airdefense.village.market.none").getString(), x0 + 8, top + 12, C_DIM);
+		} else {
+			small(g, Component.translatable("screen.airdefense.village.market.hint").getString(), x0 + 8, top + 12, C_DIM);
+		}
+		int[] have = {eco.wood(), eco.stone(), eco.iron(), ex.get(0), ex.get(1), ex.get(2), ex.get(5), ex.get(6)};
+		int[] cap = {eco.cap(), eco.cap(), eco.cap(), ex.get(3), ex.get(3), ex.get(4), ex.get(7), ex.get(8)};
+		int[] lot = com.stasdoto.airdefense.nation.Market.LOT;
+		for (int k = 0; k < 8; k++) {
+			int y = top + 24 + k * ROW;
+			g.item(GOODS_ICONS[k], x0 + 8, y - 1);
+			g.text(font, Component.translatable("nation.airdefense.goods." + k), x0 + 28, y + 3, C_TEXT);
+			String amount = eco.free() ? "∞" : have[k] + " / " + cap[k];
+			boolean low = !eco.free() && have[k] < cap[k] / 6;
+			g.text(font, amount, x0 + 108, y + 3, low ? 0xFFFFB04A : C_DIM);
+			small(g, Component.translatable("screen.airdefense.village.market.lot", lot[k]).getString(), x0 + 178, y + 4, C_DIM);
 		}
 	}
 

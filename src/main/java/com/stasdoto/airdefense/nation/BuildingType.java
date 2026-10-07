@@ -47,7 +47,13 @@ public enum BuildingType {
 	REFINERY("refinery", 19, 17, 22, 30, 200, 160, 0),
 	GARAGES("garages", 17, 7, 5, 10, 80, 10, 0),
 	/** A barn with a silo and a pen: the heart of a farm. */
-	FARM("farm", 15, 11, 14, 140, 60, 6, 0);
+	FARM("farm", 15, 11, 14, 140, 60, 6, 0),
+	/** Bakery, cannery and mill: food from the town's own workshops (uses fuel). */
+	FOOD_PLANT("food_plant", 19, 13, 14, 40, 240, 40, 0),
+	/** Makes weapons from iron and fuel (the logistics hub turns them into ammunition; soldiers are armed with them). */
+	ARMS_FACTORY("arms_factory", 21, 15, 16, 60, 320, 120, 0),
+	/** Stalls under awnings: the town's goods are bought and sold here for emeralds. */
+	MARKET("market", 17, 13, 8, 100, 80, 10, 0);
 
 	public final String id;
 	public final int width;
