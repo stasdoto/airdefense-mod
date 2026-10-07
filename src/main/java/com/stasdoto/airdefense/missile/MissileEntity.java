@@ -389,8 +389,15 @@ public class MissileEntity extends Entity {
 	// Finding missiles far away: with the longer ranges (1.24) the air defence looks over thousands of blocks, so
 	// every flying missile is kept in a list instead of searching the whole area's entities.
 
-	private static final java.util.Set<MissileEntity> LIVE = java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
+	// (Entities count as equal when their ids are, and in single player the client's copy of a missile has the server's
+	// id: so the server's and the client's missiles are kept apart, by identity.)
+	private static final java.util.Set<MissileEntity> LIVE_SERVER = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+	private static final java.util.Set<MissileEntity> LIVE_CLIENT = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
 	private boolean listed;
+
+	private static java.util.Set<MissileEntity> live(net.minecraft.world.level.Level level) {
+		return level.isClientSide() ? LIVE_CLIENT : LIVE_SERVER;
+	}
 
 	/** The missiles in this box that pass the test (a plain entity search for small boxes). */
 	public static List<MissileEntity> find(net.minecraft.world.level.Level level, AABB box, java.util.function.Predicate<MissileEntity> test) {
@@ -398,8 +405,9 @@ public class MissileEntity extends Entity {
 			return level.getEntitiesOfClass(MissileEntity.class, box, test);
 		}
 		List<MissileEntity> out = new java.util.ArrayList<>();
-		synchronized (LIVE) {
-			var it = LIVE.iterator();
+		java.util.Set<MissileEntity> live = live(level);
+		synchronized (live) {
+			var it = live.iterator();
 			while (it.hasNext()) {
 				MissileEntity m = it.next();
 				if (m.isRemoved()) {
@@ -415,8 +423,12 @@ public class MissileEntity extends Entity {
 	private void list() {
 		if (!listed) {
 			listed = true;
-			synchronized (LIVE) {
-				LIVE.add(this);
+			java.util.Set<MissileEntity> live = live(level());
+			synchronized (live) {
+				if (live.size() > 256) {
+					live.removeIf(Entity::isRemoved);
+				}
+				live.add(this);
 			}
 		}
 	}
