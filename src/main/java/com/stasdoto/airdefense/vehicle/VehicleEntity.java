@@ -2135,7 +2135,7 @@ public class VehicleEntity extends LivingEntity {
 		if (s == null) {
 			return true;
 		}
-		double r = s.radius + 200;
+		double r = s.radius + 80;
 		return Vec3.atCenterOf(s.center).subtract(at).horizontalDistanceSqr() < r * r;
 	}
 
