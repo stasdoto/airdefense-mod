@@ -238,6 +238,7 @@ public final class Nations {
 		p.setDirty();
 		discovered++;
 		citiesFounded++;
+		com.stasdoto.airdefense.siren.Sirens.planCity(level, c);
 		AirDefense.LOGGER.info("[airdefense] city {} ({}, {} people, {} buildings) at {} -> {}{}", s.name, c.size, c.citizens, s.eco.buildings.size(),
 				bell.toShortString(), country.name, c.capital() ? " (capital)" : "");
 		return s;
@@ -299,6 +300,7 @@ public final class Nations {
 		p.setDirty();
 		discovered++;
 		hamletsFounded++;
+		com.stasdoto.airdefense.siren.Sirens.planHamlet(level, h);
 		AirDefense.LOGGER.info("[airdefense] hamlet {} ({} buildings) at {} -> {}", s.name, s.eco.buildings.size(), bell.toShortString(), country.name);
 		return s;
 	}
@@ -334,6 +336,7 @@ public final class Nations {
 		placeFlag(level, p, s);
 		p.setDirty();
 		discovered++;
+		com.stasdoto.airdefense.siren.Sirens.planVillage(level, center);
 		AirDefense.LOGGER.info("[airdefense] village {} at {} -> {}", s.name, center.toShortString(),
 				s.country < 0 ? "independent" : p.country(s.country).name);
 		return s;

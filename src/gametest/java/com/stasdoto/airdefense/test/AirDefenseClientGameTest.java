@@ -142,6 +142,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("smallArms")) {
 				smallArms(ctx, server);
 			}
+			if (scene("sirens")) {
+				sirens(ctx, server);
+			}
 			if (scene("nations")) {
 				nations(ctx, server);
 			}
@@ -2249,6 +2252,242 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runCommand("gamemode spectator @a");
 	}
 
+	// ------------------------------------------------------------------------------------------------
+	// 1.24: air raid sirens and Iron Dome
+
+	/** The sirens standing within {@code r} of (x, z), nearest first. */
+	private static List<BlockPos> sirensNear(TestServerContext server, int x, int z, int r) {
+		return server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			List<BlockPos> out = new ArrayList<>();
+			for (long k : com.stasdoto.airdefense.siren.Sirens.get(s).known) {
+				BlockPos p = BlockPos.of(k);
+				if (Math.hypot(p.getX() - x, p.getZ() - z) <= r && l.isLoaded(p)
+						&& l.getBlockState(p).getBlock() instanceof com.stasdoto.airdefense.siren.SirenBlock) {
+					out.add(p);
+				}
+			}
+			out.sort(java.util.Comparator.comparingDouble(p -> Math.hypot(p.getX() - x, p.getZ() - z)));
+			return out;
+		});
+	}
+
+	/** How many of these sirens show each signal: {off, alert, all clear}. */
+	private static int[] signals(TestServerContext server, List<BlockPos> sirens) {
+		return server.computeOnServer(s -> {
+			int[] n = new int[3];
+			for (BlockPos p : sirens) {
+				var st = s.overworld().getBlockState(p);
+				if (st.getBlock() instanceof com.stasdoto.airdefense.siren.SirenBlock) {
+					n[st.getValue(com.stasdoto.airdefense.siren.SirenBlock.SIGNAL).ordinal()]++;
+				}
+			}
+			return n;
+		});
+	}
+
+	/** A camera {@code dist} blocks in front of a siren (on the side its horn faces), a little above, looking at it. */
+	private static float[] sirenCam(TestServerContext server, BlockPos p, double dist, double up) {
+		net.minecraft.core.Direction f = server.computeOnServer(s -> {
+			var st = s.overworld().getBlockState(p);
+			return st.getBlock() instanceof com.stasdoto.airdefense.siren.SirenBlock ? st.getValue(com.stasdoto.airdefense.siren.SirenBlock.FACING)
+					: net.minecraft.core.Direction.SOUTH;
+		});
+		double side = dist * 0.45;
+		net.minecraft.core.Direction across = f.getClockWise();
+		double x = p.getX() + 0.5 + f.getStepX() * dist + across.getStepX() * side;
+		double z = p.getZ() + 0.5 + f.getStepZ() * dist + across.getStepZ() * side;
+		double y = p.getY() + up;
+		return look(x, y, z, p.getX() + 0.5, p.getY() + 1.4, p.getZ() + 0.5);
+	}
+
+	private static float[] look(double x, double y, double z, double tx, double ty, double tz) {
+		double dx = tx - x;
+		double dy = ty - y;
+		double dz = tz - z;
+		float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+		float pitch = (float) -Math.toDegrees(Math.atan2(dy, Math.hypot(dx, dz)));
+		return new float[]{(float) x, (float) y, (float) z, yaw, pitch};
+	}
+
+	/**
+	 * The capital is built and joins the map, its sirens go up by themselves. The tablet's warning page: the alert
+	 * everywhere, the all clear, silence; one town by a click on its row; one siren switched by hand; a siren out in the
+	 * field that does not follow the town. Then Iron Dome by the city: a HIMARS salvo at an empty field is let go, a
+	 * salvo at the city is shot down, and the city's sirens sound by themselves.
+	 */
+	private void sirens(ClientGameTestContext ctx, TestServerContext server) {
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 5000");
+		server.runCommand("difficulty peaceful");
+		int[] cap = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var c = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), com.stasdoto.airdefense.nation.Cities.terrain(l), 0, 0).getFirst();
+			BlockPos bell = c.bell();
+			return new int[]{c.x, c.z, c.half(), c.base, bell.getX(), bell.getZ()};
+		});
+		int cx = cap[0];
+		int cz = cap[1];
+		int half = cap[2];
+		int base = cap[3];
+		camera(server, cx + 0.5, base + 70, cz + half + 90, 180, 35);
+		ctx.waitTicks(60);
+		int m = half + 20;
+		generateCity(server, cx - m, cz - m, cx + m, cz + m);
+		camera(server, cx + 0.5, base + 40, cz + 0.5, 180, 40);
+		int founded = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Nations.citiesFounded > 0, 400);
+		int waited = waitUntil(ctx, () -> sirensNear(server, cx, cz, half + 40).size() >= 2, 400);
+		ctx.waitTicks(80);
+		List<BlockPos> city = sirensNear(server, cap[4], cap[5], half + 40);
+		String plan = server.computeOnServer(s -> {
+			var z = com.stasdoto.airdefense.siren.Sirens.get(s);
+			return "put up " + com.stasdoto.airdefense.siren.Sirens.townSirensPlaced + ", still planned " + z.pending.size() + ", known " + z.known.size();
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT siren_city: {} sirens in the capital (founded after {} ticks, sirens after {}; {}) at {}",
+				city.size(), founded, waited, plan, city);
+		if (city.isEmpty()) {
+			return;
+		}
+		int town = server.computeOnServer(s -> com.stasdoto.airdefense.siren.Sirens.townOf(s.overworld(), city.getFirst()));
+		shot(ctx, server, sirenCam(server, city.getFirst(), 6, 1.2), "300_siren_square", 40);
+		if (city.size() > 1) {
+			shot(ctx, server, sirenCam(server, city.get(1), 7, 2.5), "301_siren_street", 30);
+		}
+		// One more siren out in the field, put there by hand (it belongs to no town).
+		int fx = cx + half + 140;
+		int fz = cz - 30;
+		camera(server, fx + 6.5, base + 4, fz + 6.5, 135, 15);
+		ctx.waitTicks(40);
+		server.runCommand(String.format("setblock %d %d %d airdefense:siren[facing=south]", fx, base + 1, fz));
+		ctx.waitTicks(30);
+		BlockPos field = new BlockPos(fx, base + 1, fz);
+		List<BlockPos> fieldList = List.of(field);
+
+		// The tablet: right click opens the map, the "Air raid alert" button the warning page.
+		camera(server, cap[4] + 0.5, base + 1, cap[5] + 12.5, 180, 0);
+		server.runCommand("gamemode creative @a");
+		server.runCommand("clear @a");
+		server.runCommand("item replace entity @a hotbar.0 with airdefense:designator");
+		ctx.runOnClient(mc -> mc.player.getInventory().setSelectedSlot(0));
+		ctx.waitTicks(30);
+		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT);
+		ctx.waitForScreen(com.stasdoto.airdefense.client.map.TacticalMapScreen.class);
+		ctx.waitTicks(10);
+		boolean page = ctx.tryClickScreenButton("Air raid alert");
+		ctx.waitForScreen(com.stasdoto.airdefense.client.siren.SirenScreen.class);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("302_siren_tablet");
+		// Alert everywhere.
+		boolean all = ctx.tryClickScreenButton("Alert everywhere");
+		ctx.waitTicks(50);
+		int[] a = signals(server, city);
+		int[] af = signals(server, fieldList);
+		ctx.takeScreenshot("303_siren_tablet_alert");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT siren_all: page {} button {} -> city alert {}/{}, field siren alert {}", page, all, a[1], city.size(), af[1]);
+		// The all clear everywhere, then silence.
+		boolean clear = ctx.tryClickScreenButton("All clear everywhere");
+		ctx.waitTicks(50);
+		int[] c = signals(server, city);
+		boolean silence = ctx.tryClickScreenButton("Silence all");
+		ctx.waitTicks(50);
+		int[] q = signals(server, city);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT siren_clear: button {} -> all clear {}/{}; silence {} -> quiet {}/{}", clear, c[2], city.size(),
+				silence, q[0], city.size());
+		// One town: a click on the "Alert" of the first row (the nearest town, the capital).
+		int[] click = ctx.computeOnClient(mc -> {
+			var sc = mc.gui.screen();
+			int colW = Math.min(240, (sc.width - 30) / 2);
+			int x0 = (sc.width - colW * 2 - 10) / 2;
+			return new int[]{x0 + colW - 104 + 25, 52 + 14 + 2 + 8};
+		});
+		int scale = ctx.computeOnClient(mc -> mc.getWindow().getGuiScale());
+		ctx.getInput().setCursorPos(click[0] * scale, click[1] * scale);
+		ctx.waitTicks(2);
+		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
+		ctx.waitTicks(50);
+		int[] t = signals(server, city);
+		int[] tf = signals(server, fieldList);
+		String townName = server.computeOnServer(s -> {
+			var st = com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(town);
+			return st == null ? "-" : st.name + " alert=" + com.stasdoto.airdefense.siren.Sirens.get(s).alert.contains(town);
+		});
+		ctx.takeScreenshot("304_siren_tablet_town");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT siren_town: town {} ({}) -> city alert {}/{}, field siren alert {} (should stay quiet)", town, townName,
+				t[1], city.size(), tf[1]);
+		int heard = ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.siren.SirenClient.voicesNow);
+		int starts = ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.siren.SirenClient.startsPlayed);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT siren_sound: {} siren voices playing, {} spin-ups heard", heard, starts);
+		// The town's all clear; one siren switched on by hand stays on.
+		ctx.computeOnClient(mc -> {
+			com.stasdoto.airdefense.client.siren.SirenClient.send(com.stasdoto.airdefense.siren.SirenNet.Action.TOWN_CLEAR, town, 0);
+			com.stasdoto.airdefense.client.siren.SirenClient.send(com.stasdoto.airdefense.siren.SirenNet.Action.SIREN_MODE,
+					com.stasdoto.airdefense.siren.Sirens.MODE_ON, field.asLong());
+			return 0;
+		});
+		ctx.waitTicks(50);
+		int[] h = signals(server, city);
+		int[] hf = signals(server, fieldList);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT siren_manual: town all clear -> city clear {}/{}; field siren switched on -> alert {}", h[2], city.size(), hf[1]);
+		ctx.computeOnClient(mc -> {
+			com.stasdoto.airdefense.client.siren.SirenClient.send(com.stasdoto.airdefense.siren.SirenNet.Action.SIREN_MODE,
+					com.stasdoto.airdefense.siren.Sirens.MODE_AUTO, field.asLong());
+			com.stasdoto.airdefense.client.siren.SirenClient.send(com.stasdoto.airdefense.siren.SirenNet.Action.SILENCE, 0, 0);
+			return 0;
+		});
+		ctx.waitTicks(30);
+		ctx.runOnClient(mc -> mc.gui.setScreen(null));
+		server.runCommand("clear @a");
+		server.runCommand("gamemode spectator @a");
+
+		// Iron Dome east of the city with its radar.
+		int ix = cx + half + 16;
+		int iz = cz + 8;
+		prepareDefense(ctx, server, VehicleType.IRON_DOME, ix, iz, 270);
+		spawnVehicle(server, VehicleType.ELM2084, ix + 4, iz + 14, 250);
+		ctx.waitTicks(40);
+		shot(ctx, server, look(ix - 9, base + 5, iz + 12, ix, base + 2, iz), "305_iron_dome", 20);
+		// A salvo at an empty field: Iron Dome lets it go.
+		int ignoredBefore = VehicleEntity.IGNORED_HARMLESS.size();
+		int autoBefore = com.stasdoto.airdefense.siren.Sirens.autoAlerts;
+		int[] before = counters();
+		BlockPos emptyField = new BlockPos(ix + 95, base, iz - 80);
+		int launched = MissileStats.STRIKES_LAUNCHED.get();
+		launchFrom(ctx, server, VehicleType.HIMARS, ix + 60, iz - 280, emptyField);
+		waitUntil(ctx, () -> MissileStats.STRIKES_LAUNCHED.get() > launched, 300);
+		ctx.waitTicks(20);
+		camera(server, ix - 14, base + 6, iz + 20, 215, -12);
+		ctx.waitTicks(260);
+		report("iron_dome_field_salvo", before);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT iron_dome_ignored: {} rockets let go (falling in an empty field), automatic alerts {}",
+				VehicleEntity.IGNORED_HARMLESS.size() - ignoredBefore, com.stasdoto.airdefense.siren.Sirens.autoAlerts - autoBefore);
+		// A salvo at the city: Iron Dome fires, the city's sirens sound by themselves.
+		before = counters();
+		BlockPos square = new BlockPos(cap[4] - 6, base, cap[5] + 10);
+		int launched2 = MissileStats.STRIKES_LAUNCHED.get();
+		launchFrom(ctx, server, VehicleType.HIMARS, ix + 70, iz - 270, square);
+		waitUntil(ctx, () -> MissileStats.STRIKES_LAUNCHED.get() > launched2, 300);
+		ctx.waitTicks(10);
+		camera(server, ix - 14, base + 6, iz + 20, 200, -22);
+		int interceptors = MissileStats.INTERCEPTORS_LAUNCHED.get();
+		waitUntil(ctx, () -> MissileStats.INTERCEPTORS_LAUNCHED.get() > interceptors, 300);
+		ctx.waitTicks(6);
+		ctx.takeScreenshot("306_iron_dome_launch");
+		ctx.waitTicks(25);
+		ctx.takeScreenshot("307_iron_dome_intercepts");
+		ctx.waitTicks(40);
+		int[] auto = signals(server, city);
+		shot(ctx, server, sirenCam(server, city.getFirst(), 6, 1.2), "308_siren_auto_alert", 30);
+		ctx.waitTicks(200);
+		report("iron_dome_city_salvo", before);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT siren_auto: automatic alerts {}, city sirens on alert {}/{}",
+				com.stasdoto.airdefense.siren.Sirens.autoAlerts - autoBefore, auto[1], city.size());
+		// Dusk: the lamp on the sounding siren.
+		server.runCommand("time set 13200");
+		shot(ctx, server, sirenCam(server, city.getFirst(), 5, 1.0), "309_siren_dusk", 40);
+		server.runOnServer(s -> com.stasdoto.airdefense.siren.Sirens.get(s).silence());
+		server.runCommand("time set 1000");
+	}
+
 	/**
 	 * 1.24: the arsenal. Every gun on a wall in item frames and in a soldier's hands; each one in first person at
 	 * the hip and aimed (with its scope or collimator picture); then the new mechanics: shotgun pellets, the M16A4's
@@ -2277,6 +2516,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				l.addFreshEntity(frame);
 			}
 		});
+		ctx.runOnClient(mc -> { if (!mc.gui.hud.isHidden()) { mc.gui.hud.toggle(); } });
 		camera(server, x0 + 0.5, g + 2.0, -5.4, 180, -8);
 		ctx.waitTicks(40);
 		ctx.takeScreenshot("150_arsenal_wall");
@@ -2284,36 +2524,37 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(10);
 		ctx.takeScreenshot("150b_arsenal_wall_close");
 
-		// Soldiers holding them (third person, from the side), twelve at a time.
+		// Soldiers holding them (third person, from the side), six at a time.
 		List<Integer> men = new ArrayList<>();
 		server.runOnServer(s -> {
 			ServerLevel l = s.overworld();
-			for (int i = 0; i < 12; i++) {
+			for (int i = 0; i < 6; i++) {
 				var m = com.stasdoto.airdefense.nation.SoldierEntity.create(l, com.stasdoto.airdefense.nation.SoldierEntity.SOLDIER, -1, 5, -1,
-						new Vec3(x0 - 13 + i * 2.2, g, -24.5), i);
+						new Vec3(x0 - 4.25 + i * 1.7, g, -24.5), i);
 				m.setNoAi(true);
-				m.snapTo(x0 - 13 + i * 2.2, g, -24.5, -90f, 0f);
+				m.snapTo(x0 - 4.25 + i * 1.7, g, -24.5, -90f, 0f);
 				m.setYHeadRot(-90f);
 				m.setYBodyRot(-90f);
 				l.addFreshEntity(m);
 				men.add(m.getId());
 			}
 		});
-		for (int batch = 0; batch * 12 < all.length; batch++) {
+		for (int batch = 0; batch * 6 < all.length; batch++) {
 			int b = batch;
 			server.runOnServer(s -> {
 				for (int i = 0; i < men.size(); i++) {
-					int k = b * 12 + i;
+					int k = b * 6 + i;
 					if (s.overworld().getEntity(men.get(i)) instanceof net.minecraft.world.entity.LivingEntity m) {
 						m.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, k < all.length
 								? com.stasdoto.airdefense.weapon.GunItem.loaded(com.stasdoto.airdefense.registry.ModItems.GUNS.get(all[k])) : ItemStack.EMPTY);
 					}
 				}
 			});
-			camera(server, x0 - 1.0, g + 1.6, -17.0, 180, 4);
+			camera(server, x0 + 0.0, g + 1.3, -20.4, 180, 6);
 			ctx.waitTicks(20);
 			ctx.takeScreenshot("151_arsenal_soldiers_" + batch);
 		}
+		ctx.runOnClient(mc -> { if (mc.gui.hud.isHidden()) { mc.gui.hud.toggle(); } });
 		for (int id : men) {
 			server.runOnServer(s -> {
 				if (s.overworld().getEntity(id) != null) {

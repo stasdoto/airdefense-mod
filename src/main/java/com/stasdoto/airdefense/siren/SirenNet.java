@@ -112,7 +112,7 @@ public final class SirenNet {
 		ServerPlayNetworking.registerGlobalReceiver(Action.TYPE, (payload, context) -> handle(context.player(), payload));
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			if (server.getTickCount() % 20 == 0) {
-				Sirens.get(server).tick(server.overworld().getGameTime());
+				Sirens.get(server).tick(server.overworld());
 			}
 		});
 	}
@@ -180,7 +180,7 @@ public final class SirenNet {
 		List<Town> towns = new ArrayList<>();
 		for (Settlement t : p.settlements.values()) {
 			towns.add(new Town(t.id, t.name, s.townSignal(now, t.id), counts.getOrDefault(t.id, 0), (int) Math.sqrt(t.center.distSqr(at)),
-					t.isCity()));
+					t.capitalCity));
 		}
 		towns.sort(Comparator.comparingInt(Town::distance));
 		if (ServerPlayNetworking.canSend(player, State.TYPE)) {

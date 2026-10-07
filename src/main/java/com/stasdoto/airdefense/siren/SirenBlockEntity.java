@@ -19,6 +19,7 @@ public class SirenBlockEntity extends BlockEntity {
 	private int mode = Sirens.MODE_AUTO;
 	private int town = Integer.MIN_VALUE;
 	private boolean registered;
+	private int seconds;
 
 	public SirenBlockEntity(BlockPos pos, BlockState state) {
 		super(ModBlockEntities.SIREN, pos, state);
@@ -32,6 +33,9 @@ public class SirenBlockEntity extends BlockEntity {
 		this.mode = mode;
 		setChanged();
 		if (level instanceof ServerLevel server) {
+			if (town == Integer.MIN_VALUE) {
+				town = Sirens.townOf(server, getBlockPos());
+			}
 			update(server, getBlockPos(), getBlockState());
 		}
 	}
@@ -44,7 +48,7 @@ public class SirenBlockEntity extends BlockEntity {
 			be.registered = true;
 			Sirens.get(server.getServer()).register(pos);
 		}
-		if (be.town == Integer.MIN_VALUE || level.getGameTime() % 1200 == 0) {
+		if (be.town == Integer.MIN_VALUE || ++be.seconds % 30 == 0) {
 			// The town may be founded after the siren was built: look again now and then.
 			be.town = Sirens.townOf(server, pos);
 		}
