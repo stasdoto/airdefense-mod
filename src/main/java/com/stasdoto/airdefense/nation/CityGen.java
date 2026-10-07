@@ -447,7 +447,7 @@ public final class CityGen {
 		boolean bridge = g[2] == 1 || g[0] < y - 6;
 		if (bridge) {
 			int deck = Math.max(y, t.sea() + 2);
-			w.set(pos.set(x, deck, z), r.dirt ? Blocks.SPRUCE_PLANKS.defaultBlockState() : surface(r, along, d, half));
+			w.set(pos.set(x, deck, z), r.dirt ? Blocks.SPRUCE_PLANKS.defaultBlockState() : surface(r, along, d, half, diagonal(spot)));
 			for (int yy = deck + 1; yy <= Math.max(deck + 4, g[1] + 1); yy++) {
 				if (!w.get(pos.set(x, yy, z)).isAir()) {
 					w.set(pos, AIR);
@@ -475,7 +475,7 @@ public final class CityGen {
 			shape(w, x, z, yy, dirt, g, pos);
 			return;
 		}
-		BlockState top = surface(r, along, d, half);
+		BlockState top = surface(r, along, d, half, diagonal(spot));
 		shape(w, x, z, y, slab ? ASPHALT : top, g, pos);
 		if (slab) {
 			// The markings go on the half-block step, so they run on unbroken up and down the slopes.
@@ -488,7 +488,12 @@ public final class CityGen {
 	}
 
 	/** The road surface with its markings: a highway's centre line, lane lines and edge lines; a town road's dashes. */
-	private static BlockState surface(Cities.Road r, double along, double d, double half) {
+	/** Running across the grid rather than along it: thin lines there come out as saw teeth of single blocks. */
+	private static boolean diagonal(Cities.Road.Spot spot) {
+		return Math.min(Math.abs(spot.ux), Math.abs(spot.uz)) > 0.3;
+	}
+
+	private static BlockState surface(Cities.Road r, double along, double d, double half, boolean diagonal) {
 		if (r.highway) {
 			boolean full = half > r.half - 0.6;
 			if (d < 0.5) {
@@ -497,7 +502,8 @@ public final class CityGen {
 			if (full && d >= 3.0 && d < 4.0 && Math.floorMod((int) along, 12) < 6) {
 				return MARK;
 			}
-			if (full && d >= 6.0 && d < 6.8) {
+			// The edge lines only where the road runs along the grid (diagonally they would be teeth, not a line).
+			if (full && !diagonal && d >= 6.0 && d < 6.8) {
 				return MARK;
 			}
 			return ASPHALT;
