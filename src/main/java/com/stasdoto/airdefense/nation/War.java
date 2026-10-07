@@ -277,12 +277,18 @@ public final class War {
 
 	/** The way into a town by road: the road, which end is out of town, how far back it starts, the points to drive. */
 	public static final class Approach {
+		/** The road (null: across country, in a straight line from {@code (ex, ez)} out along {@code (dx, dz)}). */
+		@Nullable
 		public final Cities.Road road;
 		public final boolean fromEnd;
 		public final double back;
 		public final List<Vec3> waypoints = new ArrayList<>();
+		private double ex;
+		private double ez;
+		private double dx;
+		private double dz;
 
-		Approach(Cities.Road road, boolean fromEnd, double back) {
+		Approach(@Nullable Cities.Road road, boolean fromEnd, double back) {
 			this.road = road;
 			this.fromEnd = fromEnd;
 			this.back = back;
@@ -292,6 +298,51 @@ public final class War {
 		public double fromTown(double s) {
 			return fromEnd ? road.length - s : s;
 		}
+
+		/** How far out the way goes. */
+		public double length() {
+			return road != null ? road.length : back + 60;
+		}
+
+		/** The point {@code s} blocks out of town along the way. */
+		public double[] at(double s) {
+			return road != null ? road.pointAt(fromTown(s)) : new double[]{ex + dx * s, ez + dz * s};
+		}
+	}
+
+	/**
+	 * No road in: across country in a straight line from the attacker's side (turned a little either way if that side
+	 * is water), from {@code back} blocks out to the edge of the town.
+	 */
+	@Nullable
+	public static Approach crossCountry(ServerLevel level, Settlement target, Vec3 from, double back) {
+		Cities.Terrain t = Cities.terrain(level);
+		double base = Math.atan2(from.z - target.center.getZ(), from.x - target.center.getX());
+		double edge = Math.max(24, target.radius * 0.8);
+		for (double turn : new double[]{0, 0.4, -0.4, 0.8, -0.8, 1.3, -1.3}) {
+			double a = base + turn;
+			double dx = Math.cos(a);
+			double dz = Math.sin(a);
+			double ex = target.center.getX() + 0.5 + dx * edge;
+			double ez = target.center.getZ() + 0.5 + dz * edge;
+			boolean dry = true;
+			for (double s = 0; s <= back && dry; s += 20) {
+				dry = t.top((int) Math.floor(ex + dx * s), (int) Math.floor(ez + dz * s)) >= t.sea();
+			}
+			if (!dry) {
+				continue;
+			}
+			Approach ap = new Approach(null, false, back);
+			ap.ex = ex;
+			ap.ez = ez;
+			ap.dx = dx;
+			ap.dz = dz;
+			for (double s = back; s >= 0; s -= 12) {
+				ap.waypoints.add(new Vec3(ex + dx * s, 0, ez + dz * s));
+			}
+			return ap;
+		}
+		return null;
 	}
 
 	/**
@@ -369,11 +420,13 @@ public final class War {
 		Vec3 homeAt = home != null ? Vec3.atCenterOf(home.center) : Vec3.atCenterOf(target.center).add(500, 0, 0);
 		Approach ap = approach(level, target, homeAt, 210);
 		if (ap == null) {
+			// No road: they come across the fields from their side - still from out of sight, never out of thin air.
+			ap = crossCountry(level, target, homeAt, 200);
+		}
+		if (ap == null) {
 			return out;
 		}
-		Cities.Road road = ap.road;
 		double back = ap.back;
-		java.util.function.DoubleUnaryOperator atFromTown = ap::fromTown;
 		List<Vec3> waypoints = ap.waypoints;
 		// The vehicles: by how many men there are and which side's kit.
 		boolean east = SoldierEntity.bloc(ai.id) == com.stasdoto.airdefense.weapon.GunType.Bloc.EAST;
@@ -393,9 +446,9 @@ public final class War {
 		BlockPos flag = target.flag;
 		for (int k = 0; k < kit.size(); k++) {
 			com.stasdoto.airdefense.vehicle.VehicleType type = kit.get(k);
-			double s = Math.min(road.length - 2, back + 16 * k);
-			double[] pt = road.pointAt(atFromTown.applyAsDouble(s));
-			double[] ahead = road.pointAt(atFromTown.applyAsDouble(Math.max(0, s - 6)));
+			double s = Math.min(ap.length() - 2, back + 16 * k);
+			double[] pt = ap.at(s);
+			double[] ahead = ap.at(Math.max(0, s - 6));
 			BlockPos at = BlockPos.containing(pt[0], 0, pt[1]);
 			if (!level.isLoaded(at)) {
 				// Out on the road beyond sight: load its ground now (and keep it running) rather than skip the vehicle.

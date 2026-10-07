@@ -940,12 +940,24 @@ public final class Nations {
 		}
 	}
 
-	/** A bandit gang turns up 50-70 blocks from the village and heads for it. */
+	/**
+	 * A bandit gang comes out of the woods 100-130 blocks from the village, on the side away from the nearest player
+	 * (out of his sight: nobody pops up in front of him), and heads for it.
+	 */
 	public static List<SoldierEntity> raid(ServerLevel level, Settlement target, int count) {
 		Random r = new Random();
 		List<SoldierEntity> gang = new ArrayList<>();
-		double a = r.nextDouble() * Math.PI * 2;
-		double d = 50 + r.nextDouble() * 20;
+		var watcher = level.getNearestPlayer(target.center.getX(), target.center.getY(), target.center.getZ(), 400, pl -> true);
+		double a = watcher != null ? Math.atan2(target.center.getZ() - watcher.getZ(), target.center.getX() - watcher.getX()) + (r.nextDouble() - 0.5) * 1.6
+				: r.nextDouble() * Math.PI * 2;
+		double d = 100 + r.nextDouble() * 30;
+		if (watcher != null) {
+			double sx = target.center.getX() + Math.cos(a) * d;
+			double sz = target.center.getZ() + Math.sin(a) * d;
+			if (Math.hypot(sx - watcher.getX(), sz - watcher.getZ()) < 80) {
+				return gang;
+			}
+		}
 		for (int i = 0; i < count; i++) {
 			int x = (int) Math.floor(target.center.getX() + Math.cos(a) * d + r.nextInt(5) - 2);
 			int z = (int) Math.floor(target.center.getZ() + Math.sin(a) * d + r.nextInt(5) - 2);
