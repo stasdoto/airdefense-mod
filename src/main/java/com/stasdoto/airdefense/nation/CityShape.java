@@ -15,6 +15,8 @@ import java.util.Random;
  */
 public final class CityShape {
 	public static final int SH = Cities.STREET_HALF;
+	/** The pavement on each side of a street (1.25: two blocks - the kerb stones and the walk). */
+	public static final int WALK = 2;
 
 	public static final int HALL = 0;
 	public static final int DOWNTOWN = 1;
@@ -43,10 +45,10 @@ public final class CityShape {
 			this.j0 = j0;
 			this.i1 = i1;
 			this.j1 = j1;
-			this.x0 = gx[i0] + SH + 2;
-			this.x1 = gx[i1 + 1] - SH - 2;
-			this.z0 = gz[j0] + SH + 2;
-			this.z1 = gz[j1 + 1] - SH - 2;
+			this.x0 = gx[i0] + SH + WALK + 1;
+			this.x1 = gx[i1 + 1] - SH - WALK - 1;
+			this.z0 = gz[j0] + SH + WALK + 1;
+			this.z1 = gz[j1 + 1] - SH - WALK - 1;
 		}
 
 		public int width() {
@@ -194,10 +196,10 @@ public final class CityShape {
 		for (int i = 0; i < n; i++) {
 			for (int j = 0; j < n; j++) {
 				if (isOn(i, j)) {
-					ax = Math.min(ax, gx[i] - SH - 1);
-					bx = Math.max(bx, gx[i + 1] + SH + 1);
-					az = Math.min(az, gz[j] - SH - 1);
-					bz = Math.max(bz, gz[j + 1] + SH + 1);
+					ax = Math.min(ax, gx[i] - SH - WALK);
+					bx = Math.max(bx, gx[i + 1] + SH + WALK);
+					az = Math.min(az, gz[j] - SH - WALK);
+					bz = Math.max(bz, gz[j + 1] + SH + WALK);
 				}
 			}
 		}
@@ -212,7 +214,8 @@ public final class CityShape {
 		int[] w = new int[n];
 		int before = 0;
 		for (int i = 0; i < n; i++) {
-			w[i] = i == mid ? 34 : 26 + r.nextInt(13);
+			// 1.25: wider streets and pavements - the blocks grow with them, the lots keep their size.
+			w[i] = i == mid ? 38 : 30 + r.nextInt(13);
 			if (i < mid) {
 				before += w[i];
 			}
@@ -467,8 +470,8 @@ public final class CityShape {
 		p.onH = p.dh <= SH && (segH(kh, col) || nearNode);
 		p.street = p.onV || p.onH;
 		if (!p.street) {
-			boolean nearNodeK = p.dv <= SH + 1 && p.dh <= SH + 1 && p.node;
-			p.kerb = p.dv == SH + 1 && (segV(kv, row) || nearNodeK) || p.dh == SH + 1 && (segH(kh, col) || nearNodeK);
+			boolean nearNodeK = p.dv <= SH + WALK && p.dh <= SH + WALK && p.node;
+			p.kerb = p.dv <= SH + WALK && (segV(kv, row) || nearNodeK) || p.dh <= SH + WALK && (segH(kh, col) || nearNodeK);
 			p.lot = lotAt(col, row);
 		}
 		return p;
@@ -491,8 +494,8 @@ public final class CityShape {
 				if (!isOn(i, j)) {
 					continue;
 				}
-				int dx = Math.max(0, Math.max(gx[i] - SH - 1 - x, x - gx[i + 1] - SH - 1));
-				int dz = Math.max(0, Math.max(gz[j] - SH - 1 - z, z - gz[j + 1] - SH - 1));
+				int dx = Math.max(0, Math.max(gx[i] - SH - WALK - x, x - gx[i + 1] - SH - WALK));
+				int dz = Math.max(0, Math.max(gz[j] - SH - WALK - z, z - gz[j + 1] - SH - WALK));
 				best = Math.min(best, Math.max(dx, dz));
 			}
 		}

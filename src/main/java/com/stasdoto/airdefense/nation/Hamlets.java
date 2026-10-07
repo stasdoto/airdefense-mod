@@ -206,7 +206,9 @@ public final class Hamlets {
 		int sx = h.x + (int) Math.round(dx / len * (Hamlet.SQUARE + 1));
 		int sz = h.z + (int) Math.round(dz / len * (Hamlet.SQUARE + 1));
 		int[] e = Cities.edge(c, h.x, h.z);
-		h.road = Cities.between(t, sx, sz, h.base, e[0], e[1], c.base, 1, true);
+		double[] out = Cities.outward(c, e);
+		// A narrow asphalt country road, winding over the land into town.
+		h.road = Cities.between(t, h.seed(), sx, sz, h.base, dx / len, dz / len, e[0], e[1], c.base, out[0], out[1], Cities.COUNTRY_HALF, false);
 		List<Pad> taken = new ArrayList<>();
 		// Houses in a loose ring, doors to the square.
 		int houses = 5 + r.nextInt(5);

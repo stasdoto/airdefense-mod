@@ -998,8 +998,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 			var c = list.getFirst();
 			var r = roads.isEmpty() ? null : roads.getFirst();
-			return new int[]{c.x, c.z, c.half(), c.base, r == null ? c.x : r.x0, r == null ? c.z : r.z0, r == null ? 0 : (int) Math.round(r.ux * 100),
-					r == null ? 0 : (int) Math.round(r.uz * 100)};
+			return new int[]{c.x, c.z, c.half(), c.base, r == null ? c.x : r.x0, r == null ? c.z : r.z0, r == null ? 0 : (int) Math.round((r.pointAt(30)[0] - r.pointAt(0)[0]) / 30 * 100),
+					r == null ? 0 : (int) Math.round((r.pointAt(30)[1] - r.pointAt(0)[1]) / 30 * 100)};
 		});
 		if (cap == null) {
 			return;

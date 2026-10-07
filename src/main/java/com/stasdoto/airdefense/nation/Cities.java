@@ -27,9 +27,9 @@ import net.minecraft.world.level.levelgen.Heightmap;
  */
 public final class Cities {
 	public static final int CELL = 2048;
-	public static final int PITCH = 32;
-	/** Streets: 5 blocks of asphalt centred on each grid line; then a pavement. */
-	public static final int STREET_HALF = 2;
+	public static final int PITCH = 36;
+	/** Streets (1.25): 7 blocks of asphalt centred on each grid line - a lane each way - then a pavement two blocks wide. */
+	public static final int STREET_HALF = 3;
 	/** Ground blended from the city's level back to nature over this many blocks. */
 	public static final int MARGIN = 14;
 	public static final int ROAD_HALF = 3;
@@ -201,16 +201,24 @@ public final class Cities {
 		}
 	}
 
-	/** A road from {@code (x0, z0)} to {@code (x1, z1)} with its height every {@link #STEP} blocks. */
+	/**
+	 * A road (1.25): a winding line of points from {@code (x0, z0)} to {@code (x1, z1)} that follows the land - round
+	 * the hills, along the valleys, over rivers on bridges - with its height every {@link #STEP} blocks along it.
+	 * Highways between cities have two lanes each way; the roads to the hamlets are narrow country roads.
+	 */
 	public static final class Road {
 		public static final int STEP = 16;
+		/** Segments per bucket of the spatial index. */
+		private static final int BUCKET = 12;
 		public final int x0;
 		public final int z0;
 		public final int x1;
 		public final int z1;
+		final float[] px;
+		final float[] pz;
+		/** Distance along the road at each point. */
+		final float[] cum;
 		public final double length;
-		public final double ux;
-		public final double uz;
 		public final float[] heights;
 		public final int minX;
 		public final int maxX;
@@ -219,37 +227,153 @@ public final class Cities {
 		/** Half the width of the carriageway; a country track (a hamlet's) is a narrow dirt road. */
 		public final int half;
 		public final boolean dirt;
+		/** Two lanes each way (between cities). */
+		public final boolean highway;
+		/** Half width where the road leaves a city (it widens from the street to the highway over the first metres). */
+		public final int startHalf;
+		private final float[] bx0;
+		private final float[] bx1;
+		private final float[] bz0;
+		private final float[] bz1;
 
-		Road(int x0, int z0, int x1, int z1, float[] heights) {
-			this(x0, z0, x1, z1, heights, ROAD_HALF, false);
+		/** Where a column is relative to the road. */
+		public static final class Spot {
+			public double along;
+			public double across;
+			/** Unit direction of the road there. */
+			public double ux;
+			public double uz;
 		}
 
-		Road(int x0, int z0, int x1, int z1, float[] heights, int half, boolean dirt) {
+		Road(float[] px, float[] pz, float[] heights, int half, boolean dirt, boolean highway, int startHalf) {
+			this.px = px;
+			this.pz = pz;
 			this.half = half;
 			this.dirt = dirt;
-			this.x0 = x0;
-			this.z0 = z0;
-			this.x1 = x1;
-			this.z1 = z1;
-			this.length = Math.max(1, Math.hypot(x1 - x0, z1 - z0));
-			this.ux = (x1 - x0) / length;
-			this.uz = (z1 - z0) / length;
+			this.highway = highway;
+			this.startHalf = startHalf;
+			int n = px.length;
+			this.x0 = Math.round(px[0]);
+			this.z0 = Math.round(pz[0]);
+			this.x1 = Math.round(px[n - 1]);
+			this.z1 = Math.round(pz[n - 1]);
+			cum = new float[n];
+			float ax = Float.MAX_VALUE;
+			float bxx = -Float.MAX_VALUE;
+			float az = Float.MAX_VALUE;
+			float bzz = -Float.MAX_VALUE;
+			for (int i = 0; i < n; i++) {
+				if (i > 0) {
+					cum[i] = cum[i - 1] + (float) Math.hypot(px[i] - px[i - 1], pz[i] - pz[i - 1]);
+				}
+				ax = Math.min(ax, px[i]);
+				bxx = Math.max(bxx, px[i]);
+				az = Math.min(az, pz[i]);
+				bzz = Math.max(bzz, pz[i]);
+			}
+			this.length = Math.max(1, cum[n - 1]);
 			this.heights = heights;
-			int pad = half + 2;
-			minX = Math.min(x0, x1) - pad;
-			maxX = Math.max(x0, x1) + pad;
-			minZ = Math.min(z0, z1) - pad;
-			maxZ = Math.max(z0, z1) + pad;
+			int pad = half + 4;
+			minX = (int) Math.floor(ax) - pad;
+			maxX = (int) Math.ceil(bxx) + pad;
+			minZ = (int) Math.floor(az) - pad;
+			maxZ = (int) Math.ceil(bzz) + pad;
+			int segs = n - 1;
+			int buckets = Math.max(1, (segs + BUCKET - 1) / BUCKET);
+			bx0 = new float[buckets];
+			bx1 = new float[buckets];
+			bz0 = new float[buckets];
+			bz1 = new float[buckets];
+			for (int b = 0; b < buckets; b++) {
+				float a0 = Float.MAX_VALUE;
+				float a1 = -Float.MAX_VALUE;
+				float c0 = Float.MAX_VALUE;
+				float c1 = -Float.MAX_VALUE;
+				for (int i = b * BUCKET; i <= Math.min(segs, (b + 1) * BUCKET); i++) {
+					a0 = Math.min(a0, px[i]);
+					a1 = Math.max(a1, px[i]);
+					c0 = Math.min(c0, pz[i]);
+					c1 = Math.max(c1, pz[i]);
+				}
+				bx0[b] = a0;
+				bx1[b] = a1;
+				bz0[b] = c0;
+				bz1[b] = c1;
+			}
 		}
 
-		/** Distance along the road of the point nearest to (px, pz). */
-		public double along(double px, double pz) {
-			return (px - x0) * ux + (pz - z0) * uz;
+		/** A straight road (the old kind, still used for short links). */
+		Road(int x0, int z0, int x1, int z1, float[] heights, int half, boolean dirt) {
+			this(new float[]{x0, x1}, new float[]{z0, z1}, heights, half, dirt, false, half);
 		}
 
-		/** Distance from the centre line (signed). */
-		public double across(double px, double pz) {
-			return (px - x0) * -uz + (pz - z0) * ux;
+		/**
+		 * The nearest point of the road to (x, z), if it is within {@code reach} of the line: distance along (it runs
+		 * on past the ends in a straight line), signed distance across, the direction. False if nothing is that close.
+		 */
+		public boolean locate(double x, double z, double reach, Spot out) {
+			double best = reach * reach;
+			boolean found = false;
+			int segs = px.length - 1;
+			for (int b = 0; b < bx0.length; b++) {
+				if (x < bx0[b] - reach || x > bx1[b] + reach || z < bz0[b] - reach || z > bz1[b] + reach) {
+					continue;
+				}
+				for (int i = b * BUCKET; i < Math.min(segs, (b + 1) * BUCKET); i++) {
+					double sx = px[i + 1] - px[i];
+					double sz = pz[i + 1] - pz[i];
+					double sl = Math.sqrt(sx * sx + sz * sz);
+					if (sl < 1e-6) {
+						continue;
+					}
+					double ux = sx / sl;
+					double uz = sz / sl;
+					double rx = x - px[i];
+					double rz = z - pz[i];
+					double u = rx * ux + rz * uz;
+					double uc = u;
+					if (i > 0 && uc < 0) {
+						uc = 0;
+					}
+					if (i < segs - 1 && uc > sl) {
+						uc = sl;
+					}
+					double cx = px[i] + ux * uc;
+					double cz = pz[i] + uz * uc;
+					double d2 = (x - cx) * (x - cx) + (z - cz) * (z - cz);
+					if (d2 < best) {
+						best = d2;
+						found = true;
+						out.along = cum[i] + uc;
+						out.across = rx * -uz + rz * ux;
+						out.ux = ux;
+						out.uz = uz;
+					}
+				}
+			}
+			return found;
+		}
+
+		/** Distance along the road of the point nearest to (px, pz) (slow: for a few checks, not for every column). */
+		public double along(double x, double z) {
+			Spot s = new Spot();
+			return locate(x, z, 1e6, s) ? s.along : -1e9;
+		}
+
+		/** Distance from the centre line (signed; slow, see {@link #along}). */
+		public double across(double x, double z) {
+			Spot s = new Spot();
+			return locate(x, z, 1e6, s) ? s.across : 1e9;
+		}
+
+		/** Half the width at this distance along: it widens from the street it leaves a city by, narrows into the next. */
+		public double halfAt(double t) {
+			if (startHalf >= half) {
+				return half;
+			}
+			double ramp = (half - startHalf) * 6.0;
+			double k = Math.min(1, Math.min(Math.max(0, t), Math.max(0, length - t)) / ramp);
+			return startHalf + (half - startHalf) * k;
 		}
 
 		public float height(double t) {
@@ -258,6 +382,37 @@ public final class Cities {
 			int b = Math.min(heights.length - 1, a + 1);
 			double f = i - a;
 			return (float) (heights[a] * (1 - f) + heights[b] * f);
+		}
+
+		/** The point at this distance along: {x, z}. */
+		public double[] pointAt(double t) {
+			t = Math.max(0, Math.min(length, t));
+			int lo = 0;
+			int hi = cum.length - 1;
+			while (hi - lo > 1) {
+				int mid = (lo + hi) >>> 1;
+				if (cum[mid] <= t) {
+					lo = mid;
+				} else {
+					hi = mid;
+				}
+			}
+			double seg = Math.max(1e-6, cum[hi] - cum[lo]);
+			double f = (t - cum[lo]) / seg;
+			return new double[]{px[lo] + (px[hi] - px[lo]) * f, pz[lo] + (pz[hi] - pz[lo]) * f};
+		}
+
+		/** The points of the line (for the map). */
+		public int points() {
+			return px.length;
+		}
+
+		public float pointX(int i) {
+			return px[i];
+		}
+
+		public float pointZ(int i) {
+			return pz[i];
 		}
 	}
 
@@ -477,13 +632,13 @@ public final class Cities {
 		City cap = here.getFirst();
 		for (City c : here) {
 			if (c != cap) {
-				out.add(road(t, cap, c));
+				out.add(road(seed, t, cap, c));
 			}
 		}
 		for (int[] d : new int[][]{{1, 0}, {0, 1}}) {
 			List<City> next = cities(seed, t, cx + d[0], cz + d[1]);
 			if (!next.isEmpty() && next.getFirst().index == 0) {
-				out.add(road(t, cap, next.getFirst()));
+				out.add(road(seed, t, cap, next.getFirst()));
 			}
 		}
 		return out;
@@ -506,43 +661,53 @@ public final class Cities {
 		return new int[]{(int) Math.round(c.x + ux * (last + 1)), (int) Math.round(c.z + uz * (last + 1))};
 	}
 
-	/** From the edge of one city to the edge of the other, following the land, smoothed. */
-	private static Road road(Terrain t, City a, City b) {
+	/** Highways (1.25): two lanes each way - 15 blocks of asphalt with the markings, hard shoulders and crash barriers. */
+	public static final int HIGHWAY_HALF = 7;
+	/** Country roads to the hamlets: one lane each way. */
+	public static final int COUNTRY_HALF = 2;
+
+	/** A highway from the edge of one city to the edge of the other, winding over the land between them. */
+	private static Road road(long seed, Terrain t, City a, City b) {
 		int[] ea = edge(a, b.x, b.z);
 		int[] eb = edge(b, a.x, a.z);
-		return between(t, ea[0], ea[1], a.base, eb[0], eb[1], b.base, ROAD_HALF, false);
+		double[] da = outward(a, ea);
+		double[] db = outward(b, eb);
+		long rs = seed ^ a.key() * 31 ^ b.key() * 17;
+		float[][] line = RoadPlanner.route(t, rs, ea[0], ea[1], da[0], da[1], eb[0], eb[1], db[0], db[1], 32, 28,
+				(x, z) -> avoidTowns(seed, t, a, b, x, z));
+		float[] hs = RoadPlanner.heights(t, line[0], line[1], a.base, b.base, 0.065);
+		return new Road(line[0], line[1], hs, HIGHWAY_HALF, false, true, STREET_HALF);
 	}
 
-	/** A road from (x0, z0) at level y0 to (x1, z1) at y1, following the land in between, smoothed. */
-	static Road between(Terrain t, int x0, int z0, int y0, int x1, int z1, int y1, int half, boolean dirt) {
-		double l = Math.hypot(x1 - x0, z1 - z0);
-		int n = Math.max(2, (int) Math.ceil(l / Road.STEP) + 1);
-		float[] hs = new float[n];
-		for (int i = 0; i < n; i++) {
-			double s = Math.min(l, i * Road.STEP) / Math.max(1, l);
-			int px = (int) Math.round(x0 + (x1 - x0) * s);
-			int pz = (int) Math.round(z0 + (z1 - z0) * s);
-			hs[i] = Math.max(t.sea() + 1, t.top(px, pz));
+	/** The way out of a city at its edge point: along the street it leaves by (the axis nearest the direction out). */
+	static double[] outward(City c, int[] e) {
+		double dx = e[0] - c.x;
+		double dz = e[1] - c.z;
+		if (Math.abs(dx) >= Math.abs(dz)) {
+			return new double[]{Math.signum(dx), 0};
 		}
-		// Smooth it out, then ease into each city's level.
-		for (int pass = 0; pass < 4; pass++) {
-			float[] o = hs.clone();
-			for (int i = 1; i < n - 1; i++) {
-				hs[i] = (o[i - 1] + 2 * o[i] + o[i + 1]) / 4f;
+		return new double[]{0, Math.signum(dz)};
+	}
+
+	/** Other cities on the way cost a lot to pass through (roads go round them). */
+	private static double avoidTowns(long seed, Terrain t, City a, City b, int x, int z) {
+		for (City c : citiesAround(seed, t, x, z)) {
+			if (c == a || c == b) {
+				continue;
+			}
+			if (c.outside(x, z) <= 40) {
+				return 1;
 			}
 		}
-		for (int i = 0; i < n; i++) {
-			double s = i * (double) Road.STEP;
-			double fa = Math.max(0, 1 - s / 64.0);
-			double fb = Math.max(0, 1 - (l - s) / 64.0);
-			hs[i] = (float) (hs[i] * (1 - fa - fb) + y0 * fa + y1 * fb);
-			if (fa + fb > 1) {
-				hs[i] = (float) ((y0 * fa + y1 * fb) / (fa + fb));
-			}
-		}
-		hs[0] = y0;
-		hs[n - 1] = y1;
-		return new Road(x0, z0, x1, z1, hs, half, dirt);
+		return 0;
+	}
+
+	/** A country road from (x0, z0) at level y0 to (x1, z1) at y1, winding over the land in between. */
+	static Road between(Terrain t, long seed, int x0, int z0, int y0, double dx0, double dz0, int x1, int z1, int y1, double dx1, double dz1,
+			int half, boolean dirt) {
+		float[][] line = RoadPlanner.route(t, seed, x0, z0, dx0, dz0, x1, z1, dx1, dz1, 12, 10, null);
+		float[] hs = RoadPlanner.heights(t, line[0], line[1], y0, y1, 0.1);
+		return new Road(line[0], line[1], hs, half, dirt, false, half);
 	}
 
 	// ------------------------------------------------------------------------------------------------

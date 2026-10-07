@@ -41,8 +41,11 @@ public final class CityGen {
 	private static final BlockState ASPHALT_SLAB = Blocks.CONCRETE_SLAB.pick(DyeColor.GRAY).defaultBlockState();
 	private static final BlockState MARK = Blocks.CONCRETE.pick(DyeColor.WHITE).defaultBlockState();
 	private static final BlockState KERB = Blocks.SMOOTH_STONE.defaultBlockState();
+	private static final BlockState WALKWAY = Blocks.POLISHED_ANDESITE.defaultBlockState();
 	private static final BlockState PILLAR = Blocks.STONE_BRICKS.defaultBlockState();
 	private static final BlockState RAIL = Blocks.IRON_BARS.defaultBlockState();
+	/** A highway's crash barrier. */
+	private static final BlockState BARRIER = Blocks.ANDESITE_WALL.defaultBlockState();
 	private static final BlockState AIR = Blocks.AIR.defaultBlockState();
 
 	private CityGen() {
@@ -101,6 +104,8 @@ public final class CityGen {
 		}
 		Writer w = new Writer(level);
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+		Cities.Road.Spot probe = new Cities.Road.Spot();
+		Cities.Road.Spot spot = new Cities.Road.Spot();
 		for (int x = x0; x < x0 + 16; x++) {
 			for (int z = z0; z < z0 + 16; z++) {
 				Cities.City in = null;
@@ -119,18 +124,24 @@ public final class CityGen {
 				Cities.Road road = null;
 				double best = Double.MAX_VALUE;
 				for (Cities.Road r : roads) {
-					double along = r.along(x + 0.5, z + 0.5);
-					if (along < -1 || along > r.length + 1) {
+					if (!r.locate(x + 0.5, z + 0.5, r.half + 8, probe)) {
 						continue;
 					}
-					double d = Math.abs(r.across(x + 0.5, z + 0.5)) - r.half;
+					if (probe.along < -1 || probe.along > r.length + 1) {
+						continue;
+					}
+					double d = Math.abs(probe.across) - r.halfAt(probe.along);
 					if (d < best) {
 						best = d;
 						road = r;
+						spot.along = probe.along;
+						spot.across = probe.across;
+						spot.ux = probe.ux;
+						spot.uz = probe.uz;
 					}
 				}
 				if (road != null && best <= 0.5) {
-					roadColumn(w, t, road, x, z, pos);
+					roadColumn(w, t, road, spot, x, z, pos);
 					continue;
 				}
 				boolean done = false;
@@ -144,7 +155,7 @@ public final class CityGen {
 					continue;
 				}
 				if (road != null && best <= 3.5) {
-					roadColumn(w, t, road, x, z, pos);
+					roadColumn(w, t, road, spot, x, z, pos);
 				}
 				if (near != null && (road == null || best > 3.5)) {
 					marginColumn(w, t, near, x, z, pos);
@@ -217,6 +228,7 @@ public final class CityGen {
 			}
 		}
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+		Cities.Road.Spot probe = new Cities.Road.Spot();
 		for (int x = x0; x < x0 + 16; x++) {
 			for (int z = z0; z < z0 + 16; z++) {
 				int from = Integer.MIN_VALUE;
@@ -245,9 +257,9 @@ public final class CityGen {
 				}
 				if (from == Integer.MIN_VALUE) {
 					for (Cities.Road r : roads) {
-						double along = r.along(x + 0.5, z + 0.5);
-						if (along >= 0 && along <= r.length && Math.abs(r.across(x + 0.5, z + 0.5)) <= r.half + 0.5) {
-							from = (int) Math.floor(r.height(along)) + 1;
+						if (r.locate(x + 0.5, z + 0.5, r.half + 1, probe) && probe.along >= 0 && probe.along <= r.length
+								&& Math.abs(probe.across) <= r.halfAt(probe.along) + 0.5) {
+							from = (int) Math.floor(r.height(probe.along)) + 1;
 						}
 					}
 				}
@@ -325,7 +337,7 @@ public final class CityGen {
 	private static void cityColumn(Writer w, Cities.Terrain t, Cities.City c, int x, int z, BlockPos.MutableBlockPos pos) {
 		int[] g = ground(w, x, z, pos);
 		CityShape.Probe p = c.shape().probe(x, z);
-		int zebra = Cities.STREET_HALF + 2;
+		int zebra = Cities.STREET_HALF + CityShape.WALK;
 		BlockState surface;
 		if (p.street) {
 			surface = ASPHALT;
@@ -339,7 +351,8 @@ public final class CityGen {
 				}
 			}
 		} else if (p.kerb) {
-			surface = KERB;
+			// The kerb stones along the street, the walk behind them.
+			surface = Math.min(p.dv, p.dh) == Cities.STREET_HALF + 1 ? KERB : WALKWAY;
 		} else {
 			surface = Blocks.GRASS_BLOCK.defaultBlockState();
 		}
@@ -369,16 +382,17 @@ public final class CityGen {
 		shape(w, x, z, target, surface, g, pos);
 	}
 
-	private static void roadColumn(Writer w, Cities.Terrain t, Cities.Road r, int x, int z, BlockPos.MutableBlockPos pos) {
-		double along = r.along(x + 0.5, z + 0.5);
-		double d = Math.abs(r.across(x + 0.5, z + 0.5));
+	private static void roadColumn(Writer w, Cities.Terrain t, Cities.Road r, Cities.Road.Spot spot, int x, int z, BlockPos.MutableBlockPos pos) {
+		double along = spot.along;
+		double d = Math.abs(spot.across);
+		double half = r.halfAt(along);
 		float h = r.height(along);
 		int y = (int) Math.floor(h);
 		boolean slab = h - y >= 0.5f;
 		int[] g = ground(w, x, z, pos);
-		if (d > r.half + 0.5) {
+		if (d > half + 0.5) {
 			// The embankment or the cutting next to the road.
-			double side = d - r.half - 0.5;
+			double side = d - half - 0.5;
 			if (g[2] == 1) {
 				return;
 			}
@@ -399,16 +413,16 @@ public final class CityGen {
 		boolean bridge = g[2] == 1 || g[0] < y - 6;
 		if (bridge) {
 			int deck = Math.max(y, t.sea() + 2);
-			w.set(pos.set(x, deck, z), r.dirt ? Blocks.SPRUCE_PLANKS.defaultBlockState() : ASPHALT);
+			w.set(pos.set(x, deck, z), r.dirt ? Blocks.SPRUCE_PLANKS.defaultBlockState() : surface(r, along, d, half, false));
 			for (int yy = deck + 1; yy <= Math.max(deck + 4, g[1] + 1); yy++) {
 				if (!w.get(pos.set(x, yy, z)).isAir()) {
 					w.set(pos, AIR);
 				}
 			}
-			if (d > r.half - 0.5) {
+			if (d > half - 0.5) {
 				w.set(pos.set(x, deck + 1, z), r.dirt ? Blocks.SPRUCE_FENCE.defaultBlockState() : RAIL);
 			}
-			if (Math.floorMod((int) along, 24) < 2 && d <= r.half - 0.5) {
+			if (Math.floorMod((int) along, 24) < 2 && d <= half - 0.5 && (!r.highway || d < 1.5 || d > half - 2.5)) {
 				for (int yy = deck - 1; yy > w.level.getMinY(); yy--) {
 					BlockState s = w.get(pos.set(x, yy, z));
 					if (!s.isAir() && s.getFluidState().isEmpty() && !s.canBeReplaced()) {
@@ -427,11 +441,38 @@ public final class CityGen {
 			shape(w, x, z, yy, dirt, g, pos);
 			return;
 		}
-		BlockState surface = d < 0.5 && !slab && Math.floorMod((int) along, 8) < 4 ? MARK : ASPHALT;
-		shape(w, x, z, y, surface, g, pos);
+		shape(w, x, z, y, surface(r, along, d, half, slab), g, pos);
 		if (slab) {
 			w.set(pos.set(x, y + 1, z), ASPHALT_SLAB.setValue(BlockStateProperties.SLAB_TYPE, SlabType.BOTTOM));
 		}
+		// Crash barriers along a highway where it runs high on an embankment.
+		if (r.highway && d > half - 0.5 && g[0] < y - 2 && !slab) {
+			w.set(pos.set(x, y + 1, z), BARRIER);
+		}
+	}
+
+	/** The road surface with its markings: a highway's centre line, lane lines and edge lines; a town road's dashes. */
+	private static BlockState surface(Cities.Road r, double along, double d, double half, boolean slab) {
+		if (slab) {
+			return ASPHALT;
+		}
+		if (r.highway) {
+			boolean full = half > r.half - 0.6;
+			if (d < 0.5) {
+				return MARK;
+			}
+			if (full && d >= 3.0 && d < 4.0 && Math.floorMod((int) along, 12) < 6) {
+				return MARK;
+			}
+			if (full && d >= 6.0 && d < 6.8) {
+				return MARK;
+			}
+			return ASPHALT;
+		}
+		if (r.half <= Cities.COUNTRY_HALF) {
+			return ASPHALT;
+		}
+		return d < 0.5 && Math.floorMod((int) along, 8) < 4 ? MARK : ASPHALT;
 	}
 
 	// ------------------------------------------------------------------------------------------------
