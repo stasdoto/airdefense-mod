@@ -2271,7 +2271,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runCommand("clear @a");
 		server.runCommand("effect give @a minecraft:resistance 600 4 true");
 		camera(server, x + 0.5, g, 0.5, 180, -20);
-		ctx.waitTicks(40);
+		ctx.waitTicks(100);
 		server.runOnServer(s -> {
 			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
 			pl.getInventory().setItem(0, com.stasdoto.airdefense.weapon.GunItem.loaded(
@@ -2285,10 +2285,12 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		int shotsBefore = com.stasdoto.airdefense.weapon.GunServer.SHOTS.get();
 		int drone = server.computeOnServer(s -> {
 			var m = com.stasdoto.airdefense.missile.MissileEntity.launchStrike(s.overworld(), com.stasdoto.airdefense.missile.MissileType.SHAHED,
-					new Vec3(x + 12, g + 35, -170), new Vec3(x + 12, g, 400), new Vec3(0, 0, 1));
+					new Vec3(x + 12, g + 35, -120), new Vec3(x + 12, g, 400), new Vec3(0, 0, 1));
 			m.setCruiseAltitude(35);
 			return m.getId();
 		});
+		int seen = waitUntil(ctx, () -> alive(server, drone), 60);
+		AirDefense.LOGGER.info("[airdefense-test] rifle_shahed: drone {} flying after {} ticks", drone, seen);
 		ctx.getInput().holdMouse(right);
 		int fired = 0;
 		boolean shotAt = false;
