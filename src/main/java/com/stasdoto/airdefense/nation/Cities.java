@@ -252,6 +252,24 @@ public final class Cities {
 		return null;
 	}
 
+	/** Like {@link #cityAt}, but only from cells already planned (never plans one: for checks on the server's own tick). */
+	@Nullable
+	public static City plannedCityAt(long seed, int x, int z, int margin) {
+		if (cacheSeed != seed) {
+			return null;
+		}
+		List<City> list = CITIES.get(cellKey(Math.floorDiv(x, CELL), Math.floorDiv(z, CELL)));
+		if (list == null) {
+			return null;
+		}
+		for (City c : list) {
+			if (c.outside(x, z) <= margin) {
+				return c;
+			}
+		}
+		return null;
+	}
+
 	/** Roads that start in this cell (towns to their capital, the capital to the capitals east and south). */
 	public static List<Road> roads(long seed, Terrain t, int cx, int cz) {
 		checkSeed(seed);

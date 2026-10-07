@@ -134,7 +134,7 @@ public final class Nations {
 				continue;
 			}
 			// People of a planned city that stands here wait for their city (founded with all its buildings).
-			Cities.City planned = Cities.cityAt(level.getSeed(), Cities.terrain(level), v.getBlockX(), v.getBlockZ(), Cities.MARGIN);
+			Cities.City planned = Cities.plannedCityAt(level.getSeed(), v.getBlockX(), v.getBlockZ(), Cities.MARGIN);
 			if (planned != null && level.isLoaded(planned.bell()) && level.getBlockState(planned.bell()).is(Blocks.BELL)) {
 				continue;
 			}
