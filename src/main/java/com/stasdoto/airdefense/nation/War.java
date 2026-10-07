@@ -213,7 +213,11 @@ public final class War {
 				}
 				Settlement target = nearestTarget(level, p, ai, enemy);
 				if (target != null) {
-					sendSquad(level, p, ai, target, 3 + r.nextInt(3));
+					// Bigger squads now (1.25), and they come by road where there is one.
+					int men = 4 + r.nextInt(5) + Math.min(4, p.settlementsOf(ai.id).size() / 2);
+					if (sendColumn(level, p, ai, target, men).isEmpty()) {
+						sendSquad(level, p, ai, target, men);
+					}
 				}
 				// At night, now and then: a massed drone raid on one of his villages.
 				if (target != null && level.isDarkOutside() && r.nextInt(100) < 12
@@ -269,6 +273,130 @@ public final class War {
 			}
 		}
 		return best;
+	}
+
+	/**
+	 * A column against a town (1.25): the squad comes by road from the attacker's nearest town - a car for a few men,
+	 * an armoured carrier and a lorry for more, a column led by a tank for a big squad - and turns up far out on the
+	 * road it comes in by, not out of thin air; at the edge of town the men get out and go for the flag on foot while
+	 * the armour gives fire. Empty if there is no road to come by.
+	 */
+	public static List<com.stasdoto.airdefense.vehicle.VehicleEntity> sendColumn(ServerLevel level, Politics p, Country ai, Settlement target, int men) {
+		List<com.stasdoto.airdefense.vehicle.VehicleEntity> out = new ArrayList<>();
+		long seed = level.getSeed();
+		Cities.Terrain t = Cities.terrain(level);
+		Settlement home = null;
+		double bestD = Double.MAX_VALUE;
+		for (Settlement o : p.settlementsOf(ai.id)) {
+			double d = o.center.distSqr(target.center);
+			if (d < bestD) {
+				bestD = d;
+				home = o;
+			}
+		}
+		Vec3 homeAt = home != null ? Vec3.atCenterOf(home.center) : Vec3.atCenterOf(target.center).add(500, 0, 0);
+		// The roads into the target town, and the one coming from the attacker's side.
+		List<Cities.Road> in = new ArrayList<>();
+		Cities.City city = target.city >= 0 ? Cities.plannedCityAt(seed, target.center.getX(), target.center.getZ(), 400) : null;
+		Hamlets.Hamlet hamlet = target.hamlet >= 0 ? Cities.plannedHamletAt(seed, target.center.getX(), target.center.getZ(), 40) : null;
+		if (city != null) {
+			for (Cities.Road r : Cities.roadsNear(seed, t, city.x, city.z)) {
+				if (city.outside(r.x0, r.z0) <= 12 || city.outside(r.x1, r.z1) <= 12) {
+					in.add(r);
+				}
+			}
+		} else if (hamlet != null && hamlet.road != null) {
+			in.add(hamlet.road);
+		}
+		Cities.Road road = null;
+		boolean towardsEnd = false;
+		double best = Double.MAX_VALUE;
+		for (Cities.Road r : in) {
+			boolean startInTown = city != null ? city.outside(r.x0, r.z0) <= 12 : Math.hypot(r.x0 - target.center.getX(), r.z0 - target.center.getZ()) < 30;
+			double[] far = startInTown ? new double[]{r.x1, r.z1} : new double[]{r.x0, r.z0};
+			double d = Math.hypot(far[0] - homeAt.x, far[1] - homeAt.z);
+			if (d < best) {
+				best = d;
+				road = r;
+				towardsEnd = !startInTown;
+			}
+		}
+		if (road == null || road.length < 90) {
+			return out;
+		}
+		// Far enough out not to be seen turning up (or as far as the road goes).
+		double back = Math.min(road.length - 10, 210);
+		final Cities.Road rd = road;
+		final boolean fromEnd = towardsEnd;
+		java.util.function.DoubleUnaryOperator atFromTown = s -> fromEnd ? rd.length - s : s;
+		List<Vec3> waypoints = new ArrayList<>();
+		for (double s = back; s >= 0; s -= 12) {
+			double[] pt = road.pointAt(atFromTown.applyAsDouble(s));
+			waypoints.add(new Vec3(pt[0], 0, pt[1]));
+		}
+		// On into the town a little way (a city: up its street; a hamlet: to the square's edge).
+		if (city != null) {
+			double[] e = road.pointAt(atFromTown.applyAsDouble(0));
+			Vec3 into = new Vec3(city.x - e[0], 0, city.z - e[1]).normalize().scale(22);
+			waypoints.add(new Vec3(e[0], 0, e[1]).add(into));
+		}
+		// The vehicles: by how many men there are and which side's kit.
+		boolean east = SoldierEntity.bloc(ai.id) == com.stasdoto.airdefense.weapon.GunType.Bloc.EAST;
+		List<com.stasdoto.airdefense.vehicle.VehicleType> kit = new ArrayList<>();
+		if (men <= 4) {
+			kit.add(east ? com.stasdoto.airdefense.vehicle.VehicleType.BTR82 : com.stasdoto.airdefense.vehicle.VehicleType.MAXXPRO);
+		} else if (men <= 8) {
+			kit.add(east ? com.stasdoto.airdefense.vehicle.VehicleType.BMP2 : com.stasdoto.airdefense.vehicle.VehicleType.BRADLEY);
+			kit.add(com.stasdoto.airdefense.vehicle.VehicleType.SUPPLY_TRUCK);
+		} else {
+			kit.add(east ? com.stasdoto.airdefense.vehicle.VehicleType.T72 : com.stasdoto.airdefense.vehicle.VehicleType.LEOPARD2);
+			kit.add(east ? com.stasdoto.airdefense.vehicle.VehicleType.BMP2 : com.stasdoto.airdefense.vehicle.VehicleType.BRADLEY);
+			kit.add(east ? com.stasdoto.airdefense.vehicle.VehicleType.BTR82 : com.stasdoto.airdefense.vehicle.VehicleType.M113);
+			kit.add(com.stasdoto.airdefense.vehicle.VehicleType.SUPPLY_TRUCK);
+		}
+		int left = men;
+		BlockPos flag = target.flag;
+		for (int k = 0; k < kit.size(); k++) {
+			com.stasdoto.airdefense.vehicle.VehicleType type = kit.get(k);
+			double s = Math.min(road.length - 2, back + 16 * k);
+			double[] pt = road.pointAt(atFromTown.applyAsDouble(s));
+			double[] ahead = road.pointAt(atFromTown.applyAsDouble(Math.max(0, s - 6)));
+			BlockPos at = BlockPos.containing(pt[0], 0, pt[1]);
+			if (!level.isLoaded(at)) {
+				level.getChunkSource().addTicketWithRadius(net.minecraft.server.level.TicketType.ENDER_PEARL, net.minecraft.world.level.ChunkPos.containing(at), 2);
+				continue;
+			}
+			int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, at.getX(), at.getZ());
+			float yaw = (float) Math.toDegrees(Math.atan2(-(ahead[0] - pt[0]), ahead[1] - pt[1]));
+			com.stasdoto.airdefense.vehicle.VehicleEntity v = com.stasdoto.airdefense.vehicle.VehicleEntity.spawn(level, type,
+					new Vec3(pt[0], y, pt[1]), yaw);
+			v.country = ai.id;
+			v.home = home == null ? -1 : home.id;
+			v.garrison = true;
+			int seats = type == com.stasdoto.airdefense.vehicle.VehicleType.SUPPLY_TRUCK ? 10 : type.isArmed() && type.weapon.cannon() ? 0
+					: type == com.stasdoto.airdefense.vehicle.VehicleType.MAXXPRO ? 6 : 8;
+			int n = Math.min(left, seats);
+			v.troops = n;
+			v.troopTarget = flag;
+			left -= n;
+			// From where it stands, along the road behind the ones in front.
+			List<Vec3> mine = new ArrayList<>();
+			mine.add(new Vec3(ahead[0], 0, ahead[1]));
+			for (Vec3 w : waypoints) {
+				mine.add(w);
+			}
+			v.drive(mine, type.isArmed() && type.weapon.cannon() ? 0.65f : 0.7f);
+			out.add(v);
+		}
+		if (!out.isEmpty()) {
+			squads++;
+			Country owner = p.country(target.country);
+			if (owner != null) {
+				tell(level, owner, Component.translatable("nation.airdefense.war.column", ai.name, men, out.size(), target.name));
+			}
+			AirDefense.LOGGER.info("[airdefense] {} sends a column ({} vehicles, {} men) against {}", ai.name, out.size(), men, target.name);
+		}
+		return out;
 	}
 
 	/** An enemy squad turns up 50-70 blocks from the village (on the side of their own land) and heads for its flag. */
@@ -441,6 +569,32 @@ public final class War {
 				}
 			}
 		}
+	}
+
+	/** Whether this country's forces should fight this entity: the people and vehicles of a country it is at war with. */
+	public static boolean hostile(ServerLevel level, int country, net.minecraft.world.entity.Entity e) {
+		Politics p = Politics.get(level.getServer());
+		Country c = p.country(country);
+		if (c == null) {
+			return false;
+		}
+		if (e instanceof ServerPlayer pl) {
+			if (pl.isSpectator() || pl.getAbilities().instabuild) {
+				return false;
+			}
+			Country pc = p.countryOwnedBy(pl.getUUID());
+			return pc != null && c.atWarWith(pc.id) || c.wanted.contains(pl.getUUID());
+		}
+		if (e instanceof SoldierEntity s) {
+			return s.country() >= 0 && s.country() != country && c.atWarWith(s.country());
+		}
+		if (e instanceof com.stasdoto.airdefense.vehicle.VehicleEntity v) {
+			if (v.country >= 0) {
+				return v.country != country && c.atWarWith(v.country);
+			}
+			return v.getControllingPassenger() != null && hostile(level, country, v.getControllingPassenger());
+		}
+		return false;
 	}
 
 	private static void tell(ServerLevel level, Country c, Component message) {

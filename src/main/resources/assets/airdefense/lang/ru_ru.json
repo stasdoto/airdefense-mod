@@ -646,7 +646,7 @@
   "hud.airdefense.vehicle.plane": "ВЫС %s м · тяга %s%% · %s",
   "hud.airdefense.vehicle.heli": "ВЫС %1$s м · %3$s",
   "hud.airdefense.vehicle.keys_plane": "W/S — тяга · мышь — куда лететь · A/D — вираж · ЛКМ — пушка · %1$s — подвеска · Shift — выйти",
-  "hud.airdefense.vehicle.keys_heli": "W/S — вперёд/назад · A/D — поворот · Пробел — вверх · Ctrl — вниз · ЛКМ — огонь · %1$s — ракеты",
+  "hud.airdefense.vehicle.keys_heli": "W/S — нос вниз/вверх · A/D — крен · мышь — поворот · Пробел — вверх · Ctrl — вниз · ЛКМ — огонь · %1$s — ракеты",
   "hud.airdefense.vehicle.keys_passenger": "%3$s — пересесть · Shift — выйти",
   "entity.airdefense.fuel_truck": "Бензовоз",
   "item.airdefense.fuel_truck": "Бензовоз КамАЗ",
@@ -898,5 +898,6 @@
   "nation.airdefense.strike.incoming": "%s бьёт ракетами по городу %s!",
   "nation.airdefense.strike.remote": "%s ударил по %s: ракет %s, сбито %s",
   "nation.airdefense.war.why_border": "спор о границе",
-  "nation.airdefense.war.news": "Новости: %s и %s начали войну"
+  "nation.airdefense.war.news": "Новости: %s и %s начали войну",
+  "nation.airdefense.war.column": "%s ведёт на %4$s колонну: %3$s машин, %2$s солдат!"
 }

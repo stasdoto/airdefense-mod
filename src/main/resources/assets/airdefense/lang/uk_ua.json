@@ -646,7 +646,7 @@
   "hud.airdefense.vehicle.plane": "ВИС %s м · тяга %s%% · %s",
   "hud.airdefense.vehicle.heli": "ВИС %1$s м · %3$s",
   "hud.airdefense.vehicle.keys_plane": "W/S — тяга · миша — куди летіти · A/D — віраж · ЛКМ — гармата · %1$s — підвіска · Shift — вийти",
-  "hud.airdefense.vehicle.keys_heli": "W/S — вперед/назад · A/D — поворот · Пробіл — вгору · Ctrl — вниз · ЛКМ — вогонь · %1$s — ракети",
+  "hud.airdefense.vehicle.keys_heli": "W/S — ніс униз/угору · A/D — крен · миша — поворот · Пробіл — угору · Ctrl — униз · ЛКМ — вогонь · %1$s — ракети",
   "hud.airdefense.vehicle.keys_passenger": "%3$s — пересісти · Shift — вийти",
   "entity.airdefense.fuel_truck": "Бензовоз",
   "item.airdefense.fuel_truck": "Бензовоз КамАЗ",
@@ -898,5 +898,6 @@
   "nation.airdefense.strike.incoming": "%s б'є ракетами по місту %s!",
   "nation.airdefense.strike.remote": "%s вдарив по %s: ракет %s, збито %s",
   "nation.airdefense.war.why_border": "суперечка через кордон",
-  "nation.airdefense.war.news": "Новини: %s і %s почали війну"
+  "nation.airdefense.war.news": "Новини: %s і %s почали війну",
+  "nation.airdefense.war.column": "%s веде на %4$s колону: %3$s машин, %2$s солдатів!"
 }

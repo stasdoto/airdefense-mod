@@ -773,9 +773,152 @@ public class VehicleEntity extends LivingEntity {
 	// ------------------------------------------------------------------------------------------------
 	// Driving physics (runs where the vehicle is simulated)
 
+	// ------------------------------------------------------------------------------------------------
+	// Driving by itself (1.25): a column of the world's countries drives along the roads, the troops on board get
+	// out at the end; an AI gunner fights with the vehicle's weapon.
+
+	@Nullable
+	private List<Vec3> route;
+	private int routeIndex;
+	private float routeSpeed = 0.75f;
+	private int stuckTicks;
+	private int backingTicks;
+	/** Soldiers on board (they are only a number while they ride) and where they are going. */
+	public int troops;
+	@Nullable
+	public BlockPos troopTarget;
+	/** For the tests: columns that arrived, troops that got out. */
+	public static int arrivals;
+	public static int dismounted;
+
+	/** Drives along these points (no driver needed), at this share of its top speed. */
+	public void drive(List<Vec3> waypoints, float speedShare) {
+		route = new ArrayList<>(waypoints);
+		routeIndex = 0;
+		routeSpeed = speedShare;
+		stuckTicks = 0;
+		if (!canDrive() && vtype.isLauncher()) {
+			fold();
+		}
+	}
+
+	public boolean driving() {
+		return route != null;
+	}
+
+	/** The keys an AI driver would press: steer at the next point, ease off in bends, back out when stuck. */
+	private Input autopilot() {
+		if (route == null || routeIndex >= route.size() || !(level() instanceof ServerLevel level)) {
+			return Input.EMPTY;
+		}
+		Vec3 to = route.get(routeIndex);
+		double dx = to.x - getX();
+		double dz = to.z - getZ();
+		double dist = Math.sqrt(dx * dx + dz * dz);
+		boolean last = routeIndex == route.size() - 1;
+		if (dist < (last ? 5 : 8)) {
+			routeIndex++;
+			if (routeIndex >= route.size()) {
+				route = null;
+				arrived(level);
+				return new Input(false, false, false, false, true, false, false);
+			}
+			return autopilot();
+		}
+		float want = (float) Math.toDegrees(Math.atan2(-dx, dz));
+		float err = Mth.wrapDegrees(want - getYRot());
+		float max = vtype.maxSpeed * routeSpeed;
+		if (backingTicks > 0) {
+			backingTicks--;
+			return new Input(false, true, err > 0, err < 0, false, false, false);
+		}
+		// Stuck against something: back off a little and try again.
+		if (Math.abs(speed) < 0.02f) {
+			if (++stuckTicks > 50) {
+				stuckTicks = 0;
+				backingTicks = 25;
+			}
+		} else {
+			stuckTicks = 0;
+		}
+		boolean bend = Math.abs(err) > 30;
+		float limit = bend ? max * 0.45f : last && dist < 25 ? max * 0.4f : max;
+		boolean fwd = speed < limit && Math.abs(err) < 100;
+		boolean brake = speed > limit * 1.15f;
+		return new Input(fwd, false, err < -3, err > 3, brake, false, false);
+	}
+
+	/** At the end of the road: the troops get out and go on on foot. */
+	private void arrived(ServerLevel level) {
+		arrivals++;
+		if (troops <= 0) {
+			return;
+		}
+		com.stasdoto.airdefense.nation.Politics p = com.stasdoto.airdefense.nation.Politics.get(level.getServer());
+		com.stasdoto.airdefense.nation.Country c = p.country(country);
+		Vec3 back = forward().scale(-(vtype.geometry.length() / 2 + 1.5));
+		RandomSource r = level.getRandom();
+		for (int i = 0; i < troops; i++) {
+			Vec3 at = position().add(back).add(right().scale((i % 3 - 1) * 1.4)).add(forward().scale(-(i / 3) * 1.3));
+			int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mth.floor(at.x), Mth.floor(at.z));
+			com.stasdoto.airdefense.nation.SoldierEntity e = com.stasdoto.airdefense.nation.SoldierEntity.create(level,
+					com.stasdoto.airdefense.nation.SoldierEntity.SOLDIER, country, c == null ? 0 : c.color, home, new Vec3(at.x, y, at.z), r.nextInt());
+			if (troopTarget != null) {
+				e.orderTo(troopTarget);
+			}
+			level.addFreshEntity(e);
+			dismounted++;
+		}
+		troops = 0;
+	}
+
+	/** An AI gunner (the world's countries' armour): picks the nearest enemy in sight and fires bursts at it. */
+	private void aiGunner(ServerLevel level, Weapon w) {
+		if (country < 0 || (tickCount + getId()) % 5 != 0) {
+			return;
+		}
+		if (aiTarget == null || !aiTarget.isAlive() || aiTarget.distanceToSqr(this) > 140 * 140 || (tickCount + getId()) % 40 == 0) {
+			aiTarget = null;
+			double best = 140 * 140;
+			for (Entity e : level.getEntities(this, getBoundingBox().inflate(140, 40, 140),
+					e -> e.isAlive() && !e.isSpectator() && com.stasdoto.airdefense.nation.War.hostile(level, country, e))) {
+				double d = e.distanceToSqr(this);
+				if (d < best && sees(level, e)) {
+					best = d;
+					aiTarget = e;
+				}
+			}
+		}
+		if (aiTarget == null) {
+			return;
+		}
+		Vec3 point = aiTarget.position().add(0, aiTarget.getBbHeight() * 0.5, 0);
+		setTurretTarget(relativeBearing(point));
+		Vec3 muzzle = railWorld(0);
+		double h = Math.sqrt(Mth.square(point.x - getX()) + Mth.square(point.z - getZ()));
+		double base = vtype.geometry.turretPivot()[1] + getY();
+		setElevationTarget(Mth.clamp((float) Math.toDegrees(Math.atan2(point.y - Math.max(base, muzzle.y - 0.5), Math.max(1, h))), -8, w.maxElevation));
+		float yawErr = Math.abs(Mth.wrapDegrees(turretYaw - getTurretTarget()));
+		if (yawErr < 4 && gunCooldown == 0 && roundsLeft == 0 && getAmmo() > 0) {
+			roundsLeft = Math.min(w.burst, getAmmo());
+			roundTimer = 0;
+			gunCooldown = w.reload + 10 + level.getRandom().nextInt(20);
+		}
+	}
+
+	@Nullable
+	private Entity aiTarget;
+
+	private boolean sees(ServerLevel level, Entity e) {
+		Vec3 from = position().add(0, vtype.geometry.height() * 0.8, 0);
+		Vec3 to = e.position().add(0, e.getBbHeight() * 0.6, 0);
+		return level.clip(new net.minecraft.world.level.ClipContext(from, to, net.minecraft.world.level.ClipContext.Block.COLLIDER,
+				net.minecraft.world.level.ClipContext.Fluid.NONE, this)).getType() == net.minecraft.world.phys.HitResult.Type.MISS;
+	}
+
 	@Override
 	public void travel(Vec3 ignored) {
-		Input in = level().isClientSide() ? clientInput : Input.EMPTY;
+		Input in = level().isClientSide() ? clientInput : route != null && getControllingPassenger() == null ? autopilot() : Input.EMPTY;
 		if (vtype.isAir()) {
 			travelAir(in);
 			return;
@@ -868,34 +1011,7 @@ public class VehicleEntity extends LivingEntity {
 		Vec3 v = getDeltaMovement();
 		float turn = in.left() ? -1 : in.right() ? 1 : 0;
 		if (vtype.air == VehicleType.HELI) {
-			float fwd = in.forward() ? 1 : in.backward() ? -0.5f : 0;
-			if (!onGround() || engine > 0.9f) {
-				setYRot(getYRot() + turn * vtype.pivotTurn * engine);
-			}
-			Vec3 f = forward();
-			double tx = f.x * fwd * vtype.maxSpeed * engine;
-			double tz = f.z * fwd * vtype.maxSpeed * engine;
-			double vx = v.x + (tx - v.x) * 0.04;
-			double vz = v.z + (tz - v.z) * 0.04;
-			double vy;
-			if (engine < 0.75f) {
-				// No lift: it comes down (rotor still turning, so not like a stone).
-				vy = Math.max(v.y - 0.035, -0.7);
-			} else {
-				double climb = in.jump() ? 0.3 : in.sprint() ? -0.3 : 0;
-				vy = v.y + (climb - v.y) * 0.1;
-			}
-			if (onGround()) {
-				vx *= 0.6;
-				vz *= 0.6;
-				if (vy < 0) {
-					vy = -0.04;
-				}
-			}
-			Vec3 motion = new Vec3(vx, vy, vz);
-			setDeltaMovement(motion);
-			move(MoverType.SELF, motion);
-			speed = (float) Math.hypot(vx, vz);
+			travelHeli(in, pilot, v);
 		} else {
 			if (piloted && in.forward()) {
 				throttle = Math.min(1, throttle + 0.01f);
@@ -937,6 +1053,93 @@ public class VehicleEntity extends LivingEntity {
 			speed = (float) sp;
 		}
 		yBodyRot = yHeadRot = getYRot();
+	}
+
+	/**
+	 * A helicopter's flight (1.25): it flies by tilting its rotor. W / S tip the nose down / up and it gathers speed
+	 * forwards / backwards, A / D bank it and it slides sideways, the pilot's look turns it (the pedals), Space / Ctrl
+	 * pull / lower the collective. The body leans and comes back level with some weight to it; speed builds up and
+	 * dies away gradually, there is extra lift once it moves (translational lift) and a cushion of air near the ground.
+	 * Let go of everything and it levels itself and holds its height. Without power it autorotates down.
+	 */
+	public float heliPitch;
+	public float heliRoll;
+
+	private void travelHeli(Input in, @Nullable Player pilot, Vec3 v) {
+		boolean powered = engine >= 0.75f;
+		float fwdIn = in.forward() ? 1 : in.backward() ? -0.7f : 0;
+		float sideIn = in.left() ? -1 : in.right() ? 1 : 0;
+		boolean grounded = onGround() && v.y <= 0.01;
+		float wantPitch = grounded || !powered ? 0 : fwdIn * 22f;
+		float wantRoll = grounded || !powered ? 0 : sideIn * 20f;
+		// The body's attitude follows the stick with some weight (and a little more briskly back to level).
+		float pr = wantPitch == 0 ? 1.4f : 1.0f;
+		float rr = wantRoll == 0 ? 1.6f : 1.2f;
+		heliPitch += Mth.clamp(wantPitch - heliPitch, -pr, pr);
+		heliRoll += Mth.clamp(wantRoll - heliRoll, -rr, rr);
+		// Heading: towards where the pilot looks, at the pedals' rate (faster when moving: the tail fin helps).
+		if (pilot != null && powered && !grounded) {
+			float want = Mth.wrapDegrees(pilot.getYRot() - getYRot());
+			float rate = vtype.pivotTurn * (0.7f + 0.6f * (float) Math.min(1, Math.hypot(v.x, v.z) / vtype.maxSpeed));
+			setYRot(getYRot() + Mth.clamp(want * 0.12f, -rate, rate) + heliRoll * 0.02f);
+		}
+		Vec3 f = forward();
+		Vec3 r = right();
+		double g = 0.04;
+		double vx = v.x;
+		double vz = v.z;
+		double vy = v.y;
+		if (powered) {
+			// Tilted thrust pushes it the way it leans.
+			double ax = Math.tan(Math.toRadians(heliPitch)) * g * engine;
+			double as = Math.tan(Math.toRadians(heliRoll)) * g * engine;
+			vx += f.x * ax + r.x * as;
+			vz += f.z * ax + r.z * as;
+			// Collective: climb / sink, else hold the height (the autopilot trims it).
+			double climb = in.jump() ? 0.34 : in.sprint() ? -0.32 : 0;
+			double h = Math.hypot(vx, vz);
+			// Translational lift: moving, the rotor bites better (it rises a touch unless trimmed).
+			double tl = Math.min(1, h / (vtype.maxSpeed * 0.5)) * 0.004;
+			// Ground cushion: a little extra lift within a few blocks of the ground.
+			double cushion = heightAboveGround() < 3 ? 0.006 : 0;
+			vy += (climb - vy) * 0.055 + tl + cushion - (climb == 0 && vy > 0.02 ? 0.004 : 0);
+		} else {
+			// No power: it autorotates down, the forward speed bleeds off.
+			vy = Math.max(vy - 0.028, -0.6);
+			heliPitch *= 0.95f;
+			heliRoll *= 0.95f;
+		}
+		// Drag: grows with speed, so the top speed comes by itself.
+		double h = Math.hypot(vx, vz);
+		double drag = 0.012 + h * 0.0045 / Math.max(0.5, vtype.maxSpeed / 1.8);
+		vx -= vx * drag;
+		vz -= vz * drag;
+		if (grounded) {
+			vx *= 0.55;
+			vz *= 0.55;
+			if (vy < 0) {
+				vy = -0.04;
+			}
+		}
+		Vec3 motion = new Vec3(vx, vy, vz);
+		setDeltaMovement(motion);
+		move(MoverType.SELF, motion);
+		if (horizontalCollision) {
+			setDeltaMovement(getDeltaMovement().multiply(0.3, 1, 0.3));
+		}
+		speed = (float) Math.hypot(vx, vz);
+	}
+
+	/** Blocks of air under it (up to 8). */
+	private double heightAboveGround() {
+		BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
+		for (int i = 0; i <= 8; i++) {
+			m.set(getBlockX(), getBlockY() - i, getBlockZ());
+			if (!level().getBlockState(m).getCollisionShape(level(), m).isEmpty()) {
+				return getY() - (m.getY() + 1);
+			}
+		}
+		return 9;
 	}
 
 	/** Boats: water right under the waterline. */
@@ -1063,6 +1266,10 @@ public class VehicleEntity extends LivingEntity {
 			// air defence keeps guarding while the player is far away.
 			level.getChunkSource().addTicketWithRadius(ModTickets.VEHICLE, ChunkPos.containing(blockPosition()), 2);
 		}
+		if (route != null) {
+			// On the road by itself: its ground keeps running (only while it drives).
+			keepLoaded(level);
+		}
 		if (vtype.isLauncher()) {
 			tickLauncher(level);
 		} else if (vtype.isRadar()) {
@@ -1112,6 +1319,9 @@ public class VehicleEntity extends LivingEntity {
 			}
 		}
 		Player p = shooter();
+		if (p == null && country >= 0) {
+			aiGunner(level, w);
+		}
 		if (p != null) {
 			Vec3 eye = p.getEyePosition();
 			Vec3 end = eye.add(p.getLookAngle().scale(400));
@@ -2424,12 +2634,16 @@ public class VehicleEntity extends LivingEntity {
 			if (vtype.air == VehicleType.PLANE) {
 				tiltPitch += (-getXRot() - tiltPitch) * 0.5f;
 				tiltRoll += (Mth.clamp(-yawDelta * 12, -60, 60) - tiltRoll) * 0.15f;
+			} else if (isLocalDriverSimulated() || !level().isClientSide()) {
+				// The attitude the flight model works with (where it is simulated).
+				tiltPitch += (-heliPitch - tiltPitch) * 0.5f;
+				tiltRoll += (-heliRoll - tiltRoll) * 0.5f;
 			} else {
 				Vec3 d = new Vec3(getX() - xo, 0, getZ() - zo);
 				double along = d.dot(forward());
 				double sideways = d.dot(right());
-				tiltPitch += ((float) (-along / vtype.maxSpeed * 14) - tiltPitch) * 0.1f;
-				tiltRoll += ((float) (-sideways / vtype.maxSpeed * 14 - yawDelta * 3) - tiltRoll) * 0.1f;
+				tiltPitch += ((float) (-along / vtype.maxSpeed * 22) - tiltPitch) * 0.1f;
+				tiltRoll += ((float) (-sideways / vtype.maxSpeed * 20 - yawDelta * 3) - tiltRoll) * 0.1f;
 			}
 			lift = 0;
 			return;
@@ -2622,6 +2836,19 @@ public class VehicleEntity extends LivingEntity {
 		output.putInt("vehicle_country", country);
 		output.putInt("vehicle_home", home);
 		output.putBoolean("vehicle_garrison", garrison);
+		output.putInt("vehicle_troops", troops);
+		if (troopTarget != null) {
+			output.store("vehicle_troop_target", BlockPos.CODEC, troopTarget);
+		}
+		if (route != null) {
+			List<Integer> pts = new ArrayList<>();
+			for (int i = routeIndex; i < route.size(); i++) {
+				pts.add((int) Math.floor(route.get(i).x));
+				pts.add((int) Math.floor(route.get(i).z));
+			}
+			output.store("vehicle_route", com.mojang.serialization.Codec.INT.listOf(), pts);
+			output.putFloat("vehicle_route_speed", routeSpeed);
+		}
 		output.putInt("vehicle_cargo_kind", entityData.get(DATA_CARGO_KIND));
 	}
 
@@ -2642,6 +2869,19 @@ public class VehicleEntity extends LivingEntity {
 		country = input.getIntOr("vehicle_country", -1);
 		home = input.getIntOr("vehicle_home", -1);
 		garrison = input.getBooleanOr("vehicle_garrison", false);
+		troops = input.getIntOr("vehicle_troops", 0);
+		troopTarget = input.read("vehicle_troop_target", BlockPos.CODEC).orElse(null);
+		input.read("vehicle_route", com.mojang.serialization.Codec.INT.listOf()).ifPresent(pts -> {
+			List<Vec3> r = new ArrayList<>();
+			for (int i = 0; i + 1 < pts.size(); i += 2) {
+				r.add(new Vec3(pts.get(i) + 0.5, 0, pts.get(i + 1) + 0.5));
+			}
+			if (!r.isEmpty()) {
+				route = r;
+				routeIndex = 0;
+				routeSpeed = input.getFloatOr("vehicle_route_speed", 0.75f);
+			}
+		});
 		entityData.set(DATA_CARGO_KIND, input.getIntOr("vehicle_cargo_kind", -1));
 		fold();
 	}

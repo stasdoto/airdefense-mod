@@ -515,10 +515,25 @@ public class SoldierEntity extends PathfinderMob {
 	// ------------------------------------------------------------------------------------------------
 	// Goals
 
-	/** Close in to a good range, keep the target in sight, fire. */
+	/** For the tests: soldiers that took cover, fell back wounded, threw grenades (1.25). */
+	public static int tookCover;
+	public static int fellBack;
+	public static int grenadesThrown;
+	private int grenades = 2;
+	private int grenadeCooldown;
+
+	/**
+	 * Fighting (1.25: smarter). Under fire a soldier looks for cover nearby - a wall, a bank, a car - he can shoot over,
+	 * and fights from there; badly hurt he falls back out of the line of fire; an enemy hiding behind something close by
+	 * gets a grenade; the men of a squad keep a few steps apart. Otherwise: close in to a good range and fire.
+	 */
 	static final class ShootGoal extends Goal {
 		private final SoldierEntity s;
 		private int repath;
+		@Nullable
+		private BlockPos cover;
+		private int coverSearch;
+		private int fallBack;
 
 		ShootGoal(SoldierEntity s) {
 			this.s = s;
@@ -534,12 +549,14 @@ public class SoldierEntity extends PathfinderMob {
 		@Override
 		public void start() {
 			s.setAggressive(true);
+			cover = null;
 		}
 
 		@Override
 		public void stop() {
 			s.getNavigation().stop();
 			s.setAggressive(false);
+			cover = null;
 		}
 
 		@Override
@@ -551,24 +568,151 @@ public class SoldierEntity extends PathfinderMob {
 		public void tick() {
 			LivingEntity t = s.getTarget();
 			GunType gun = s.gun();
-			if (t == null || gun == null) {
+			if (t == null || gun == null || !(s.level() instanceof ServerLevel level)) {
 				return;
 			}
 			double d = s.distanceTo(t);
 			boolean see = s.getSensing().hasLineOfSight(t);
 			s.getLookControl().setLookAt(t, 40f, 40f);
 			double good = gun.pistol || gun.pellets > 1 ? 12 : gun.scoped() ? 45 : gun.range < 90 ? 18 : 26;
+			boolean underFire = s.hurtTime > 0 || s.tickCount - s.getLastHurtByMobTimestamp() < 60;
+			if (s.grenadeCooldown > 0) {
+				s.grenadeCooldown--;
+			}
+			// Badly hurt: back out of the line of fire for a while.
+			if (fallBack > 0) {
+				fallBack--;
+				if (see && fallBack % 10 == 0) {
+					s.tryShoot(t);
+				}
+				return;
+			}
+			if (s.getHealth() < s.getMaxHealth() * 0.35f && underFire && s.random.nextInt(3) == 0) {
+				Vec3 away = s.position().subtract(t.position()).multiply(1, 0, 1).normalize().scale(12);
+				Vec3 to = s.position().add(away);
+				int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mth.floor(to.x), Mth.floor(to.z));
+				s.getNavigation().moveTo(to.x, y, to.z, 1.25);
+				fallBack = 70;
+				cover = null;
+				fellBack++;
+				return;
+			}
+			// A grenade for an enemy hiding close by.
+			if (!see && d > 6 && d < 18 && s.grenades > 0 && s.grenadeCooldown == 0 && s.random.nextInt(4) == 0) {
+				throwGrenade(level, t, d);
+				return;
+			}
+			// Cover when under fire (or just when close): a spot nearby with something solid towards the enemy.
+			if (cover == null && (underFire || d < 20) && --coverSearch <= 0) {
+				coverSearch = 40;
+				cover = findCover(level, t, good);
+				if (cover != null) {
+					tookCover++;
+				}
+			}
+			if (cover != null) {
+				if (cover.distSqr(t.blockPosition()) < 36 || !level.getBlockState(cover).isAir()) {
+					cover = null;
+				} else if (s.blockPosition().distSqr(cover) > 1) {
+					if (--repath <= 0) {
+						repath = 10;
+						s.getNavigation().moveTo(cover.getX() + 0.5, cover.getY(), cover.getZ() + 0.5, underFire ? 1.25 : 1.0);
+					}
+				} else {
+					s.getNavigation().stop();
+				}
+				if (see && d <= gun.range * 0.8) {
+					s.tryShoot(t);
+				}
+				return;
+			}
 			if (!see || d > good) {
 				if (--repath <= 0) {
 					repath = 10;
 					s.getNavigation().moveTo(t, 1.0);
 				}
 			} else {
-				s.getNavigation().stop();
+				// A few steps apart from the next man.
+				SoldierEntity close = null;
+				for (SoldierEntity o : level.getEntitiesOfClass(SoldierEntity.class, s.getBoundingBox().inflate(2.2), o -> o != s && o.isAlive()
+						&& o.country() == s.country())) {
+					close = o;
+					break;
+				}
+				if (close != null && --repath <= 0) {
+					repath = 15;
+					Vec3 side = s.position().subtract(close.position()).multiply(1, 0, 1);
+					side = side.lengthSqr() < 1e-4 ? new Vec3(1, 0, 0) : side.normalize();
+					Vec3 to = s.position().add(side.scale(3));
+					s.getNavigation().moveTo(to.x, s.getY(), to.z, 0.9);
+				} else if (close == null) {
+					s.getNavigation().stop();
+				}
 			}
 			if (see && d <= gun.range * 0.8) {
 				s.tryShoot(t);
 			}
+		}
+
+		/** A spot within a few blocks to stand behind something solid, towards the enemy, still in range of him. */
+		@Nullable
+		private BlockPos findCover(ServerLevel level, LivingEntity t, double good) {
+			Vec3 to = t.position().subtract(s.position());
+			BlockPos best = null;
+			double bestScore = Double.MAX_VALUE;
+			BlockPos here = s.blockPosition();
+			for (int dx = -7; dx <= 7; dx++) {
+				for (int dz = -7; dz <= 7; dz++) {
+					if (dx * dx + dz * dz > 49) {
+						continue;
+					}
+					int x = here.getX() + dx;
+					int z = here.getZ() + dz;
+					int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+					if (Math.abs(y - here.getY()) > 2) {
+						continue;
+					}
+					BlockPos p = new BlockPos(x, y, z);
+					if (!level.getBlockState(p).isAir() || !level.getBlockState(p.above()).isAir()) {
+						continue;
+					}
+					double tx = t.getX() - (x + 0.5);
+					double tz = t.getZ() - (z + 0.5);
+					double dist = Math.sqrt(tx * tx + tz * tz);
+					if (dist < 8 || dist > good * 1.5) {
+						continue;
+					}
+					// The block one step towards the enemy: something solid at the height of the body.
+					BlockPos front = BlockPos.containing(x + 0.5 + tx / dist, y, z + 0.5 + tz / dist);
+					boolean low = !level.getBlockState(front).getCollisionShape(level, front).isEmpty();
+					boolean high = !level.getBlockState(front.above()).getCollisionShape(level, front.above()).isEmpty();
+					if (!low) {
+						continue;
+					}
+					boolean taken = !level.getEntitiesOfClass(SoldierEntity.class, new net.minecraft.world.phys.AABB(p).inflate(0.8), o -> o != s).isEmpty();
+					if (taken) {
+						continue;
+					}
+					double score = Math.sqrt(dx * dx + dz * dz) + (high ? 3 : 0) + Math.max(0, dist - good) * 0.5;
+					if (score < bestScore) {
+						bestScore = score;
+						best = p;
+					}
+				}
+			}
+			return best;
+		}
+
+		private void throwGrenade(ServerLevel level, LivingEntity t, double d) {
+			Vec3 to = t.position().subtract(s.getEyePosition());
+			float yaw = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
+			s.setYRot(yaw);
+			s.setYHeadRot(yaw);
+			s.setXRot(-32f);
+			com.stasdoto.airdefense.weapon.GrenadeEntity.throwFrom(level, s, (float) Mth.clamp(0.35 + d * 0.042, 0.5, 1.15));
+			s.grenades--;
+			s.grenadeCooldown = 200;
+			grenadesThrown++;
 		}
 	}
 

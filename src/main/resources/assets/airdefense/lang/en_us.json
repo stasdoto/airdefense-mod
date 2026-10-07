@@ -646,7 +646,7 @@
   "hud.airdefense.vehicle.plane": "ALT %s m · throttle %s%% · %s",
   "hud.airdefense.vehicle.heli": "ALT %1$s m · %3$s",
   "hud.airdefense.vehicle.keys_plane": "W/S throttle · mouse steers · A/D bank · left click gun · %1$s ordnance · Shift leave",
-  "hud.airdefense.vehicle.keys_heli": "W/S fwd/back · A/D turn · Space up · Ctrl down · left click fire · %1$s rockets",
+  "hud.airdefense.vehicle.keys_heli": "W/S - nose down/up · A/D - bank · mouse - turn · Space - up · Ctrl - down · LMB - fire · %1$s - rockets",
   "hud.airdefense.vehicle.keys_passenger": "%3$s change seat · Shift leave",
   "entity.airdefense.fuel_truck": "Fuel truck",
   "item.airdefense.fuel_truck": "KamAZ fuel truck",
@@ -898,5 +898,6 @@
   "nation.airdefense.strike.incoming": "%s fires missiles at %s!",
   "nation.airdefense.strike.remote": "%s struck %s: %s missiles, %s shot down",
   "nation.airdefense.war.why_border": "a quarrel over the border",
-  "nation.airdefense.war.news": "News: %s and %s are at war"
+  "nation.airdefense.war.news": "News: %s and %s are at war",
+  "nation.airdefense.war.column": "%s sends %s soldiers in %s vehicles against %s by road!"
 }

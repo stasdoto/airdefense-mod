@@ -307,7 +307,22 @@ public final class Arsenals extends SavedData {
 	// The vehicles in the world
 
 	/** Where the town's vehicles stand: round the edge of a city (air defence), in its depot's yard (launchers). */
+	private static final Map<Long, BlockPos> SPOTS = new HashMap<>();
+
 	private static BlockPos spot(ServerLevel level, Settlement s, int index, boolean launcher) {
+		long key = s.id * 64L + index;
+		BlockPos cached = SPOTS.get(key);
+		if (cached == null) {
+			if (SPOTS.size() > 4096) {
+				SPOTS.clear();
+			}
+			cached = findSpot(level, s, index, launcher);
+			SPOTS.put(key, cached);
+		}
+		return cached;
+	}
+
+	private static BlockPos findSpot(ServerLevel level, Settlement s, int index, boolean launcher) {
 		Cities.Terrain t = Cities.terrain(level);
 		long seed = level.getSeed();
 		if (s.city >= 0) {
@@ -331,9 +346,34 @@ public final class Arsenals extends SavedData {
 								: new BlockPos(d.front.getAxis() == net.minecraft.core.Direction.Axis.X ? yard : mid, d.y, d.z0 + off);
 					}
 				}
-				double a = Math.PI / 4 + index * Math.PI / 2 + (index >= 4 ? Math.PI / 4 : 0);
-				int r = c.half() + 14;
-				return new BlockPos(c.x + (int) Math.round(Math.cos(a) * r), c.base, c.z + (int) Math.round(Math.sin(a) * r));
+				// Round the city just outside its edge, off the roads and the depot.
+				List<Cities.Road> roads = Cities.roadsNear(seed, t, c.x, c.z);
+				Depots.Depot d = c.depot(seed, t);
+				Cities.Road.Spot probe = new Cities.Road.Spot();
+				double a0 = Math.PI / 4 + index * Math.PI / 2 + (index >= 4 ? Math.PI / 4 : 0);
+				for (int k = 0; k < 24; k++) {
+					double a = a0 + (k % 2 == 0 ? 1 : -1) * (k / 2) * 0.13;
+					for (int r = c.half() / 2; r <= c.half() + 40; r += 4) {
+						int x = c.x + (int) Math.round(Math.cos(a) * r);
+						int z = c.z + (int) Math.round(Math.sin(a) * r);
+						int out = c.outside(x, z);
+						if (out < 8) {
+							continue;
+						}
+						boolean bad = d != null && d.out(x, z) < 6;
+						for (Cities.Road road : roads) {
+							if (road.locate(x, z, road.half + 4, probe)) {
+								bad = true;
+								break;
+							}
+						}
+						if (!bad) {
+							return new BlockPos(x, c.base, z);
+						}
+						break;
+					}
+				}
+				return new BlockPos(c.x + (int) Math.round(Math.cos(a0) * (c.half() + 20)), c.base, c.z + (int) Math.round(Math.sin(a0) * (c.half() + 20)));
 			}
 		}
 		// A village: on its edge, spread round.
