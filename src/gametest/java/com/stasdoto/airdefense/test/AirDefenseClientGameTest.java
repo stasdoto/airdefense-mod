@@ -1785,24 +1785,35 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		spawnVehicle(server, VehicleType.IRIS_T, x + 14, 56, 180);
 		spawnVehicle(server, VehicleType.BUK, x - 14, 56, 180);
 		ctx.waitTicks(100);
-		for (MissileType kind : new MissileType[]{MissileType.KALIBR, MissileType.SHAHED}) {
-			int[] before = counters();
-			int sd = MissileEntity.SELF_DESTRUCTS.get();
-			server.runOnServer(s -> {
-				ServerLevel l = s.overworld();
-				Vec3 from = new Vec3(x + 5, ground + 60, -380);
-				Vec3 aim = new Vec3(x + 5, ground, 60);
-				MissileEntity m = MissileEntity.launchStrike(l, kind, from, aim, aim.subtract(from).normalize());
-				m.setCountry(900);
-			});
-			camera(server, x + 26, ground + 8, 72, 160, -8);
-			ctx.waitTicks(140);
-			ctx.takeScreenshot("54_three_vs_one_" + kind.name().toLowerCase());
-			ctx.waitTicks(320);
-			report("three_vs_one_" + kind.name().toLowerCase(), before);
-			AirDefense.LOGGER.info("[airdefense-test] RESULT three_vs_one_{}_selfdestruct: {}", kind.name().toLowerCase(),
-					MissileEntity.SELF_DESTRUCTS.get() - sd);
-		}
+		oneTarget(ctx, server, x, MissileType.KALIBR, 60, "three_vs_one_kalibr");
+		oneTarget(ctx, server, x, MissileType.SHAHED, 60, "three_vs_one_shahed");
+		// Five batteries (with Patriot and S-300) and a radar station: a ballistic missile gets two interceptors, no more;
+		// a decoy the radar sees gets none.
+		spawnVehicle(server, VehicleType.PATRIOT, x + 28, 62, 180);
+		spawnVehicle(server, VehicleType.S300, x - 28, 62, 180);
+		spawnVehicle(server, VehicleType.TRML4D, x, 80, 180);
+		ctx.waitTicks(140);
+		oneTarget(ctx, server, x, MissileType.ISKANDER, 240, "five_vs_one_iskander");
+		oneTarget(ctx, server, x, MissileType.ISKANDER_DECOY, 240, "radar_vs_decoy");
+	}
+
+	/** One missile of this kind at the batteries round (x, 50); counts what went up for it. */
+	private void oneTarget(ClientGameTestContext ctx, TestServerContext server, int x, MissileType kind, int height, String scene) {
+		int[] before = counters();
+		int sd = MissileEntity.SELF_DESTRUCTS.get();
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			Vec3 from = new Vec3(x + 5, ground + height, -380);
+			Vec3 aim = new Vec3(x + 5, ground, 60);
+			MissileEntity m = MissileEntity.launchStrike(l, kind, from, aim, aim.subtract(from).normalize());
+			m.setCountry(900);
+		});
+		camera(server, x + 26, ground + 8, 72, 160, -8);
+		ctx.waitTicks(140);
+		ctx.takeScreenshot("54_" + scene);
+		ctx.waitTicks(320);
+		report(scene, before);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT {}_selfdestruct: {}", scene, MissileEntity.SELF_DESTRUCTS.get() - sd);
 	}
 
 	private void droneVsIrisT(ClientGameTestContext ctx, TestServerContext server) {
