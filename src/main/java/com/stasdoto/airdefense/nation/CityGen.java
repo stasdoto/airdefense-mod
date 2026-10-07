@@ -940,7 +940,8 @@ public final class CityGen {
 		}
 
 		void set(BlockPos p, BlockState s) {
-			level.setBlock(p, s, Block.UPDATE_CLIENTS);
+			// No onPlace while building (as in world generation): a pumpkin by an unloaded chunk would look for a golem there.
+			level.setBlock(p, s, Block.UPDATE_CLIENTS | Block.UPDATE_SKIP_ON_PLACE);
 			Block b = s.getBlock();
 			if (b instanceof CrossCollisionBlock || b instanceof WallBlock || b instanceof StairBlock || b instanceof FenceGateBlock) {
 				BlockPos q = p.immutable();
