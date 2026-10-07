@@ -1035,6 +1035,15 @@ public class VehicleEntity extends LivingEntity {
 		}
 	}
 
+	/**
+	 * Whose vehicle it is (1.25): -1 = the player's (or nobody's: it obeys whoever drives it), else a country of the
+	 * world - a town's garrison; {@link #home} is its town, and a garrison does not keep its ground loaded (it only lives
+	 * while somebody is near; the rest of the time its town's arsenal stands for it).
+	 */
+	public int country = -1;
+	public int home = -1;
+	public boolean garrison;
+
 	private void serverLogic(ServerLevel level) {
 		Vec3 pos = position();
 		burnFuel(Math.sqrt(Mth.square(pos.x - lastServerPos.x) + Mth.square(pos.z - lastServerPos.z)));
@@ -1049,7 +1058,7 @@ public class VehicleEntity extends LivingEntity {
 		if (marchTicks > 0) {
 			marchTicks--;
 		}
-		if (tickCount <= 1 || (tickCount + getId()) % 20 == 0) {
+		if (!garrison && (tickCount <= 1 || (tickCount + getId()) % 20 == 0)) {
 			// Keeps its own ground loaded and running: visible and controllable on the tablet map from anywhere,
 			// air defence keeps guarding while the player is far away.
 			level.getChunkSource().addTicketWithRadius(ModTickets.VEHICLE, ChunkPos.containing(blockPosition()), 2);
@@ -1671,6 +1680,7 @@ public class VehicleEntity extends LivingEntity {
 			missile = type.missile;
 		}
 		MissileEntity m = MissileEntity.launchStrike(level, missile, from, aim, forward(), dir);
+		m.setCountry(country);
 		MissileType.Kind kind = missile.kind;
 		if (plan != null && (kind == MissileType.Kind.DRONE || kind == MissileType.Kind.CRUISE)) {
 			m.applyPlan(plan, salvoIndex % 2 == 0);
@@ -1829,6 +1839,12 @@ public class VehicleEntity extends LivingEntity {
 		if (!m.isAlive() || !m.getMissileType().threat || m.getY() <= level().getMinY()) {
 			return false;
 		}
+		// Its own side's missiles fly on (the player's air defence lets his own strikes through, and his towns'
+		// air defence does too).
+		if (m.country() == country || level() instanceof ServerLevel sl && (m.country() == -1 && playersCountry(sl, country)
+				|| country == -1 && playersCountry(sl, m.country()))) {
+			return false;
+		}
 		// A battery linked to a radar station that sees the target gets its track early: it can shoot further out,
 		// and the station's better look helps tell decoys apart.
 		RadarNetwork.Station station = radarLinked && level() instanceof ServerLevel server ? RadarNetwork.coverage(server, m.position()) : null;
@@ -1849,6 +1865,14 @@ public class VehicleEntity extends LivingEntity {
 			return false;
 		}
 		return worthEngagingNow(m, radar, range);
+	}
+
+	private static boolean playersCountry(ServerLevel level, int id) {
+		if (id < 0) {
+			return false;
+		}
+		com.stasdoto.airdefense.nation.Country c = com.stasdoto.airdefense.nation.Politics.get(level.getServer()).country(id);
+		return c != null && c.owner != null;
 	}
 
 	/** Iron Dome: missiles judged to fall in empty country and let go (for the tests). */
@@ -2515,6 +2539,7 @@ public class VehicleEntity extends LivingEntity {
 		super.die(source);
 		if (level() instanceof ServerLevel server) {
 			RadarNetwork.remove(server, getId());
+			com.stasdoto.airdefense.nation.Arsenals.destroyed(server, this);
 			ejectPassengers();
 			// The fuel and every missile still on board go up.
 			float power = 3.5f + Integer.bitCount(getLoadedMask()) * (vtype.isLauncher() ? 1.2f : 0.4f);
@@ -2594,6 +2619,9 @@ public class VehicleEntity extends LivingEntity {
 		output.putFloat("vehicle_fuel", entityData.get(DATA_FUEL));
 		output.putInt("vehicle_ordnance", getOrdnance());
 		output.putInt("vehicle_cargo", getCargo());
+		output.putInt("vehicle_country", country);
+		output.putInt("vehicle_home", home);
+		output.putBoolean("vehicle_garrison", garrison);
 		output.putInt("vehicle_cargo_kind", entityData.get(DATA_CARGO_KIND));
 	}
 
@@ -2611,6 +2639,9 @@ public class VehicleEntity extends LivingEntity {
 		entityData.set(DATA_FUEL, input.getFloatOr("vehicle_fuel", -1f));
 		entityData.set(DATA_ORDNANCE, input.getIntOr("vehicle_ordnance", vtype.ordnance != null ? vtype.ordnance.count : 0));
 		entityData.set(DATA_CARGO, input.getIntOr("vehicle_cargo", 0));
+		country = input.getIntOr("vehicle_country", -1);
+		home = input.getIntOr("vehicle_home", -1);
+		garrison = input.getBooleanOr("vehicle_garrison", false);
 		entityData.set(DATA_CARGO_KIND, input.getIntOr("vehicle_cargo_kind", -1));
 		fold();
 	}

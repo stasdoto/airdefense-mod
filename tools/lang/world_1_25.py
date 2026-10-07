@@ -7,6 +7,11 @@ LANG = os.path.join(os.path.dirname(__file__), '..', '..', 'src', 'main', 'resou
 S = {
     'building.airdefense.depot': ('Distribution warehouse', 'Распределительный склад', 'Розподільчий склад'),
     'map.airdefense.depot': ('Depot', 'Склады', 'Склади'),
+    'nation.airdefense.war.why_border': ('a quarrel over the border', 'спор о границе', 'суперечка через кордон'),
+    'nation.airdefense.war.news': ('News: %s and %s are at war', 'Новости: %s и %s начали войну', 'Новини: %s і %s почали війну'),
+    'nation.airdefense.strike.incoming': ('%s fires missiles at %s!', '%s бьёт ракетами по городу %s!', '%s б\'є ракетами по місту %s!'),
+    'nation.airdefense.strike.remote': ('%s struck %s: %s missiles, %s shot down', '%s ударил по %s: ракет %s, сбито %s',
+                                        '%s вдарив по %s: ракет %s, збито %s'),
 }
 
 

@@ -894,5 +894,9 @@
   "block.airdefense.siren_mast": "Siren mast",
   "tooltip.airdefense.siren": "On the ground it goes up on a 6 m mast; sneak to put just the siren (on a roof)",
   "building.airdefense.depot": "Distribution warehouse",
-  "map.airdefense.depot": "Depot"
+  "map.airdefense.depot": "Depot",
+  "nation.airdefense.strike.incoming": "%s fires missiles at %s!",
+  "nation.airdefense.strike.remote": "%s struck %s: %s missiles, %s shot down",
+  "nation.airdefense.war.why_border": "a quarrel over the border",
+  "nation.airdefense.war.news": "News: %s and %s are at war"
 }

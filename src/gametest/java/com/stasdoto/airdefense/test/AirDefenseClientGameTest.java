@@ -3866,7 +3866,14 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	// --- helpers -----------------------------------------------------------------------------------
 
 	private int spawnVehicle(TestServerContext server, VehicleType type, int x, int z, float yaw) {
-		return server.computeOnServer(s -> VehicleEntity.spawn(s.overworld(), type, new Vec3(x + 0.5, ground, z + 0.5), yaw).getId());
+		return server.computeOnServer(s -> {
+			VehicleEntity v = VehicleEntity.spawn(s.overworld(), type, new Vec3(x + 0.5, ground, z + 0.5), yaw);
+			if (type.isLauncher()) {
+				// The tests' launchers play the enemy: the air defence (the player's) shoots at what they fire.
+				v.country = 900;
+			}
+			return v.getId();
+		});
 	}
 
 	private static void forVehicles(ServerLevel level, List<Integer> ids, java.util.function.Consumer<VehicleEntity> action) {

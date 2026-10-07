@@ -86,6 +86,11 @@ public class MissileEntity extends Entity {
 	/** Unguided rockets (RPG): who fired it (not hit by his own rocket), and what it flew into. */
 	@org.jetbrains.annotations.Nullable
 	private Entity owner;
+	/**
+	 * Whose missile it is (1.25): the launching vehicle's country; -1 = the player's own (his vehicles), -2 = unknown
+	 * (raids, anything else) - an air defence leaves its own side's missiles alone and shoots at the rest.
+	 */
+	private int country = -2;
 	@org.jetbrains.annotations.Nullable
 	private Entity directHit;
 	/** Piloted drones (FPV, Magura): who flies it from its camera. */
@@ -344,6 +349,14 @@ public class MissileEntity extends Entity {
 	/** See {@link #decoyRoll}: compared with a radar's discrimination to decide whether it is fooled by a decoy. */
 	public double decoyRoll() {
 		return decoyRoll;
+	}
+
+	public int country() {
+		return country;
+	}
+
+	public void setCountry(int country) {
+		this.country = country;
 	}
 
 	@Override

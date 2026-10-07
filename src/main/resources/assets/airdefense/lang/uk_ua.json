@@ -894,5 +894,9 @@
   "block.airdefense.siren_mast": "Щогла сирени",
   "tooltip.airdefense.siren": "На землі стає на щоглу 6 м; із Shift — лише сирена (наприклад, на дах)",
   "building.airdefense.depot": "Розподільчий склад",
-  "map.airdefense.depot": "Склади"
+  "map.airdefense.depot": "Склади",
+  "nation.airdefense.strike.incoming": "%s б'є ракетами по місту %s!",
+  "nation.airdefense.strike.remote": "%s вдарив по %s: ракет %s, збито %s",
+  "nation.airdefense.war.why_border": "суперечка через кордон",
+  "nation.airdefense.war.news": "Новини: %s і %s почали війну"
 }

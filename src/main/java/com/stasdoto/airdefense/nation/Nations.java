@@ -113,6 +113,10 @@ public final class Nations {
 		}
 		long t4 = System.nanoTime();
 		PROFILE[4] += t4 - t3;
+		if (t % 20 == 13) {
+			// The towns' air defence and launchers (1.25).
+			Arsenals.tick(level);
+		}
 		Economy.tick(level, p);
 		long t5 = System.nanoTime();
 		PROFILE[5] += t5 - t4;

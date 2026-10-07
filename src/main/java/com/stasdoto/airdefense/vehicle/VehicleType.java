@@ -341,6 +341,16 @@ public enum VehicleType {
 		return defense != null ? defense.magazine : radar != null ? 0 : weapon != null ? weapon.magazine : rails();
 	}
 
+	/** By its id ("patriot"); Patriot if there is no such vehicle. */
+	public static VehicleType byName(String id) {
+		for (VehicleType t : values()) {
+			if (t.id.equals(id)) {
+				return t;
+			}
+		}
+		return PATRIOT;
+	}
+
 	public static VehicleType byId(int ordinal) {
 		VehicleType[] all = values();
 		return ordinal >= 0 && ordinal < all.length ? all[ordinal] : ISKANDER;

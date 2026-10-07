@@ -894,5 +894,9 @@
   "block.airdefense.siren_mast": "Мачта сирены",
   "tooltip.airdefense.siren": "На земле встаёт на мачту 6 м; с Shift — только сирена (например, на крышу)",
   "building.airdefense.depot": "Распределительный склад",
-  "map.airdefense.depot": "Склады"
+  "map.airdefense.depot": "Склады",
+  "nation.airdefense.strike.incoming": "%s бьёт ракетами по городу %s!",
+  "nation.airdefense.strike.remote": "%s ударил по %s: ракет %s, сбито %s",
+  "nation.airdefense.war.why_border": "спор о границе",
+  "nation.airdefense.war.news": "Новости: %s и %s начали войну"
 }

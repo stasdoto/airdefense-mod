@@ -367,10 +367,51 @@ public final class War {
 		}
 	}
 
+	/**
+	 * Wars of the world's own countries among themselves (1.25): now and then two neighbours fall out (their towns
+	 * fire missiles at each other from then on, see Arsenals); after two or three days they make peace.
+	 */
+	private static void worldWars(ServerLevel level, Politics p, Random r) {
+		long now = level.getGameTime();
+		List<Country> ai = new ArrayList<>();
+		for (Country c : p.countries.values()) {
+			if (c.owner == null && !c.cityState && p.settlements.get(c.capital) != null) {
+				ai.add(c);
+			}
+		}
+		for (Country a : ai) {
+			for (Country b : ai) {
+				if (a.id >= b.id) {
+					continue;
+				}
+				if (a.atWarWith(b.id)) {
+					Long since = a.warSince.get(b.id);
+					if (since != null && now - since > 48000 + r.nextInt(24000)) {
+						peace(level, p, a, b);
+					}
+					continue;
+				}
+				Long peace = PEACE_SINCE.get(pair(a.id, b.id));
+				if (peace != null && now - peace < 72000) {
+					continue;
+				}
+				Settlement ca = p.settlements.get(a.capital);
+				Settlement cb = p.settlements.get(b.capital);
+				if (ca.center.distSqr(cb.center) < 3200.0 * 3200.0 && r.nextInt(100) < 4) {
+					declare(level, p, a, b, Component.translatable("nation.airdefense.war.why_border"));
+					for (ServerPlayer pl : level.getServer().getPlayerList().getPlayers()) {
+						pl.sendSystemMessage(Component.translatable("nation.airdefense.war.news", a.name, b.name));
+					}
+				}
+			}
+		}
+	}
+
 	/** Once a day a neighbour may fall upon a country that has grown big (three villages or more). */
 	private static void neighbours(ServerLevel level, Politics p) {
 		Random r = new Random();
 		long now = level.getGameTime();
+		worldWars(level, p, r);
 		for (Country player : new ArrayList<>(p.countries.values())) {
 			if (player.owner == null) {
 				continue;

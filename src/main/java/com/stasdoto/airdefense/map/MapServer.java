@@ -56,14 +56,14 @@ public final class MapServer {
 				return;
 			}
 			case MapActionPayload.STRIKE -> {
-				if (level.getEntity(p.vehicleId()) instanceof VehicleEntity v && v.getVehicleType().isLauncher()) {
+				if (level.getEntity(p.vehicleId()) instanceof VehicleEntity v && v.getVehicleType().isLauncher() && mine(level, player, v)) {
 					BlockPos target = ground(level, p.x(), p.y(), p.z());
 					DesignatorItem.setTarget(tablet, target);
 					v.commandStrike(target, player);
 				}
 			}
 			case MapActionPayload.SET_MODE -> {
-				if (level.getEntity(p.vehicleId()) instanceof VehicleEntity v && v.getVehicleType().hasMode()) {
+				if (level.getEntity(p.vehicleId()) instanceof VehicleEntity v && v.getVehicleType().hasMode() && mine(level, player, v)) {
 					v.setModeByOrder(p.x(), player);
 				}
 			}
@@ -138,9 +138,20 @@ public final class MapServer {
 		return new RadarPayload(stations, contacts);
 	}
 
+	/** The player's own vehicle (or one of his country's towns'): only those take orders from his tablet. */
+	public static boolean mine(ServerLevel level, ServerPlayer player, VehicleEntity v) {
+		if (v.country == -1) {
+			return true;
+		}
+		com.stasdoto.airdefense.nation.Country own = com.stasdoto.airdefense.nation.Politics.get(level.getServer()).countryOwnedBy(player.getUUID());
+		return own != null && own.id == v.country;
+	}
+
 	public static MapStatusPayload status(ServerLevel level, ServerPlayer player) {
+		com.stasdoto.airdefense.nation.Country own = com.stasdoto.airdefense.nation.Politics.get(level.getServer()).countryOwnedBy(player.getUUID());
+		int ownId = own == null ? -1 : own.id;
 		List<VehicleEntity> vehicles = new ArrayList<>(level.getEntities(EntityTypeTest.forClass(VehicleEntity.class),
-				v -> v.isAlive() && v.distanceToSqr(player) < LIST_RANGE * LIST_RANGE));
+				v -> v.isAlive() && v.distanceToSqr(player) < LIST_RANGE * LIST_RANGE && (v.country == -1 || v.country == ownId)));
 		vehicles.sort(Comparator.comparingDouble(v -> v.distanceToSqr(player)));
 		List<MapStatusPayload.Entry> entries = new ArrayList<>();
 		for (VehicleEntity v : vehicles) {
