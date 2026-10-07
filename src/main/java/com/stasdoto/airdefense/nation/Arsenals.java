@@ -830,7 +830,7 @@ public final class Arsenals extends SavedData {
 		u.ammo = Math.max(0, u.ammo - salvo);
 		var watcher = level.getNearestPlayer(target.center.getX(), target.center.getY(), target.center.getZ(), target.radius + 350, pl -> true);
 		boolean seen = watcher != null;
-		if (!seen && !level.players().isEmpty()) {
+		if (!seen && !level.players().isEmpty() && com.stasdoto.airdefense.missile.MissileStats.debug()) {
 			var pl = level.players().getFirst();
 			AirDefense.LOGGER.info("[airdefense] strike on {} unseen: nearest player {} blocks off (reach {})", target.name,
 					(int) Math.sqrt(pl.distanceToSqr(Vec3.atCenterOf(target.center))), target.radius + 350);

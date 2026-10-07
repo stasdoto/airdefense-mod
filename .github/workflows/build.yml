@@ -101,6 +101,12 @@ jobs:
           find . -path ./.gradle -prune -o -name 'latest.log' -path '*logs*' -print | head -3
           LOG=$(find . -path ./.gradle -prune -o -name 'latest.log' -path '*logs*' -print | head -1)
           [ -n "$LOG" ] && cp "$LOG" /tmp/out/game-latest.log || true
+          # A long run's log can pass GitHub's 100 MB file limit: keep the RESULT lines plain, the whole log packed.
+          if [ -f /tmp/out/game-latest.log ] && [ $(stat -c%s /tmp/out/game-latest.log) -gt 40000000 ]; then
+            grep -a "RESULT\|SUMMARY\|Exception\|ERROR" /tmp/out/game-latest.log > /tmp/out/game-results.log || true
+            gzip -9 /tmp/out/game-latest.log
+            ls -la /tmp/out/game-latest.log.gz
+          fi
           cp gametest-log.txt glxinfo.txt /tmp/out/ || true
       - name: publish results to a ci-* branch
         if: always()
