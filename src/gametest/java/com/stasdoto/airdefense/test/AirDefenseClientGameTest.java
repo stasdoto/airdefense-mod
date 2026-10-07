@@ -1805,6 +1805,10 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			ServerLevel l = s.overworld();
 			Vec3 from = new Vec3(x + 5, ground + height, -380);
 			Vec3 aim = new Vec3(x + 5, ground, 60);
+			// Out beyond the loaded ground: load it, the missile keeps its way loaded from then on.
+			var cp = net.minecraft.world.level.ChunkPos.containing(BlockPos.containing(from));
+			l.getChunkSource().addTicketWithRadius(net.minecraft.server.level.TicketType.ENDER_PEARL, cp, 3);
+			l.getChunk(cp.x(), cp.z());
 			MissileEntity m = MissileEntity.launchStrike(l, kind, from, aim, aim.subtract(from).normalize());
 			m.setCountry(900);
 		});

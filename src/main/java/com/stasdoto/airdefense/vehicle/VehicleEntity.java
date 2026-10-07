@@ -2118,7 +2118,25 @@ public class VehicleEntity extends LivingEntity {
 		if (type.protectsOnly() && level() instanceof ServerLevel server && !threatensSomething(server, m)) {
 			return false;
 		}
+		// A town's own air defence guards its town (and itself): what flies past to somewhere else is not its business.
+		if (garrison && home >= 0 && level() instanceof ServerLevel server && !aimedAtHome(server, m)) {
+			return false;
+		}
 		return worthEngagingNow(m, radar, range);
+	}
+
+	/** The missile is aimed at this vehicle's town (or close to the vehicle itself). */
+	private boolean aimedAtHome(ServerLevel level, MissileEntity m) {
+		Vec3 at = m.getTarget();
+		if (at.distanceToSqr(position()) < 120 * 120) {
+			return true;
+		}
+		com.stasdoto.airdefense.nation.Settlement s = com.stasdoto.airdefense.nation.Politics.get(level.getServer()).settlements.get(home);
+		if (s == null) {
+			return true;
+		}
+		double r = s.radius + 200;
+		return Vec3.atCenterOf(s.center).subtract(at).horizontalDistanceSqr() < r * r;
 	}
 
 	private static boolean playersCountry(ServerLevel level, int id) {
