@@ -112,6 +112,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("air")) {
 				aircraft(ctx, server);
 			}
+			if (scene("citylook")) {
+				cityLook(ctx, server);
+			}
 			if (scene("fpv")) {
 				pilotedDrones(ctx, server);
 			}
@@ -762,6 +765,96 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		AirDefense.LOGGER.info("[airdefense-test] RESULT magura: ran {} ticks, boat {} -> {}", b[0], b[1], b[2]);
 		ctx.waitTicks(40);
 		server.runCommand("gamemode spectator @a");
+	}
+
+	/** Camera in front of the first building of this type in the city: {x, y, z, yaw, pitch}, or null. */
+	private static float[] facing(TestServerContext server, com.stasdoto.airdefense.nation.BuildingType type, int skip, double dist, double up,
+			double side) {
+		return server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var t = com.stasdoto.airdefense.nation.Cities.terrain(l);
+			var c = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), t, 0, 0).getFirst();
+			int k = 0;
+			for (var b : c.buildings()) {
+				if (b.type != type || k++ < skip) {
+					continue;
+				}
+				var f = b.facing;
+				var right = f.getClockWise();
+				double mx = b.origin.getX() + 0.5 + f.getStepX() * b.type.depth / 2.0;
+				double mz = b.origin.getZ() + 0.5 + f.getStepZ() * b.type.depth / 2.0;
+				double cx = b.origin.getX() + 0.5 - f.getStepX() * dist + right.getStepX() * side;
+				double cz = b.origin.getZ() + 0.5 - f.getStepZ() * dist + right.getStepZ() * side;
+				double cy = c.base + up;
+				double dx = mx - cx;
+				double dz = mz - cz;
+				double dy = c.base + Math.min(b.type.height, 14) * 0.45 - cy;
+				float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+				float pitch = (float) -Math.toDegrees(Math.atan2(dy, Math.hypot(dx, dz)));
+				return new float[]{(float) cx, (float) cy, (float) cz, yaw, pitch};
+			}
+			return null;
+		});
+	}
+
+	private void shot(ClientGameTestContext ctx, TestServerContext server, float[] cam, String name, int wait) {
+		if (cam == null) {
+			AirDefense.LOGGER.info("[airdefense-test] no camera for {}", name);
+			return;
+		}
+		camera(server, cam[0], cam[1], cam[2], cam[3], cam[4]);
+		ctx.waitTicks(wait);
+		ctx.takeScreenshot(name);
+	}
+
+	private void cityLook(ClientGameTestContext ctx, TestServerContext server) {
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 5000");
+		server.runCommand("difficulty peaceful");
+		int[] cap = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var c = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), com.stasdoto.airdefense.nation.Cities.terrain(l), 0, 0).getFirst();
+			return new int[]{c.x, c.z, c.half(), c.base};
+		});
+		int cx = cap[0];
+		int cz = cap[1];
+		int half = cap[2];
+		int base = cap[3];
+		camera(server, cx + 0.5, base + 70, cz + half + 90, 180, 35);
+		ctx.waitTicks(60);
+		int m = half + 20;
+		generateCity(server, cx - m, cz - m, cx + m, cz + m);
+		ctx.waitTicks(120);
+		String[] names = {"200_aerial", "201_hall", "202_panel9", "203_panel5", "204_tower", "205_office", "206_shop", "207_shop2", "208_villa",
+				"209_villa2", "210_school", "211_hospital", "212_street", "213_street_high"};
+		List<float[]> cams = new ArrayList<>();
+		cams.add(new float[]{cx + 0.5f, base + 75, cz + half + 70, 180, 38});
+		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.CITY_HALL, 0, 26, 7, 0));
+		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.PANEL9, 0, 22, 6, 6));
+		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.PANEL5, 0, 18, 5, 5));
+		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.TOWER, 0, 30, 10, 6));
+		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.OFFICE, 0, 22, 6, 4));
+		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.SHOP, 0, 9, 2.5, 3));
+		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.SHOP, 1, 9, 2.5, -3));
+		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.COTTAGE, 0, 9, 3, 4));
+		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.HOUSE, 0, 9, 3, -4));
+		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.SCHOOL, 0, 20, 5, 0));
+		cams.add(facing(server, com.stasdoto.airdefense.nation.BuildingType.HOSPITAL, 0, 12, 4, 2));
+		cams.add(new float[]{cx + 16.5f + 1, base + 2.6f, cz + half - 2.5f, 180, 2});
+		cams.add(new float[]{cx - 16.5f, base + 14, cz + 40.5f, 160, 20});
+		for (int i = 0; i < names.length; i++) {
+			shot(ctx, server, cams.get(i), names[i], i == 0 ? 60 : 30);
+		}
+		// Night: the same city with its lights.
+		server.runCommand("time set 18000");
+		ctx.waitTicks(40);
+		String[] night = {"220_night_aerial", "221_night_hall", "222_night_panel9", "224_night_tower", "226_night_shop", "232_night_street",
+				"233_night_street_high"};
+		int[] which = {0, 1, 2, 4, 6, 12, 13};
+		for (int i = 0; i < night.length; i++) {
+			shot(ctx, server, cams.get(which[i]), night[i], 40);
+		}
+		server.runCommand("time set 1000");
 	}
 
 	/** Builds the chunks of a square (as the world generator would). */

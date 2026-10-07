@@ -48,7 +48,22 @@ public final class CityGen {
 	private CityGen() {
 	}
 
+	private static final ConcurrentHashMap<Long, CityDecor.Result> DECOR = new ConcurrentHashMap<>();
+
+	static CityDecor.Result decor(Cities.City c) {
+		CityDecor.Result d = DECOR.get(c.key());
+		if (d == null) {
+			if (DECOR.size() > 12) {
+				DECOR.clear();
+			}
+			d = CityDecor.build(c);
+			DECOR.put(c.key(), d);
+		}
+		return d;
+	}
+
 	static void clearCache() {
+		DECOR.clear();
 		PLANS.clear();
 	}
 
@@ -118,6 +133,7 @@ public final class CityGen {
 		}
 		for (Cities.City c : cities) {
 			buildings(w, c, cp);
+			decor(w, c, cp);
 			details(w, c, cp, seed);
 		}
 		w.finish();
@@ -193,6 +209,15 @@ public final class CityGen {
 				}
 			}
 		}
+	}
+
+	private static boolean ours(List<Cities.City> cities, BlockPos pos) {
+		for (Cities.City c : cities) {
+			if (decor(c).trees.contains(pos.asLong())) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -386,34 +411,43 @@ public final class CityGen {
 		}
 	}
 
+	/** Lamps, trees, benches, cars... of the city that fall in this chunk; a cat or two. */
+	private static void decor(Writer w, Cities.City c, ChunkPos cp) {
+		CityDecor.Result d = decor(c);
+		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+		List<CityDecor.D> list = d.blocks.get(cp.pack());
+		if (list != null) {
+			for (CityDecor.D b : list) {
+				pos.set(b.x(), b.y(), b.z());
+				BlockState cur = w.get(pos);
+				if (b.force() || cur.isAir() || cur.canBeReplaced()) {
+					w.set(pos, b.s());
+				}
+			}
+		}
+		List<CityDecor.Spawn> spawns = d.spawns.get(cp.pack());
+		if (spawns != null) {
+			for (CityDecor.Spawn s : spawns) {
+				var cat = EntityTypes.CAT.create(w.level.getLevel(), EntitySpawnReason.STRUCTURE);
+				if (cat != null && w.get(pos.set(s.x(), s.y(), s.z())).isAir()) {
+					cat.snapTo(s.x() + 0.5, s.y(), s.z() + 0.5, 0, 0);
+					cat.setPersistenceRequired();
+					w.level.addFreshEntity(cat);
+				}
+			}
+		}
+	}
+
 	private static boolean in(BlockPos p, int x0, int z0) {
 		return p.getX() >= x0 && p.getX() < x0 + 16 && p.getZ() >= z0 && p.getZ() < z0 + 16;
 	}
 
-	/** Street lamps on the corners of the blocks, the bell, people. */
+	/** The bell of the square, people in the streets. */
 	private static void details(Writer w, Cities.City c, ChunkPos cp, long seed) {
 		int x0 = cp.getMinBlockX();
 		int z0 = cp.getMinBlockZ();
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 		int half = c.half();
-		int corner = Cities.STREET_HALF + 1;
-		for (int x = x0; x < x0 + 16; x++) {
-			for (int z = z0; z < z0 + 16; z++) {
-				if (!c.inside(x, z)) {
-					continue;
-				}
-				int ox = Math.floorMod(x - c.x + half, Cities.PITCH);
-				int oz = Math.floorMod(z - c.z + half, Cities.PITCH);
-				if ((ox == corner || ox == Cities.PITCH - corner) && (oz == corner || oz == Cities.PITCH - corner)
-						&& w.get(pos.set(x, c.base + 1, z)).isAir()) {
-					for (int y = 1; y <= 3; y++) {
-						w.set(pos.set(x, c.base + y, z), Blocks.IRON_BARS.defaultBlockState());
-					}
-					w.set(pos.set(x, c.base + 4, z), Blocks.SEA_LANTERN.defaultBlockState());
-					w.set(pos.set(x, c.base + 5, z), Blocks.SMOOTH_STONE_SLAB.defaultBlockState());
-				}
-			}
-		}
 		BlockPos bell = c.bell();
 		if (in(bell, x0, z0)) {
 			w.set(bell.below(), Blocks.POLISHED_ANDESITE.defaultBlockState());

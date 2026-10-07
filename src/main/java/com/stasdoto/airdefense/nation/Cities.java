@@ -31,6 +31,8 @@ public final class Cities {
 	/** Ground blended from the city's level back to nature over this many blocks. */
 	public static final int MARGIN = 14;
 	public static final int ROAD_HALF = 3;
+	/** Buildings stand this far from the middle of their block: a strip of front garden between them and the pavement. */
+	public static final int FRONT = 11;
 
 	public enum Size {
 		SMALL(3, 100, 260, 10), MEDIUM(5, 300, 620, 18), LARGE(7, 650, 1000, 28);
@@ -486,14 +488,14 @@ public final class Cities {
 		BuildingType GA = BuildingType.GARAGES;
 		return switch (size) {
 			case LARGE -> switch (ring) {
-				case 1 -> pick(r, Lot.one(BuildingType.TOWER), 4, Lot.one(BuildingType.OFFICE), 3, Lot.one(P9), 3, Lot.two(P5, SH), 1);
-				case 2 -> pick(r, Lot.one(P9), 4, Lot.two(P5, P5), 2, Lot.two(P5, SH), 2, Lot.one(BuildingType.OFFICE), 1, Lot.one(BuildingType.PARK), 1);
+				case 1 -> pick(r, Lot.one(BuildingType.TOWER), 4, Lot.one(BuildingType.OFFICE), 3, Lot.one(P9), 3, Lot.two(P5, SH), 2, Lot.two(SH, SH), 2);
+				case 2 -> pick(r, Lot.one(P9), 4, Lot.two(P5, P5), 2, Lot.two(P5, SH), 3, Lot.two(SH, SH), 1, Lot.one(BuildingType.OFFICE), 1, Lot.one(BuildingType.PARK), 1);
 				default -> pick(r, Lot.cottages(), 7, Lot.two(GA, GA), 1, Lot.two(P5, P5), 2, Lot.two(GA, P5), 1);
 			};
 			case MEDIUM -> ring == 1
-					? pick(r, Lot.one(P9), 3, Lot.two(P5, SH), 2, Lot.two(P5, P5), 2, Lot.one(BuildingType.OFFICE), 1, Lot.one(BuildingType.PARK), 1)
+					? pick(r, Lot.one(P9), 3, Lot.two(P5, SH), 3, Lot.two(SH, SH), 2, Lot.two(P5, P5), 2, Lot.one(BuildingType.OFFICE), 1, Lot.one(BuildingType.PARK), 1)
 					: pick(r, Lot.cottages(), 7, Lot.two(GA, P5), 1, Lot.two(P5, SH), 1);
-			case SMALL -> pick(r, Lot.cottages(), 6, Lot.two(P5, SH), 1, Lot.two(GA, P5), 1);
+			case SMALL -> pick(r, Lot.cottages(), 6, Lot.two(P5, SH), 2, Lot.two(SH, SH), 1, Lot.two(GA, P5), 1);
 		};
 	}
 
@@ -546,7 +548,7 @@ public final class Cities {
 		List<Building> out = new ArrayList<>();
 		int y = c.base;
 		// The city hall on the central square, its front to the south.
-		Building hall = new Building(out.size(), BuildingType.CITY_HALL, new BlockPos(c.x, y, c.z + 12), Direction.NORTH, true);
+		Building hall = new Building(out.size(), BuildingType.CITY_HALL, new BlockPos(c.x, y, c.z + 8), Direction.NORTH, true);
 		hall.variant = r.nextInt(97);
 		out.add(hall);
 		for (int i = 0; i < n; i++) {
@@ -563,14 +565,14 @@ public final class Cities {
 					for (int q = 0; q < 4; q++) {
 						int sx = q % 2 == 0 ? -7 : 7;
 						boolean south = q < 2;
-						add(out, r, small[r.nextInt(small.length)], bx + sx, y, bz + (south ? 12 : -12), south ? Direction.NORTH : Direction.SOUTH);
+						add(out, r, small[r.nextInt(small.length)], bx + sx, y, bz + (south ? FRONT : -FRONT), south ? Direction.NORTH : Direction.SOUTH);
 					}
 				} else if (lot.b != null) {
-					add(out, r, lot.a, bx, y, bz + 12, Direction.NORTH);
-					add(out, r, lot.b, bx, y, bz - 12, Direction.SOUTH);
+					add(out, r, lot.a, bx, y, bz + FRONT, Direction.NORTH);
+					add(out, r, lot.b, bx, y, bz - FRONT, Direction.SOUTH);
 				} else {
 					Direction f = Direction.Plane.HORIZONTAL.getRandomDirection(net.minecraft.util.RandomSource.create(r.nextLong()));
-					add(out, r, lot.a, bx - f.getStepX() * 12, y, bz - f.getStepZ() * 12, f);
+					add(out, r, lot.a, bx - f.getStepX() * FRONT, y, bz - f.getStepZ() * FRONT, f);
 				}
 			}
 		}
