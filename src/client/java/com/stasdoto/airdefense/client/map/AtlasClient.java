@@ -80,7 +80,7 @@ public final class AtlasClient {
 		ClientPlayNetworking.registerGlobalReceiver(AtlasPayload.TYPE, (payload, context) -> context.client().execute(() -> load(payload.data())));
 		ClientPlayNetworking.registerGlobalReceiver(AtlasPoliticsPayload.TYPE, (payload, context) -> context.client().execute(() -> politics(payload)));
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> {
-			if (mc.level == null && loaded) {
+			if (mc.level == null && (loaded || politics != null)) {
 				clear();
 			}
 		});
@@ -95,6 +95,7 @@ public final class AtlasClient {
 		politics = null;
 		BY_KEY.clear();
 		COUNTRIES.clear();
+		TOWNS.clear();
 		if (texture != null) {
 			Minecraft.getInstance().getTextureManager().release(textureId);
 			texture = null;

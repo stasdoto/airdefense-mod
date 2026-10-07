@@ -75,6 +75,7 @@ public final class Atlas {
 	}
 
 	private static void stop() {
+		LAST_POLITICS.clear();
 		if (pool != null) {
 			pool.shutdownNow();
 			pool = null;
@@ -189,7 +190,8 @@ public final class Atlas {
 	public static void sendPolitics(ServerLevel level, ServerPlayer player, boolean now) {
 		long t = level.getGameTime();
 		Long last = LAST_POLITICS.get(player.getUUID());
-		if (!now && last != null && t - last < 100 || !ServerPlayNetworking.canSend(player, AtlasPoliticsPayload.TYPE)) {
+		// (A stored time from an earlier world can be ahead of this one's clock: that counts as long ago.)
+		if (!now && last != null && t >= last && t - last < 100 || !ServerPlayNetworking.canSend(player, AtlasPoliticsPayload.TYPE)) {
 			return;
 		}
 		LAST_POLITICS.put(player.getUUID(), t);
