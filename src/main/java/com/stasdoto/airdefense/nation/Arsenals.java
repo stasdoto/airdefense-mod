@@ -308,6 +308,8 @@ public final class Arsenals extends SavedData {
 
 	/** Where the town's vehicles stand: round the edge of a city (air defence), in its depot's yard (launchers). */
 	private static final Map<Long, BlockPos> SPOTS = new HashMap<>();
+	/** Seconds a unit's vehicle has not been found where it should be. */
+	private static final Map<UUID, Integer> MISSING = new HashMap<>();
 
 	private static BlockPos spot(ServerLevel level, Settlement s, int index, boolean launcher) {
 		long key = s.id * 64L + index;
@@ -405,7 +407,12 @@ public final class Arsenals extends SavedData {
 			VehicleEntity v = u.entity == null ? null : level.getEntity(u.entity) instanceof VehicleEntity ve ? ve : null;
 			if (v == null && u.entity != null) {
 				// Its chunk may still be loading its entities: wait for it a while before calling it gone.
-				continue;
+				int n = MISSING.merge(u.entity, 1, Integer::sum);
+				if (n < 120) {
+					continue;
+				}
+				MISSING.remove(u.entity);
+				u.entity = null;
 			}
 			if (v == null) {
 				int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, at.getX(), at.getZ());

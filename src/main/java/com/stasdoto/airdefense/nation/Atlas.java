@@ -342,10 +342,11 @@ public final class Atlas {
 		List<Hamlets.Hamlet> hamlets = new ArrayList<>();
 		List<Cities.Road> roads = new ArrayList<>();
 		Set<Cities.Road> seen = new HashSet<>();
-		int cx0 = Math.floorDiv(o[0], Cities.CELL) - 1;
-		int cz0 = Math.floorDiv(o[1], Cities.CELL) - 1;
-		int cx1 = Math.floorDiv(o[0] + SIZE * RES, Cities.CELL) + 1;
-		int cz1 = Math.floorDiv(o[1] + SIZE * RES, Cities.CELL) + 1;
+		// The cells under the atlas and a strip round it (the next capitals shape the borders at the edge).
+		int cx0 = Math.floorDiv(o[0] - 700, Cities.CELL);
+		int cz0 = Math.floorDiv(o[1] - 700, Cities.CELL);
+		int cx1 = Math.floorDiv(o[0] + SIZE * RES + 700, Cities.CELL);
+		int cz1 = Math.floorDiv(o[1] + SIZE * RES + 700, Cities.CELL);
 		// Capitals first (each founds its country), then the other towns, then the hamlets.
 		List<Cities.City> others = new ArrayList<>();
 		for (int cx = cx0; cx <= cx1; cx++) {
