@@ -1780,7 +1780,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	 * then one Shahed. One interceptor should go up for it (another only after a miss), not one from each.
 	 */
 	private void threeVsOne(ClientGameTestContext ctx, TestServerContext server) {
-		int x = 21000;
+		int x = 51000;
 		prepareDefense(ctx, server, VehicleType.NASAMS, x, 50, 180);
 		spawnVehicle(server, VehicleType.IRIS_T, x + 14, 56, 180);
 		spawnVehicle(server, VehicleType.BUK, x - 14, 56, 180);
@@ -2404,7 +2404,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	 * real size (2.5 m across the wings).
 	 */
 	private void rifleVsShahed(ClientGameTestContext ctx, TestServerContext server) {
-		int x = 33000;
+		// Far from the other scenes' batteries (their reach is five times what it was: an S-300 at 33 000 shot it).
+		int x = 45000;
 		int g = ground;
 		final int left = com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT;
 		final int right = com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT;
@@ -2755,6 +2756,16 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(60);
 		int m = half + 20;
 		generateCity(server, cx - m, cz - m, cx + m, cz + m);
+		// The atlas founded the capital (and planned its sirens) at the start, and earlier scenes may have put them up
+		// on the bare test ground; the city has just been built over them: plan them afresh.
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var z = com.stasdoto.airdefense.siren.Sirens.get(s);
+			z.known.removeIf(k -> Math.abs(BlockPos.of(k).getX() - cx) <= m && Math.abs(BlockPos.of(k).getZ() - cz) <= m);
+			z.pending.keySet().removeIf(k -> Math.abs(BlockPos.of(k).getX() - cx) <= m && Math.abs(BlockPos.of(k).getZ() - cz) <= m);
+			com.stasdoto.airdefense.siren.Sirens.planCity(l, com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(),
+					com.stasdoto.airdefense.nation.Cities.terrain(l), 0, 0).getFirst());
+		});
 		camera(server, cx + 0.5, base + 40, cz + 0.5, 180, 40);
 		int founded = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Nations.citiesFounded > 0, 400);
 		int waited = waitUntil(ctx, () -> sirensNear(server, cx, cz, half + 40).size() >= 2, 400);
@@ -3966,7 +3977,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					new net.minecraft.world.phys.AABB(x - 120, g - 10, -120, x + 200, g + 30, 120), e -> e.isAlive() && e.country() == ai).size();
 			return enemies + " enemies, " + com.stasdoto.airdefense.nation.Nations.guards(s.overworld(), stA).size() + " guards";
 		});
-		AirDefense.LOGGER.info("[airdefense-test] RESULT squad: sent {}, after the fight {}", sent, fight);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT squad: sent {}, after the fight {}; soldiers took cover {} fell back {} grenades {}", sent, fight,
+				com.stasdoto.airdefense.nation.SoldierEntity.tookCover, com.stasdoto.airdefense.nation.SoldierEntity.fellBack,
+				com.stasdoto.airdefense.nation.SoldierEntity.grenadesThrown);
 
 		// Nobody defends A: a second squad takes it.
 		server.runOnServer(s -> {
