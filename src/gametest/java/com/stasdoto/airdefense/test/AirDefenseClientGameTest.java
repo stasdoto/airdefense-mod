@@ -241,6 +241,84 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			AirDefense.LOGGER.info("[airdefense-test] RESULT real_profile_ms: {} tick {} ms", java.util.Arrays.toString(
 					java.util.Arrays.stream(com.stasdoto.airdefense.nation.Nations.PROFILE).map(v -> v / 1_000_000).toArray()),
 					server.computeOnServer(s -> s.getAverageTickTimeNanos() / 1_000_000f));
+			atlas(ctx, server, cx, cz, base);
+		}
+	}
+
+	/**
+	 * 1.25: the atlas - the 10 km round the spawn with every country, city, hamlet and road on the tablet map from the
+	 * start; a winding highway out of the capital; a widened street.
+	 */
+	private void atlas(ClientGameTestContext ctx, TestServerContext server, int cx, int cz, int base) {
+		int waited = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Atlas.ready, 3600);
+		int before = -1;
+		for (int k = 0; k < 40 && com.stasdoto.airdefense.nation.Atlas.founded != before; k++) {
+			before = com.stasdoto.airdefense.nation.Atlas.founded;
+			ctx.waitTicks(30);
+		}
+		String pol = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			int cities = 0;
+			int hamlets = 0;
+			for (var st : p.settlements.values()) {
+				if (st.city >= 0) {
+					cities++;
+				} else if (st.hamlet >= 0) {
+					hamlets++;
+				}
+			}
+			return p.countries.size() + " countries, " + cities + " cities, " + hamlets + " hamlets, flags waiting " + p.flagsPending.size();
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT atlas: ready after {} ticks ({} rows), founded {}; politics: {}; client has {} cities {} roads", waited,
+				com.stasdoto.airdefense.nation.Atlas.ROWS.get(), com.stasdoto.airdefense.nation.Atlas.founded, pol,
+				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.map.AtlasClient.CITIES.size()),
+				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.map.AtlasClient.ROADS.size()));
+		// The tablet map, from the whole atlas down to one city.
+		server.runCommand("gamemode creative @a");
+		camera(server, cx + 0.5, base + 60, cz + 0.5, 0, 90);
+		server.runCommand("clear @a");
+		server.runCommand("item replace entity @a hotbar.0 with airdefense:designator");
+		ctx.runOnClient(mc -> mc.player.getInventory().setSelectedSlot(0));
+		ctx.waitTicks(40);
+		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT);
+		ctx.waitForScreen(com.stasdoto.airdefense.client.map.TacticalMapScreen.class);
+		ctx.waitTicks(40);
+		int[][] views = {{7, 0}, {6, 0}, {5, 0}, {4, 0}, {2, 0}};
+		String[] names = {"150_atlas_whole", "151_atlas_countries", "152_atlas_region", "153_atlas_city", "154_atlas_streets"};
+		for (int i = 0; i < views.length; i++) {
+			int zi = views[i][0];
+			ctx.runOnClient(mc -> ((com.stasdoto.airdefense.client.map.TacticalMapScreen) mc.gui.screen()).centerOn(cx, cz, zi));
+			ctx.waitTicks(20);
+			ctx.takeScreenshot(names[i]);
+		}
+		ctx.runOnClient(mc -> mc.gui.setScreen(null));
+		server.runCommand("clear @a");
+		server.runCommand("gamemode spectator @a");
+		// A highway out of the capital: from above and along it.
+		double[] r = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var t = com.stasdoto.airdefense.nation.Cities.terrain(l);
+			var roads = com.stasdoto.airdefense.nation.Cities.roads(l.getSeed(), t, Math.floorDiv(cx, com.stasdoto.airdefense.nation.Cities.CELL),
+					Math.floorDiv(cz, com.stasdoto.airdefense.nation.Cities.CELL));
+			if (roads.isEmpty()) {
+				return null;
+			}
+			var road = roads.getFirst();
+			double[] a = road.pointAt(180);
+			double[] b = road.pointAt(200);
+			return new double[]{a[0], a[1], b[0] - a[0], b[1] - a[1], road.height(180), road.length};
+		});
+		if (r != null) {
+			double len = Math.hypot(r[2], r[3]);
+			double ux = r[2] / len;
+			double uz = r[3] / len;
+			camera(server, r[0] - ux * 30, r[4] + 14, r[1] - uz * 30, (float) Math.toDegrees(Math.atan2(-ux, uz)), 20);
+			ctx.waitTicks(200);
+			ctx.takeScreenshot("155_highway");
+			camera(server, r[0], r[4] + 90, r[1], 0, 90);
+			ctx.waitTicks(120);
+			ctx.takeScreenshot("156_highway_above");
+			AirDefense.LOGGER.info("[airdefense-test] RESULT highway: length {} at {} {}", (int) r[5], (int) r[0], (int) r[1]);
 		}
 	}
 

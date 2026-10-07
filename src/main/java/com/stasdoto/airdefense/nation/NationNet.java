@@ -267,6 +267,7 @@ public final class NationNet {
 			}
 		}
 		ServerPlayNetworking.send(player, new NationMapPayload(villages, men));
+		Atlas.sendPolitics(level, player, false);
 	}
 
 	/** A village's buildings for the map (see {@link NationMapPayload.Village}). */

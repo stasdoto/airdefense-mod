@@ -502,6 +502,11 @@ public final class CityShape {
 		return Math.max(1, best);
 	}
 
+	/** Whether the block (i, j) of the grid is part of the city (for the atlas). */
+	public boolean cellOn(int i, int j) {
+		return isOn(i, j);
+	}
+
 	public Lot hallLot() {
 		return lots.get(lotAt(ci, cj));
 	}

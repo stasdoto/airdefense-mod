@@ -90,6 +90,7 @@ public final class Nations {
 		Politics p = Politics.get(level.getServer());
 		long t0 = System.nanoTime();
 		if (t % 100 == 0) {
+			raisePendingFlags(level, p);
 			foundCities(level, p);
 			long t1 = System.nanoTime();
 			PROFILE[0] += t1 - t0;
@@ -204,7 +205,7 @@ public final class Nations {
 		p.settlements.values().forEach(s -> names.add(s.name));
 		int id = p.newId();
 		BlockPos bell = c.bell();
-		Settlement s = new Settlement(id, Names.village(r, names), bell, flagSpot(level, bell), -1, Optional.empty(), 0,
+		Settlement s = new Settlement(id, Names.village(r, names), bell, flagAt(level, p, id, bell), -1, Optional.empty(), 0,
 				Map.of(), List.of(), List.of());
 		s.city = c.key();
 		s.radius = c.radius();
@@ -270,7 +271,7 @@ public final class Nations {
 		p.settlements.values().forEach(s -> names.add(s.name));
 		int id = p.newId();
 		BlockPos bell = h.bell();
-		Settlement s = new Settlement(id, Names.village(r, names), bell, flagSpot(level, bell), -1, Optional.empty(), 0,
+		Settlement s = new Settlement(id, Names.village(r, names), bell, flagAt(level, p, id, bell), -1, Optional.empty(), 0,
 				Map.of(), List.of(), List.of());
 		s.hamlet = h.key();
 		s.radius = 56;
@@ -387,6 +388,54 @@ public final class Nations {
 	}
 
 	/** A free spot on the ground right next to the town square for the flag. */
+	/** Where a new town's flag goes: next to the bell if it is loaded; else later, when somebody comes (founded from afar). */
+	private static BlockPos flagAt(ServerLevel level, Politics p, int id, BlockPos bell) {
+		if (level.isLoaded(bell)) {
+			return flagSpot(level, bell);
+		}
+		p.flagsPending.add(id);
+		return bell.above(2);
+	}
+
+	public static boolean isFounded(Politics p, Cities.City c) {
+		for (Settlement s : p.settlements.values()) {
+			if (s.city == c.key()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static boolean isFounded(Politics p, Hamlets.Hamlet h) {
+		for (Settlement s : p.settlements.values()) {
+			if (s.hamlet == h.key()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Towns founded from afar get their flag once their square is loaded. */
+	private static void raisePendingFlags(ServerLevel level, Politics p) {
+		if (p.flagsPending.isEmpty()) {
+			return;
+		}
+		var it = p.flagsPending.iterator();
+		while (it.hasNext()) {
+			Settlement s = p.settlements.get(it.next());
+			if (s == null) {
+				it.remove();
+				continue;
+			}
+			if (level.isLoaded(s.center) && level.getBlockState(s.center).is(Blocks.BELL)) {
+				s.flag = flagSpot(level, s.center);
+				placeFlag(level, p, s);
+				it.remove();
+				p.setDirty();
+			}
+		}
+	}
+
 	private static BlockPos flagSpot(ServerLevel level, BlockPos center) {
 		for (int ring = 2; ring <= 5; ring++) {
 			for (Direction d : Direction.Plane.HORIZONTAL) {

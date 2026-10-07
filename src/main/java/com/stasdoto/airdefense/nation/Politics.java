@@ -23,19 +23,23 @@ public final class Politics extends SavedData {
 	public static final Codec<Politics> CODEC = RecordCodecBuilder.create(i -> i.group(
 			Country.CODEC.listOf().optionalFieldOf("countries", List.of()).forGetter(p -> new ArrayList<>(p.countries.values())),
 			Settlement.CODEC.listOf().optionalFieldOf("settlements", List.of()).forGetter(p -> new ArrayList<>(p.settlements.values())),
-			Codec.INT.optionalFieldOf("next_id", 1).forGetter(p -> p.nextId)
+			Codec.INT.optionalFieldOf("next_id", 1).forGetter(p -> p.nextId),
+			Codec.INT.listOf().optionalFieldOf("flags_pending", List.of()).forGetter(p -> new ArrayList<>(p.flagsPending))
 	).apply(i, Politics::new));
 	public static final SavedDataType<Politics> TYPE = new SavedDataType<>(AirDefense.id("politics"), Politics::new, CODEC, null);
 
 	public final Map<Integer, Country> countries = new LinkedHashMap<>();
 	public final Map<Integer, Settlement> settlements = new LinkedHashMap<>();
+	/** Towns founded from afar (the atlas) whose flag goes up once somebody comes near. */
+	public final java.util.Set<Integer> flagsPending = new java.util.HashSet<>();
 	private int nextId;
 
 	public Politics() {
-		this(List.of(), List.of(), 1);
+		this(List.of(), List.of(), 1, List.of());
 	}
 
-	private Politics(List<Country> countries, List<Settlement> settlements, int nextId) {
+	private Politics(List<Country> countries, List<Settlement> settlements, int nextId, List<Integer> pending) {
+		this.flagsPending.addAll(pending);
 		for (Country c : countries) {
 			this.countries.put(c.id, c);
 		}
