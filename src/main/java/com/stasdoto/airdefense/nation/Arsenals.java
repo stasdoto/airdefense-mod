@@ -143,14 +143,24 @@ public final class Arsenals extends SavedData {
 	/** Missiles on their way from a factory town to another town of the country. */
 	public final List<Delivery> deliveries = new ArrayList<>();
 
-	public record Delivery(int to, MissileType type, int count, long arrives) {
+	public record Delivery(long id, int to, MissileType type, int count, long arrives) {
 		static final Codec<Delivery> CODEC = RecordCodecBuilder.create(i -> i.group(
+				Codec.LONG.optionalFieldOf("id", 0L).forGetter(Delivery::id),
 				Codec.INT.fieldOf("to").forGetter(Delivery::to),
 				Codec.STRING.fieldOf("type").forGetter(d -> d.type.name()),
 				Codec.INT.fieldOf("count").forGetter(Delivery::count),
 				Codec.LONG.fieldOf("arrives").forGetter(Delivery::arrives)
-		).apply(i, (to, t, n, at) -> new Delivery(to, MissileType.valueOf(t), n, at)));
+		).apply(i, (id, to, t, n, at) -> new Delivery(id, to, MissileType.valueOf(t), n, at)));
 	}
+
+	/** A lorry sets off this long (ticks) before its load is due, from 200 blocks out on the road into town. */
+	private static final long SUPPLY_LEAD = 900;
+	/** Deliveries whose lorry is on the road now (not saved: after a restart the load just arrives). */
+	private final java.util.Set<Long> shown = new java.util.HashSet<>();
+	/** For the tests: lorries sent, loads they brought in, loads lost with their lorry. */
+	public static int lorries;
+	public static int lorryLoads;
+	public static int lorryLosses;
 
 	public Arsenals() {
 		this(List.of(), List.of());
@@ -252,25 +262,37 @@ public final class Arsenals extends SavedData {
 
 	public static void tick(ServerLevel level) {
 		long now = level.getGameTime();
+		// Called once a second (game time 13, 33, 53...): count in seconds.
+		long sec = now / 20;
 		Politics p = Politics.get(level.getServer());
 		Arsenals a = get(level.getServer());
 		for (Settlement s : p.settlements.values()) {
 			Arsenal ar = a.of(p, s);
 			boolean near = level.isLoaded(s.center) && level.getNearestPlayer(s.center.getX(), s.center.getY(), s.center.getZ(), 240,
 					pl -> !pl.isSpectator()) != null;
-			if ((now + s.id) % 40 == 0 && incoming(level, s)) {
+			if ((sec + s.id) % 2 == 0 && incoming(level, s)) {
 				ar.alertUntil = now + 600;
 			}
 			boolean alert = ar.alertUntil > now;
 			if (near || alert) {
 				a.materialize(level, p, s, ar, near, alert);
 			}
-			if ((now + s.id * 13L) % 600 == 0) {
+			if ((sec + s.id * 13L) % 30 == 0) {
 				a.produce(level, p, s, ar);
 			}
 		}
-		// Deliveries arriving.
+		// Deliveries arriving; a lorry on the road into town when somebody is there to see it come.
 		if (!a.deliveries.isEmpty()) {
+			for (Delivery d : List.copyOf(a.deliveries)) {
+				if (d.id() != 0 && d.arrives() - now <= SUPPLY_LEAD && !a.shown.contains(d.id())) {
+					Settlement s = p.settlements.get(d.to());
+					if (s != null && level.isLoaded(s.center) && level.getNearestPlayer(s.center.getX(), s.center.getY(), s.center.getZ(), 360,
+							pl -> true) != null) {
+						a.shown.add(d.id());
+						a.supplyLorry(level, p, s, d);
+					}
+				}
+			}
 			var it = a.deliveries.iterator();
 			while (it.hasNext()) {
 				Delivery d = it.next();
@@ -285,7 +307,7 @@ public final class Arsenals extends SavedData {
 				}
 			}
 		}
-		if (now % 400 == 200) {
+		if (sec % 20 == 10) {
 			a.war(level, p);
 		}
 	}
@@ -496,19 +518,18 @@ public final class Arsenals extends SavedData {
 
 	/**
 	 * Every 30 s: a city with an arms factory works on what the country's towns are shortest of, using iron and fuel;
-	 * what is made goes to that town (by road: it takes a while). No iron or fuel - nothing is made.
+	 * what is made goes to that town (by road: it takes a while). A town without a factory makes its own in a workshop,
+	 * three times slower and only for itself. No iron or fuel - nothing is made.
 	 */
 	private void produce(ServerLevel level, Politics p, Settlement s, Arsenal ar) {
-		if (s.city < 0 || s.eco.count(BuildingType.ARMS_FACTORY) == 0 && s.eco.count(BuildingType.FACTORY) == 0) {
-			return;
-		}
+		boolean factory = s.city >= 0 && (s.eco.count(BuildingType.ARMS_FACTORY) > 0 || s.eco.count(BuildingType.FACTORY) > 0);
 		VillageEconomy e = s.eco;
 		if (ar.making == null) {
 			// The emptiest store in the country.
 			Settlement neediest = null;
 			MissileType need = null;
 			double worst = 0.75;
-			for (Settlement o : s.country < 0 ? List.of(s) : p.settlementsOf(s.country)) {
+			for (Settlement o : s.country < 0 || !factory ? List.of(s) : p.settlementsOf(s.country)) {
 				Arsenal oa = of(p, o);
 				for (Unit u : oa.units) {
 					MissileType m = missileOf(u.type);
@@ -539,7 +560,7 @@ public final class Arsenals extends SavedData {
 			setDirty();
 			return;
 		}
-		ar.progress += 600;
+		ar.progress += factory ? 600 : 200;
 		if (ar.progress >= buildTicks(ar.making)) {
 			MissileType m = ar.making;
 			int count = m.kind == MissileType.Kind.ROCKET ? 3 : 1;
@@ -550,7 +571,7 @@ public final class Arsenals extends SavedData {
 			} else {
 				// By road to the other town: a minute or two per kilometre.
 				double km = Math.sqrt(dest.center.distSqr(s.center)) / 1000.0;
-				deliveries.add(new Delivery(dest.id, m, count, level.getGameTime() + 1200 + (long) (km * 1800)));
+				deliveries.add(new Delivery(level.getRandom().nextLong() | 1L, dest.id, m, count, level.getGameTime() + 1200 + (long) (km * 1800)));
 			}
 			made += count;
 			ar.making = null;
@@ -606,6 +627,141 @@ public final class Arsenals extends SavedData {
 				}
 			}
 		}
+	}
+
+	/**
+	 * The lorry bringing a delivery in (1.25): it turns up 200 blocks out on the road from the factory's side and drives
+	 * in - to the depot's gate when the city has one (its launchers stand there), else into the town. When it gets there
+	 * the load is in the stores (sooner than by the clock); if it is destroyed on the way, the load is lost.
+	 */
+	private void supplyLorry(ServerLevel level, Politics p, Settlement to, Delivery d) {
+		Vec3 from = Vec3.atCenterOf(to.center).add(600, 0, 0);
+		for (Settlement o : p.settlementsOf(to.country)) {
+			if (o.id != to.id && o.city >= 0) {
+				from = Vec3.atCenterOf(o.center);
+				break;
+			}
+		}
+		List<Vec3> route = supplyRoute(level, to, from);
+		if (route.size() < 2) {
+			return;
+		}
+		Vec3 start = route.getFirst();
+		Vec3 next = route.get(1);
+		BlockPos at = BlockPos.containing(start.x, 0, start.z);
+		if (!level.isLoaded(at)) {
+			level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, ChunkPos.containing(at), 2);
+			shown.remove(d.id());
+			return;
+		}
+		int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, at.getX(), at.getZ());
+		float yaw = (float) Math.toDegrees(Math.atan2(-(next.x - start.x), next.z - start.z));
+		VehicleEntity v = VehicleEntity.spawn(level, com.stasdoto.airdefense.vehicle.VehicleType.SUPPLY_TRUCK, new Vec3(start.x, y, start.z), yaw);
+		v.country = side(to);
+		v.home = to.id;
+		v.garrison = true;
+		v.setUnlimited(false);
+		v.cargoDelivery = d.id();
+		v.drive(route.subList(1, route.size()), 0.7f);
+		lorries++;
+		AirDefense.LOGGER.info("[airdefense] a lorry brings {} x{} to {}", d.type().name(), d.count(), to.name);
+	}
+
+	/** The road a lorry takes in: along the highway to the depot's access road and in at its gate, or into the town. */
+	private static List<Vec3> supplyRoute(ServerLevel level, Settlement to, Vec3 from) {
+		long seed = level.getSeed();
+		Cities.Terrain t = Cities.terrain(level);
+		Cities.City city = to.city >= 0 ? Cities.plannedCityAt(seed, to.center.getX(), to.center.getZ(), 400) : null;
+		Depots.Depot depot = city == null ? null : city.depot(seed, t);
+		List<Vec3> out = new ArrayList<>();
+		if (depot != null && depot.access != null) {
+			// Where the access road meets the highway, and the highway it meets.
+			double jx = depot.access.x1;
+			double jz = depot.access.z1;
+			Cities.Road.Spot spot = new Cities.Road.Spot();
+			for (Cities.Road r : Cities.mainRoadsNear(seed, t, city.x, city.z)) {
+				if (!r.highway || !r.locate(jx, jz, r.half + 6, spot)) {
+					continue;
+				}
+				boolean startInTown = city.outside(r.x0, r.z0) <= 12;
+				double join = spot.along;
+				// From further out than the junction (away from town), up to it.
+				double far = startInTown ? Math.min(r.length - 10, join + 200) : Math.max(10, join - 200);
+				double step = startInTown ? -12 : 12;
+				for (double s = far; startInTown ? s > join : s < join; s += step) {
+					double[] q = r.pointAt(s);
+					out.add(new Vec3(q[0], 0, q[1]));
+				}
+				double[] q = r.pointAt(join);
+				out.add(new Vec3(q[0], 0, q[1]));
+				out.add(new Vec3(depot.access.x0 + 0.5, 0, depot.access.z0 + 0.5));
+				// Through the gate into the yard.
+				out.add(new Vec3(depot.gateX + 0.5 - depot.front.getStepX() * 10, 0, depot.gateZ + 0.5 - depot.front.getStepZ() * 10));
+				if (out.size() >= 4) {
+					return out;
+				}
+				out.clear();
+			}
+		}
+		War.Approach ap = War.approach(level, to, from, 200);
+		if (ap != null) {
+			out.addAll(ap.waypoints);
+		}
+		return out;
+	}
+
+	/** A lorry got to the end of its road: the load goes into the town's stores (if the clock has not put it there already). */
+	public static void lorryArrived(ServerLevel level, VehicleEntity v) {
+		Arsenals a = get(level.getServer());
+		Politics p = Politics.get(level.getServer());
+		var it = a.deliveries.iterator();
+		while (it.hasNext()) {
+			Delivery d = it.next();
+			if (d.id() == v.cargoDelivery) {
+				it.remove();
+				Arsenal to = a.arsenals.get(d.to());
+				Settlement s = p.settlements.get(d.to());
+				if (to != null && s != null) {
+					to.add(d.type(), Math.min(d.count(), Math.max(0, a.cap(s, to, d.type()) - to.stock(d.type()))));
+				}
+				lorryLoads++;
+				a.setDirty();
+				AirDefense.LOGGER.info("[airdefense] the lorry unloaded {} x{} at {}", d.type().name(), d.count(), s == null ? "?" : s.name);
+			}
+		}
+		a.shown.remove(v.cargoDelivery);
+		v.cargoDelivery = 0;
+	}
+
+	/** A lorry was destroyed on the road: its load is lost. */
+	public static void lorryLost(ServerLevel level, VehicleEntity v) {
+		Arsenals a = get(level.getServer());
+		if (a.deliveries.removeIf(d -> d.id() == v.cargoDelivery)) {
+			lorryLosses++;
+			a.setDirty();
+			AirDefense.LOGGER.info("[airdefense] a lorry was destroyed with its load");
+		}
+		a.shown.remove(v.cargoDelivery);
+		v.cargoDelivery = 0;
+	}
+
+	/** For the tests: a load of a town's own launcher missiles on its way, due in 20 s (its lorry sets off at once). */
+	public static MissileType testDelivery(ServerLevel level, Settlement to) {
+		Arsenals a = get(level.getServer());
+		Arsenal ar = a.of(Politics.get(level.getServer()), to);
+		MissileType m = null;
+		for (Unit u : ar.units) {
+			if (u.type.isLauncher()) {
+				m = missileOf(u.type);
+				break;
+			}
+		}
+		if (m == null) {
+			return null;
+		}
+		a.deliveries.add(new Delivery(level.getRandom().nextLong() | 1L, to.id, m, 3, level.getGameTime() + 400));
+		a.setDirty();
+		return m;
 	}
 
 	/** For the tests: this town fires its first loaded launcher at that town now. */

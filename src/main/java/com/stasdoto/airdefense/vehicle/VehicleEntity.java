@@ -790,6 +790,9 @@ public class VehicleEntity extends LivingEntity {
 	/** For the tests: columns that arrived, troops that got out. */
 	public static int arrivals;
 	public static int dismounted;
+	/** A town's supply lorry: the delivery it carries (0 = none); after unloading it waits, then goes away. */
+	public long cargoDelivery;
+	private int unloadedTicks = -1;
 
 	/** Drives along these points (no driver needed), at this share of its top speed. */
 	public void drive(List<Vec3> waypoints, float speedShare) {
@@ -850,6 +853,11 @@ public class VehicleEntity extends LivingEntity {
 
 	/** At the end of the road: the troops get out and go on on foot. */
 	private void arrived(ServerLevel level) {
+		if (cargoDelivery != 0) {
+			com.stasdoto.airdefense.nation.Arsenals.lorryArrived(level, this);
+			unloadedTicks = 0;
+			return;
+		}
 		arrivals++;
 		if (troops <= 0) {
 			return;
@@ -1269,6 +1277,12 @@ public class VehicleEntity extends LivingEntity {
 		if (route != null) {
 			// On the road by itself: its ground keeps running (only while it drives).
 			keepLoaded(level);
+		} else if (unloadedTicks >= 0 && ++unloadedTicks % 20 == 0 && getPassengers().isEmpty()) {
+			// An unloaded supply lorry drives off (goes away) once nobody is close enough to watch, or after five minutes.
+			if (unloadedTicks > 6000 || unloadedTicks > 400 && level.getNearestPlayer(this, 40) == null) {
+				discard();
+				return;
+			}
 		}
 		if (vtype.isLauncher()) {
 			tickLauncher(level);
@@ -2751,6 +2765,9 @@ public class VehicleEntity extends LivingEntity {
 		if (level() instanceof ServerLevel server) {
 			RadarNetwork.remove(server, getId());
 			com.stasdoto.airdefense.nation.Arsenals.destroyed(server, this);
+			if (cargoDelivery != 0) {
+				com.stasdoto.airdefense.nation.Arsenals.lorryLost(server, this);
+			}
 			ejectPassengers();
 			// The fuel and every missile still on board go up.
 			float power = 3.5f + Integer.bitCount(getLoadedMask()) * (vtype.isLauncher() ? 1.2f : 0.4f);
@@ -2834,6 +2851,8 @@ public class VehicleEntity extends LivingEntity {
 		output.putInt("vehicle_home", home);
 		output.putBoolean("vehicle_garrison", garrison);
 		output.putInt("vehicle_troops", troops);
+		output.putLong("vehicle_delivery", cargoDelivery);
+		output.putInt("vehicle_unloaded", unloadedTicks);
 		if (troopTarget != null) {
 			output.store("vehicle_troop_target", BlockPos.CODEC, troopTarget);
 		}
@@ -2867,6 +2886,8 @@ public class VehicleEntity extends LivingEntity {
 		home = input.getIntOr("vehicle_home", -1);
 		garrison = input.getBooleanOr("vehicle_garrison", false);
 		troops = input.getIntOr("vehicle_troops", 0);
+		cargoDelivery = input.getLongOr("vehicle_delivery", 0L);
+		unloadedTicks = input.getIntOr("vehicle_unloaded", -1);
 		troopTarget = input.read("vehicle_troop_target", BlockPos.CODEC).orElse(null);
 		input.read("vehicle_route", com.mojang.serialization.Codec.INT.listOf()).ifPresent(pts -> {
 			List<Vec3> r = new ArrayList<>();

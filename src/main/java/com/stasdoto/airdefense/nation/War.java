@@ -275,6 +275,75 @@ public final class War {
 		return best;
 	}
 
+	/** The way into a town by road: the road, which end is out of town, how far back it starts, the points to drive. */
+	public static final class Approach {
+		public final Cities.Road road;
+		public final boolean fromEnd;
+		public final double back;
+		public final List<Vec3> waypoints = new ArrayList<>();
+
+		Approach(Cities.Road road, boolean fromEnd, double back) {
+			this.road = road;
+			this.fromEnd = fromEnd;
+			this.back = back;
+		}
+
+		/** Distance along the road from the town's end to the road's own measure. */
+		public double fromTown(double s) {
+			return fromEnd ? road.length - s : s;
+		}
+	}
+
+	/**
+	 * The road into a town that comes from the side of {@code from}, driven from up to {@code maxBack} blocks out to a
+	 * little way into the town (a city: up its street; a hamlet: to the square's edge). Null if there is no such road.
+	 */
+	@Nullable
+	public static Approach approach(ServerLevel level, Settlement target, Vec3 from, double maxBack) {
+		long seed = level.getSeed();
+		Cities.Terrain t = Cities.terrain(level);
+		List<Cities.Road> in = new ArrayList<>();
+		Cities.City city = target.city >= 0 ? Cities.plannedCityAt(seed, target.center.getX(), target.center.getZ(), 400) : null;
+		Hamlets.Hamlet hamlet = target.hamlet >= 0 ? Cities.plannedHamletAt(seed, target.center.getX(), target.center.getZ(), 40) : null;
+		if (city != null) {
+			for (Cities.Road r : Cities.roadsNear(seed, t, city.x, city.z)) {
+				if (city.outside(r.x0, r.z0) <= 12 || city.outside(r.x1, r.z1) <= 12) {
+					in.add(r);
+				}
+			}
+		} else if (hamlet != null && hamlet.road != null) {
+			in.add(hamlet.road);
+		}
+		Cities.Road road = null;
+		boolean towardsEnd = false;
+		double best = Double.MAX_VALUE;
+		for (Cities.Road r : in) {
+			boolean startInTown = city != null ? city.outside(r.x0, r.z0) <= 12 : Math.hypot(r.x0 - target.center.getX(), r.z0 - target.center.getZ()) < 30;
+			double[] far = startInTown ? new double[]{r.x1, r.z1} : new double[]{r.x0, r.z0};
+			double d = Math.hypot(far[0] - from.x, far[1] - from.z);
+			if (d < best) {
+				best = d;
+				road = r;
+				towardsEnd = !startInTown;
+			}
+		}
+		if (road == null || road.length < 90) {
+			return null;
+		}
+		// Far enough out not to be seen turning up (or as far as the road goes).
+		Approach ap = new Approach(road, towardsEnd, Math.min(road.length - 10, maxBack));
+		for (double s = ap.back; s >= 0; s -= 12) {
+			double[] pt = road.pointAt(ap.fromTown(s));
+			ap.waypoints.add(new Vec3(pt[0], 0, pt[1]));
+		}
+		if (city != null) {
+			double[] e = road.pointAt(ap.fromTown(0));
+			Vec3 into = new Vec3(city.x - e[0], 0, city.z - e[1]).normalize().scale(22);
+			ap.waypoints.add(new Vec3(e[0], 0, e[1]).add(into));
+		}
+		return ap;
+	}
+
 	/**
 	 * A column against a town (1.25): the squad comes by road from the attacker's nearest town - a car for a few men,
 	 * an armoured carrier and a lorry for more, a column led by a tank for a big squad - and turns up far out on the
@@ -295,51 +364,14 @@ public final class War {
 			}
 		}
 		Vec3 homeAt = home != null ? Vec3.atCenterOf(home.center) : Vec3.atCenterOf(target.center).add(500, 0, 0);
-		// The roads into the target town, and the one coming from the attacker's side.
-		List<Cities.Road> in = new ArrayList<>();
-		Cities.City city = target.city >= 0 ? Cities.plannedCityAt(seed, target.center.getX(), target.center.getZ(), 400) : null;
-		Hamlets.Hamlet hamlet = target.hamlet >= 0 ? Cities.plannedHamletAt(seed, target.center.getX(), target.center.getZ(), 40) : null;
-		if (city != null) {
-			for (Cities.Road r : Cities.roadsNear(seed, t, city.x, city.z)) {
-				if (city.outside(r.x0, r.z0) <= 12 || city.outside(r.x1, r.z1) <= 12) {
-					in.add(r);
-				}
-			}
-		} else if (hamlet != null && hamlet.road != null) {
-			in.add(hamlet.road);
-		}
-		Cities.Road road = null;
-		boolean towardsEnd = false;
-		double best = Double.MAX_VALUE;
-		for (Cities.Road r : in) {
-			boolean startInTown = city != null ? city.outside(r.x0, r.z0) <= 12 : Math.hypot(r.x0 - target.center.getX(), r.z0 - target.center.getZ()) < 30;
-			double[] far = startInTown ? new double[]{r.x1, r.z1} : new double[]{r.x0, r.z0};
-			double d = Math.hypot(far[0] - homeAt.x, far[1] - homeAt.z);
-			if (d < best) {
-				best = d;
-				road = r;
-				towardsEnd = !startInTown;
-			}
-		}
-		if (road == null || road.length < 90) {
+		Approach ap = approach(level, target, homeAt, 210);
+		if (ap == null) {
 			return out;
 		}
-		// Far enough out not to be seen turning up (or as far as the road goes).
-		double back = Math.min(road.length - 10, 210);
-		final Cities.Road rd = road;
-		final boolean fromEnd = towardsEnd;
-		java.util.function.DoubleUnaryOperator atFromTown = s -> fromEnd ? rd.length - s : s;
-		List<Vec3> waypoints = new ArrayList<>();
-		for (double s = back; s >= 0; s -= 12) {
-			double[] pt = road.pointAt(atFromTown.applyAsDouble(s));
-			waypoints.add(new Vec3(pt[0], 0, pt[1]));
-		}
-		// On into the town a little way (a city: up its street; a hamlet: to the square's edge).
-		if (city != null) {
-			double[] e = road.pointAt(atFromTown.applyAsDouble(0));
-			Vec3 into = new Vec3(city.x - e[0], 0, city.z - e[1]).normalize().scale(22);
-			waypoints.add(new Vec3(e[0], 0, e[1]).add(into));
-		}
+		Cities.Road road = ap.road;
+		double back = ap.back;
+		java.util.function.DoubleUnaryOperator atFromTown = ap::fromTown;
+		List<Vec3> waypoints = ap.waypoints;
 		// The vehicles: by how many men there are and which side's kit.
 		boolean east = SoldierEntity.bloc(ai.id) == com.stasdoto.airdefense.weapon.GunType.Bloc.EAST;
 		List<com.stasdoto.airdefense.vehicle.VehicleType> kit = new ArrayList<>();

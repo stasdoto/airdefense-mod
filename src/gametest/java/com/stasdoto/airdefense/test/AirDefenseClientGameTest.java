@@ -2497,6 +2497,39 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			shot(ctx, server, look((cap[6] + cap[8]) / 2.0 + 40, base + 40, (cap[7] + cap[9]) / 2.0 + 40, (cap[6] + cap[8]) / 2.0, base, (cap[7] + cap[9]) / 2.0),
 					"181_depot", 80);
 		}
+		// A lorry brings missiles in from the factory: on the highway, in at the depot's gate.
+		int lorriesBefore = com.stasdoto.airdefense.nation.Arsenals.lorries;
+		String load = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			for (var st : p.settlements.values()) {
+				if (st.city >= 0 && st.capitalCity) {
+					var mt = com.stasdoto.airdefense.nation.Arsenals.testDelivery(s.overworld(), st);
+					return mt == null ? "none" : mt.name();
+				}
+			}
+			return "no capital";
+		});
+		int lorryOut = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Arsenals.lorries > lorriesBefore, 200);
+		ctx.waitTicks(60);
+		float[] lcam = server.computeOnServer(s -> {
+			for (VehicleEntity v : s.overworld().getEntitiesOfClass(VehicleEntity.class, new net.minecraft.world.phys.AABB(cx - 700, base - 40, cz - 700,
+					cx + 700, base + 80, cz + 700), v -> v.cargoDelivery != 0)) {
+				return look(v.getX() + 10, v.getY() + 6, v.getZ() + 10, v.getX(), v.getY() + 1, v.getZ());
+			}
+			return null;
+		});
+		shot(ctx, server, lcam, "181b_supply_lorry", 30);
+		int lorryIn = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Arsenals.lorryLoads > 0, 1600);
+		float[] ucam = server.computeOnServer(s -> {
+			for (VehicleEntity v : s.overworld().getEntitiesOfClass(VehicleEntity.class, new net.minecraft.world.phys.AABB(cx - 700, base - 40, cz - 700,
+					cx + 700, base + 80, cz + 700), v -> v.getVehicleType() == com.stasdoto.airdefense.vehicle.VehicleType.SUPPLY_TRUCK && !v.driving())) {
+				return look(v.getX() + 16, v.getY() + 10, v.getZ() + 16, v.getX(), v.getY() + 1, v.getZ());
+			}
+			return null;
+		});
+		shot(ctx, server, ucam, "181c_lorry_unloaded", 20);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT supply_lorry: load {} lorry out after {} ticks, unloaded after {} ticks (lorries {}, loads {})",
+				load, lorryOut, lorryIn, com.stasdoto.airdefense.nation.Arsenals.lorries, com.stasdoto.airdefense.nation.Arsenals.lorryLoads);
 		// The enemy: a town of another country 1.5 km to the east, at war with the capital's country.
 		int[] ids = server.computeOnServer(s -> {
 			ServerLevel l = s.overworld();
