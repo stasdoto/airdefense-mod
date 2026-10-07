@@ -77,11 +77,13 @@ public enum DefenseType {
 
 	/**
 	 * Interceptors that may be on their way to one target at a time - from this battery and every other one around
-	 * (the count is the target's). One: the batteries share the targets out, and fire again only once a missile has
-	 * missed and blown itself up (shoot - look - shoot), never a salvo at a single drone.
+	 * together (the count is the target's). One: the batteries share the targets out, and fire again only once a
+	 * missile has missed and blown itself up (shoot - look - shoot), never a salvo at a single drone. A ballistic
+	 * missile gets two (it is too fast to look before the second shot) - and never more, however many batteries stand
+	 * there.
 	 */
 	public int shotsPerTarget(MissileType.Kind kind) {
-		return 1;
+		return kind == MissileType.Kind.BALLISTIC ? 2 : 1;
 	}
 
 	/**

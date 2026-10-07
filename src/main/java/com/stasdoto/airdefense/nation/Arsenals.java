@@ -206,6 +206,8 @@ public final class Arsenals extends SavedData {
 			if (s.city >= 0 && capital) {
 				kit.addAll(east ? List.of(VehicleType.S300, VehicleType.BUK, VehicleType.PANTSIR, VehicleType.TOR)
 						: List.of(VehicleType.PATRIOT, VehicleType.IRIS_T, VehicleType.NASAMS, VehicleType.GEPARD));
+				// A radar station: the capital's batteries see further and are not fooled by decoys.
+				kit.add(east ? VehicleType.ST68 : VehicleType.TRML4D);
 				kit.addAll(east ? List.of(VehicleType.ISKANDER, VehicleType.SHAHED, VehicleType.SHAHED) : List.of(VehicleType.HIMARS, VehicleType.HIMARS));
 			} else if (s.city >= 0) {
 				kit.add(east ? (r.nextBoolean() ? VehicleType.BUK : VehicleType.TOR) : (r.nextBoolean() ? VehicleType.NASAMS : VehicleType.IRIS_T));

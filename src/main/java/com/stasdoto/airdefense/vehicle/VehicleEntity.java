@@ -2106,9 +2106,9 @@ public class VehicleEntity extends LivingEntity {
 		if (m.distanceToSqr(radar) > range * range || isAboutToLeave(m, radar, range)) {
 			return false;
 		}
-		// A decoy this radar sees through is ignored (each decoy has a fixed "how convincing" roll).
-		double discrimination = type.discrimination + (station != null ? station.type().discrimination : 0);
-		if (m.getMissileType().isDecoy() && m.decoyRoll() < discrimination) {
+		// A decoy: a radar station that sees it tells it apart for sure (the battery never fires at it); the battery's
+		// own radar alone sees through some (each decoy has a fixed "how convincing" roll).
+		if (m.getMissileType().isDecoy() && (station != null || m.decoyRoll() < type.discrimination)) {
 			return false;
 		}
 		if (type.interceptor == null) {
