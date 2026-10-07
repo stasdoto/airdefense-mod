@@ -53,7 +53,9 @@ public enum BuildingType {
 	/** Makes weapons from iron and fuel (the logistics hub turns them into ammunition; soldiers are armed with them). */
 	ARMS_FACTORY("arms_factory", 21, 15, 16, 60, 320, 120, 0),
 	/** Stalls under awnings: the town's goods are bought and sold here for emeralds. */
-	MARKET("market", 17, 13, 8, 100, 80, 10, 0);
+	MARKET("market", 17, 13, 8, 100, 80, 10, 0),
+	/** 1.25: a huge distribution warehouse out of town by the highway (the town's stores, missiles and drones among them). */
+	DEPOT("depot", 49, 27, 13, 20, 900, 160, 0);
 
 	public final String id;
 	public final int width;

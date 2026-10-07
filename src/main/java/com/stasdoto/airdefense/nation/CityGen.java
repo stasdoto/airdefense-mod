@@ -99,7 +99,14 @@ public final class CityGen {
 				}
 			}
 		}
-		if (cities.isEmpty() && roads.isEmpty() && hamlets.isEmpty()) {
+		List<Depots.Depot> depots = new ArrayList<>();
+		for (Cities.City c : Cities.citiesAround(seed, t, mx, mz)) {
+			Depots.Depot d = c.depot(seed, t);
+			if (d != null && d.near(mx, mz, 30)) {
+				depots.add(d);
+			}
+		}
+		if (cities.isEmpty() && roads.isEmpty() && hamlets.isEmpty() && depots.isEmpty()) {
 			return;
 		}
 		Writer w = new Writer(level);
@@ -145,6 +152,15 @@ public final class CityGen {
 					continue;
 				}
 				boolean done = false;
+				for (Depots.Depot d : depots) {
+					if (depotColumn(w, d, x, z, pos)) {
+						done = true;
+						break;
+					}
+				}
+				if (done) {
+					continue;
+				}
 				for (Hamlets.Hamlet h : hamlets) {
 					if (h.near(x, z, 0) && hamletColumn(w, t, h, x, z, pos)) {
 						done = true;
@@ -169,6 +185,9 @@ public final class CityGen {
 		}
 		for (Hamlets.Hamlet h : hamlets) {
 			hamlet(w, h, cp);
+		}
+		for (Depots.Depot d : depots) {
+			depot(w, d, cp);
 		}
 		w.finish();
 		chunks++;
@@ -208,7 +227,14 @@ public final class CityGen {
 				}
 			}
 		}
-		if (cities.isEmpty() && roads.isEmpty() && hamlets.isEmpty()) {
+		List<Depots.Depot> depots = new ArrayList<>();
+		for (Cities.City c : Cities.citiesAround(seed, t, cp.getMiddleBlockX(), cp.getMiddleBlockZ())) {
+			Depots.Depot d = c.depot(seed, t);
+			if (d != null && d.near(x0 + 8, z0 + 8, 12)) {
+				depots.add(d);
+			}
+		}
+		if (cities.isEmpty() && roads.isEmpty() && hamlets.isEmpty() && depots.isEmpty()) {
 			return;
 		}
 		// The logs of our own buildings (timber frames, barns) stay.
@@ -237,6 +263,11 @@ public final class CityGen {
 						if (pd.out(x, z) == 0) {
 							from = pd.y() + 1;
 						}
+					}
+				}
+				for (Depots.Depot dp : depots) {
+					if (dp.out(x, z) <= 2) {
+						from = dp.y + 1;
 					}
 				}
 				int span = 28;
@@ -473,6 +504,112 @@ public final class CityGen {
 			return ASPHALT;
 		}
 		return d < 0.5 && Math.floorMod((int) along, 8) < 4 ? MARK : ASPHALT;
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Depots (1.25): the fenced yard of asphalt with its parking lines and light masts, blended into the land
+
+	private static final int DEPOT_BLEND = 7;
+
+	private static boolean depotColumn(Writer w, Depots.Depot d, int x, int z, BlockPos.MutableBlockPos pos) {
+		int o = d.out(x, z);
+		if (o > DEPOT_BLEND) {
+			return false;
+		}
+		int[] g = ground(w, x, z, pos);
+		if (o == 0) {
+			boolean edge = x == d.x0 || x == d.x1 || z == d.z0 || z == d.z1;
+			boolean gate = Math.abs(x - d.gateX) <= 4 && Math.abs(z - d.gateZ) <= 4;
+			shape(w, x, z, d.y, yardSurface(d, x, z), g, pos);
+			if (edge && !gate) {
+				w.set(pos.set(x, d.y + 1, z), RAIL);
+				w.set(pos.set(x, d.y + 2, z), RAIL);
+			}
+			// Light masts along the fence (inside it), every 24 blocks.
+			boolean nearEdge = x == d.x0 + 1 || x == d.x1 - 1 || z == d.z0 + 1 || z == d.z1 - 1;
+			if (nearEdge && Math.floorMod(x + z, 24) == 0 && !gate) {
+				for (int y = 1; y <= 7; y++) {
+					w.set(pos.set(x, d.y + y, z), RAIL);
+				}
+				w.set(pos.set(x, d.y + 8, z), Blocks.SEA_LANTERN.defaultBlockState());
+				w.set(pos.set(x, d.y + 9, z), Blocks.SMOOTH_STONE_SLAB.defaultBlockState());
+			}
+			return true;
+		}
+		if (g[2] == 1) {
+			return false;
+		}
+		double f = o / (double) (DEPOT_BLEND + 1);
+		f = f * f * (3 - 2 * f);
+		int target = (int) Math.round(d.y * (1 - f) + g[0] * f);
+		if (target != g[0]) {
+			BlockState top = w.get(pos.set(x, g[0], z));
+			BlockState surface = top.is(BlockTags.SAND) || top.is(Blocks.SNOW_BLOCK) || top.is(BlockTags.DIRT) ? top : GRASS;
+			shape(w, x, z, target, surface, g, pos);
+		}
+		return true;
+	}
+
+	/** The yard: asphalt, white parking bays in front of the warehouses. */
+	private static BlockState yardSurface(Depots.Depot d, int x, int z) {
+		int distFront;
+		int along;
+		switch (d.front) {
+			case NORTH -> {
+				distFront = d.z0 + 3 + 24 - z;
+				along = x;
+			}
+			case SOUTH -> {
+				distFront = z - (d.z1 - 3 - 24);
+				along = x;
+			}
+			case WEST -> {
+				distFront = d.x0 + 3 + 24 - x;
+				along = z;
+			}
+			default -> {
+				distFront = x - (d.x1 - 3 - 24);
+				along = z;
+			}
+		}
+		if (distFront >= 2 && distFront <= 9 && Math.floorMod(along, 5) == 0) {
+			return MARK;
+		}
+		if (distFront == 10 && Math.floorMod(along, 4) < 2) {
+			return MARK;
+		}
+		return ASPHALT;
+	}
+
+	private static void depot(Writer w, Depots.Depot d, ChunkPos cp) {
+		int x0 = cp.getMinBlockX();
+		int z0 = cp.getMinBlockZ();
+		for (Building b : d.buildings) {
+			int reach = Math.max(b.type.width, b.type.depth) + 3;
+			if (b.origin.getX() + reach < x0 || b.origin.getX() - reach > x0 + 15 || b.origin.getZ() + reach < z0 || b.origin.getZ() - reach > z0 + 15) {
+				continue;
+			}
+			long key = -(d.key() * 64 + b.id) - 7_000_000L;
+			List<Blueprints.Placement> plan = PLANS.get(key);
+			if (plan == null) {
+				if (PLANS.size() > 160) {
+					PLANS.clear();
+				}
+				plan = Blueprints.placements(b, DyeColor.byId(d.city.color));
+				PLANS.put(key, plan);
+			}
+			for (Blueprints.Placement pl : plan) {
+				boolean mine = in(pl.pos(), x0, z0);
+				if (pl.pair()) {
+					if (mine || in(pl.pos2(), x0, z0)) {
+						w.set(pl.pos(), pl.state());
+						w.set(pl.pos2(), pl.state2());
+					}
+				} else if (mine) {
+					w.set(pl.pos(), pl.state());
+				}
+			}
+		}
 	}
 
 	// ------------------------------------------------------------------------------------------------

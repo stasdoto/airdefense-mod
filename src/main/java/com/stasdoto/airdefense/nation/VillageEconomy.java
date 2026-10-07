@@ -79,7 +79,7 @@ public final class VillageEconomy {
 
 	/** How much of each the village can keep. */
 	public int cap() {
-		return BASE_CAP + WAREHOUSE_CAP * count(BuildingType.WAREHOUSE);
+		return BASE_CAP + WAREHOUSE_CAP * (count(BuildingType.WAREHOUSE) + 6 * count(BuildingType.DEPOT));
 	}
 
 	/** Litres of oil or fuel it can hold: tanks come with the refineries, hubs and gas stations. */

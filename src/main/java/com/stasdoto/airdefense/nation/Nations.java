@@ -217,6 +217,16 @@ public final class Nations {
 			nb.done = true;
 			s.eco.buildings.add(nb);
 		}
+		// The depot out of town by the highway (1.25).
+		Depots.Depot depot = c.depot(level.getSeed(), Cities.terrain(level));
+		if (depot != null) {
+			for (Building b : depot.buildings) {
+				Building nb = new Building(p.newId(), b.type, b.origin, b.facing, true);
+				nb.variant = b.variant;
+				nb.done = true;
+				s.eco.buildings.add(nb);
+			}
+		}
 		p.settlements.put(id, s);
 		stockUp(s, c, r);
 		long cell = Cities.cellKey(c.cx, c.cz);

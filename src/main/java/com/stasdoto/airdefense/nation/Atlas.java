@@ -122,7 +122,7 @@ public final class Atlas {
 					saveGround(file, o, seed, g);
 				}
 				Plan plan = plan(seed, t, o);
-				byte[] bytes = pack(o, g, plan, seed, t.sea());
+				byte[] bytes = pack(o, g, plan, seed, t, t.sea());
 				long ms = (System.nanoTime() - t0) / 1_000_000;
 				AirDefense.LOGGER.info("[airdefense] atlas ready: {} cities, {} hamlets, {} roads, {} KB, {} ms", plan.cities.size(), plan.hamlets.size(),
 						plan.roads.size(), bytes.length / 1024, ms);
@@ -387,7 +387,7 @@ public final class Atlas {
 	// ------------------------------------------------------------------------------------------------
 	// Packing for the clients (see AtlasClient for the reading side)
 
-	private static byte[] pack(int[] o, Ground g, Plan plan, long seed, int sea) {
+	private static byte[] pack(int[] o, Ground g, Plan plan, long seed, Cities.Terrain terrain, int sea) {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		try (DataOutputStream out = new DataOutputStream(new DeflaterOutputStream(bytes, new Deflater(6)))) {
 			out.writeInt(VERSION);
@@ -423,6 +423,31 @@ public final class Atlas {
 					for (int j = 0; j < sh.n; j++) {
 						out.writeBoolean(sh.cellOn(i, j));
 					}
+				}
+			}
+			// Depots: the yard and its warehouses.
+			List<Depots.Depot> depots = new ArrayList<>();
+			for (Cities.City c : plan.cities) {
+				Depots.Depot d = c.depot(seed, terrain);
+				if (d != null) {
+					depots.add(d);
+				}
+			}
+			out.writeShort(depots.size());
+			for (Depots.Depot d : depots) {
+				out.writeLong(d.city.key());
+				out.writeInt(d.x0);
+				out.writeInt(d.z0);
+				out.writeInt(d.x1);
+				out.writeInt(d.z1);
+				out.writeByte(d.buildings.size());
+				for (Building b : d.buildings) {
+					net.minecraft.core.BlockPos a = b.at(-b.type.halfWidth(), 0, 0);
+					net.minecraft.core.BlockPos e = b.at(b.type.halfWidth(), 0, b.type.depth - 1);
+					out.writeInt(Math.min(a.getX(), e.getX()));
+					out.writeInt(Math.min(a.getZ(), e.getZ()));
+					out.writeInt(Math.max(a.getX(), e.getX()));
+					out.writeInt(Math.max(a.getZ(), e.getZ()));
 				}
 			}
 			// Hamlets: the outline round their houses and fields.

@@ -37,6 +37,10 @@ public final class AtlasClient {
 	public record Hamlet(long key, int x, int z, int[] xs, int[] zs) {
 	}
 
+	/** A depot: its yard and its warehouses ({x0, z0, x1, z1} each). */
+	public record Depot(long city, int x0, int z0, int x1, int z1, List<int[]> warehouses) {
+	}
+
 	public record Road(boolean highway, boolean dirt, int[] xs, int[] zs, int minX, int maxX, int minZ, int maxZ) {
 	}
 
@@ -49,6 +53,7 @@ public final class AtlasClient {
 	public static long warp;
 	public static final List<City> CITIES = new ArrayList<>();
 	public static final List<Hamlet> HAMLETS = new ArrayList<>();
+	public static final List<Depot> DEPOTS = new ArrayList<>();
 	public static final List<Road> ROADS = new ArrayList<>();
 	private static byte[] heights;
 	/** The cities as seats of their regions (for the borders). */
@@ -85,6 +90,7 @@ public final class AtlasClient {
 		loaded = false;
 		CITIES.clear();
 		HAMLETS.clear();
+		DEPOTS.clear();
 		ROADS.clear();
 		politics = null;
 		BY_KEY.clear();
@@ -173,6 +179,20 @@ public final class AtlasClient {
 					on[i] = in.readBoolean();
 				}
 				CITIES.add(new City(key, x, z, sz, index, n, gx, gz, on));
+			}
+			int nd = in.readShort();
+			for (int k = 0; k < nd; k++) {
+				long city = in.readLong();
+				int ax = in.readInt();
+				int az = in.readInt();
+				int bx = in.readInt();
+				int bz = in.readInt();
+				int m = in.readByte();
+				List<int[]> ws = new ArrayList<>();
+				for (int i = 0; i < m; i++) {
+					ws.add(new int[]{in.readInt(), in.readInt(), in.readInt(), in.readInt()});
+				}
+				DEPOTS.add(new Depot(city, ax, az, bx, bz, ws));
 			}
 			int nh = in.readShort();
 			for (int k = 0; k < nh; k++) {

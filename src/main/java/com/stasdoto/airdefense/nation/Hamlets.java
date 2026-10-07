@@ -130,6 +130,11 @@ public final class Hamlets {
 						REJECTED[2]++;
 					}
 				}
+				Depots.Depot depot = c.depot(seed, t);
+				if (depot != null && depot.out(hx, hz) < 75) {
+					clash = true;
+					REJECTED[2]++;
+				}
 				for (Hamlet h : out) {
 					if (Math.hypot(h.x - hx, h.z - hz) < 130) {
 						clash = true;

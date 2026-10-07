@@ -141,6 +141,23 @@ public final class Cities {
 			return h;
 		}
 
+		private volatile Depots.Depot depot;
+		private volatile boolean depotPlanned;
+
+		/** The town's depot by the highway (planned on first use), or null where there is no room for one. */
+		@Nullable
+		public Depots.Depot depot(long seed, Terrain t) {
+			if (!depotPlanned) {
+				synchronized (this) {
+					if (!depotPlanned) {
+						depot = Depots.plan(seed, t, this);
+						depotPlanned = true;
+					}
+				}
+			}
+			return depot;
+		}
+
 		/** The hamlets if they are planned already, else an empty list. */
 		public List<Hamlets.Hamlet> plannedHamlets() {
 			List<Hamlets.Hamlet> h = hamlets;
@@ -513,6 +530,10 @@ public final class Cities {
 		for (City c : citiesAround(seed, t, x, z)) {
 			for (Hamlets.Hamlet h : c.hamlets(seed, t)) {
 				out.add(h.road);
+			}
+			Depots.Depot d = c.depot(seed, t);
+			if (d != null && d.access != null) {
+				out.add(d.access);
 			}
 		}
 		return out;

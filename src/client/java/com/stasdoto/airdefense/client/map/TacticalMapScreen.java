@@ -970,6 +970,31 @@ public class TacticalMapScreen extends Screen {
 				townName(g, town, c.x(), c.z(), c.index() == 0 ? 0.75f : 0.45f);
 			}
 		}
+		// Depots: the grey yard, the warehouses' roofs.
+		for (AtlasClient.Depot d : AtlasClient.DEPOTS) {
+			int x0 = (int) Math.floor(toScreenX(d.x0()));
+			int y0 = (int) Math.floor(toScreenY(d.z0()));
+			int x1 = (int) Math.ceil(toScreenX(d.x1() + 1));
+			int y1 = (int) Math.ceil(toScreenY(d.z1() + 1));
+			if (x1 < mx0 || x0 > mx1 || y1 < my0 || y0 > my1) {
+				continue;
+			}
+			g.fill(Math.max(mx0, x0), Math.max(my0, y0), Math.min(mx1, x1), Math.min(my1, y1), 0xC05A5E62);
+			for (int[] w : d.warehouses()) {
+				int a = (int) Math.floor(toScreenX(w[0]));
+				int b = (int) Math.floor(toScreenY(w[1]));
+				int c = (int) Math.ceil(toScreenX(w[2] + 1));
+				int e = (int) Math.ceil(toScreenY(w[3] + 1));
+				g.fill(Math.max(mx0, a), Math.max(my0, b), Math.min(mx1, c), Math.min(my1, e), 0xFFC8CCD0);
+				if (c - a > 3) {
+					g.fill(Math.max(mx0, a), Math.max(my0, b), Math.min(mx1, c), Math.min(my1, b + 1), 0xFF3A3E42);
+				}
+			}
+			if (sc >= 0.25f) {
+				String label = Component.translatable("map.airdefense.depot").getString();
+				small(g, label, (x0 + x1) / 2 - (int) (font.width(label) * 0.375f), y1 + 2, 0xFFD8DCE0);
+			}
+		}
 		for (AtlasClient.Hamlet h : AtlasClient.HAMLETS) {
 			double hx = toScreenX(h.x());
 			double hy = toScreenY(h.z());

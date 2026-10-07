@@ -77,6 +77,7 @@ final class ModernDesigns {
 			case WAREHOUSE -> warehouse(p, variant);
 			case BARRACKS -> barracks(p, flag);
 			case HANGAR -> hangar(p);
+			case DEPOT -> depot(p, variant, flag);
 			default -> {
 				return false;
 			}
@@ -431,6 +432,144 @@ final class ModernDesigns {
 		}
 		p.lantern(0, 5, d / 2, true);
 		p.top = 7;
+	}
+
+	/**
+	 * A distribution warehouse (1.25): 49 x 27 blocks and 12 high - sandwich-panel walls with a clerestory of
+	 * windows, eight loading bays under a canopy along the front, the office in one corner, skylights in the flat
+	 * roof, a band in the country's colour; inside, rows of racks loaded with crates and barrels.
+	 */
+	private static void depot(Plan p, int variant, DyeColor flag) {
+		int hw = p.b.type.halfWidth();
+		int d = p.b.type.depth - 1;
+		int top = 11;
+		BlockState panelA = concrete(DyeColor.LIGHT_GRAY);
+		BlockState panelB = concrete(variant % 2 == 0 ? DyeColor.WHITE : DyeColor.LIGHT_GRAY);
+		BlockState plinth = concrete(DyeColor.GRAY);
+		p.fill(-hw, -1, 0, hw, -1, d, plinth);
+		p.fill(-hw, 0, 0, hw, 0, d, Blocks.SMOOTH_STONE.defaultBlockState());
+		for (int y = 1; y < top; y++) {
+			for (int x = -hw; x <= hw; x++) {
+				BlockState s = y <= 2 ? plinth : Math.floorMod(x, 2) == 0 ? panelA : panelB;
+				p.set(x, y, 0, s);
+				p.set(x, y, d, s);
+			}
+			for (int z = 0; z <= d; z++) {
+				BlockState s = y <= 2 ? plinth : Math.floorMod(z, 2) == 0 ? panelA : panelB;
+				p.set(-hw, y, z, s);
+				p.set(hw, y, z, s);
+			}
+		}
+		// Clerestory windows high up on every side.
+		for (int x = -hw + 2; x <= hw - 2; x++) {
+			if (Math.floorMod(x, 3) != 0) {
+				p.set(x, 9, d, pane(DyeColor.LIGHT_BLUE));
+			}
+		}
+		for (int z = 2; z <= d - 2; z++) {
+			if (Math.floorMod(z, 3) != 0) {
+				p.set(-hw, 9, z, pane(DyeColor.LIGHT_BLUE));
+				p.set(hw, 9, z, pane(DyeColor.LIGHT_BLUE));
+			}
+		}
+		// The band in the country's colour under the roof edge, all round the front.
+		for (int x = -hw; x <= hw; x++) {
+			p.set(x, top - 1, 0, concrete(flag));
+		}
+		// The office in the right front corner: three floors of windows.
+		int ox = hw - 9;
+		for (int x = ox; x <= hw - 1; x++) {
+			for (int y : new int[]{3, 4, 6, 7}) {
+				if (x != ox) {
+					p.set(x, y, 0, pane(DyeColor.CYAN));
+				}
+			}
+		}
+		for (int y = 1; y < top; y++) {
+			p.set(ox, y, 1, panelA);
+			for (int z = 1; z <= 6; z++) {
+				p.set(ox, y, z, panelA);
+			}
+			for (int x = ox; x <= hw - 1; x++) {
+				p.set(x, y, 6, panelA);
+			}
+		}
+		for (int x = ox + 1; x <= hw - 1; x++) {
+			for (int z = 1; z <= 5; z++) {
+				p.set(x, 4, z, Blocks.SMOOTH_STONE_SLAB.defaultBlockState().setValue(BlockStateProperties.SLAB_TYPE,
+						net.minecraft.world.level.block.state.properties.SlabType.TOP));
+				p.set(x, 7, z, Blocks.SMOOTH_STONE_SLAB.defaultBlockState().setValue(BlockStateProperties.SLAB_TYPE,
+						net.minecraft.world.level.block.state.properties.SlabType.TOP));
+			}
+		}
+		p.door(hw - 4, 1, 0, Blocks.IRON_DOOR, L.BACK);
+		p.set(hw - 2, 1, 2, Blocks.CRAFTING_TABLE.defaultBlockState());
+		p.set(hw - 2, 5, 2, Blocks.LECTERN.defaultBlockState());
+		// Loading bays: shutters down, two of them open; a canopy over all of them, bumpers below.
+		int bay = 0;
+		for (int x = -hw + 3; x + 2 < ox - 1; x += 5) {
+			boolean open = bay == 2 || bay == 5;
+			for (int dx = 0; dx < 3; dx++) {
+				for (int y = 1; y <= 4; y++) {
+					if (open) {
+						p.remove(x + dx, y, 0);
+					} else {
+						p.set(x + dx, y, 0, y == 4 ? concrete(DyeColor.ORANGE) : concrete(DyeColor.GRAY));
+					}
+				}
+				p.set(x + dx, 5, 0, concrete(DyeColor.YELLOW));
+			}
+			p.set(x - 1, 1, -1, concrete(DyeColor.BLACK));
+			p.set(x + 3, 1, -1, concrete(DyeColor.BLACK));
+			bay++;
+		}
+		for (int x = -hw; x < ox; x++) {
+			p.set(x, 6, -1, Blocks.SMOOTH_STONE_SLAB.defaultBlockState());
+			p.set(x, 6, -2, Blocks.SMOOTH_STONE_SLAB.defaultBlockState());
+		}
+		// The roof: flat, a parapet, skylight strips, vents.
+		p.fill(-hw, top, 0, hw, top, d, Blocks.SMOOTH_STONE.defaultBlockState());
+		for (int x = -hw + 4; x <= hw - 4; x += 6) {
+			for (int z = 3; z <= d - 3; z++) {
+				p.set(x, top, z, glass(DyeColor.LIGHT_GRAY));
+			}
+		}
+		p.ring(-hw, 0, hw, d, top + 1, Blocks.SMOOTH_STONE_SLAB.defaultBlockState());
+		for (int x = -hw + 7; x <= hw - 7; x += 12) {
+			p.set(x, top + 1, d / 2, Blocks.IRON_BLOCK.defaultBlockState());
+			p.set(x, top + 2, d / 2, Blocks.IRON_TRAPDOOR.defaultBlockState());
+		}
+		// Racks inside: uprights, shelves, crates and barrels; aisles between.
+		for (int z = 9; z <= d - 3; z += 5) {
+			for (int x = -hw + 3; x <= hw - 3; x++) {
+				boolean post = Math.floorMod(x + hw, 6) == 3;
+				for (int y = 1; y <= 7; y++) {
+					if (post) {
+						p.set(x, y, z, Blocks.IRON_BARS.defaultBlockState());
+					} else if (y == 3 || y == 6) {
+						p.set(x, y, z, Blocks.SPRUCE_SLAB.defaultBlockState());
+					} else if (y == 1 || y == 4 || y == 7) {
+						long h = (long) x * 31 + z * 17 + y;
+						int k = (int) Math.floorMod(h * 0x9E3779B1L >>> 7, 5L);
+						p.set(x, y, z, k == 0 ? Blocks.BARREL.defaultBlockState() : k == 1 ? Blocks.CHEST.defaultBlockState()
+								: k == 2 ? Blocks.HAY_BLOCK.defaultBlockState() : Blocks.SPRUCE_PLANKS.defaultBlockState());
+					}
+				}
+			}
+		}
+		for (int x = -hw + 4; x <= hw - 4; x += 8) {
+			for (int z = 6; z <= d - 2; z += 8) {
+				p.lantern(x, top - 1, z, true);
+			}
+		}
+		// A ladder up the side, drainpipes.
+		p.ladder(-hw - 1, 1, top, d - 3, L.RIGHT);
+		for (int x : new int[]{-hw, hw}) {
+			for (int y = 1; y < top; y++) {
+				p.set(x, y, -1, Blocks.IRON_BARS.defaultBlockState());
+			}
+		}
+		p.top = top + 3;
 	}
 
 	private static void barracks(Plan p, DyeColor flag) {
