@@ -820,7 +820,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 			int sx = sh.gx[sh.ci + 1];
 			int sz = sh.gz[sh.cj + 1];
-			out[1] = new float[]{sx + 1.5f, c.base + 2.6f, sz - 3.5f, 180, 2};
+			out[1] = new float[]{sx + 0.5f, c.base + 3.2f, sz - 3.5f, 180, 4};
 			out[2] = new float[]{sh.gx[sh.ci] - 0.5f, c.base + 16, sz + 8.5f, 160, 22};
 			var hs = c.hamlets(l.getSeed(), t);
 			StringBuilder sb = new StringBuilder();
