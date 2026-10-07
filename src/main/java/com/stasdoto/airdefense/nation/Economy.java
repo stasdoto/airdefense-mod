@@ -473,6 +473,7 @@ public final class Economy {
 
 	/** The footprint keeps clear of the other buildings and of the streets. */
 	private static boolean fits(ServerLevel level, Settlement s, Building nb, Building old) {
+		Cities.City city = s.isCity() ? Cities.plannedCityAt(level.getSeed(), s.center.getX(), s.center.getZ(), 0) : null;
 		int hw = nb.type.halfWidth();
 		for (int x = -hw; x <= hw; x++) {
 			for (int z = -1; z < nb.type.depth; z++) {
@@ -482,9 +483,15 @@ public final class Economy {
 						return false;
 					}
 				}
-				BlockState ground = level.getBlockState(at);
-				if (ground.is(Blocks.CONCRETE.pick(DyeColor.GRAY)) || ground.is(Blocks.CONCRETE.pick(DyeColor.WHITE))) {
-					return false;
+				if (city != null) {
+					if (city.isStreet(at.getX(), at.getZ())) {
+						return false;
+					}
+				} else {
+					BlockState ground = level.getBlockState(at);
+					if (ground.is(Blocks.CONCRETE.pick(DyeColor.GRAY)) || ground.is(Blocks.CONCRETE.pick(DyeColor.WHITE))) {
+						return false;
+					}
 				}
 			}
 		}

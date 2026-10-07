@@ -129,6 +129,18 @@ public final class Cities {
 			return Math.abs(px - x) <= h && Math.abs(pz - z) <= h;
 		}
 
+		/** On a street or its pavement (inside the square). */
+		public boolean isStreet(int px, int pz) {
+			if (!inside(px, pz)) {
+				return false;
+			}
+			int ox = Math.floorMod(px - x + half(), PITCH);
+			int oz = Math.floorMod(pz - z + half(), PITCH);
+			int dx = Math.min(ox, PITCH - ox);
+			int dz = Math.min(oz, PITCH - oz);
+			return dx <= STREET_HALF + 1 || dz <= STREET_HALF + 1;
+		}
+
 		/** Distance outside the city square (0 inside). */
 		public int outside(int px, int pz) {
 			int h = half() + STREET_HALF;
