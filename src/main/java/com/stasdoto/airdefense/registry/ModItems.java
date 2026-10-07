@@ -139,11 +139,32 @@ public final class ModItems {
 	public static final Item AMMO_9MM = register("ammo_9mm", Item::new, new Item.Properties().stacksTo(96));
 	/** The RPG-7 rocket grenade: an item in the inventory, and the model of the rocket in flight. */
 	public static final Item RPG_ROUND = register("rpg_round", Item::new, new Item.Properties().stacksTo(8));
-	public static final Item AK74 = gun(GunType.AK74);
-	public static final Item PKM = gun(GunType.PKM);
-	public static final Item SVD = gun(GunType.SVD);
-	public static final Item PM = gun(GunType.PM);
-	public static final Item RPG7 = gun(GunType.RPG7);
+	// 1.24: the ammunition of the new arms, and what the one-shot launchers fire (only their flying models).
+	public static final Item AMMO_556 = register("ammo_556", Item::new, new Item.Properties().stacksTo(90));
+	public static final Item AMMO_762X39 = register("ammo_762x39", Item::new, new Item.Properties().stacksTo(90));
+	public static final Item AMMO_9X39 = register("ammo_9x39", Item::new, new Item.Properties().stacksTo(80));
+	public static final Item AMMO_127 = register("ammo_127", Item::new, new Item.Properties().stacksTo(40));
+	public static final Item AMMO_12G = register("ammo_12g", Item::new, new Item.Properties().stacksTo(48));
+	public static final Item AMMO_40MM = register("ammo_40mm", Item::new, new Item.Properties().stacksTo(18));
+	public static final Item CG_ROUND = register("cg_round", Item::new, new Item.Properties().stacksTo(4));
+	public static final Item JAVELIN_MISSILE = register("javelin_missile", Item::new, new Item.Properties().stacksTo(2).rarity(Rarity.UNCOMMON));
+	public static final Item RPG22_ROCKET = register("rpg22_rocket", Item::new, new Item.Properties().stacksTo(1));
+	public static final Item AT4_ROCKET = register("at4_rocket", Item::new, new Item.Properties().stacksTo(1));
+	public static final Item NLAW_MISSILE = register("nlaw_missile", Item::new, new Item.Properties().stacksTo(1));
+	/** Every gun, by type (1.24: 35 of them). */
+	public static final java.util.EnumMap<GunType, Item> GUNS = new java.util.EnumMap<>(GunType.class);
+
+	static {
+		for (GunType t : GunType.values()) {
+			GUNS.put(t, gun(t));
+		}
+	}
+
+	public static final Item AK74 = GUNS.get(GunType.AK74);
+	public static final Item PKM = GUNS.get(GunType.PKM);
+	public static final Item SVD = GUNS.get(GunType.SVD);
+	public static final Item PM = GUNS.get(GunType.PM);
+	public static final Item RPG7 = GUNS.get(GunType.RPG7);
 	public static final Item F1_GRENADE = register("f1_grenade", GrenadeItem::new, new Item.Properties().stacksTo(16));
 	public static final Item HELMET = register("helmet", Item::new, new Item.Properties().humanoidArmor(ModArmor.HELMET, ArmorType.HELMET));
 	public static final Item NVG_HELMET = register("nvg_helmet", NvgItem::new,
@@ -239,15 +260,30 @@ public final class ModItems {
 				output.accept(STINGER_MISSILE);
 				output.accept(FPV_DRONE);
 				output.accept(MAGURA_DRONE);
-				output.accept(GunItem.loaded(AK74));
-				output.accept(GunItem.loaded(PKM));
-				output.accept(GunItem.loaded(SVD));
-				output.accept(GunItem.loaded(PM));
-				output.accept(GunItem.loaded(RPG7));
+			})
+			.build();
+
+	/** 1.24: the small arms got their own tab - the guns by side and kind, their ammunition, the gear. */
+	public static final ResourceKey<CreativeModeTab> ARMS_TAB_KEY = ResourceKey.create(Registries.CREATIVE_MODE_TAB, AirDefense.id("arms"));
+	public static final CreativeModeTab ARMS_TAB = FabricCreativeModeTab.builder()
+			.icon(() -> new ItemStack(AK74))
+			.title(Component.translatable("itemGroup.airdefense.arms"))
+			.displayItems((params, output) -> {
+				for (GunType t : GunType.values()) {
+					output.accept(GunItem.loaded(GUNS.get(t)));
+				}
 				output.accept(AMMO_545);
+				output.accept(AMMO_556);
+				output.accept(AMMO_762X39);
 				output.accept(AMMO_762);
 				output.accept(AMMO_9MM);
+				output.accept(AMMO_9X39);
+				output.accept(AMMO_127);
+				output.accept(AMMO_12G);
+				output.accept(AMMO_40MM);
 				output.accept(RPG_ROUND);
+				output.accept(CG_ROUND);
+				output.accept(JAVELIN_MISSILE);
 				output.accept(F1_GRENADE);
 				output.accept(HELMET);
 				output.accept(NVG_HELMET);
@@ -264,9 +300,12 @@ public final class ModItems {
 	}
 
 	private static Item gun(GunType type) {
-		// Aiming slows you down (the sniper rifle more), no sprinting with the sights up.
-		return register(type.id, p -> new GunItem(type, p), new Item.Properties().stacksTo(1)
-				.component(DataComponents.USE_EFFECTS, new UseEffects(false, false, type == GunType.SVD ? 0.35f : 0.6f)));
+		// Aiming slows you down (scopes and heavy arms more), no sprinting with the sights up.
+		Item.Properties p = new Item.Properties().stacksTo(1).component(DataComponents.USE_EFFECTS, new UseEffects(false, false, type.aimSpeed()));
+		if (type.needsLock() || type == GunType.M82) {
+			p = p.rarity(Rarity.UNCOMMON);
+		}
+		return register(type.id, props -> new GunItem(type, props), p);
 	}
 
 	private static Item missile(MissileType type) {
@@ -280,5 +319,6 @@ public final class ModItems {
 
 	public static void init() {
 		Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, TAB_KEY, TAB);
+		Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, ARMS_TAB_KEY, ARMS_TAB);
 	}
 }

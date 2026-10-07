@@ -39,7 +39,16 @@ public enum MissileType {
 	AIM9("stinger_missile", Kind.INTERCEPTOR, false, 4.8, 0.4, 2.0f, false, 1f, 1.3f, 3.5, 200, 0.3, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
 	// Stage R9: piloted from their camera - an FPV quadcopter with an RPG grenade, a Magura sea drone with 300 kg.
 	FPV("fpv_drone", Kind.DIRECT, false, 1.4, 0.06, 2.8f, false, 1f, 0.8f, 0, 1800, 0.0, Trail.NONE, ModSounds.DRONE_BUZZ),
-	MAGURA("magura_drone", Kind.DIRECT, false, 1.1, 0.03, 8.0f, true, 6f, 2.4f, 0, 6000, 0.0, Trail.NONE, ModSounds.ENGINE_TRUCK);
+	MAGURA("magura_drone", Kind.DIRECT, false, 1.1, 0.03, 8.0f, true, 6f, 2.4f, 0, 6000, 0.0, Trail.NONE, ModSounds.ENGINE_TRUCK),
+	// 1.24: what the infantry's launchers fire (render scale 1 = real size). RPG-22, AT4 and the Carl Gustaf round fly
+	// straight; the NLAW flies a line just above the sight line and goes off over a vehicle (top attack); the
+	// Javelin climbs high and dives onto the locked target; the 40 mm grenade arcs.
+	RPG22("rpg22_rocket", Kind.DIRECT, false, 3.0, 0.3, 1.9f, false, 1f, 1.0f, 0, 80, 0.0, Trail.SMALL, null),
+	AT4("at4_rocket", Kind.DIRECT, false, 4.0, 0.0, 2.3f, false, 1f, 1.0f, 0, 90, 0.0, Trail.SMALL, null),
+	CG84("cg_round", Kind.DIRECT, false, 4.2, 0.0, 2.6f, false, 1f, 1.0f, 0, 100, 0.0, Trail.SMALL, null),
+	NLAW("nlaw_missile", Kind.DIRECT, false, 3.4, 0.3, 2.4f, false, 1f, 1.0f, 0, 120, 0.0, Trail.SMALL, null),
+	JAVELIN("javelin_missile", Kind.DIRECT, false, 2.4, 0.12, 3.2f, false, 1f, 1.0f, 0, 400, 0.18, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
+	G40("ammo_40mm", Kind.DIRECT, false, 2.4, 0.0, 1.6f, false, 1f, 1.0f, 0, 200, 0.0, Trail.NONE, null);
 
 	public enum Kind { BALLISTIC, ROCKET, CRUISE, DRONE, INTERCEPTOR, DIRECT }
 
@@ -76,6 +85,32 @@ public enum MissileType {
 		this.turnRate = turnRate;
 		this.trail = trail;
 		this.loopSound = loopSound;
+	}
+
+	/** Flies to a target on its own after the launch (Javelin: the locked vehicle; NLAW: over the sight line). */
+	public boolean guided() {
+		return this == JAVELIN || this == NLAW;
+	}
+
+	/** An infantry rocket or grenade (no sustainer burn of the RPG's kind: AT4, Carl Gustaf, 40 mm). */
+	public boolean ballisticRound() {
+		return this == AT4 || this == CG84 || this == G40;
+	}
+
+	/** Damage a direct hit does to a vehicle (shaped charges; the top attackers hit the thin roof). */
+	public float vehicleDamage() {
+		return switch (this) {
+			case RPG -> 260f;
+			case RPG22 -> 220f;
+			case AT4 -> 320f;
+			case CG84 -> 380f;
+			case NLAW -> 900f;
+			case JAVELIN -> 1400f;
+			case G40 -> 30f;
+			case FPV -> 260f;
+			case MAGURA -> 600f;
+			default -> 70f;
+		};
 	}
 
 	/** Flown by a player from its camera. */

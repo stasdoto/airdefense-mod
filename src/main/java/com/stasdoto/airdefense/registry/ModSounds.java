@@ -68,6 +68,19 @@ public final class ModSounds {
 	public static final SoundEvent THROW = register("throw", 12);
 	public static final SoundEvent NVG_SWITCH = register("nvg_switch", 8);
 	public static final SoundEvent MEDKIT = register("medkit", 12);
+	// 1.24: more kinds of report, the pump, the 40 mm launcher, the Javelin's seeker tones.
+	public static final SoundEvent CARBINE_NEAR = register("carbine_near", 96);
+	public static final SoundEvent CARBINE_FAR = register("carbine_far", 600);
+	public static final SoundEvent SHOTGUN_NEAR = register("shotgun_near", 96);
+	public static final SoundEvent SHOTGUN_FAR = register("shotgun_far", 400);
+	public static final SoundEvent SUPPRESSED_NEAR = register("suppressed_near", 32);
+	public static final SoundEvent SUPPRESSED_FAR = register("suppressed_far", 90);
+	public static final SoundEvent HEAVY_NEAR = register("heavy_near", 160);
+	public static final SoundEvent HEAVY_FAR = register("heavy_far", 1000);
+	public static final SoundEvent GUN_PUMP = register("gun_pump", 16);
+	public static final SoundEvent GRENADE_LAUNCH = register("grenade_launch", 64);
+	public static final SoundEvent JAVELIN_SEEK = register("javelin_seek", 8);
+	public static final SoundEvent JAVELIN_LOCK = register("javelin_lock", 8);
 	/** Handed to vanilla explosions: the client plays the real explosion sound itself, delayed by distance. */
 	public static final SoundEvent SILENT = register("silent", 16);
 

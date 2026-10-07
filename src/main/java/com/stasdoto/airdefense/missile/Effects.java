@@ -203,6 +203,28 @@ public final class Effects {
 		}
 	}
 
+	/** A 40 mm grenade (M32): a sharp burst, fragments out to 8 blocks for what the burst can "see". */
+	public static void grenade40(ServerLevel level, Entity grenade, Vec3 at, @org.jetbrains.annotations.Nullable Entity shooter) {
+		level.explode(grenade, level.damageSources().explosion(grenade, shooter), null, at.x, at.y, at.z, 1.3f, false,
+				Level.ExplosionInteraction.NONE, ModParticles.GLOW, ModParticles.GLOW, WeightedList.of(), Holder.direct(ModSounds.SILENT));
+		Fx.send(level, FxPayload.GRENADE, at, 0.9f, Vec3.ZERO);
+		shockWave(level, grenade, at, 5, 0.4, 0.4);
+		double reach = 8;
+		AABB box = new AABB(at, at).inflate(reach);
+		for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && !e.isSpectator())) {
+			Vec3 c = e.getBoundingBox().getCenter();
+			double d = c.distanceTo(at);
+			if (d > reach || level.clip(new ClipContext(at.add(0, 0.2, 0), c, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, grenade)).getType()
+					!= HitResult.Type.MISS) {
+				continue;
+			}
+			float dmg = (float) (30 * Math.pow(1 - d / reach, 1.1));
+			if (dmg > 0.5f) {
+				e.hurtServer(level, ModDamageTypes.shrapnel(level, grenade, shooter), dmg);
+			}
+		}
+	}
+
 	/** The sound of a gun burst at the muzzle (heard late and duller far away). */
 	public static void gunBurst(ServerLevel level, Vec3 muzzle) {
 		Fx.send(level, FxPayload.GUN, muzzle, 1.0f, Vec3.ZERO);

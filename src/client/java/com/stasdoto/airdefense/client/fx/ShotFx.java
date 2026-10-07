@@ -46,11 +46,21 @@ public final class ShotFx {
 		Vec3 d = to.subtract(muzzle);
 		double dist = d.length();
 		Vec3 dir = dist > 1e-4 ? d.scale(1 / dist) : Vec3.ZERO;
-		float flash = (gun == GunType.PM ? 0.16f : gun == GunType.SVD ? 0.34f : 0.24f) * (own ? 0.6f : 1f);
-		pe.add(FxClient.flash(level, muzzle.x, muzzle.y, muzzle.z, flash).life(1, 1));
-		// A short light that brightens the surroundings at night (small and faint, or it hangs there as a disc).
-		pe.add(FxClient.glow(level, muzzle.x, muzzle.y, muzzle.z, flash * 1.6f, 1).alpha(0.22f, 1, 0.2f));
-		if (!own) {
+		float flash = switch (gun.report) {
+			case PISTOL -> 0.16f;
+			case SNIPER, SHOTGUN -> 0.34f;
+			case HEAVY -> 0.5f;
+			case SUPPRESSED -> 0.0f;
+			case CARBINE -> 0.28f;
+			default -> 0.24f;
+		} * (own ? 0.6f : 1f);
+		boolean quiet = gun.report == GunType.Report.SUPPRESSED;
+		if (!quiet) {
+			pe.add(FxClient.flash(level, muzzle.x, muzzle.y, muzzle.z, flash).life(1, 1));
+			// A short light that brightens the surroundings at night (small and faint, or it hangs there as a disc).
+			pe.add(FxClient.glow(level, muzzle.x, muzzle.y, muzzle.z, flash * 1.6f, 1).alpha(0.22f, 1, 0.2f));
+		}
+		if (!own && !quiet) {
 			Vec3 puff = muzzle.add(dir.scale(0.4));
 			pe.add(FxClient.smokeWhite(level, puff.x, puff.y, puff.z, dir.x * 0.03, 0.01, dir.z * 0.03, 0.05f).life(14, 24));
 		}

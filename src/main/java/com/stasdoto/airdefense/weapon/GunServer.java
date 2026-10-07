@@ -62,8 +62,16 @@ public final class GunServer {
 
 	private static final Map<UUID, State> STATES = new HashMap<>();
 
+	public static final AtomicInteger PELLETS = new AtomicInteger();
+	public static final AtomicInteger GUIDED = new AtomicInteger();
+	public static final AtomicInteger NO_LOCK = new AtomicInteger();
+	public static final AtomicInteger TUBES_SPENT = new AtomicInteger();
+
 	private static final class State {
-		long nextShot;
+		double nextShot;
+		/** Game tick at which the bolt (or the pump) is worked after a shot (its sound), 0 = none. */
+		long cycleAt;
+		Item cycleItem;
 		int round;
 		int reloadLeft;
 		int reloadTotal;
@@ -92,7 +100,7 @@ public final class GunServer {
 
 	private static void handle(ServerPlayer player, GunActionPayload p) {
 		switch (p.action()) {
-			case GunActionPayload.FIRE -> fire(player, new Vec3(p.dx(), p.dy(), p.dz()));
+			case GunActionPayload.FIRE -> fire(player, new Vec3(p.dx(), p.dy(), p.dz()), p.target());
 			case GunActionPayload.RELOAD -> startReload(player);
 			case GunActionPayload.NVG -> NvgItem.toggle(player);
 			default -> {
@@ -110,6 +118,10 @@ public final class GunServer {
 	// Firing
 
 	public static void fire(ServerPlayer player, Vec3 wanted) {
+		fire(player, wanted, -1);
+	}
+
+	public static void fire(ServerPlayer player, Vec3 wanted, int lockId) {
 		ItemStack stack = player.getMainHandItem();
 		if (!(stack.getItem() instanceof GunItem item) || !player.isAlive() || player.isSpectator() || player.isPassenger()) {
 			return;
@@ -128,24 +140,68 @@ public final class GunServer {
 			st.nextShot = now + 4;
 			return;
 		}
-		st.nextShot = Math.max(now, st.nextShot) + gun.interval;
-		GunItem.setAmmo(stack, ammo - 1);
-		st.round++;
-		SHOTS.incrementAndGet();
 		Vec3 eye = player.getEyePosition();
 		Vec3 look = player.getLookAngle();
 		Vec3 dir = wanted.lengthSqr() > 0.25 ? wanted.normalize() : look;
 		if (dir.dot(look) < Math.cos(Math.toRadians(gun.hipSpread * 4 + 10))) {
 			dir = look;
 		}
+		Entity lock = null;
+		if (gun.needsLock()) {
+			// The Javelin flies only at a target its seeker has locked (on the client, two seconds in the sight).
+			lock = lockId >= 0 ? level.getEntity(lockId) : null;
+			if (lock == null || !lock.isAlive() || lock.distanceTo(player) > gun.range
+					|| lock.getBoundingBox().getCenter().subtract(eye).normalize().dot(look) < Math.cos(Math.toRadians(12))) {
+				player.sendOverlayMessage(Component.translatable("message.airdefense.gun.no_lock"));
+				NO_LOCK.incrementAndGet();
+				st.nextShot = now + 10;
+				return;
+			}
+		}
+		st.nextShot = Math.max(now, st.nextShot) + gun.interval;
+		GunItem.setAmmo(stack, ammo - 1);
+		st.round++;
+		SHOTS.incrementAndGet();
 		Vec3 muzzle = muzzle(player, look);
 		if (gun.rocket()) {
-			MissileEntity.launchDirect(level, MissileType.RPG, eye.add(dir.scale(1.3)).add(0, -0.12, 0), dir, player);
-			Effects.rpgBackblast(level, eye.subtract(dir.scale(1.4)).add(0, -0.2, 0), muzzle);
-			ROCKETS.incrementAndGet();
+			launch(level, player, gun, eye, dir, muzzle, lock);
+			if (gun.disposable) {
+				// A one-shot tube: thrown away (a creative player keeps a loaded one).
+				TUBES_SPENT.incrementAndGet();
+				if (player.getAbilities().instabuild) {
+					GunItem.setAmmo(stack, 1);
+				} else {
+					stack.shrink(1);
+				}
+			}
 			return;
 		}
 		shoot(level, player, gun, eye, dir, muzzle, st.round);
+		if (gun.action == GunType.Action.BOLT || gun.action == GunType.Action.PUMP) {
+			st.cycleAt = now + Math.max(4, (long) (gun.interval * 0.35));
+			st.cycleItem = item;
+		}
+	}
+
+	/** A launcher's round leaves the tube: a rocket, a guided missile, a 40 mm grenade; the back-blast behind. */
+	private static void launch(ServerLevel level, ServerPlayer player, GunType gun, Vec3 eye, Vec3 dir, Vec3 muzzle, @Nullable Entity lock) {
+		Vec3 from = eye.add(dir.scale(1.3)).add(0, -0.12, 0);
+		MissileType type = gun.rocket;
+		if (type == MissileType.G40) {
+			MissileEntity.launchWithVelocity(level, type, from, dir.scale(type.maxSpeed), player, null);
+			level.playSound(null, player.getX(), player.getEyeY(), player.getZ(), ModSounds.GRENADE_LAUNCH, SoundSource.PLAYERS, 1.2f,
+					0.95f + level.getRandom().nextFloat() * 0.1f);
+			ROCKETS.incrementAndGet();
+			return;
+		}
+		if (type.guided()) {
+			MissileEntity.launchGuided(level, type, from, dir, player, lock);
+			GUIDED.incrementAndGet();
+		} else {
+			MissileEntity.launchDirect(level, type, from, dir, player);
+		}
+		Effects.rpgBackblast(level, eye.subtract(dir.scale(1.4)).add(0, -0.2, 0), muzzle);
+		ROCKETS.incrementAndGet();
 	}
 
 	/**
@@ -153,6 +209,44 @@ public final class GunServer {
 	 * only), and everyone around told what to draw and hear. Returns what it hit ({@link ShotPayload} HIT_*).
 	 */
 	public static int shoot(ServerLevel level, LivingEntity shooter, GunType gun, Vec3 eye, Vec3 dir, Vec3 muzzle, int round) {
+		if (gun.pellets <= 1) {
+			return shootOne(level, shooter, gun, eye, dir, muzzle, round);
+		}
+		// A shotgun: a cloud of pellets round the aim (each its own trace); the best hit counts.
+		int best = ShotPayload.HIT_NONE;
+		float cone = shooter instanceof Player p && p.isUsingItem() ? gun.aimSpread : gun.hipSpread;
+		for (int i = 0; i < gun.pellets; i++) {
+			Vec3 d = cone(dir, cone * 0.8f, level.getRandom());
+			int h = shootOne(level, shooter, gun, eye, d, muzzle, i == 0 ? round : -1);
+			PELLETS.incrementAndGet();
+			best = rank(h) > rank(best) ? h : best;
+		}
+		return best;
+	}
+
+	private static int rank(int hit) {
+		return switch (hit) {
+			case ShotPayload.HIT_HEAD -> 4;
+			case ShotPayload.HIT_FLESH -> 3;
+			case ShotPayload.HIT_METAL -> 2;
+			case ShotPayload.HIT_BLOCK -> 1;
+			default -> 0;
+		};
+	}
+
+	/** A random direction within {@code degrees} (a cone, denser in the middle) around {@code look}. */
+	public static Vec3 cone(Vec3 look, float degrees, net.minecraft.util.RandomSource r) {
+		if (degrees <= 0) {
+			return look;
+		}
+		Vec3 up = Math.abs(look.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
+		Vec3 a = look.cross(up).normalize();
+		Vec3 b = look.cross(a).normalize();
+		double rad = Math.toRadians(degrees) * 0.5;
+		return look.add(a.scale(r.nextGaussian() * rad * 0.6)).add(b.scale(r.nextGaussian() * rad * 0.6)).normalize();
+	}
+
+	private static int shootOne(ServerLevel level, LivingEntity shooter, GunType gun, Vec3 eye, Vec3 dir, Vec3 muzzle, int round) {
 		Trace t = trace(level, shooter, eye, dir, gun.range);
 		int hit = ShotPayload.HIT_NONE;
 		if (t.entity() != null) {
@@ -165,8 +259,7 @@ public final class GunServer {
 		}
 		ShotPayload shot = new ShotPayload(shooter.getId(), gun.ordinal(), muzzle.x, muzzle.y, muzzle.z, t.pos().x, t.pos().y, t.pos().z,
 				hit, round);
-		double hear = gun == GunType.SVD ? 800 : gun == GunType.PM ? 300 : 600;
-		for (ServerPlayer p : PlayerLookup.around(level, muzzle, hear)) {
+		for (ServerPlayer p : PlayerLookup.around(level, muzzle, gun.hearing())) {
 			if (ServerPlayNetworking.canSend(p, ShotPayload.TYPE)) {
 				ServerPlayNetworking.send(p, shot);
 			}
@@ -211,6 +304,13 @@ public final class GunServer {
 			hit = ShotPayload.HIT_METAL;
 		} else if (target instanceof VehicleEntity) {
 			hit = ShotPayload.HIT_METAL;
+			if (gun.antiMateriel) {
+				// A 12.7 mm round goes through thin armour: counted as a heavy projectile, not a rifle bullet.
+				if (target.hurtServer(level, level.damageSources().thrown(shooter, shooter), dmg * 1.5f)) {
+					HITS.incrementAndGet();
+				}
+				return hit;
+			}
 		} else if (target instanceof LivingEntity living) {
 			boolean head = living.getBbHeight() > 1.2f && at.y >= living.getEyeY() - 0.28;
 			boolean chest = !head && at.y >= living.getY() + living.getBbHeight() * 0.42;
@@ -256,11 +356,11 @@ public final class GunServer {
 		}
 		GunType gun = item.gun;
 		State st = state(player);
-		if (st.reloadLeft > 0 || GunItem.ammo(stack) >= gun.magazine) {
+		if (gun.disposable || st.reloadLeft > 0 || GunItem.ammo(stack) >= gun.magazine) {
 			return;
 		}
 		if (!player.getAbilities().instabuild && countAmmo(player, gun) <= 0) {
-			player.sendOverlayMessage(Component.translatable("message.airdefense.gun.no_ammo", Component.translatable("item.airdefense." + gun.ammoId)));
+			player.sendOverlayMessage(Component.translatable("message.airdefense.gun.no_ammo", Component.translatable(gun.ammoKey())));
 			return;
 		}
 		st.reloadLeft = st.reloadTotal = gun.reload;
@@ -275,7 +375,17 @@ public final class GunServer {
 	private static void tick(MinecraftServer server) {
 		for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 			State st = STATES.get(player.getUUID());
-			if (st == null || st.reloadLeft <= 0) {
+			if (st == null) {
+				continue;
+			}
+			if (st.cycleAt > 0 && player.level().getGameTime() >= st.cycleAt) {
+				// Working the bolt / racking the pump after a shot.
+				st.cycleAt = 0;
+				if (player.getMainHandItem().getItem() == st.cycleItem && st.cycleItem instanceof GunItem gi) {
+					sound(player.level(), player, gi.gun.action == GunType.Action.PUMP ? ModSounds.GUN_PUMP : ModSounds.GUN_BOLT, 0.8f);
+				}
+			}
+			if (st.reloadLeft <= 0) {
 				continue;
 			}
 			ItemStack stack = player.getMainHandItem();
@@ -301,6 +411,9 @@ public final class GunServer {
 
 	public static int countAmmo(Player player, GunType gun) {
 		Item ammo = gun.ammo();
+		if (ammo == null) {
+			return 0;
+		}
 		int n = 0;
 		for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
 			ItemStack s = player.getInventory().getItem(i);
@@ -313,6 +426,9 @@ public final class GunServer {
 
 	private static int takeAmmo(Player player, GunType gun, int want) {
 		Item ammo = gun.ammo();
+		if (ammo == null) {
+			return 0;
+		}
 		int got = 0;
 		for (int i = 0; i < player.getInventory().getContainerSize() && got < want; i++) {
 			ItemStack s = player.getInventory().getItem(i);

@@ -1,0 +1,22 @@
+{
+ "model": {
+  "type": "minecraft:select",
+  "property": "minecraft:display_context",
+  "cases": [
+   {
+    "when": [
+     "none",
+     "fixed"
+    ],
+    "model": {
+     "type": "minecraft:model",
+     "model": "airdefense:item/rpg22_rocket_3d"
+    }
+   }
+  ],
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "airdefense:item/rpg22_rocket"
+  }
+ }
+}

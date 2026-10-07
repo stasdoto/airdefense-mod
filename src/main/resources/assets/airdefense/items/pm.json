@@ -1,31 +1,39 @@
 {
-  "model": {
-    "type": "minecraft:select",
-    "property": "minecraft:display_context",
-    "cases": [
-      {
-        "when": [
-          "gui",
-          "ground",
-          "fixed"
-        ],
-        "model": {
-          "type": "minecraft:model",
-          "model": "airdefense:item/pm_icon"
-        }
-      }
+ "model": {
+  "type": "minecraft:select",
+  "property": "minecraft:display_context",
+  "cases": [
+   {
+    "when": [
+     "gui"
     ],
-    "fallback": {
-      "type": "minecraft:condition",
-      "property": "minecraft:using_item",
-      "on_true": {
-        "type": "minecraft:model",
-        "model": "airdefense:item/pm_aim"
-      },
-      "on_false": {
-        "type": "minecraft:model",
-        "model": "airdefense:item/pm"
-      }
+    "model": {
+     "type": "minecraft:model",
+     "model": "airdefense:item/pm_icon"
     }
+   },
+   {
+    "when": [
+     "ground",
+     "fixed"
+    ],
+    "model": {
+     "type": "minecraft:model",
+     "model": "airdefense:item/pm"
+    }
+   }
+  ],
+  "fallback": {
+   "type": "minecraft:condition",
+   "property": "minecraft:using_item",
+   "on_true": {
+    "type": "minecraft:model",
+    "model": "airdefense:item/pm_aim"
+   },
+   "on_false": {
+    "type": "minecraft:model",
+    "model": "airdefense:item/pm"
+   }
   }
+ }
 }

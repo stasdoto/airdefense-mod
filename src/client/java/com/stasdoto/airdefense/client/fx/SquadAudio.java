@@ -34,7 +34,11 @@ public final class SquadAudio {
 		RIFLE(45, -1, 500),
 		MG(50, -1, 600),
 		SNIPER(60, -1, 800),
-		PISTOL(30, -1, 300);
+		PISTOL(30, -1, 300),
+		CARBINE(45, -1, 500),
+		SHOTGUN(35, -1, 400),
+		SUPPRESSED(16, -1, 90),
+		HEAVY(70, -1, 1000);
 
 		/** Up to here the near layer; {@code mid} (if any) up to its border; then far; silent beyond {@code max}. */
 		final double near;
@@ -63,6 +67,10 @@ public final class SquadAudio {
 			case MG -> new SoundEvent[]{ModSounds.MG_NEAR, null, ModSounds.MG_FAR};
 			case SNIPER -> new SoundEvent[]{ModSounds.SNIPER_NEAR, null, ModSounds.SNIPER_FAR};
 			case PISTOL -> new SoundEvent[]{ModSounds.PISTOL_NEAR, null, ModSounds.PISTOL_FAR};
+			case CARBINE -> new SoundEvent[]{ModSounds.CARBINE_NEAR, null, ModSounds.CARBINE_FAR};
+			case SHOTGUN -> new SoundEvent[]{ModSounds.SHOTGUN_NEAR, null, ModSounds.SHOTGUN_FAR};
+			case SUPPRESSED -> new SoundEvent[]{ModSounds.SUPPRESSED_NEAR, null, ModSounds.SUPPRESSED_FAR};
+			case HEAVY -> new SoundEvent[]{ModSounds.HEAVY_NEAR, null, ModSounds.HEAVY_FAR};
 		};
 	}
 
@@ -74,6 +82,11 @@ public final class SquadAudio {
 			case SNIPER -> Kind.SNIPER;
 			case PISTOL -> Kind.PISTOL;
 			case ROCKET -> Kind.LAUNCH_LIGHT;
+			case CARBINE -> Kind.CARBINE;
+			case SHOTGUN -> Kind.SHOTGUN;
+			case SUPPRESSED -> Kind.SUPPRESSED;
+			case HEAVY -> Kind.HEAVY;
+			case GRENADE -> Kind.SHOTGUN;
 		};
 	}
 

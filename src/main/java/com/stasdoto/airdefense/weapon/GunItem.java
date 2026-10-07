@@ -81,7 +81,7 @@ public class GunItem extends Item {
 
 	@Override
 	public boolean isBarVisible(ItemStack stack) {
-		return true;
+		return !gun.disposable && gun.magazine > 1;
 	}
 
 	@Override
@@ -102,14 +102,28 @@ public class GunItem extends Item {
 
 	@Override
 	public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
-		tooltip.accept(Component.translatable("tooltip.airdefense.gun.magazine", ammo(stack), gun.magazine,
-				Component.translatable("item.airdefense." + gun.ammoId)).withStyle(ChatFormatting.GRAY));
-		if (gun.rocket()) {
-			tooltip.accept(Component.translatable("tooltip.airdefense.gun.rpg").withStyle(ChatFormatting.GRAY));
+		if (gun.disposable) {
+			tooltip.accept(Component.translatable("tooltip.airdefense.gun.disposable").withStyle(ChatFormatting.GRAY));
 		} else {
-			tooltip.accept(Component.translatable("tooltip.airdefense.gun.stats", (int) gun.damage, (int) gun.range,
-					Component.translatable(gun.auto ? "tooltip.airdefense.gun.auto" : "tooltip.airdefense.gun.semi")).withStyle(ChatFormatting.GRAY));
+			tooltip.accept(Component.translatable("tooltip.airdefense.gun.magazine", ammo(stack), gun.magazine,
+					Component.translatable(gun.ammoKey())).withStyle(ChatFormatting.GRAY));
 		}
-		tooltip.accept(Component.translatable("tooltip.airdefense.gun.keys").withStyle(ChatFormatting.DARK_GRAY));
+		if (gun.rocket()) {
+			tooltip.accept(Component.translatable("tooltip.airdefense.gun.launcher." + gun.id).withStyle(ChatFormatting.GRAY));
+		} else {
+			String mode = switch (gun.action) {
+				case AUTO -> "tooltip.airdefense.gun.auto";
+				case BURST -> "tooltip.airdefense.gun.burst";
+				case BOLT -> "tooltip.airdefense.gun.bolt";
+				case PUMP -> "tooltip.airdefense.gun.pump";
+				default -> "tooltip.airdefense.gun.semi";
+			};
+			String dmg = gun.pellets > 1 ? gun.pellets + "×" + (int) gun.damage : String.valueOf((int) gun.damage);
+			tooltip.accept(Component.translatable("tooltip.airdefense.gun.stats", dmg, (int) gun.range,
+					Component.translatable(mode, gun.burst)).withStyle(ChatFormatting.GRAY));
+		}
+		tooltip.accept(Component.translatable("tooltip.airdefense.gun.desc." + gun.id).withStyle(ChatFormatting.DARK_GREEN));
+		tooltip.accept(Component.translatable(gun.disposable || gun.needsLock() ? "tooltip.airdefense.gun.keys_launcher" : "tooltip.airdefense.gun.keys")
+				.withStyle(ChatFormatting.DARK_GRAY));
 	}
 }

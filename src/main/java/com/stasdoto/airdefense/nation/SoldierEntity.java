@@ -145,15 +145,35 @@ public class SoldierEntity extends PathfinderMob {
 		return s;
 	}
 
+	/** Countries with an even id arm themselves from the eastern arsenal, odd ones from the western (1.24). */
+	public static GunType.Bloc bloc(int country) {
+		return Math.floorMod(country, 2) == 0 ? GunType.Bloc.EAST : GunType.Bloc.WEST;
+	}
+
+	private static Item pick(int roll, GunType... pool) {
+		return ModItems.GUNS.get(pool[Math.floorMod(roll, pool.length)]);
+	}
+
 	private void equip(int roll) {
 		int role = role();
 		Item gun;
 		if (role == BANDIT) {
-			gun = roll < 55 ? ModItems.AK74 : ModItems.PM;
+			gun = roll < 55 ? pick(roll, GunType.AKM, GunType.AKS74U, GunType.AK74, GunType.SAIGA12, GunType.M870)
+					: pick(roll, GunType.PM, GunType.GLOCK17, GunType.FORT12);
 		} else if (role == REBEL) {
-			gun = roll < 40 ? ModItems.AK74 : ModItems.PM;
+			gun = roll < 45 ? pick(roll, GunType.AKM, GunType.AK74, GunType.MP5) : pick(roll, GunType.PM, GunType.FORT12);
 		} else {
-			gun = roll < 70 ? ModItems.AK74 : roll < 88 ? ModItems.PKM : ModItems.SVD;
+			boolean east = bloc(country) == GunType.Bloc.EAST;
+			if (roll < 62) {
+				gun = east ? pick(roll, GunType.AK74, GunType.AK74, GunType.AK12, GunType.AKM, GunType.FORT221)
+						: pick(roll, GunType.M4A1, GunType.M4A1, GunType.HK416, GunType.SCARH, GunType.M16A4);
+			} else if (roll < 74) {
+				gun = east ? pick(roll, GunType.RPK74, GunType.PKM, GunType.PKP) : pick(roll, GunType.M249, GunType.M240B);
+			} else if (roll < 86) {
+				gun = east ? pick(roll, GunType.SVD, GunType.SV98, GunType.VSS) : pick(roll, GunType.M110, GunType.AWM);
+			} else {
+				gun = east ? pick(roll, GunType.AKS74U, GunType.ASVAL, GunType.SAIGA12) : pick(roll, GunType.MP5, GunType.M870, GunType.HK416);
+			}
 			setItemSlot(EquipmentSlot.HEAD, new ItemStack(ModItems.HELMET));
 			setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.VEST));
 		}
@@ -162,7 +182,10 @@ public class SoldierEntity extends PathfinderMob {
 
 	/** Weapons from the town's arsenal (1.23): a machine gun or a marksman's rifle instead of what he got. */
 	public void issueArms(int roll) {
-		setItemSlot(EquipmentSlot.MAINHAND, GunItem.loaded(roll < 55 ? ModItems.PKM : ModItems.SVD));
+		boolean east = bloc(country) == GunType.Bloc.EAST;
+		Item gun = roll < 55 ? (east ? pick(roll, GunType.PKM, GunType.PKP) : pick(roll, GunType.M240B, GunType.M249))
+				: (east ? pick(roll, GunType.SVD, GunType.SV98) : pick(roll, GunType.M110, GunType.M82));
+		setItemSlot(EquipmentSlot.MAINHAND, GunItem.loaded(gun));
 	}
 
 	public Component title() {
@@ -387,10 +410,10 @@ public class SoldierEntity extends PathfinderMob {
 				burst = 0;
 				cooldown = 14 + random.nextInt(12);
 			} else {
-				cooldown = gun.interval;
+				cooldown = (int) Math.ceil(gun.interval);
 			}
 		} else {
-			cooldown = gun.interval + 10 + random.nextInt(14);
+			cooldown = (int) Math.ceil(gun.interval) + 10 + random.nextInt(14);
 		}
 	}
 
@@ -424,8 +447,10 @@ public class SoldierEntity extends PathfinderMob {
 			return;
 		}
 		Item ammoItem = gun.ammo();
-		int n = 4 + random.nextInt(gun == GunType.PKM ? 30 : 14);
-		spawnAtLocation(level, new ItemStack(ammoItem, n));
+		if (ammoItem != null && !gun.rocket()) {
+			int n = 4 + random.nextInt(gun.magazine >= 60 ? 30 : 14);
+			spawnAtLocation(level, new ItemStack(ammoItem, n));
+		}
 		if (random.nextInt(8) == 0) {
 			ItemStack g = getMainHandItem().copy();
 			GunItem.setAmmo(g, random.nextInt(gun.magazine / 2 + 1));
@@ -532,7 +557,7 @@ public class SoldierEntity extends PathfinderMob {
 			double d = s.distanceTo(t);
 			boolean see = s.getSensing().hasLineOfSight(t);
 			s.getLookControl().setLookAt(t, 40f, 40f);
-			double good = gun == GunType.PM ? 12 : gun == GunType.SVD ? 45 : 26;
+			double good = gun.pistol || gun.pellets > 1 ? 12 : gun.scoped() ? 45 : gun.range < 90 ? 18 : 26;
 			if (!see || d > good) {
 				if (--repath <= 0) {
 					repath = 10;

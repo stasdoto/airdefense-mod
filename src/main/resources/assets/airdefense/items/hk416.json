@@ -1,0 +1,39 @@
+{
+ "model": {
+  "type": "minecraft:select",
+  "property": "minecraft:display_context",
+  "cases": [
+   {
+    "when": [
+     "gui"
+    ],
+    "model": {
+     "type": "minecraft:model",
+     "model": "airdefense:item/hk416_icon"
+    }
+   },
+   {
+    "when": [
+     "ground",
+     "fixed"
+    ],
+    "model": {
+     "type": "minecraft:model",
+     "model": "airdefense:item/hk416"
+    }
+   }
+  ],
+  "fallback": {
+   "type": "minecraft:condition",
+   "property": "minecraft:using_item",
+   "on_true": {
+    "type": "minecraft:model",
+    "model": "airdefense:item/hk416_aim"
+   },
+   "on_false": {
+    "type": "minecraft:model",
+    "model": "airdefense:item/hk416"
+   }
+  }
+ }
+}

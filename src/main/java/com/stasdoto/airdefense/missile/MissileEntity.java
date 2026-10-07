@@ -94,6 +94,11 @@ public class MissileEntity extends Entity {
 	/** Never hits this one (the aircraft that fired it). */
 	@org.jetbrains.annotations.Nullable
 	private Entity ignore;
+	/** Javelin: the locked target (its last seen place is kept in {@link #target}). */
+	@org.jetbrains.annotations.Nullable
+	private Entity guidedTarget;
+	/** Debug counters read by the automated test: top attacks (Javelin dives, NLAW over-flights) that went off. */
+	public static final java.util.concurrent.atomic.AtomicInteger TOP_ATTACKS = new java.util.concurrent.atomic.AtomicInteger();
 
 	public MissileEntity(EntityType<? extends MissileEntity> type, Level level) {
 		super(type, level);
@@ -215,6 +220,23 @@ public class MissileEntity extends Entity {
 		return m;
 	}
 
+	/**
+	 * Fires an infantry guided missile: the Javelin at the locked {@code lock} (soft launch, then it climbs and dives
+	 * onto it), the NLAW along the sight line (it goes off over a vehicle).
+	 */
+	public static MissileEntity launchGuided(ServerLevel level, MissileType type, Vec3 pos, Vec3 dir,
+			@org.jetbrains.annotations.Nullable Entity owner, @org.jetbrains.annotations.Nullable Entity lock) {
+		MissileEntity m = launchDirect(level, type, pos, dir, owner);
+		m.guidedTarget = lock;
+		if (lock != null) {
+			m.target = lock.getBoundingBox().getCenter();
+		}
+		m.speed = type == MissileType.JAVELIN ? 0.45 : 1.4;
+		m.lastVel = m.launchDir.scale(m.speed);
+		m.setMotor(type != MissileType.JAVELIN);
+		return m;
+	}
+
 	/** Fires an unguided rocket (RPG) straight along {@code dir}. */
 	public static MissileEntity launchDirect(ServerLevel level, MissileType type, Vec3 pos, Vec3 dir,
 			@org.jetbrains.annotations.Nullable Entity owner) {
@@ -225,7 +247,7 @@ public class MissileEntity extends Entity {
 		m.launchDir = dir.normalize();
 		m.target = pos.add(m.launchDir.scale(200));
 		m.health = type.health;
-		m.speed = 1.6;
+		m.speed = type.ballisticRound() ? type.maxSpeed : 1.6;
 		m.owner = owner;
 		m.lastVel = m.launchDir.scale(m.speed);
 		m.updateRotation(m.launchDir);
@@ -449,6 +471,14 @@ public class MissileEntity extends Entity {
 			setMotor(false);
 			return lastVel.add(0, -0.06, 0).scale(0.997);
 		}
+		if (type.guided()) {
+			return guidedStep(type);
+		}
+		if (type.ballisticRound()) {
+			// Recoilless rounds and grenades: all their speed from the barrel, then gravity (a 40 mm grenade arcs).
+			setMotor(type != MissileType.G40 && life < 3);
+			return lastVel.add(0, type == MissileType.G40 ? -0.045 : -0.012, 0).scale(0.997);
+		}
 		boolean motor = life < 30;
 		setMotor(motor);
 		if (motor) {
@@ -456,6 +486,66 @@ public class MissileEntity extends Entity {
 			return lastVel.normalize().scale(speed).add(0, -0.004, 0);
 		}
 		return lastVel.add(0, -0.05, 0).scale(0.995);
+	}
+
+	// --- Infantry guided missiles ---
+
+	private Vec3 guidedStep(MissileType type) {
+		Vec3 pos = position();
+		Vec3 dir = lastVel.lengthSqr() > 1e-8 ? lastVel.normalize() : launchDir;
+		if (type == MissileType.NLAW) {
+			// Predicted line of sight: a straight flight a metre above the line the gunner aimed along; over a vehicle
+			// the downward-looking fuze sets off the charge into its roof.
+			setMotor(life < 40);
+			speed = Math.min(type.maxSpeed, speed + type.accel);
+			Vec3 along = launchPos.add(launchDir.scale(pos.subtract(launchPos).dot(launchDir)));
+			double rise = Math.min(1.0, pos.distanceTo(launchPos) / 12.0);
+			double dy = along.y + rise - pos.y;
+			Vec3 v = launchDir.scale(speed).add(0, Mth.clamp(dy * 0.3, -0.15, 0.15), 0);
+			if (life > 6 && level() instanceof ServerLevel sl) {
+				AABB below = new AABB(pos.x - 2.2, pos.y - 5.0, pos.z - 2.2, pos.x + 2.2, pos.y + 0.2, pos.z + 2.2);
+				var hits = sl.getEntitiesOfClass(com.stasdoto.airdefense.vehicle.VehicleEntity.class, below, e -> e.isAlive() && e != owner
+						&& (owner == null || !owner.isPassengerOfSameVehicle(e)));
+				if (!hits.isEmpty()) {
+					directHit = hits.getFirst();
+					TOP_ATTACKS.incrementAndGet();
+					detonate(pos, false);
+					return null;
+				}
+			}
+			return v;
+		}
+		// Javelin: thrown out of the tube by a small charge, the motor lights, it climbs and dives onto the target.
+		if (life < 6) {
+			setMotor(false);
+			return lastVel.scale(0.98).add(0, -0.01, 0);
+		}
+		setMotor(true);
+		speed = Math.min(type.maxSpeed, speed + type.accel);
+		if (guidedTarget != null && guidedTarget.isAlive() && !guidedTarget.isRemoved()) {
+			target = guidedTarget.getBoundingBox().getCenter().add(0, guidedTarget.getBbHeight() * 0.3, 0);
+		}
+		Vec3 to = target.subtract(pos);
+		double flat = Math.sqrt(to.x * to.x + to.z * to.z);
+		double total = Math.sqrt(Mth.square(target.x - launchPos.x) + Mth.square(target.z - launchPos.z));
+		double apex = Mth.clamp(total * 0.3, 14, 45);
+		double above = pos.y - target.y;
+		Vec3 want;
+		if (phase == 0 && flat > Math.max(above, 6) * 0.9 + 4) {
+			// Climb towards the apex height, then fly level.
+			Vec3 horiz = flat > 1e-3 ? new Vec3(to.x / flat, 0, to.z / flat) : new Vec3(dir.x, 0, dir.z).normalize();
+			double climb = above < apex ? 0.9 : 0.0;
+			want = horiz.add(0, climb, 0).normalize();
+		} else {
+			phase = 1;
+			want = to.normalize();
+		}
+		double turn = phase == 1 ? 0.35 : type.turnRate;
+		Vec3 nd = dir.add(want.subtract(dir).scale(turn)).normalize();
+		if (phase == 1 && life % 10 == 0) {
+			MissileStats.log("JAVELIN diving from {} m above the target, {} m to go", (int) above, (int) to.length());
+		}
+		return nd.scale(speed);
 	}
 
 	// --- Piloted drones: they go where the pilot looks (through their camera) ---
@@ -867,8 +957,13 @@ public class MissileEntity extends Entity {
 				Effects.rpgImpact(level, this, at, owner, directHit, 260f, 2.4f);
 			} else if (type == MissileType.MAGURA) {
 				Effects.rpgImpact(level, this, at, owner, directHit, 600f, 5.5f);
+			} else if (type == MissileType.G40) {
+				Effects.grenade40(level, this, at, owner);
 			} else {
-				Effects.rpgImpact(level, this, at, owner, directHit);
+				if (type == MissileType.JAVELIN && directHit instanceof com.stasdoto.airdefense.vehicle.VehicleEntity) {
+					TOP_ATTACKS.incrementAndGet();
+				}
+				Effects.rpgImpact(level, this, at, owner, directHit, type.vehicleDamage(), type.power);
 			}
 			return;
 		}

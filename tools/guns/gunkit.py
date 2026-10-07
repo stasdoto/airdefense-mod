@@ -55,7 +55,7 @@ STYLES = {
     'poly_grooves': dict(kind='grooves', base=0x26272A),
     'wood_grooves': dict(kind='grooves', base=0x8A4A26),
     # Wood: laminated birch (AKM), walnut (SVD, hunting rifles), light beech.
-    'wood': dict(kind='wood', base=0x8A4A26, c2=0x6A3518),
+    'wood': dict(kind='wood', base=0x7C3B1E, c2=0x5A2814),
     'walnut': dict(kind='wood', base=0x5E3A22, c2=0x442818),
     'beech': dict(kind='wood', base=0xA9744A, c2=0x8A5A36),
     'brass': dict(kind='brushed', base=0xC49646),
@@ -73,7 +73,7 @@ STYLES = {
     'mag': dict(kind='ribs', base=0x2A2B2D),
     'mag_tan': dict(kind='ribs', base=0x9C845E),
     'mag_plum': dict(kind='ribs', base=0x6A2E1E),
-    'mag_steel': dict(kind='ribs', base=0x45484C),
+    'mag_steel': dict(kind='ribs', base=0x383B40),
     'grip': dict(kind='checker', base=0x26272A),
     'grip_tan': dict(kind='checker', base=0x9E865E),
     'grip_wood': dict(kind='checker', base=0x6E3A1E),
@@ -89,6 +89,29 @@ STYLES = {
     'yellow': dict(kind='plain', base=0xC8A830),
     'red': dict(kind='plain', base=0x9A2420),
     'orange': dict(kind='plain', base=0xD07A2A),
+    # 1.24 additions.
+    'plum_dark': dict(kind='plain', base=0x3A1810),
+    'wood_dark': dict(kind='plain', base=0x40200F),
+    'groove': dict(kind='plain', base=0x141416),
+    'blued': dict(kind='metal', base=0x22252C, wear=0x4C5664),
+    'park': dict(kind='metal', base=0x35373A, wear=0x5E6267),
+    'fde': dict(kind='stipple', base=0x8A7556),
+    'fde_metal': dict(kind='metal', base=0x7E6A4E, wear=0xA69070),
+    'fde_grip': dict(kind='checker', base=0x86714F),
+    'mag_fde': dict(kind='ribs', base=0x86714F),
+    'od': dict(kind='stipple', base=0x4C5034),
+    'od_metal': dict(kind='metal', base=0x4E5236, wear=0x787B58),
+    'od_grip': dict(kind='checker', base=0x4A4E33),
+    'mag_od': dict(kind='ribs', base=0x4A4E33),
+    'ukr_green': dict(kind='stipple', base=0x5A5E3E),
+    'mark_white': dict(kind='plain', base=0xDADAD2, flat=True),
+    'mark_red': dict(kind='plain', base=0xB02A22, flat=True),
+    'mark_yellow': dict(kind='plain', base=0xD8B840, flat=True),
+    'brass_case': dict(kind='brushed', base=0xC8A050),
+    'grey_tube': dict(kind='tube', base=0x6E7266, band=0xD8D8D0),
+    'jav_tube': dict(kind='tube', base=0x5C6044, band=0xC8B040),
+    'clu': dict(kind='metal', base=0x50553C, wear=0x7A8060),
+    'nlaw_green': dict(kind='tube', base=0x48523A, band=0xE0D8B0),
 }
 
 SHADE = {'up': 1.12, 'down': 0.66, 'east': 0.94, 'west': 0.94, 'north': 0.86, 'south': 0.86}
@@ -239,13 +262,26 @@ class Painter:
 FACES = ('north', 'south', 'east', 'west', 'up', 'down')
 
 
+def rot_matrix(ax, deg):
+    """Minecraft's element rotation (right-handed: +x raises the front (-z) end, +y turns the front to the left
+    (-x), +z turns the top to the left)."""
+    a = math.radians(deg)
+    c, s = math.cos(a), math.sin(a)
+    if ax == 'x':
+        return np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
+    if ax == 'y':
+        return np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
+    return np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
+
+
 class Box:
-    def __init__(self, lo, hi, style, rot=0, aim=True, tags=(), faces=None, sides=None, ax='z', origin=None, edges=True):
+    def __init__(self, lo, hi, style, rot=0, aim=True, tags=(), faces=None, sides=None, ax='z', origin=None, edges=True, euler=None):
         self.lo = tuple(min(lo[i], hi[i]) for i in range(3))
         self.hi = tuple(max(lo[i], hi[i]) for i in range(3))
         self.style = style
-        self.rot = rot          # 45 / -45 / 22.5 ... about self.ax through origin (default: the box centre)
+        self.rot = rot          # degrees about self.ax through origin (default: the box centre); any angle
         self.ax = ax
+        self.euler = euler      # or (x, y, z) degrees, applied as Minecraft's Euler XYZ rotation
         self.origin = origin
         self.aim = aim          # drawn in the aimed view
         self.tags = set(tags)   # 'loaded' = only while loaded, 'empty' = only when empty
@@ -259,11 +295,37 @@ class Box:
     def center(self):
         return tuple((self.lo[i] + self.hi[i]) / 2 for i in range(3))
 
+    def rotated(self):
+        return bool(self.rot) or self.euler is not None
+
+    def matrix(self):
+        if self.euler is not None:
+            x, y, z = self.euler
+            return rot_matrix('x', x) @ rot_matrix('y', y) @ rot_matrix('z', z)
+        if self.rot:
+            return rot_matrix(self.ax, self.rot)
+        return np.eye(3)
+
+    def pivot(self):
+        return np.array(self.origin if self.origin is not None else self.center(), dtype=np.float64)
+
+    def corners(self):
+        """The eight corners where they really are (after the rotation)."""
+        R = self.matrix()
+        o = self.pivot()
+        out = []
+        for x in (self.lo[0], self.hi[0]):
+            for y in (self.lo[1], self.hi[1]):
+                for z in (self.lo[2], self.hi[2]):
+                    out.append(R @ (np.array([x, y, z]) - o) + o)
+        return np.array(out)
+
 
 class Gun:
-    def __init__(self, id, sight, R=5, seed=1, long_gun=True, length=None):
+    def __init__(self, id, sight, R=5, seed=1, long_gun=True, length=None, bore=None):
         self.id = id
         self.sight = sight          # height (cm) of the line of sight above the grip
+        self.bore = sight - 3.75 if bore is None else bore   # height of the barrel's axis
         self.R = R                  # texture pixels per centimetre
         self.seed = seed
         self.long_gun = long_gun
@@ -321,6 +383,53 @@ class Gun:
             zc = z_top + (z_bottom - z_top) * (i + 0.5) / n
             self.box((x - w / 2, yb, zc - thick_z / 2), (x + w / 2, ya, zc + thick_z / 2), style, edges=False, **kw)
 
+    def slab(self, p0, p1, thick, w, style, x=0.0, ext=0.0, **kw):
+        """A straight part between two points of the side view (z, y): a box {thick} across the line, {w} wide,
+        turned about x to lie along it (a pistol grip, a stock's edge, a magazine, a bipod leg). ext = extra length
+        at both ends (to close the joints of a chain)."""
+        (z0, y0), (z1, y1) = p0, p1
+        if z1 < z0:
+            (z0, y0), (z1, y1) = (z1, y1), (z0, y0)
+        dz, dy = z1 - z0, y1 - y0
+        L = math.hypot(dz, dy) + 2 * ext
+        cz, cy = (z0 + z1) / 2, (y0 + y1) / 2
+        ang = math.degrees(math.atan2(-dy, dz))
+        ang = round(ang, 3)
+        if abs(ang) < 0.05:
+            ang = 0
+        return self.box((x - w / 2, cy - thick / 2, cz - L / 2), (x + w / 2, cy + thick / 2, cz + L / 2), style,
+                        rot=ang, ax='x', origin=(x, cy, cz), **kw)
+
+    def profile(self, top, bottom, w, style, x=0.0, n=None, edge=1.0, inset=0.15, **kw):
+        """A flat part between two straight edges of the side view - top = ((z0, y0), (z1, y1)), bottom likewise
+        (same z0, z1): strips that stay inside the outline and a thin slab along each edge, so the outline is a
+        clean straight line, not a staircase (a rifle stock, a handguard's taper, a butt)."""
+        (za, ta), (zb, tb) = top
+        (zc, ba), (zd, bb) = bottom
+        assert abs(za - zc) < 1e-6 and abs(zb - zd) < 1e-6
+        z0, z1 = min(za, zb), max(za, zb)
+        topf = lambda z: ta + (tb - ta) * (z - za) / (zb - za)
+        botf = lambda z: ba + (bb - ba) * (z - za) / (zb - za)
+        n = n or max(2, int((z1 - z0) / 3.0))
+        for i in range(n):
+            s0 = z0 + (z1 - z0) * i / n
+            s1 = z0 + (z1 - z0) * (i + 1) / n
+            yt = min(topf(s0), topf(s1)) - inset
+            yb = max(botf(s0), botf(s1)) + inset
+            if yt > yb:
+                self.box((x - w / 2 + 0.02, yb, s0), (x + w / 2 - 0.02, yt, s1), style, edges=False, **kw)
+        # Edge slabs, their outer face on the line.
+        for (p0, p1, sgn) in (((za, ta), (zb, tb), -1), ((za, ba), (zb, bb), 1)):
+            dz, dy = p1[0] - p0[0], p1[1] - p0[1]
+            L = math.hypot(dz, dy)
+            nz, ny = -dy / L, dz / L          # left normal of the edge
+            if ny * sgn < 0:
+                nz, ny = -nz, -ny
+            off = edge / 2
+            q0 = (p0[0] + nz * off, p0[1] + ny * off)
+            q1 = (p1[0] + nz * off, p1[1] + ny * off)
+            self.slab(q0, q1, edge, w, style, x=x, edges=False, **kw)
+
     def curve(self, pts, w, style, x=0.0, **kw):
         """A curved part (a banana magazine) through points (z, y_top, y_bottom, thick)."""
         for i in range(len(pts) - 1):
@@ -333,10 +442,14 @@ class Gun:
     # --- bounds ------------------------------------------------------------------------------------------------
 
     def bounds(self, boxes=None):
+        """Where the gun really reaches (rotated parts counted where they are)."""
         boxes = boxes or self.boxes
-        lo = [min(b.lo[i] for b in boxes) for i in range(3)]
-        hi = [max(b.hi[i] for b in boxes) for i in range(3)]
-        return lo, hi
+        pts = np.concatenate([b.corners() if b.rotated() else np.array([b.lo, b.hi]) for b in boxes])
+        return list(pts.min(axis=0)), list(pts.max(axis=0))
+
+    def raw_reach(self):
+        """The largest coordinate of any box before its rotation (Minecraft limits from/to to -16..32)."""
+        return max(max(abs(v) for v in b.lo + b.hi) for b in self.boxes)
 
     def length(self):
         lo, hi = self.bounds()
@@ -415,10 +528,33 @@ def element(b, bi, uvpos, W, H, k):
         u, v, w, h = uvpos[(bi, face)]
         faces[face] = {'texture': '#t', 'uv': [round(u * 16 / W, 4), round(v * 16 / H, 4), round((u + w) * 16 / W, 4), round((v + h) * 16 / H, 4)]}
     e = {'from': f, 'to': t, 'faces': faces}
-    if b.rot:
-        o = b.origin or b.center()
+    if b.euler is not None:
+        o = b.pivot()
+        e['rotation'] = {'origin': [m(o[0]), m(o[1]), m(o[2])], 'x': b.euler[0], 'y': b.euler[1], 'z': b.euler[2]}
+    elif b.rot:
+        o = b.pivot()
         e['rotation'] = {'origin': [m(o[0]), m(o[1]), m(o[2])], 'axis': b.ax, 'angle': b.rot}
     return e
+
+
+# First-person poses (display transforms, 1/16 block, from the hand's place 0.56 right, 0.52 down, 0.72 ahead of the
+# eye). At the hip a long gun is held high and close, the barrel towards the left of the crosshair; a pistol out in
+# front. Aimed, the sight line runs AIM_DROP blocks under the eye (the front post just under the crosshair).
+HIP = [-5.6, 5.2, 6.4]
+HIP_ROT = [3, -5, 4]
+PISTOL_HIP = [-6.1, 4.8, 4.8]
+PISTOL_ROT = [0, -3, 0]
+AIM_DROP = 0.015
+
+
+def fp_point(display, k, v):
+    """Where gun-space point v (cm) is in first person: camera space, blocks (x right, y up, -z ahead)."""
+    t = np.array(display['translation'], dtype=np.float64) / 16.0
+    r = [math.radians(a) for a in display['rotation']]
+    R = rot_matrix('x', display['rotation'][0]) @ rot_matrix('y', display['rotation'][1]) @ rot_matrix('z', display['rotation'][2])
+    sc = display['scale'][0]
+    p = np.array(v, dtype=np.float64) * k / 16.0
+    return np.array([0.56, -0.52, -0.72]) + t + R @ (sc * p)
 
 
 def export(g, real_length=None):
@@ -426,7 +562,7 @@ def export(g, real_length=None):
     img, uvpos, W, H = build_atlas(g)
     Image.fromarray(img, 'RGBA').save(path('textures', 'item', 'gun', g.id + '.png'), optimize=True)
     lo, hi = g.bounds()
-    reach = max(max(abs(v) for v in lo), max(abs(v) for v in hi))
+    reach = max(max(abs(v) for v in lo), max(abs(v) for v in hi), g.raw_reach())
     k = min(1.0, 23.5 / reach)
     length_cm = g.length_override or (hi[2] - lo[2])
     real = (real_length or length_cm / 100.0)
@@ -435,9 +571,13 @@ def export(g, real_length=None):
         return [element(b, bi, uvpos, W, H, k) for bi, b in enumerate(g.boxes) if pred(b)]
 
     textures = {'t': 'airdefense:item/gun/' + g.id, 'particle': 'airdefense:item/gun/' + g.id}
-    hip_fp = {'rotation': [0, 4, 0], 'translation': [0, 1.5 if g.long_gun else 2.5, 0], 'scale': [scale] * 3}
+    # First person (1/16 block from the hand's place 0.56 right, 0.52 down, 0.72 ahead of the eye): at the hip the grip
+    # comes 0.16 closer in, up and back so the gun looks its real size; aimed, the line of sight runs just under
+    # the eye with the grip 0.3 ahead (a pistol is held out at arm's length).
+    hip_fp = {'rotation': HIP_ROT if g.long_gun else PISTOL_ROT, 'translation': HIP if g.long_gun else PISTOL_HIP, 'scale': [scale] * 3}
     sight = g.sight * k * scale / 16
-    aim_fp = {'rotation': [0, 0, 0], 'translation': [-8.96, round((0.52 - sight - 0.035) * 16, 3), -2.5], 'scale': [scale] * 3}
+    aim_fp = {'rotation': [0, 0, 0], 'translation': [-8.96, round((0.52 - sight - AIM_DROP) * 16, 3), 6.72 if g.long_gun else 4.8],
+              'scale': [scale] * 3}
     if g.scoped:
         aim_fp = {'rotation': [0, 0, 0], 'translation': [0, -40, 0], 'scale': [0.01] * 3}
     tp = {'rotation': [0, 0, 0], 'translation': [0, 0.5, -1.0], 'scale': [scale] * 3}
@@ -486,7 +626,10 @@ def export(g, real_length=None):
     }}, 'items', g.id + '.json')
     icon(g, img, uvpos)
     n = len(g.boxes)
-    return dict(id=g.id, boxes=n, atlas=(W, H), scale=scale, k=k, muzzle=g.muzzle(), sight=g.sight)
+    tip = (0.0, g.bore, -g.muzzle() * 100.0)
+    hip_m = fp_point(hip_fp, k, tip)
+    aim_m = fp_point(aim_fp, k, tip) if not g.scoped else np.array([0.0, -0.06, -0.9])
+    return dict(id=g.id, boxes=n, atlas=(W, H), scale=scale, k=k, muzzle=g.muzzle(), sight=g.sight, hip=hip_m, aim=aim_m)
 
 
 # ----------------------------------------------------------------------------------------------------------------
@@ -518,24 +661,35 @@ def render_side(g, img, uvpos, size=32, ss=4, angle_deg=None, width=None, height
     Z = zc - al / s
     Y = yc + up / s
     index = {id(b): i for i, b in enumerate(g.boxes)}
-    for b in sorted(boxes, key=lambda b: b.hi[0]):
+    for b in sorted(boxes, key=lambda b: b.corners()[:, 0].max() if b.rotated() else b.hi[0]):
         if 'east' not in b.faces:
             continue
         u0, v0, fw, fh = uvpos[(index[id(b)], 'east')]
         tex = img[v0:v0 + fh, u0:u0 + fw, :3].astype(np.float64)
         ylo, yhi = b.lo[1], b.hi[1]
         zlo, zhi = b.lo[2], b.hi[2]
-        if b.rot and b.ax == 'z':
+        Zl, Yl = Z, Y
+        if b.euler is None and b.rot and b.ax == 'z':
             c = b.center()
             r = (b.hi[0] - b.lo[0]) / 2
             ylo, yhi = c[1] - r, c[1] + r
-        elif b.rot and b.ax == 'x':
-            continue
-        inside = (Z >= zlo) & (Z <= zhi) & (Y >= ylo) & (Y <= yhi)
+        elif b.euler is None and b.rot and b.ax == 'x':
+            # Back into the box's own frame: rotate the sample point the other way round the pivot.
+            o = b.pivot()
+            a = math.radians(-b.rot)
+            ca_, sa_ = math.cos(a), math.sin(a)
+            dy_, dz_ = Y - o[1], Z - o[2]
+            Yl = dy_ * ca_ - dz_ * sa_ + o[1]
+            Zl = dy_ * sa_ + dz_ * ca_ + o[2]
+        elif b.rotated():
+            cs = b.corners()
+            zlo, zhi = cs[:, 2].min(), cs[:, 2].max()
+            ylo, yhi = cs[:, 1].min(), cs[:, 1].max()
+        inside = (Zl >= zlo) & (Zl <= zhi) & (Yl >= ylo) & (Yl <= yhi)
         if not inside.any():
             continue
-        tu = np.clip(((zhi - Z) / max(1e-6, zhi - zlo) * fw).astype(int), 0, fw - 1)
-        tv = np.clip(((yhi - Y) / max(1e-6, yhi - ylo) * fh).astype(int), 0, fh - 1)
+        tu = np.clip(((zhi - Zl) / max(1e-6, zhi - zlo) * fw).astype(int), 0, fw - 1)
+        tv = np.clip(((yhi - Yl) / max(1e-6, yhi - ylo) * fh).astype(int), 0, fh - 1)
         col = tex[tv, tu]
         acc[inside, :3] = col[inside] * 1.12 + 6
         acc[inside, 3] = 255

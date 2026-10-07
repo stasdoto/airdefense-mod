@@ -42,3 +42,6 @@ devkit/
 build/
 .gradle/
 run/
+
+__pycache__/
+*.pyc

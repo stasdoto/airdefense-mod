@@ -1,6 +1,6 @@
 {
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "airdefense:item/pm"
-  }
+ "parent": "minecraft:item/generated",
+ "textures": {
+  "layer0": "airdefense:item/pm"
+ }
 }
