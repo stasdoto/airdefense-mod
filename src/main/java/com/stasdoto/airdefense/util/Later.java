@@ -26,6 +26,14 @@ public final class Later {
 	public static int done;
 	public static int givenUp;
 
+	/**
+	 * Loaded with its entities too (entity ticking): putting a missile or a lorry into ground whose entities are still
+	 * being read held the server for a couple of seconds.
+	 */
+	private static boolean ready(ServerLevel level, BlockPos at) {
+		return level.isLoaded(at) && level.isPositionEntityTicking(at);
+	}
+
 	/** Jobs waiting for their ground. */
 	public static int pending() {
 		return JOBS.size();
@@ -45,7 +53,7 @@ public final class Later {
 
 	/** Does {@code work} as soon as the chunk at {@code at} is loaded (now, if it is), within {@code maxTicks}. */
 	public static void whenLoaded(ServerLevel level, BlockPos at, int maxTicks, Consumer<ServerLevel> work) {
-		if (level.isLoaded(at)) {
+		if (ready(level, at)) {
 			work.accept(level);
 			done++;
 			return;
@@ -61,7 +69,7 @@ public final class Later {
 		List<Job> ready = new ArrayList<>();
 		for (Iterator<Job> it = JOBS.iterator(); it.hasNext(); ) {
 			Job j = it.next();
-			if (j.level.isLoaded(j.at)) {
+			if (ready(j.level, j.at)) {
 				it.remove();
 				ready.add(j);
 			} else if (j.level.getGameTime() > j.giveUpAt) {

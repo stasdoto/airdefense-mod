@@ -419,6 +419,8 @@ public final class Arsenals extends SavedData {
 	/** Puts the town's vehicles into the world (those that are not there), tops up their stores from the depot. */
 	private void materialize(ServerLevel level, Politics p, Settlement s, Arsenal ar, boolean near, boolean alert) {
 		int side = side(s);
+		// A couple of vehicles a second: a whole city's arsenal at once froze the server for a second or two.
+		int budget = 2;
 		for (int i = 0; i < ar.units.size(); i++) {
 			Unit u = ar.units.get(i);
 			if (u.lost) {
@@ -447,6 +449,9 @@ public final class Arsenals extends SavedData {
 				u.entity = null;
 			}
 			if (v == null) {
+				if (budget-- <= 0) {
+					continue;
+				}
 				int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, at.getX(), at.getZ());
 				float yaw = (float) Math.toDegrees(Math.atan2(-(s.center.getX() - at.getX()), s.center.getZ() - at.getZ())) + 180f;
 				v = VehicleEntity.spawn(level, u.type, new Vec3(at.getX() + 0.5, y, at.getZ() + 0.5), yaw);
