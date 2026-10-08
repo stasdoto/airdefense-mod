@@ -19,6 +19,10 @@ public final class GridHud {
 
 	public static void draw(GuiGraphicsExtractor g, DeltaTracker delta) {
 		Minecraft mc = Minecraft.getInstance();
+		if (com.stasdoto.airdefense.client.vehicle.GunnerSight.active() != com.stasdoto.airdefense.client.vehicle.GunnerSight.Kind.NONE) {
+			// The gun sight's eyepiece fills the screen.
+			return;
+		}
 		LocalPlayer p = mc.player;
 		if (p == null || mc.gui.screen() != null || !(DesignatorItem.held(p) != null || p.getVehicle() instanceof VehicleEntity)) {
 			return;

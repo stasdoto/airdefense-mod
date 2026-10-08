@@ -716,7 +716,23 @@ public class VehicleEntity extends LivingEntity {
 			x = xr;
 			z = zr + vtype.geometry.turretPivot()[2];
 		}
-		return new Vec3(r.x * x + f.x * z, y, r.z * x + f.z * z);
+		// 1.26: the seat goes with the body's pitch and bank (a climbing or banking aircraft, a tank on a slope). The
+		// rider's eyes are put where they belong in the tilted cockpit - he himself stays upright, so his seat point is
+		// set that far below them.
+		float eye = (float) Math.max(0.5, passenger.getEyeHeight() - 0.6);
+		Vec3 e = tilted(x, y + eye, z, getYRot(), tiltPitch, tiltRoll, lift);
+		return new Vec3(e.x, e.y - eye, e.z);
+	}
+
+	/**
+	 * A point of the vehicle (vehicle space: x right, y up, z forward; metres) as an offset from its position, with the
+	 * body turned as it is drawn: yaw, then the pitch and the roll of its tilt, and its lift.
+	 */
+	public static Vec3 tilted(double x, double y, double z, float yawDeg, float pitchDeg, float rollDeg, float lift) {
+		org.joml.Vector3f v = new org.joml.Vector3f((float) -x, (float) y, (float) z);
+		new org.joml.Quaternionf().rotationY(-yawDeg * Mth.DEG_TO_RAD).rotateX(-pitchDeg * Mth.DEG_TO_RAD).rotateZ(rollDeg * Mth.DEG_TO_RAD)
+				.transform(v);
+		return new Vec3(v.x, v.y + lift, v.z);
 	}
 
 	@Override

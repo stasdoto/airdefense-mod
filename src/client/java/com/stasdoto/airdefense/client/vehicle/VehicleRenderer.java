@@ -132,11 +132,15 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		if (GunnerSight.thermalOn() && !s.wreck) {
 			// Through the thermal sight a vehicle shows warm (its engine, its tracks), a burnt-out one cold.
 			light = 0xF000F0;
-			overlay = OverlayTexture.pack(0.6f, false);
+			overlay = OverlayTexture.pack(0.78f, false);
 		}
 		collector.submitModel(model, s, poseStack, tex, light, overlay, s.outlineColor);
 		if (inside != null && near) {
+			// The inside is modelled at twice the detail (32 units a metre): drawn at half scale.
+			poseStack.pushPose();
+			poseStack.scale(0.5f, 0.5f, 0.5f);
 			collector.submitModel(inside, s, poseStack, insideTexture, s.lightCoords, OverlayTexture.NO_OVERLAY, s.outlineColor);
+			poseStack.popPose();
 		}
 		if (glass != null) {
 			// Far away (or with nothing inside to show) the panes stay dark and solid; near, you see in through them.

@@ -164,11 +164,10 @@ public final class GunnerSight {
 	}
 
 	private static Vec3 local(VehicleEntity v, double x, double y, double z, float pt) {
-		float yaw = Mth.rotLerp(pt, v.yRotO, v.getYRot()) * Mth.DEG_TO_RAD;
-		Vec3 f = new Vec3(-Mth.sin(yaw), 0, Mth.cos(yaw));
-		Vec3 r = new Vec3(-Mth.cos(yaw), 0, -Mth.sin(yaw));
-		Vec3 base = v.getPosition(pt);
-		return base.add(r.x * x + f.x * z, y + Mth.lerp(pt, v.liftO, v.lift), r.z * x + f.z * z);
+		// Turned with the hull's tilt as it is drawn (on a slope the sight stays on the turret).
+		Vec3 off = VehicleEntity.tilted(x, y, z, Mth.rotLerp(pt, v.yRotO, v.getYRot()), Mth.lerp(pt, v.tiltPitchO, v.tiltPitch),
+				Mth.lerp(pt, v.tiltRollO, v.tiltRoll), Mth.lerp(pt, v.liftO, v.lift));
+		return v.getPosition(pt).add(off);
 	}
 
 	/** Is this vehicle the one the camera sits in (it is not drawn then)? */

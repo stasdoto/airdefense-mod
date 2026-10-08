@@ -199,7 +199,10 @@ public final class GunClient {
 			zoom = target;
 		}
 		while (NVG.consumeClick()) {
-			send(GunActionPayload.NVG, Vec3.ZERO, -1);
+			// In a vehicle's sight the same key works its thermal channel (GunnerSight), not the helmet's goggles.
+			if (com.stasdoto.airdefense.client.vehicle.GunnerSight.active() == com.stasdoto.airdefense.client.vehicle.GunnerSight.Kind.NONE) {
+				send(GunActionPayload.NVG, Vec3.ZERO, -1);
+			}
 		}
 		seeker(mc, p, gun);
 		if (gun == null || p.getVehicle() instanceof VehicleEntity) {

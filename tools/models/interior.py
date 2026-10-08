@@ -275,7 +275,7 @@ def truck_cab(m, p, cab, armoured=False, boat=False):
         seat(p, sx, sy, sz, 'seat_black' if armoured else 'seat', w=min(0.52, (x1 - x0) / 2 - 0.1), armoured=armoured)
         if role == 'driver':
             # Dials in front of the driver, the wheel, pedals, the gear lever.
-            gauges(p, sx - 0.22, sx + 0.22, dash_top - 0.2, dash_top - 0.06, zd)
+            gauges(p, sx - 0.24, sx + 0.24, dash_top - 0.22, dash_top - 0.05, zd)
             if armoured:
                 p.box((sx + 0.25, dash_top - 0.22, zd - 0.02), (sx + 0.45, dash_top - 0.06, zd), 'int_black', sides={'back': 'screen'},
                       faces=('back', 'top', 'bottom', 'left', 'right'))
@@ -493,8 +493,10 @@ def troop_cabin(m, p, cab):
 
 def build(m):
     """The inside model of an outer one (its cabs)."""
-    im = Model(m.id + '_int', paint='int_panel', tex_width=512, seed=m.seed + 777)
+    im = Model(m.id + '_int', paint='int_panel', tex_width=1024, seed=m.seed + 777)
     im.interior_of = m.id
+    # Twice the detail: dials and switches need the texels (VehicleRenderer draws it at half scale).
+    im.px = 32
     made = {}
 
     def part_for(name):

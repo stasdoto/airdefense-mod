@@ -204,7 +204,7 @@ class Painter:
             if h >= 6:
                 region[h // 2, :, :3] = st_c
         elif kind == 'gauge':
-            # A row of round dials: dark face, light ring, tick marks and a needle.
+            # A row of round dials: dark face, light bezel, ticks and a white needle (tiny ones: a light face).
             region[..., :3] = mul((40, 42, 44), k)
             n = max(1, int(round(w / max(1, h))))
             size = w / n
@@ -212,17 +212,25 @@ class Painter:
             for i in range(n):
                 cx = size * (i + 0.5) - 0.5
                 cy = (h - 1) / 2.0
-                r = min(size, h) / 2.0 - 0.3
+                r = min(size, h) / 2.0 - 0.4
                 d = np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2)
+                if r < 3:
+                    region[d <= r, :3] = (176, 178, 168)
+                    region[(d <= 0.8), :3] = (30, 30, 30)
+                    continue
                 region[d <= r, :3] = mul(base, 1.0)
-                ring = (d <= r) & (d > r - 1.0)
-                region[ring, :3] = (200, 200, 190)
-                ang = -2.4 + self.rng.random() * 3.2
-                for t in np.linspace(0, r - 1.2, 8):
+                region[(d <= r) & (d > r - 1.1), :3] = (190, 192, 184)
+                for a in np.linspace(-2.4, 0.8, 7):
+                    px = int(round(cx + math.cos(a) * (r - 2.0)))
+                    py = int(round(cy + math.sin(a) * (r - 2.0)))
+                    if 0 <= px < w and 0 <= py < h:
+                        region[py, px, :3] = (210, 210, 200)
+                ang = -2.2 + self.rng.random() * 2.8
+                for t in np.linspace(0, r - 1.6, 10):
                     px = int(round(cx + math.cos(ang) * t))
                     py = int(round(cy + math.sin(ang) * t))
                     if 0 <= px < w and 0 <= py < h:
-                        region[py, px, :3] = (235, 225, 120)
+                        region[py, px, :3] = (240, 240, 232)
         elif kind == 'screen':
             region[..., :3] = rgb(st['base'])
             line = rgb(st['line'])
@@ -281,9 +289,11 @@ class Box:
         self.faces = tuple(faces) if faces else ALL_FACES
         # Per-face style overrides, e.g. {'front': 'glass'}.
         self.sides = dict(sides or {})
+        # Texels (and model units) per metre: 16, or more for a finely drawn inside (see Model.px).
+        self.px = PX
 
     def px_size(self):
-        return tuple(max(1, int(round((self.hi[i] - self.lo[i]) * PX))) for i in range(3))
+        return tuple(max(1, int(round((self.hi[i] - self.lo[i]) * self.px))) for i in range(3))
 
     def key(self):
         return (self.px_size(), self.style, self.faces, tuple(sorted(self.sides.items())))
@@ -344,7 +354,9 @@ class Part:
                     sides = {mapf(f): v for f, v in sides.items()}
         if style == 'glass' and faces is None and not self.design_x:
             faces = outward_face(a, b, self.pivot)
-        self.boxes.append(Box(a, b, style or self.model.paint, faces, sides))
+        bx = Box(a, b, style or self.model.paint, faces, sides)
+        bx.px = self.model.px
+        self.boxes.append(bx)
         return self
 
     def cbox(self, c, size, style=None, faces=None, sides=None):
@@ -401,6 +413,8 @@ class Model:
         self.interior_of = None
         # A stand-in for a hand-made model (VehicleModels.java): only its inside is generated.
         self.stub = False
+        # Model units (and texels) per metre. The insides are drawn at twice the detail (the client scales them down).
+        self.px = PX
 
     def part(self, name, pivot=(0, 0, 0), rot=(0, 0, 0), parent=None):
         p = Part(self, name, pivot, rot, parent)
@@ -538,9 +552,9 @@ class Model:
             counter[0] += 1
             names[p] = var
             px, py, pz = p.pivot
-            ox = (px - parent_pivot[0]) * PX
-            oy = -(py - parent_pivot[1]) * PX
-            oz = (pz - parent_pivot[2]) * PX
+            ox = (px - parent_pivot[0]) * self.px
+            oy = -(py - parent_pivot[1]) * self.px
+            oz = (pz - parent_pivot[2]) * self.px
             lines.append('\t\tPartDefinition %s = %s.addOrReplaceChild("%s", CubeListBuilder.create()' % (var, parent_var, p.name))
             for b in p.boxes:
                 if only == 'solid' and b.style == 'glass' or only == 'glass' and b.style != 'glass':
@@ -548,9 +562,9 @@ class Model:
                 u, v = uv[b.key()]
                 w, h, d = b.px_size()
                 # Box min corner relative to the pivot, Minecraft space (y down).
-                x0 = (b.lo[0] - px) * PX
-                y0 = -(b.hi[1] - py) * PX
-                z0 = (b.lo[2] - pz) * PX
+                x0 = (b.lo[0] - px) * self.px
+                y0 = -(b.hi[1] - py) * self.px
+                z0 = (b.lo[2] - pz) * self.px
                 faces = ''
                 if set(b.faces) != set(ALL_FACES):
                     faces = ', EnumSet.of(%s)' % ', '.join('Direction.' + FACE_DIR[x] for x in b.faces)
