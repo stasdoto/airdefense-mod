@@ -41,6 +41,16 @@ S = {
     'hud.airdefense.vehicle.keys_plane': ('Mouse - where to fly · W/S - throttle · A/D - bank · Space - air brake · LMB - gun · %1$s - ordnance · Shift - leave',
                                           'Мышь — куда лететь · W/S — тяга · A/D — крен · Пробел — тормоз · ЛКМ — пушка · %1$s — подвеска · Shift — выйти',
                                           'Миша — куди летіти · W/S — тяга · A/D — крен · Пробіл — гальмо · ЛКМ — гармата · %1$s — підвіска · Shift — вийти'),
+    # The guide.
+    'guide.airdefense.page.24': ('THE CREW\n\nTank, IFV, APC, armoured car, gunboat: you sit at the gun sight at once.\nC - sight / seat\nZ - magnification 1x, 3.5x, 8x\nN - thermal imager\nX - smoke grenades (the enemy cannot see through)\nLMB - fire, WASD - drive.',
+                                 'ЭКИПАЖ\n\nТанк, БМП, БТР, броневик, катер: садитесь — и сразу у прицела наводчика.\nC — прицел / место\nZ — кратность 1×, 3,5×, 8×\nN — тепловизор\nX — дымовые гранаты (враг не видит сквозь дым)\nЛКМ — огонь, WASD — ехать.',
+                                 'ЕКІПАЖ\n\nТанк, БМП, БТР, броньовик, катер: сідаєте — і одразу біля прицілу навідника.\nC — приціл / місце\nZ — кратність 1×, 3,5×, 8×\nN — тепловізор\nX — димові гранати (ворог не бачить крізь дим)\nЛКМ — вогонь, WASD — їхати.'),
+    'guide.airdefense.page.25': ('CABINS\n\nEvery truck, launcher, radar and armoured car has a cab inside: dials, a wheel that turns with the wheels, seats, a radio. The glass is see-through when you are near.\nA tank driver with a gunner aboard: C - the periscope.',
+                                 'КАБИНЫ\n\nУ каждого грузовика, пусковой, РЛС и броневика внутри кабина: приборы, руль крутится вместе с колёсами, сиденья, рация. Вблизи стёкла прозрачные.\nМеханик танка при наводчике: C — перископ.',
+                                 'КАБІНИ\n\nУ кожної вантажівки, пускової, РЛС і броньовика всередині кабіна: прилади, кермо крутиться разом із колесами, сидіння, рація. Зблизька скло прозоре.\nМеханік танка при навіднику: C — перископ.'),
+    'guide.airdefense.page.26': ('PLANES AND HELICOPTERS\n\nPlane: look where to fly - it banks into the turn by itself. W/S - throttle, A/D - bank by hand, Space - air brake. Too slow - it stalls.\nThe head-up display: speed, height, horizon, the bomb\'s impact point, the missile lock.',
+                                 'САМОЛЁТЫ И ВЕРТОЛЁТЫ\n\nСамолёт: смотрите, куда лететь, — он сам ляжет в вираж. W/S — тяга, A/D — крен вручную, Пробел — тормоз. Слишком медленно — сваливание.\nНа стекле: скорость, высота, горизонт, точка падения бомбы, захват ракеты.',
+                                 'ЛІТАКИ І ГЕЛІКОПТЕРИ\n\nЛітак: дивіться, куди летіти, — він сам ляже у віраж. W/S — тяга, A/D — крен вручну, Пробіл — гальмо. Надто повільно — звалювання.\nНа склі: швидкість, висота, горизонт, точка падіння бомби, захоплення ракети.'),
     # Sounds.
     'subtitles.airdefense.rotor': ('Helicopter rotor', 'Винт вертолёта', 'Гвинт гелікоптера'),
     'subtitles.airdefense.jet': ('Jet engine', 'Реактивный двигатель', 'Реактивний двигун'),

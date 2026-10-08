@@ -932,5 +932,8 @@
   "subtitles.airdefense.tracks": "Tracks clatter",
   "key.airdefense.smoke": "Smoke grenades",
   "message.airdefense.vehicle.smoke": "Smoke!",
-  "message.airdefense.vehicle.smoke_reload": "Smoke grenades: reloading, %s s"
+  "message.airdefense.vehicle.smoke_reload": "Smoke grenades: reloading, %s s",
+  "guide.airdefense.page.24": "THE CREW\n\nTank, IFV, APC, armoured car, gunboat: you sit at the gun sight at once.\nC - sight / seat\nZ - magnification 1x, 3.5x, 8x\nN - thermal imager\nX - smoke grenades (the enemy cannot see through)\nLMB - fire, WASD - drive.",
+  "guide.airdefense.page.25": "CABINS\n\nEvery truck, launcher, radar and armoured car has a cab inside: dials, a wheel that turns with the wheels, seats, a radio. The glass is see-through when you are near.\nA tank driver with a gunner aboard: C - the periscope.",
+  "guide.airdefense.page.26": "PLANES AND HELICOPTERS\n\nPlane: look where to fly - it banks into the turn by itself. W/S - throttle, A/D - bank by hand, Space - air brake. Too slow - it stalls.\nThe head-up display: speed, height, horizon, the bomb's impact point, the missile lock."
 }
