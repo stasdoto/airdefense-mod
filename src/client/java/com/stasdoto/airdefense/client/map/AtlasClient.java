@@ -87,6 +87,7 @@ public final class AtlasClient {
 	}
 
 	private static void clear() {
+		AtlasTiles.clear();
 		loaded = false;
 		CITIES.clear();
 		HAMLETS.clear();
@@ -341,6 +342,15 @@ public final class AtlasClient {
 	/** The city whose region holds this point (its index in CITIES), or -1. */
 	public static int regionAt(double x, double z) {
 		return Territory.owner(seatX, seatZ, seatW, warp, x, z);
+	}
+
+	/** The cities' centres (0 = x, 1 = z), for painting the borders off the render thread. */
+	static int[] seats(int axis) {
+		return (axis == 0 ? seatX : seatZ).clone();
+	}
+
+	static float[] seatWeights() {
+		return seatW.clone();
 	}
 
 	/** The country holding a city's region (-1: nobody yet, or unknown). */

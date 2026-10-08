@@ -200,6 +200,15 @@ public class RadarScreen extends Screen {
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+		long t0 = System.nanoTime();
+		draw(g, mouseX, mouseY, partialTick);
+		frameNanos = System.nanoTime() - t0;
+	}
+
+	/** For the tests: how long the last frame's drawing took (ns). */
+	public static long frameNanos;
+
+	private void draw(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
 		RadarPayload p = latest;
 		boolean working = p != null && !p.stations().isEmpty();
 		labels.clear();
@@ -468,29 +477,11 @@ public class RadarScreen extends Screen {
 	}
 
 	private void line(GuiGraphicsExtractor g, double x0, double y0, double x1, double y1, int color, int dash) {
-		double len = Math.hypot(x1 - x0, y1 - y0);
-		int n = (int) Math.min(2000, Math.ceil(len));
-		for (int i = 0; i <= n; i++) {
-			if (dash > 0 && (i / dash) % 2 == 1) {
-				continue;
-			}
-			double t = n == 0 ? 0 : (double) i / n;
-			dot(g, x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, color);
-		}
+		GuiDraw.line(g, GuiDraw.Clip.disc(cx, cy, radius), x0, y0, x1, y1, 1f, color, dash);
 	}
 
 	private void circle(GuiGraphicsExtractor g, double x, double y, double r, int color, int dash) {
-		if (r < 1) {
-			return;
-		}
-		int n = (int) Mth.clamp(r * Mth.TWO_PI / 1.5, 16, 900);
-		for (int i = 0; i < n; i++) {
-			if (dash > 0 && (i / dash) % 2 == 1) {
-				continue;
-			}
-			double a = Mth.TWO_PI * i / n;
-			dot(g, x + Math.cos(a) * r, y + Math.sin(a) * r, color);
-		}
+		GuiDraw.circle(g, GuiDraw.Clip.disc(cx, cy, radius), x, y, r, 1f, color, dash);
 	}
 
 	/** A small label where it does not cover another one (tried a little above and below; left out if no room). */

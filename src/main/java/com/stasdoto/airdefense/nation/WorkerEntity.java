@@ -60,6 +60,17 @@ import net.minecraft.world.phys.Vec3;
  * faster it goes. Sent home, a worker is the same villager again - same face, trade, homes and memories.
  */
 public class WorkerEntity extends PathfinderMob {
+	@Override
+	public void tick() {
+		if (level().isClientSide()) {
+			super.tick();
+			return;
+		}
+		long perf0 = System.nanoTime();
+		super.tick();
+		com.stasdoto.airdefense.util.Perf.add(com.stasdoto.airdefense.util.Perf.WORKERS, System.nanoTime() - perf0);
+	}
+
 	public static final int WOOD = 0;
 	public static final int STONE = 1;
 	public static final int IRON = 2;

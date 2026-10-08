@@ -188,6 +188,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("threeVsOne")) {
 				threeVsOne(ctx, server);
 			}
+			if (scene("samePoint")) {
+				samePoint(ctx, server);
+			}
 			if (scene("manual")) {
 				manualDefense(ctx, server, VehicleType.GEPARD, 16500, "manual_gepard");
 				manualDefense(ctx, server, VehicleType.IRIS_T, 18000, "manual_iris_t");
@@ -299,6 +302,43 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			ctx.waitTicks(20);
 			ctx.takeScreenshot(names[i]);
 		}
+		// 1.25.1: how smooth the map is - dragged across the land at three zooms, the longest frame measured.
+		for (int zi : new int[]{6, 4, 2}) {
+			ctx.runOnClient(mc -> com.stasdoto.airdefense.client.map.TacticalMapScreen.maxFrameNanos = 0);
+			for (int k = 0; k < 60; k++) {
+				int kk = k;
+				ctx.runOnClient(mc -> ((com.stasdoto.airdefense.client.map.TacticalMapScreen) mc.gui.screen()).centerOn(cx + kk * (zi == 6 ? 40 : zi == 4 ? 12 : 3),
+						cz + kk * (zi == 6 ? 25 : zi == 4 ? 8 : 2), zi));
+				ctx.waitTick();
+			}
+			long worst = ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.map.TacticalMapScreen.maxFrameNanos);
+			long last = ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.map.TacticalMapScreen.frameNanos);
+			AirDefense.LOGGER.info("[airdefense-test] RESULT map_frame zoom {}: longest {} us, last {} us, {}", zi, worst / 1000, last / 1000,
+					ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.map.TacticalMapScreen.tileStats()));
+		}
+		ctx.takeScreenshot("157_atlas_dragged");
+		ctx.runOnClient(mc -> mc.gui.setScreen(null));
+		// The radar screen with a station and a few batteries about.
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			for (int k = 0; k < 5; k++) {
+				VehicleType t = k == 0 ? VehicleType.TRML4D : k == 1 ? VehicleType.PATRIOT : k == 2 ? VehicleType.IRIS_T : k == 3 ? VehicleType.NASAMS : VehicleType.GEPARD;
+				int x = cx + 20 + k * 12;
+				int z = cz + 20;
+				VehicleEntity.spawn(l, t, new Vec3(x + 0.5, l.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z + 0.5), 0);
+			}
+		});
+		server.runCommand("item replace entity @a hotbar.0 with airdefense:designator");
+		ctx.runOnClient(mc -> mc.player.getInventory().setSelectedSlot(0));
+		ctx.waitTicks(60);
+		ctx.runOnClient(mc -> mc.gui.setScreen(new com.stasdoto.airdefense.client.map.RadarScreen()));
+		long radarWorst = 0;
+		for (int k = 0; k < 60; k++) {
+			ctx.waitTick();
+			radarWorst = Math.max(radarWorst, ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.map.RadarScreen.frameNanos));
+		}
+		ctx.takeScreenshot("158_radar");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT radar_frame: longest {} us", radarWorst / 1000);
 		ctx.runOnClient(mc -> mc.gui.setScreen(null));
 		server.runCommand("clear @a");
 		server.runCommand("gamemode spectator @a");
@@ -327,6 +367,45 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			ctx.waitTicks(120);
 			ctx.takeScreenshot("156_highway_above");
 			AirDefense.LOGGER.info("[airdefense-test] RESULT highway: length {} at {} {}", (int) r[5], (int) r[0], (int) r[1]);
+		}
+		soak(ctx, server, cx, cz, base);
+	}
+
+	/**
+	 * 1.25.1: two minutes of play in the real world - flying round the capital and out over the country, a drone raid
+	 * and a strike at the town - with every server tick over 60 ms written down (and where it went).
+	 */
+	private void soak(ClientGameTestContext ctx, TestServerContext server, int cx, int cz, int base) {
+		int slow0 = com.stasdoto.airdefense.util.Perf.slowTicks;
+		com.stasdoto.airdefense.util.Perf.WORST.clear();
+		com.stasdoto.airdefense.util.Perf.worstMs = 0;
+		server.runCommand("gamemode spectator @a");
+		long[] frames = new long[2];
+		for (int k = 0; k < 120; k++) {
+			double a = k * 0.06;
+			double r = 120 + k * 4;
+			camera(server, cx + Math.cos(a) * r, base + 40, cz + Math.sin(a) * r, (float) Math.toDegrees(a) + 90, 15);
+			if (k == 20) {
+				server.runOnServer(s -> com.stasdoto.airdefense.drone.Raids.onPlayer(s.getPlayerList().getPlayers().getFirst(), 12, null));
+			}
+			if (k == 50) {
+				server.runOnServer(s -> {
+					var p = com.stasdoto.airdefense.nation.Politics.get(s);
+					var capital = testCapital(s);
+					for (var st : p.settlements.values()) {
+						if (capital != null && st.country != capital.country && st.city >= 0
+								&& com.stasdoto.airdefense.nation.Arsenals.strikeNow(s.overworld(), st, capital)) {
+							break;
+						}
+					}
+				});
+			}
+			ctx.waitTicks(20);
+		}
+		AirDefense.LOGGER.info("[airdefense-test] RESULT soak: slow ticks {} (over 60 ms), worst {} ms, average {} ms", com.stasdoto.airdefense.util.Perf.slowTicks - slow0,
+				com.stasdoto.airdefense.util.Perf.worstMs, server.computeOnServer(s -> s.getAverageTickTimeNanos() / 1_000_000f));
+		for (String line : com.stasdoto.airdefense.util.Perf.WORST) {
+			AirDefense.LOGGER.info("[airdefense-test] RESULT soak_tick: {}", line);
 		}
 	}
 
@@ -1797,6 +1876,32 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		oneTarget(ctx, server, x, MissileType.ISKANDER_DECOY, 240, "radar_vs_decoy");
 	}
 
+	/**
+	 * 1.25.1: a salvo of Shaheds and two cruise missiles at one point. The first ones blow a crater there; the rest
+	 * must still come down on it (into the crater) - not circle round the empty point in the air.
+	 */
+	private void samePoint(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 57000;
+		BlockPos target = new BlockPos(x, ground - 1, 80);
+		camera(server, x + 30, ground + 20, 110, 135, 20);
+		ctx.waitTicks(40);
+		int impacts0 = MissileStats.GROUND_IMPACTS.get();
+		launchFrom(ctx, server, VehicleType.SHAHED, x - 10, -150, target);
+		launchFrom(ctx, server, VehicleType.KALIBR, x + 10, -170, target);
+		camera(server, x + 30, ground + 20, 110, 135, 20);
+		int first = waitUntil(ctx, () -> MissileStats.GROUND_IMPACTS.get() > impacts0, 1200);
+		ctx.takeScreenshot("59_same_point_first");
+		int[] left = new int[1];
+		int settled = waitUntil(ctx, () -> {
+			left[0] = server.computeOnServer(s -> MissileEntity.find(s.overworld(), new net.minecraft.world.phys.AABB(target).inflate(400),
+					m -> m.isAlive() && m.getMissileType().threat).size());
+			return left[0] == 0;
+		}, 1200);
+		ctx.takeScreenshot("59b_same_point_after");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT same_point: first impact after {} ticks, all down {} ticks later (still flying {}), impacts {}",
+				first, settled, left[0], MissileStats.GROUND_IMPACTS.get() - impacts0);
+	}
+
 	/** One missile of this kind at the batteries round (x, 50); counts what went up for it. */
 	private void oneTarget(ClientGameTestContext ctx, TestServerContext server, int x, MissileType kind, int height, String scene) {
 		int[] before = counters();
@@ -2616,7 +2721,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		// A column by road.
 		int sent = server.computeOnServer(s -> {
 			var p = com.stasdoto.airdefense.nation.Politics.get(s);
-			return com.stasdoto.airdefense.nation.War.sendColumn(s.overworld(), p, p.country(ids[2]), p.settlements.get(ids[1]), 10).size();
+			return com.stasdoto.airdefense.nation.War.sendColumn(s.overworld(), p, p.country(ids[2]), p.settlements.get(ids[1]), 10);
 		});
 		float[] ccam = server.computeOnServer(s -> {
 			for (VehicleEntity v : s.overworld().getEntitiesOfClass(VehicleEntity.class, new net.minecraft.world.phys.AABB(cx - 600, base - 40, cz - 600,

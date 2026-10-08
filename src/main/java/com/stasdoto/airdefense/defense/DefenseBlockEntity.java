@@ -78,8 +78,9 @@ public class DefenseBlockEntity extends BlockEntity {
 			return;
 		}
 		if (sirenTimer == 0) {
-			level.playSound(null, radar.x, radar.y, radar.z, ModSounds.SIREN, SoundSource.BLOCKS, 3.0f, 1.0f);
+			// The towns around sound the alert (the battery itself has no siren).
 			sirenTimer = 130;
+			com.stasdoto.airdefense.siren.Sirens.autoAlert(level, radar, 260);
 		}
 		if (fireTimer > 0 || ammo <= 0) {
 			return;

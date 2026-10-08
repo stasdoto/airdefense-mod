@@ -86,6 +86,12 @@ public final class Nations {
 	public static final long[] PROFILE = new long[9];
 
 	private static void tick(ServerLevel level) {
+		long perf0 = System.nanoTime();
+		tickParts(level);
+		com.stasdoto.airdefense.util.Perf.add(com.stasdoto.airdefense.util.Perf.NATIONS, System.nanoTime() - perf0);
+	}
+
+	private static void tickParts(ServerLevel level) {
 		long t = level.getGameTime();
 		Politics p = Politics.get(level.getServer());
 		long t0 = System.nanoTime();
@@ -115,10 +121,14 @@ public final class Nations {
 		PROFILE[4] += t4 - t3;
 		if (t % 20 == 13) {
 			// The towns' air defence and launchers (1.25).
+			long a0 = System.nanoTime();
 			Arsenals.tick(level);
+			com.stasdoto.airdefense.util.Perf.add(com.stasdoto.airdefense.util.Perf.ARSENALS, System.nanoTime() - a0);
 		}
+		long e0 = System.nanoTime();
 		Economy.tick(level, p);
 		long t5 = System.nanoTime();
+		com.stasdoto.airdefense.util.Perf.add(com.stasdoto.airdefense.util.Perf.ECONOMY, t5 - e0);
 		PROFILE[5] += t5 - t4;
 		Supply.tick(level, p);
 		long t6 = System.nanoTime();
@@ -128,6 +138,7 @@ public final class Nations {
 		PROFILE[7] += t7 - t6;
 		War.tick(level, p);
 		PROFILE[8] += System.nanoTime() - t7;
+		com.stasdoto.airdefense.util.Perf.add(com.stasdoto.airdefense.util.Perf.WAR, System.nanoTime() - t7);
 	}
 
 	// ------------------------------------------------------------------------------------------------

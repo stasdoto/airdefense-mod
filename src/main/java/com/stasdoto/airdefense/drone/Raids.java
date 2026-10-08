@@ -206,10 +206,9 @@ public final class Raids {
 				p.connection.send(new ClientboundSetSubtitleTextPacket(sub));
 				p.connection.send(new ClientboundSetTitleTextPacket(title));
 				p.sendSystemMessage(Component.empty().append(title).append(" ").append(sub));
-				level.playSound(null, p.getX(), p.getY() + 8, p.getZ(), ModSounds.SIREN, SoundSource.HOSTILE, 4.0f, 1.0f);
 			}
 		}
-		level.playSound(null, raid.center.x, raid.center.y + 10, raid.center.z, ModSounds.SIREN, SoundSource.HOSTILE, 6.0f, 0.95f);
+		// The sound of the alert comes only from the towns' sirens (above), not out of thin air round the player.
 	}
 
 	/** For /ad raid and the tests: raid on the player's position from a random side. */

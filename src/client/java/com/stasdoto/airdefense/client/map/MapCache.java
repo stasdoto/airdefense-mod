@@ -39,8 +39,8 @@ import com.stasdoto.airdefense.AirDefense;
  */
 public final class MapCache {
 	public static final int REGION = 512;
-	/** Chunks read per tick (each is 256 columns). */
-	private static final int CHUNKS_PER_TICK = 10;
+	/** Chunks read per tick (each is 256 columns; fewer since 1.25.1 - it all runs on the frame's thread). */
+	private static final int CHUNKS_PER_TICK = 4;
 	private static final int SCAN_RADIUS = 32;
 	private static final int MAX_LOADED_REGIONS = 72;
 	private static final int[][] SPIRAL = spiral(SCAN_RADIUS);
@@ -66,6 +66,7 @@ public final class MapCache {
 		boolean dirty;
 		boolean textureDirty = true;
 		long lastUsed;
+		long lastUpload;
 
 		Region(int rx, int rz, NativeImage image) {
 			this.rx = rx;
@@ -81,9 +82,11 @@ public final class MapCache {
 				textureId = AirDefense.id("map/" + Integer.toHexString(System.identityHashCode(this)));
 				Minecraft.getInstance().getTextureManager().register(textureId, texture);
 				textureDirty = false;
-			} else if (textureDirty) {
+			} else if (textureDirty && clock - lastUpload >= 20) {
+				// At most once a second: a region is a whole megabyte to send to the graphics card.
 				texture.upload();
 				textureDirty = false;
+				lastUpload = clock;
 			}
 			return textureId;
 		}
@@ -171,8 +174,8 @@ public final class MapCache {
 			int cz = center.z() + off[1];
 			long ck = ChunkPos.pack(cx, cz);
 			long last = SCANNED.getOrDefault(ck, Long.MIN_VALUE);
-			// Close to the player the picture is refreshed every 5 s, further away every 30 s.
-			long maxAge = off[2] <= 4 ? 100 : 600;
+			// Close to the player the picture is refreshed every 15 s, further away every minute.
+			long maxAge = off[2] <= 4 ? 300 : 1200;
 			if (last != Long.MIN_VALUE && clock - last < maxAge) {
 				continue;
 			}
@@ -281,22 +284,43 @@ public final class MapCache {
 		return folder.resolve("r." + rx + "." + rz + ".png");
 	}
 
-	/** Writes the changed regions to disk (called every 30 s, when leaving the world and when the map closes). */
+	/** Writes the PNGs off the frame's thread (an image encoded on it was a freeze every 30 s). */
+	private static java.util.concurrent.ExecutorService writer;
+
+	/**
+	 * Writes the changed regions to disk (every 30 s, when leaving the world and when the map closes): a copy of each
+	 * picture is taken here (quick), the PNG is made and written in the background.
+	 */
 	public static void save() {
 		if (folder == null) {
 			return;
+		}
+		if (writer == null) {
+			writer = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+				Thread t = new Thread(r, "airdefense-map-writer");
+				t.setDaemon(true);
+				return t;
+			});
 		}
 		for (Region r : REGIONS.values()) {
 			if (!r.dirty) {
 				continue;
 			}
-			try {
-				Files.createDirectories(folder);
-				r.image.writeToFile(file(r.rx, r.rz));
-				r.dirty = false;
-			} catch (IOException e) {
-				AirDefense.LOGGER.warn("Could not save map region {} {}", r.rx, r.rz, e);
-			}
+			NativeImage copy = new NativeImage(REGION, REGION, true);
+			copy.copyFrom(r.image);
+			Path file = file(r.rx, r.rz);
+			Path dir = folder;
+			r.dirty = false;
+			writer.execute(() -> {
+				try {
+					Files.createDirectories(dir);
+					copy.writeToFile(file);
+				} catch (IOException e) {
+					AirDefense.LOGGER.warn("Could not save map region {}", file, e);
+				} finally {
+					copy.close();
+				}
+			});
 		}
 	}
 

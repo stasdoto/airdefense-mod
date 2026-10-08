@@ -32,6 +32,9 @@ public enum DefenseType {
 	// something worth protecting (see {@link #protectsOnly()}).
 	IRON_DOME(MissileType.TAMIR, 160, 20, 700, 5, 0.5);
 
+	/** How much further the guns reach than they did before 1.25.1. */
+	public static final double GUN_SCALE = 2.2;
+
 	@Nullable
 	public final MissileType interceptor;
 	public final double range;
@@ -51,13 +54,14 @@ public enum DefenseType {
 	DefenseType(@Nullable MissileType interceptor, double range, int magazine, int reload, int interval, double discrimination,
 			double gunRange, double gunSkill) {
 		this.interceptor = interceptor;
-		// Missile systems reach five times further (1.24); guns keep their range.
-		this.range = interceptor == null ? range : range * MissileType.RANGE_SCALE;
+		// Missile systems reach five times further (1.24); guns a little over twice (1.25.1): the drones fly higher
+		// now, and at the old 64 blocks a Gepard could not reach a Shahed passing over.
+		this.range = interceptor == null ? range * GUN_SCALE : range * MissileType.RANGE_SCALE;
 		this.magazine = magazine;
 		this.reload = reload;
 		this.interval = interval;
 		this.discrimination = discrimination;
-		this.gunRange = gunRange;
+		this.gunRange = gunRange * GUN_SCALE;
 		this.gunSkill = gunSkill;
 	}
 

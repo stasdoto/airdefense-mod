@@ -699,7 +699,7 @@
   "item.airdefense.fpv_drone.hint": "Right-click to launch. Flies where you look (through its camera), blows up on impact. Sneak to let go",
   "item.airdefense.magura_drone.hint": "Right-click on water to launch. Goes where you look; 300 kg of explosive sinks boats and breaks bridges",
   "message.airdefense.magura.water": "The Magura goes on water: look at water close by",
-  "hud.airdefense.drone.pilot": "Mouse to steer · %s to exit",
+  "hud.airdefense.drone.pilot": "Mouse - where to fly · W - throttle · S - slow · %s - leave",
   "radar.airdefense.contact.fpv": "FPV drone",
   "radar.airdefense.contact.magura": "sea drone",
   "guide.airdefense.page.13": "RADARS AND DRONES\n\nA radar goes down like a vehicle and turns by itself. What it sees is on the Radar tab of the tablet.\n\nGive a Shahed a flight plan, watch through its camera; Mass strike sends a whole wave.",
@@ -902,5 +902,6 @@
   "nation.airdefense.war.column": "%s sends %s soldiers in %s vehicles against %s by road!",
   "guide.airdefense.page.21": "THE MAP\n\nThe tablet shows 10 km round the spawn: the countries' borders, every town's and village's own bounds, highways and country roads, the depots.\nScroll to zoom; furthest out you see it all.",
   "guide.airdefense.page.22": "TOWN ARSENALS\n\nEvery town and village has its own air defence and launchers. In a war they fire at the enemy's towns themselves.\nFactories make missiles from iron and fuel, lorries bring them in. Stores are limited.",
-  "guide.airdefense.page.23": "COLUMNS\n\nThe enemy comes by road: a car for a few men, a carrier and a lorry for more, a column led by a tank for many.\nAt the edge of town they get out, take cover, fall back when hurt, throw grenades."
+  "guide.airdefense.page.23": "COLUMNS\n\nThe enemy comes by road: a car for a few men, a carrier and a lorry for more, a column led by a tank for many.\nAt the edge of town they get out, take cover, fall back when hurt, throw grenades.",
+  "hud.airdefense.drone.battery": "BAT  %s%%"
 }

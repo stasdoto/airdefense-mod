@@ -98,8 +98,12 @@ public final class MapServer {
 		if (y != MapActionPayload.Y_UNKNOWN) {
 			return new BlockPos(x, y, z);
 		}
-		// The chunk's height is the top block itself (the level's would be the air above it).
-		int top = level.getChunk(x >> 4, z >> 4).getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x & 15, z & 15);
+		// The chunk's height is the top block itself (the level's would be the air above it). A point far off in
+		// ground nobody has loaded is not loaded for it (that would stop the server): the land's height from the
+		// world generator will do - the missile finds the ground there by itself.
+		int top = level.hasChunk(x >> 4, z >> 4)
+				? level.getChunk(x >> 4, z >> 4).getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x & 15, z & 15)
+				: com.stasdoto.airdefense.nation.Cities.terrain(level).top(x, z);
 		return new BlockPos(x, Math.max(level.getMinY(), top), z);
 	}
 

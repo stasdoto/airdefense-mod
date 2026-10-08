@@ -683,6 +683,17 @@ public class TacticalMapScreen extends Screen {
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+		long f0 = System.nanoTime();
+		drawAll(g, mouseX, mouseY, partialTick);
+		frameNanos = System.nanoTime() - f0;
+		maxFrameNanos = Math.max(maxFrameNanos, frameNanos);
+	}
+
+	/** For the tests: how long the last frame's drawing took, and the longest since the screen opened (ns). */
+	public static long frameNanos;
+	public static long maxFrameNanos;
+
+	private void drawAll(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
 		g.fill(mx0 - 2, my0 - 2, mx1 + 2, my1 + 2, 0xFF3A4652);
 		g.enableScissor(mx0, my0, mx1, my1);
 		g.fill(mx0, my0, mx1, my1, 0xFF161B21);
@@ -690,9 +701,11 @@ public class TacticalMapScreen extends Screen {
 		if (scale() >= 0.125f) {
 			drawTerrain(g);
 		}
-		drawTerritory(g);
-		drawRoads(g);
-		drawTowns(g);
+		long t0 = System.nanoTime();
+		// The borders, towns and roads come painted in tiles (1.25.1); only their names are written here.
+		AtlasTiles.draw(g, scale(), centerX, centerZ, mx0, my0, mx1, my1);
+		drawAtlasLabels(g);
+		atlasNanos = System.nanoTime() - t0;
 		drawGrid(g);
 		drawRanges(g);
 		drawVillages(g);
@@ -739,106 +752,31 @@ public class TacticalMapScreen extends Screen {
 		g.blit(RenderPipelines.GUI_TEXTURED, AtlasClient.texture(), (int) Math.floor(cx0), (int) Math.floor(cy0), u, v, w, h, uw, vh, tw, tw);
 	}
 
-	/** Cached owners of the screen's cells: the country (by colour) and the city region of each. */
-	private int[] cellCountry;
-	private int[] cellRegion;
-	private int cellsW;
-	private int cellsH;
-	private double cellsCX = Double.NaN;
-	private double cellsCZ;
-	private int cellsZoom = -1;
-	private int cellsVersion = -1;
-	private static final int CELL_PX = 2;
-
-	private void computeCells() {
-		if (cellsZoom == zoom && cellsVersion == AtlasClient.version && cellsCX == centerX && cellsCZ == centerZ && cellCountry != null) {
-			return;
-		}
-		cellsW = (mx1 - mx0 + CELL_PX - 1) / CELL_PX + 1;
-		cellsH = (my1 - my0 + CELL_PX - 1) / CELL_PX + 1;
-		cellCountry = new int[cellsW * cellsH];
-		cellRegion = new int[cellsW * cellsH];
-		for (int j = 0; j < cellsH; j++) {
-			double wz = toWorldZ(my0 + j * CELL_PX + CELL_PX * 0.5);
-			for (int i = 0; i < cellsW; i++) {
-				double wx = toWorldX(mx0 + i * CELL_PX + CELL_PX * 0.5);
-				int region = AtlasClient.regionAt(wx, wz);
-				cellRegion[j * cellsW + i] = region;
-				cellCountry[j * cellsW + i] = AtlasClient.countryOfCity(region);
-			}
-		}
-		cellsZoom = zoom;
-		cellsVersion = AtlasClient.version;
-		cellsCX = centerX;
-		cellsCZ = centerZ;
+	/** For the tests: the atlas tiles' state. */
+	public static String tileStats() {
+		return String.join(", ", AtlasTiles.stats());
 	}
+
+	/** For the tests: how long the atlas layers took to lay down in the last frame (ns). */
+	public static long atlasNanos;
 
 	/** A country's colour on the map (a little different for each country, so two of one dye still look apart). */
 	private static int countryColor(int country) {
-		var c = AtlasClient.country(country);
-		if (c == null) {
-			return 0xFF9AA4AE;
-		}
-		int rgb = c.argb() & 0xFFFFFF;
-		int shift = Math.floorMod(country * 37, 31) - 15;
-		int r = Mth.clamp(((rgb >> 16) & 255) + shift, 0, 255);
-		int gr = Mth.clamp(((rgb >> 8) & 255) - shift / 2, 0, 255);
-		int b = Mth.clamp((rgb & 255) + shift / 2, 0, 255);
-		return 0xFF000000 | r << 16 | gr << 8 | b;
+		return AtlasTiles.countryColor(country);
 	}
 
-	/**
-	 * The countries' land lightly tinted in their colours, their borders as bold lines (red against a country at war
-	 * with you), and the line between two cities' regions inside a country dotted.
-	 */
-	private void drawTerritory(GuiGraphicsExtractor g) {
-		if (!AtlasClient.loaded || AtlasClient.CITIES.isEmpty()) {
+	private static boolean isWar(int country) {
+		var c = AtlasClient.country(country);
+		return c != null && c.war();
+	}
+
+	/** The countries' names over their capitals far out, the towns' names, the depots' labels. */
+	private void drawAtlasLabels(GuiGraphicsExtractor g) {
+		if (!AtlasClient.loaded) {
 			return;
 		}
-		computeCells();
-		// Tint: runs of one country along each row.
-		for (int j = 0; j < cellsH; j++) {
-			int y = my0 + j * CELL_PX;
-			int i = 0;
-			while (i < cellsW) {
-				int c = cellCountry[j * cellsW + i];
-				int k = i + 1;
-				while (k < cellsW && cellCountry[j * cellsW + k] == c) {
-					k++;
-				}
-				if (c >= 0) {
-					g.fill(mx0 + i * CELL_PX, y, Math.min(mx1, mx0 + k * CELL_PX), Math.min(my1, y + CELL_PX), (countryColor(c) & 0xFFFFFF) | 0x26000000);
-				}
-				i = k;
-			}
-		}
-		// Borders.
-		for (int j = 0; j < cellsH; j++) {
-			for (int i = 0; i < cellsW; i++) {
-				int a = cellCountry[j * cellsW + i];
-				int ra = cellRegion[j * cellsW + i];
-				int x = mx0 + i * CELL_PX;
-				int y = my0 + j * CELL_PX;
-				if (i + 1 < cellsW) {
-					int b = cellCountry[j * cellsW + i + 1];
-					if (b != a) {
-						border(g, x + CELL_PX - 1, y, 2, CELL_PX, a, b);
-					} else if (cellRegion[j * cellsW + i + 1] != ra && ((i + j) & 3) < 2) {
-						g.fill(x + CELL_PX - 1, y, x + CELL_PX, y + CELL_PX, 0x70FFFFFF);
-					}
-				}
-				if (j + 1 < cellsH) {
-					int b = cellCountry[(j + 1) * cellsW + i];
-					if (b != a) {
-						border(g, x, y + CELL_PX - 1, CELL_PX, 2, a, b);
-					} else if (cellRegion[(j + 1) * cellsW + i] != ra && ((i + j) & 3) < 2) {
-						g.fill(x, y + CELL_PX - 1, x + CELL_PX, y + CELL_PX, 0x70FFFFFF);
-					}
-				}
-			}
-		}
-		// Country names over their capitals when zoomed far out.
-		if (scale() <= 0.125f && AtlasClient.politics != null) {
+		float sc = scale();
+		if (sc <= 0.125f && AtlasClient.politics != null) {
 			for (var t : AtlasClient.politics.towns()) {
 				if (!t.capital()) {
 					continue;
@@ -856,155 +794,30 @@ public class TacticalMapScreen extends Screen {
 				}
 			}
 		}
-	}
-
-	private void border(GuiGraphicsExtractor g, int x, int y, int w, int h, int a, int b) {
-		boolean war = isWar(a) || isWar(b);
-		int color = war ? 0xE0FF4030 : 0xD0202428;
-		g.fill(Math.max(mx0, x), Math.max(my0, y), Math.min(mx1, x + w), Math.min(my1, y + h), color);
-	}
-
-	private static boolean isWar(int country) {
-		var c = AtlasClient.country(country);
-		return c != null && c.war();
-	}
-
-	/** Roads: highways wide and yellow with a dark edge, country roads thin and white. */
-	private void drawRoads(GuiGraphicsExtractor g) {
-		if (!AtlasClient.loaded) {
-			return;
-		}
-		double wx0 = toWorldX(mx0);
-		double wx1 = toWorldX(mx1);
-		double wz0 = toWorldZ(my0);
-		double wz1 = toWorldZ(my1);
-		float sc = scale();
-		for (int pass = 0; pass < 2; pass++) {
-			for (AtlasClient.Road r : AtlasClient.ROADS) {
-				if (r.maxX() < wx0 || r.minX() > wx1 || r.maxZ() < wz0 || r.minZ() > wz1) {
-					continue;
-				}
-				if (!r.highway() && sc < 0.0625f) {
-					continue;
-				}
-				double width = r.highway() ? Math.max(2, 15 * sc) : Math.max(1, 5 * sc);
-				int color;
-				if (pass == 0) {
-					width += 2;
-					color = 0xFF2A2420;
-				} else {
-					color = r.highway() ? 0xFFF2C94A : 0xFFE8E8E0;
-				}
-				int stepPts = sc < 0.1f ? 2 : 1;
-				for (int i = 0; i + stepPts < r.xs().length; i += stepPts) {
-					thick(g, toScreenX(r.xs()[i]), toScreenY(r.zs()[i]), toScreenX(r.xs()[i + stepPts]), toScreenY(r.zs()[i + stepPts]), width, color);
-				}
-			}
-		}
-	}
-
-	private void thick(GuiGraphicsExtractor g, double x0, double y0, double x1, double y1, double width, int color) {
-		if (Math.max(x0, x1) < mx0 - 4 || Math.min(x0, x1) > mx1 + 4 || Math.max(y0, y1) < my0 - 4 || Math.min(y0, y1) > my1 + 4) {
-			return;
-		}
-		double len = Math.hypot(x1 - x0, y1 - y0);
-		int n = (int) Math.max(1, Math.ceil(len / Math.max(1, width * 0.5)));
-		int hw = (int) Math.max(0, Math.floor(width / 2));
-		int ww = (int) Math.max(1, Math.round(width));
-		for (int i = 0; i <= n; i++) {
-			double t = (double) i / n;
-			int x = (int) Math.floor(x0 + (x1 - x0) * t) - hw;
-			int y = (int) Math.floor(y0 + (y1 - y0) * t) - hw;
-			g.fill(Math.max(mx0, x), Math.max(my0, y), Math.min(mx1, x + ww), Math.min(my1, y + ww), color);
-		}
-	}
-
-	/**
-	 * The towns' outlines: a city is the blocks of its street plan (filled in its country's colour, the edge drawn),
-	 * a hamlet the outline round its houses and fields. Names for those too far for the village list.
-	 */
-	private void drawTowns(GuiGraphicsExtractor g) {
-		if (!AtlasClient.loaded) {
-			return;
-		}
-		float sc = scale();
 		java.util.Set<Integer> listed = new java.util.HashSet<>();
 		for (NationMapPayload.Village v : NationClient.villages()) {
 			listed.add(v.id());
 		}
 		for (AtlasClient.City c : AtlasClient.CITIES) {
 			var town = AtlasClient.cityTown(c.key());
-			int color = town == null ? 0xFFB0B8C0 : countryColor(town.country());
-			boolean war = town != null && isWar(town.country());
-			int n = c.n();
-			if (toScreenX(c.gx()[n]) < mx0 || toScreenX(c.gx()[0]) > mx1 || toScreenY(c.gz()[n]) < my0 || toScreenY(c.gz()[0]) > my1) {
-				continue;
-			}
-			int fill = (color & 0xFFFFFF) | (sc < 0.1f ? 0xC0000000 : 0x55000000);
-			int edge = war ? 0xFFFF3A2A : 0xFF14181C;
-			for (int i = 0; i < n; i++) {
-				for (int j = 0; j < n; j++) {
-					if (!c.cellOn(i, j)) {
-						continue;
-					}
-					int x0 = (int) Math.floor(toScreenX(c.gx()[i]));
-					int x1 = (int) Math.floor(toScreenX(c.gx()[i + 1]));
-					int y0 = (int) Math.floor(toScreenY(c.gz()[j]));
-					int y1 = (int) Math.floor(toScreenY(c.gz()[j + 1]));
-					g.fill(Math.max(mx0, x0), Math.max(my0, y0), Math.min(mx1, x1), Math.min(my1, y1), fill);
-					if (!c.cellOn(i - 1, j)) {
-						g.fill(Math.max(mx0, x0), Math.max(my0, y0), Math.min(mx1, x0 + 1), Math.min(my1, y1), edge);
-					}
-					if (!c.cellOn(i + 1, j)) {
-						g.fill(Math.max(mx0, x1 - 1), Math.max(my0, y0), Math.min(mx1, x1), Math.min(my1, y1), edge);
-					}
-					if (!c.cellOn(i, j - 1)) {
-						g.fill(Math.max(mx0, x0), Math.max(my0, y0), Math.min(mx1, x1), Math.min(my1, y0 + 1), edge);
-					}
-					if (!c.cellOn(i, j + 1)) {
-						g.fill(Math.max(mx0, x0), Math.max(my0, y1 - 1), Math.min(mx1, x1), Math.min(my1, y1), edge);
-					}
-				}
-			}
 			if (town != null && !listed.contains(town.id())) {
 				townName(g, town, c.x(), c.z(), c.index() == 0 ? 0.75f : 0.45f);
 			}
 		}
-		// Depots: the grey yard, the warehouses' roofs.
-		for (AtlasClient.Depot d : AtlasClient.DEPOTS) {
-			int x0 = (int) Math.floor(toScreenX(d.x0()));
-			int y0 = (int) Math.floor(toScreenY(d.z0()));
-			int x1 = (int) Math.ceil(toScreenX(d.x1() + 1));
-			int y1 = (int) Math.ceil(toScreenY(d.z1() + 1));
-			if (x1 < mx0 || x0 > mx1 || y1 < my0 || y0 > my1) {
-				continue;
-			}
-			g.fill(Math.max(mx0, x0), Math.max(my0, y0), Math.min(mx1, x1), Math.min(my1, y1), 0xC05A5E62);
-			for (int[] w : d.warehouses()) {
-				int a = (int) Math.floor(toScreenX(w[0]));
-				int b = (int) Math.floor(toScreenY(w[1]));
-				int c = (int) Math.ceil(toScreenX(w[2] + 1));
-				int e = (int) Math.ceil(toScreenY(w[3] + 1));
-				g.fill(Math.max(mx0, a), Math.max(my0, b), Math.min(mx1, c), Math.min(my1, e), 0xFFC8CCD0);
-				if (c - a > 3) {
-					g.fill(Math.max(mx0, a), Math.max(my0, b), Math.min(mx1, c), Math.min(my1, b + 1), 0xFF3A3E42);
+		if (sc >= 0.25f) {
+			String label = Component.translatable("map.airdefense.depot").getString();
+			for (AtlasClient.Depot d : AtlasClient.DEPOTS) {
+				int x0 = (int) Math.floor(toScreenX(d.x0()));
+				int x1 = (int) Math.ceil(toScreenX(d.x1() + 1));
+				int y1 = (int) Math.ceil(toScreenY(d.z1() + 1));
+				if (x1 < mx0 || x0 > mx1 || y1 < my0 || y1 > my1 + 10) {
+					continue;
 				}
-			}
-			if (sc >= 0.25f) {
-				String label = Component.translatable("map.airdefense.depot").getString();
 				small(g, label, (x0 + x1) / 2 - (int) (font.width(label) * 0.375f), y1 + 2, 0xFFD8DCE0);
 			}
 		}
 		for (AtlasClient.Hamlet h : AtlasClient.HAMLETS) {
-			double hx = toScreenX(h.x());
-			double hy = toScreenY(h.z());
-			if (hx < mx0 - 60 || hx > mx1 + 60 || hy < my0 - 60 || hy > my1 + 60) {
-				continue;
-			}
 			var town = AtlasClient.hamletTown(h.key());
-			int color = town == null ? 0xFFB0B8C0 : countryColor(town.country());
-			boolean war = town != null && isWar(town.country());
-			polygon(g, h.xs(), h.zs(), (color & 0xFFFFFF) | (sc < 0.1f ? 0xB0000000 : 0x50000000), war ? 0xFFFF3A2A : 0xFF14181C);
 			if (town != null && !listed.contains(town.id())) {
 				townName(g, town, h.x(), h.z(), 0.25f);
 			}
@@ -1022,50 +835,6 @@ public class TacticalMapScreen extends Screen {
 			small(g, label, sx - (int) (font.width(label) * 0.375f), sy, 0xFFF0F2F4);
 		}
 	}
-
-	/** A filled polygon (by rows of the screen) with its outline. */
-	private void polygon(GuiGraphicsExtractor g, int[] xs, int[] zs, int fill, int edge) {
-		int n = xs.length;
-		if (n < 3) {
-			return;
-		}
-		double[] px = new double[n];
-		double[] py = new double[n];
-		double top = Double.MAX_VALUE;
-		double bottom = -Double.MAX_VALUE;
-		for (int i = 0; i < n; i++) {
-			px[i] = toScreenX(xs[i]);
-			py[i] = toScreenY(zs[i]);
-			top = Math.min(top, py[i]);
-			bottom = Math.max(bottom, py[i]);
-		}
-		int y0 = (int) Math.max(my0, Math.floor(top));
-		int y1 = (int) Math.min(my1 - 1, Math.ceil(bottom));
-		double[] xsAt = new double[n];
-		for (int y = y0; y <= y1; y++) {
-			double yc = y + 0.5;
-			int k = 0;
-			for (int i = 0; i < n; i++) {
-				int j = (i + 1) % n;
-				if (py[i] <= yc && py[j] > yc || py[j] <= yc && py[i] > yc) {
-					xsAt[k++] = px[i] + (yc - py[i]) / (py[j] - py[i]) * (px[j] - px[i]);
-				}
-			}
-			java.util.Arrays.sort(xsAt, 0, k);
-			for (int i = 0; i + 1 < k; i += 2) {
-				int a = (int) Math.max(mx0, Math.round(xsAt[i]));
-				int b = (int) Math.min(mx1, Math.round(xsAt[i + 1]));
-				if (b > a) {
-					g.fill(a, y, b, y + 1, fill);
-				}
-			}
-		}
-		for (int i = 0; i < n; i++) {
-			int j = (i + 1) % n;
-			line(g, px[i], py[i], px[j], py[j], edge, 0);
-		}
-	}
-
 
 	private void drawTerrain(GuiGraphicsExtractor g) {
 		int rx0 = MapCache.regionIndex(Mth.floor(toWorldX(mx0)));
@@ -1678,37 +1447,11 @@ public class TacticalMapScreen extends Screen {
 
 	/** A dotted ({@code dash} > 0) or solid line of single pixels, clipped to the map. */
 	private void line(GuiGraphicsExtractor g, double x0, double y0, double x1, double y1, int color, int dash) {
-		double len = Math.hypot(x1 - x0, y1 - y0);
-		int n = (int) Math.min(4000, Math.ceil(len));
-		for (int i = 0; i <= n; i++) {
-			if (dash > 0 && (i / dash) % 2 == 1) {
-				continue;
-			}
-			double t = n == 0 ? 0 : (double) i / n;
-			int x = (int) Math.floor(x0 + (x1 - x0) * t);
-			int y = (int) Math.floor(y0 + (y1 - y0) * t);
-			if (x >= mx0 && x < mx1 && y >= my0 && y < my1) {
-				g.fill(x, y, x + 1, y + 1, color);
-			}
-		}
+		GuiDraw.line(g, GuiDraw.Clip.rect(mx0, my0, mx1, my1), x0, y0, x1, y1, 1f, color, dash);
 	}
 
 	private void circle(GuiGraphicsExtractor g, double cx, double cy, double r, int color, int dash) {
-		if (r < 1) {
-			return;
-		}
-		int n = (int) Mth.clamp(r * Mth.TWO_PI / 1.5, 16, 900);
-		for (int i = 0; i < n; i++) {
-			if (dash > 0 && (i / dash) % 2 == 1) {
-				continue;
-			}
-			double a = Mth.TWO_PI * i / n;
-			int x = (int) Math.floor(cx + Math.cos(a) * r);
-			int y = (int) Math.floor(cy + Math.sin(a) * r);
-			if (x >= mx0 && x < mx1 && y >= my0 && y < my1) {
-				g.fill(x, y, x + 1, y + 1, color);
-			}
-		}
+		GuiDraw.circle(g, GuiDraw.Clip.rect(mx0, my0, mx1, my1), cx, cy, r, 1f, color, dash);
 	}
 
 	// ------------------------------------------------------------------------------------------------

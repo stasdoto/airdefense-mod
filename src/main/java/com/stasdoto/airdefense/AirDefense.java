@@ -30,6 +30,8 @@ public class AirDefense implements ModInitializer {
 		ModSounds.init();
 		ModComponents.init();
 		ModTickets.init();
+		com.stasdoto.airdefense.util.Later.init();
+		com.stasdoto.airdefense.util.Perf.init();
 		ModParticles.init();
 		PayloadTypeRegistry.clientboundPlay().register(FxPayload.TYPE, FxPayload.CODEC);
 		VehicleActionPayload.register();

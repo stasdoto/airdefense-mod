@@ -656,8 +656,9 @@ public final class Arsenals extends SavedData {
 		Vec3 next = route.get(1);
 		BlockPos at = BlockPos.containing(start.x, 0, start.z);
 		if (!level.isLoaded(at)) {
+			// Its road out there is loading (in the background, no freeze): the lorry sets off next second.
 			level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, ChunkPos.containing(at), 2);
-			level.getChunk(at.getX() >> 4, at.getZ() >> 4);
+			return false;
 		}
 		int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, at.getX(), at.getZ());
 		float yaw = (float) Math.toDegrees(Math.atan2(-(next.x - start.x), next.z - start.z));
@@ -850,17 +851,18 @@ public final class Arsenals extends SavedData {
 					case CRUISE -> 50;
 					default -> 70;
 				};
-				Vec3 pos = tc.add(dir.scale(start + k * 12)).add(side).add(0, h, 0);
-				// Out there beyond the loaded ground perhaps: load it, the missile keeps its way loaded from then on.
-				ChunkPos cp = ChunkPos.containing(BlockPos.containing(pos));
-				level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, cp, 2);
-				level.getChunk(cp.x(), cp.z());
-				int ground = level.getHeight(Heightmap.Types.MOTION_BLOCKING, Mth.floor(pos.x), Mth.floor(pos.z));
-				pos = new Vec3(pos.x, Math.max(pos.y, ground + 20), pos.z);
+				Vec3 at = tc.add(dir.scale(start + k * 12)).add(side).add(0, h, 0);
 				Vec3 aim = tc.add(level.getRandom().nextGaussian() * 3, 1, level.getRandom().nextGaussian() * 3);
-				MissileEntity me = MissileEntity.launchStrike(level, m == MissileType.SHAHED && level.getRandom().nextFloat() < 0.3f ? MissileType.GERBERA : m,
-						pos, aim, dir.scale(-1));
-				me.setCountry(side(from));
+				MissileType kind = m == MissileType.SHAHED && level.getRandom().nextFloat() < 0.3f ? MissileType.GERBERA : m;
+				Vec3 back = dir;
+				int sideOf = side(from);
+				// Out there beyond the loaded ground perhaps: it turns up once that is loaded (in the background).
+				com.stasdoto.airdefense.util.Later.whenLoaded(level, BlockPos.containing(at), 200, l -> {
+					int ground = l.getHeight(Heightmap.Types.MOTION_BLOCKING, Mth.floor(at.x), Mth.floor(at.z));
+					Vec3 pos = new Vec3(at.x, Math.max(at.y, ground + 20), at.z);
+					MissileEntity me = MissileEntity.launchStrike(l, kind, pos, aim, back.scale(-1));
+					me.setCountry(sideOf);
+				});
 			}
 			com.stasdoto.airdefense.siren.Sirens.autoAlert(level, Vec3.atCenterOf(target.center), 300);
 			AirDefense.LOGGER.info("[airdefense] {} fires {} x{} at {} (seen on the way in)", from.name, m, salvo, target.name);

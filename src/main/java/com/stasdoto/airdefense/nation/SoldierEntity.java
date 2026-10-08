@@ -355,6 +355,17 @@ public class SoldierEntity extends PathfinderMob {
 	// Shooting
 
 	@Override
+	public void tick() {
+		if (level().isClientSide()) {
+			super.tick();
+			return;
+		}
+		long perf0 = System.nanoTime();
+		super.tick();
+		com.stasdoto.airdefense.util.Perf.add(com.stasdoto.airdefense.util.Perf.SOLDIERS, System.nanoTime() - perf0);
+	}
+
+	@Override
 	public void aiStep() {
 		super.aiStep();
 		if (level().isClientSide()) {

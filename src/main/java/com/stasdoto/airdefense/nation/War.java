@@ -215,7 +215,7 @@ public final class War {
 				if (target != null) {
 					// Bigger squads now (1.25), and they come by road where there is one.
 					int men = 4 + r.nextInt(5) + Math.min(4, p.settlementsOf(ai.id).size() / 2);
-					if (sendColumn(level, p, ai, target, men).isEmpty()) {
+					if (sendColumn(level, p, ai, target, men) == 0) {
 						sendSquad(level, p, ai, target, men);
 					}
 				}
@@ -404,8 +404,8 @@ public final class War {
 	 * road it comes in by, not out of thin air; at the edge of town the men get out and go for the flag on foot while
 	 * the armour gives fire. Empty if there is no road to come by.
 	 */
-	public static List<com.stasdoto.airdefense.vehicle.VehicleEntity> sendColumn(ServerLevel level, Politics p, Country ai, Settlement target, int men) {
-		List<com.stasdoto.airdefense.vehicle.VehicleEntity> out = new ArrayList<>();
+	public static int sendColumn(ServerLevel level, Politics p, Country ai, Settlement target, int men) {
+		int sent = 0;
 		long seed = level.getSeed();
 		Cities.Terrain t = Cities.terrain(level);
 		Settlement home = null;
@@ -424,7 +424,7 @@ public final class War {
 			ap = crossCountry(level, target, homeAt, 200);
 		}
 		if (ap == null) {
-			return out;
+			return 0;
 		}
 		double back = ap.back;
 		List<Vec3> waypoints = ap.waypoints;
@@ -444,48 +444,45 @@ public final class War {
 		}
 		int left = men;
 		BlockPos flag = target.flag;
+		int homeId = home == null ? -1 : home.id;
 		for (int k = 0; k < kit.size(); k++) {
 			com.stasdoto.airdefense.vehicle.VehicleType type = kit.get(k);
 			double s = Math.min(ap.length() - 2, back + 16 * k);
 			double[] pt = ap.at(s);
 			double[] ahead = ap.at(Math.max(0, s - 6));
 			BlockPos at = BlockPos.containing(pt[0], 0, pt[1]);
-			if (!level.isLoaded(at)) {
-				// Out on the road beyond sight: load its ground now (and keep it running) rather than skip the vehicle.
-				level.getChunkSource().addTicketWithRadius(net.minecraft.server.level.TicketType.ENDER_PEARL, net.minecraft.world.level.ChunkPos.containing(at), 2);
-				level.getChunk(at.getX() >> 4, at.getZ() >> 4);
-			}
-			int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, at.getX(), at.getZ());
-			float yaw = (float) Math.toDegrees(Math.atan2(-(ahead[0] - pt[0]), ahead[1] - pt[1]));
-			com.stasdoto.airdefense.vehicle.VehicleEntity v = com.stasdoto.airdefense.vehicle.VehicleEntity.spawn(level, type,
-					new Vec3(pt[0], y, pt[1]), yaw);
-			v.country = ai.id;
-			v.home = home == null ? -1 : home.id;
-			v.garrison = true;
 			int seats = type == com.stasdoto.airdefense.vehicle.VehicleType.SUPPLY_TRUCK ? 10 : type.isArmed() && type.weapon.cannon() ? 0
 					: type == com.stasdoto.airdefense.vehicle.VehicleType.MAXXPRO ? 6 : 8;
 			int n = Math.min(left, seats);
-			v.troops = n;
-			v.troopTarget = flag;
 			left -= n;
 			// From where it stands, along the road behind the ones in front.
 			List<Vec3> mine = new ArrayList<>();
 			mine.add(new Vec3(ahead[0], 0, ahead[1]));
-			for (Vec3 w : waypoints) {
-				mine.add(w);
-			}
-			v.drive(mine, type.isArmed() && type.weapon.cannon() ? 0.65f : 0.7f);
-			out.add(v);
+			mine.addAll(waypoints);
+			// Out on the road beyond sight its ground may not be loaded: it sets off once it is (never a freeze for it).
+			com.stasdoto.airdefense.util.Later.whenLoaded(level, at, 200, l -> {
+				int y = l.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, at.getX(), at.getZ());
+				float yaw = (float) Math.toDegrees(Math.atan2(-(ahead[0] - pt[0]), ahead[1] - pt[1]));
+				com.stasdoto.airdefense.vehicle.VehicleEntity v = com.stasdoto.airdefense.vehicle.VehicleEntity.spawn(l, type,
+						new Vec3(pt[0], y, pt[1]), yaw);
+				v.country = ai.id;
+				v.home = homeId;
+				v.garrison = true;
+				v.troops = n;
+				v.troopTarget = flag;
+				v.drive(mine, type.isArmed() && type.weapon.cannon() ? 0.65f : 0.7f);
+			});
+			sent++;
 		}
-		if (!out.isEmpty()) {
+		if (sent > 0) {
 			squads++;
 			Country owner = p.country(target.country);
 			if (owner != null) {
-				tell(level, owner, Component.translatable("nation.airdefense.war.column", ai.name, men, out.size(), target.name));
+				tell(level, owner, Component.translatable("nation.airdefense.war.column", ai.name, men, sent, target.name));
 			}
-			AirDefense.LOGGER.info("[airdefense] {} sends a column ({} vehicles, {} men) against {}", ai.name, out.size(), men, target.name);
+			AirDefense.LOGGER.info("[airdefense] {} sends a column ({} vehicles, {} men) against {}", ai.name, sent, men, target.name);
 		}
-		return out;
+		return sent;
 	}
 
 	/** An enemy squad turns up 50-70 blocks from the village (on the side of their own land) and heads for its flag. */

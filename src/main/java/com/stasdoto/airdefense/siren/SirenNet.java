@@ -112,7 +112,9 @@ public final class SirenNet {
 		ServerPlayNetworking.registerGlobalReceiver(Action.TYPE, (payload, context) -> handle(context.player(), payload));
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			if (server.getTickCount() % 20 == 0) {
+				long s0 = System.nanoTime();
 				Sirens.get(server).tick(server.overworld());
+				com.stasdoto.airdefense.util.Perf.add(com.stasdoto.airdefense.util.Perf.SIRENS, System.nanoTime() - s0);
 			}
 		});
 	}

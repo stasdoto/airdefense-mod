@@ -60,6 +60,14 @@ public final class DroneClient {
 			}
 		});
 		ClientTickEvents.END_CLIENT_TICK.register(DroneClient::tick);
+		// Flying an FPV drone: the picture turns with the pilot's mouse at once (the drone follows a moment later).
+		MissileEntity.pilotView = (m, pt) -> {
+			Minecraft mc = Minecraft.getInstance();
+			if (mc.player == null || mc.getCameraEntity() != m || !m.getMissileType().piloted() || m.getMissileType() == MissileType.MAGURA) {
+				return null;
+			}
+			return new float[]{mc.player.getViewYRot(pt), mc.player.getViewXRot(pt)};
+		};
 		HudElementRegistry.addLast(AirDefense.id("drone_cam"), DroneClient::hud);
 	}
 
@@ -183,6 +191,11 @@ public final class DroneClient {
 				g.text(font, Component.translatable("hud.airdefense.drone.dist", (int) Math.round(dist)), 8, y + 20, dist < 60 ? 0xFFFF7A6A : 0xFFE8F0E8);
 			}
 			g.text(font, Component.translatable("hud.airdefense.drone.heading", (int) Math.floorMod((int) heading, 360)), 8, y + 30, 0xFFE8F0E8);
+			if (piloted) {
+				// The battery runs down with the flight.
+				int left = Mth.clamp(100 - m.tickCount * 100 / Math.max(1, m.getMissileType().maxLife), 0, 100);
+				g.text(font, Component.translatable("hud.airdefense.drone.battery", left), 8, y + 20, left < 20 ? 0xFFFF7A6A : 0xFFE8F0E8);
+			}
 			Component hint = Component.translatable(piloted ? "hud.airdefense.drone.pilot" : "hud.airdefense.drone.exit",
 					mc.options.keyShift.getTranslatedKeyMessage());
 			g.text(font, hint, w - font.width(hint) - 8, h - 14, 0xA0E8F0E8);

@@ -69,6 +69,9 @@ public class MissileEntity extends Entity {
 	@org.jetbrains.annotations.Nullable
 	private Vec3 waypoint;
 	private double planDistance;
+	/** Cruise missiles and drones in their final dive: ticks into it, and the closest they have come to the aim point. */
+	private int diveTicks;
+	private double diveClosest = Double.MAX_VALUE;
 	// Interceptors: what they are chasing; threats: how many interceptors chase them.
 	private MissileEntity targetMissile;
 	private int engagedBy;
@@ -480,7 +483,9 @@ public class MissileEntity extends Entity {
 		super.tick();
 		list();
 		if (level() instanceof ServerLevel serverLevel) {
+			long perf0 = System.nanoTime();
 			serverTick(serverLevel);
+			com.stasdoto.airdefense.util.Perf.add(com.stasdoto.airdefense.util.Perf.MISSILES, System.nanoTime() - perf0);
 		} else {
 			clientTick();
 		}
@@ -676,8 +681,11 @@ public class MissileEntity extends Entity {
 			setMotor(false);
 			return lastVel.add(0, -0.06, 0).scale(0.97);
 		}
-		speed = Math.min(type.maxSpeed, speed + type.accel);
-		return dir.lerp(p.getLookAngle(), 0.3).normalize().scale(speed);
+		// The sticks: W - full throttle, S - slow (almost hanging in the air), neither - cruising.
+		net.minecraft.world.entity.player.Input in = p.getLastClientInput();
+		double want = in.forward() ? type.maxSpeed : in.backward() ? type.maxSpeed * 0.18 : type.maxSpeed * 0.62;
+		speed += Mth.clamp(want - speed, -type.accel * 2.5, type.accel * 1.5);
+		return dir.lerp(p.getLookAngle(), 0.4).normalize().scale(speed);
 	}
 
 	// --- Ballistic missiles and MLRS rockets: deterministic parabola that ends exactly on the target -----
@@ -785,9 +793,38 @@ public class MissileEntity extends Entity {
 
 		if (phase == 2 || (waypoint == null && hd < diveDistance)) {
 			phase = 2;
+			diveTicks++;
+			// The aim point follows the ground: if what was there has already been blown away (a crater now), it dives
+			// into the crater instead of an empty point in the air.
+			if (diveTicks % 4 == 1) {
+				BlockPos at = BlockPos.containing(target.x, target.y, target.z);
+				if (level.hasChunkAt(at)) {
+					int ground = level.getHeight(Heightmap.Types.MOTION_BLOCKING, at.getX(), at.getZ());
+					if (ground < target.y - 0.5) {
+						target = new Vec3(target.x, ground, target.z);
+					}
+				}
+			}
+			Vec3 rel = target.subtract(pos);
+			double dist = rel.length();
+			// Close enough: it goes off on the spot (nothing left there to fly into).
+			if (dist < 2.2) {
+				detonate(pos, false);
+				return null;
+			}
+			// Gone past the aim point (it could not turn tightly enough) or circling: no going round again - it noses
+			// straight down where it is and goes off on the ground.
+			if (dist < diveClosest) {
+				diveClosest = dist;
+			}
+			boolean missed = dist > diveClosest + 3 && diveClosest < 30 || diveTicks > 240;
 			speed = Math.min(top * 1.35, speed + type.accel * 2);
-			Vec3 desired = target.subtract(pos).normalize();
-			return turnTowards(currentDir(), desired, type.turnRate * 3).scale(speed);
+			if (missed) {
+				return turnTowards(currentDir(), new Vec3(0, -1, 0), 0.35).scale(Math.max(speed, 0.8));
+			}
+			// The closer, the harder it can turn (the final metres are flown nose-down onto the point).
+			double turn = type.turnRate * (dist < 25 ? 6 : 3);
+			return turnTowards(currentDir(), rel.scale(1 / dist), turn).scale(speed);
 		}
 		if (waypoint != null) {
 			// Round the flank first.
@@ -908,6 +945,13 @@ public class MissileEntity extends Entity {
 			Vec3 at = pos.add(dir.scale(speed * t));
 			boolean kill = random.nextDouble() < type.killChance(tgt.getMissileType().kind);
 			setPos(at);
+			// Others flying right next to it are caught in the same blast.
+			for (MissileEntity other : find(level, new AABB(at, at).inflate(4.5),
+					o -> o != tgt && o != this && o.isAlive() && !o.detonated && o.getMissileType().threat && o.distanceToSqr(at) < 4.5 * 4.5)) {
+				if (random.nextDouble() < type.killChance(other.getMissileType().kind) * 0.7) {
+					other.shotDown();
+				}
+			}
 			detonate(at, true);
 			if (kill) {
 				tgt.shotDown();
@@ -994,13 +1038,22 @@ public class MissileEntity extends Entity {
 	/** The camera on the nose looks where it flies (the stored rotation is in the model's own convention). */
 	@Override
 	public float getViewYRot(float partialTick) {
-		return -Mth.rotLerp(partialTick, yRotO, getYRot());
+		float[] own = pilotView == null || !level().isClientSide() ? null : pilotView.apply(this, partialTick);
+		return own != null ? own[0] : -Mth.rotLerp(partialTick, yRotO, getYRot());
 	}
 
 	@Override
 	public float getViewXRot(float partialTick) {
-		return -Mth.lerp(partialTick, xRotO, getXRot());
+		float[] own = pilotView == null || !level().isClientSide() ? null : pilotView.apply(this, partialTick);
+		return own != null ? own[1] : -Mth.lerp(partialTick, xRotO, getXRot());
 	}
+
+	/**
+	 * Client hook (1.25.1): the pilot of an FPV drone looks round with his own mouse, at once - the drone turns after
+	 * where he looks; null when this is not his drone's camera.
+	 */
+	@org.jetbrains.annotations.Nullable
+	public static java.util.function.BiFunction<MissileEntity, Float, float[]> pilotView;
 
 	private void updateRotation(Vec3 v) {
 		double h = Math.sqrt(v.x * v.x + v.z * v.z);
@@ -1012,13 +1065,14 @@ public class MissileEntity extends Entity {
 		if (life % 2 != 1) {
 			return;
 		}
-		// Radius 3 makes the 3x3 chunks around the point fully "entity ticking", so the missile never freezes
-		// when it flies away from players. Also load ~1 s ahead along the flight path.
+		// Radius 2 keeps the missile's own chunk "entity ticking", so it never freezes when it flies away from
+		// players (radius 3 kept 49 chunks loaded round every missile - with many in the air, a load on the server).
+		// Also loads ~1 s ahead along the flight path.
 		ChunkPos here = ChunkPos.containing(blockPosition());
-		level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, here, 3);
+		level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, here, 2);
 		ChunkPos ahead = ChunkPos.containing(BlockPos.containing(position().add(lastVel.scale(20))));
 		if (!ahead.equals(here)) {
-			level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, ahead, 3);
+			level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, ahead, 2);
 		}
 	}
 

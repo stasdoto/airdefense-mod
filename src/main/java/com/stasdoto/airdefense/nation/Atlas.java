@@ -160,6 +160,12 @@ public final class Atlas {
 		if (!ready) {
 			return;
 		}
+		long a0 = System.nanoTime();
+		tickFounding(server);
+		com.stasdoto.airdefense.util.Perf.add(com.stasdoto.airdefense.util.Perf.ATLAS, System.nanoTime() - a0);
+	}
+
+	private static void tickFounding(MinecraftServer server) {
 		ServerLevel level = server.overworld();
 		Politics p = Politics.get(server);
 		for (int k = 0; k < 3; k++) {

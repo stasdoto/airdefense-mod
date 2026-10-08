@@ -1231,6 +1231,16 @@ public class VehicleEntity extends LivingEntity {
 
 	@Override
 	public void tick() {
+		if (level().isClientSide()) {
+			tickBoth();
+			return;
+		}
+		long perf0 = System.nanoTime();
+		tickBoth();
+		com.stasdoto.airdefense.util.Perf.add(com.stasdoto.airdefense.util.Perf.VEHICLES, System.nanoTime() - perf0);
+	}
+
+	private void tickBoth() {
 		if (!anglesInitialised) {
 			elevation = elevationO = level().isClientSide() ? getElevationTarget() : elevation;
 			turretYaw = turretYawO = level().isClientSide() ? getTurretTarget() : turretYaw;
@@ -2031,9 +2041,8 @@ public class VehicleEntity extends LivingEntity {
 			return;
 		}
 		if (sirenTimer == 0) {
-			level.playSound(null, radar.x, radar.y, radar.z, ModSounds.SIREN, SoundSource.BLOCKS, 3.0f, 1.0f);
+			// The air defence is firing: the towns around sound the air raid alert (the vehicle itself has no siren).
 			sirenTimer = 130;
-			// The air defence is firing: the towns around sound the air raid alert.
 			com.stasdoto.airdefense.siren.Sirens.autoAlert(level, position(), 260);
 		}
 		if (gun) {
@@ -2079,13 +2088,28 @@ public class VehicleEntity extends LivingEntity {
 		double range = type.range * (radarLinked ? RADAR_RANGE_BONUS : 1.0);
 		AABB box = new AABB(radar.x - range, radar.y - range, radar.z - range, radar.x + range, radar.y + range, radar.z + range);
 		long now = level.getGameTime();
+		// Targets flying close together are one blip for the batteries: one interceptor goes at the group (its blast
+		// may take both); the next one only if something is left (a ballistic missile is always its own target).
+		List<MissileEntity> engaged = type.interceptor == null ? List.of()
+				: MissileEntity.find(level, box, m -> m.isAlive() && m.getMissileType().threat && m.getEngagedBy() > 0);
 		List<MissileEntity> threats = MissileEntity.find(level, box,
 				m -> canEngage(type, m, radar)
 						&& (type.interceptor == null || m.getEngagedBy() < type.shotsPerTarget(m.getMissileType().kind)
-						&& (type.gunOnly() || type.hybrid() || !m.gunEngaged(now))));
+						&& (type.gunOnly() || type.hybrid() || !m.gunEngaged(now))
+						&& (m.getMissileType().kind == MissileType.Kind.BALLISTIC || !nearEngaged(m, engaged))));
 		return threats.stream()
 				.min(Comparator.comparingDouble((MissileEntity m) -> type.priority(m.getMissileType().kind) * 1e6 + m.distanceToSqr(radar)))
 				.orElse(null);
+	}
+
+	/** Another threat within a few blocks of this one already has an interceptor on its way. */
+	private static boolean nearEngaged(MissileEntity m, List<MissileEntity> engaged) {
+		for (MissileEntity e : engaged) {
+			if (e != m && e.distanceToSqr(m) < 7 * 7) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** In range, still flying, and worth shooting at right now with this system. */
