@@ -153,6 +153,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("townWar")) {
 				townWar(ctx, server);
 			}
+			if (scene("repair")) {
+				repair(ctx, server);
+			}
 			if (scene("nations")) {
 				nations(ctx, server);
 			}
@@ -2780,6 +2783,72 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 		}
 		return best;
+	}
+
+	/**
+	 * 1.25.2: the town rebuilds. A blast in a street and one by a house of the capital; with nobody in creative near by
+	 * the people put it back a few blocks a second after a quiet half minute; with a creative player there, at once.
+	 */
+	private void repair(ClientGameTestContext ctx, TestServerContext server) {
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 5000");
+		int[] cap = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var c = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), com.stasdoto.airdefense.nation.Cities.terrain(l), 0, 0).getFirst();
+			BlockPos bell = c.bell();
+			return new int[]{c.x, c.z, c.half(), c.base, bell.getX(), bell.getZ()};
+		});
+		int cx = cap[0];
+		int cz = cap[1];
+		int base = cap[3];
+		camera(server, cx + 0.5, base + 60, cz + cap[2] + 60, 180, 35);
+		ctx.waitTicks(60);
+		int m = cap[2] + 20;
+		generateCity(server, cx - m, cz - m, cx + m, cz + m);
+		ctx.waitTicks(40);
+		for (int phase = 0; phase < 2; phase++) {
+			boolean creative = phase == 1;
+			BlockPos at = new BlockPos(cap[4] + (creative ? -14 : 12), base + 1, cap[5] + (creative ? -12 : 10));
+			int before = holes(server, at, 6, base);
+			camera(server, at.getX() + 14.5, base + 12, at.getZ() + 14.5, 135, 30);
+			ctx.waitTicks(20);
+			ctx.takeScreenshot("190_repair_" + phase + "_before");
+			int rebuilt0 = com.stasdoto.airdefense.nation.Repairs.rebuilt;
+			server.runOnServer(s -> s.overworld().explode(null, at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 5f,
+					net.minecraft.world.level.Level.ExplosionInteraction.TNT));
+			ctx.waitTicks(10);
+			int after = holes(server, at, 6, base);
+			ctx.takeScreenshot("191_repair_" + phase + "_blast");
+			if (creative) {
+				server.runCommand("gamemode creative @a");
+			}
+			int waited = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Repairs.rebuilt - rebuilt0 > 0
+					&& holes(server, at, 6, base) <= before, creative ? 300 : 1500);
+			int end = holes(server, at, 6, base);
+			ctx.takeScreenshot("192_repair_" + phase + "_after");
+			AirDefense.LOGGER.info("[airdefense-test] RESULT repair_{}: holes {} -> {} -> {} after {} ticks, blocks put back {}, zones noted {} finished {}",
+					creative ? "creative" : "survival", before, after, end, waited, com.stasdoto.airdefense.nation.Repairs.rebuilt - rebuilt0,
+					com.stasdoto.airdefense.nation.Repairs.noted, com.stasdoto.airdefense.nation.Repairs.finished);
+			server.runCommand("gamemode spectator @a");
+		}
+	}
+
+	/** Air blocks in the ground (and the first storey) within {@code r} of a point: the size of the damage. */
+	private static int holes(TestServerContext server, BlockPos at, int r, int base) {
+		return server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			int n = 0;
+			for (int x = -r; x <= r; x++) {
+				for (int z = -r; z <= r; z++) {
+					for (int y = base - 4; y <= base; y++) {
+						if (l.getBlockState(new BlockPos(at.getX() + x, y, at.getZ() + z)).isAir()) {
+							n++;
+						}
+					}
+				}
+			}
+			return n;
+		});
 	}
 
 	/** The sirens standing within {@code r} of (x, z), nearest first. */

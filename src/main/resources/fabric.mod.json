@@ -9,6 +9,7 @@
 	"icon": "assets/airdefense/icon.png",
 	"environment": "*",
 	"mixins": [
+		"airdefense.mixins.json",
 		{
 			"config": "airdefense.client.mixins.json",
 			"environment": "client"

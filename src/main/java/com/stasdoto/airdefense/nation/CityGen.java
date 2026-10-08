@@ -75,6 +75,26 @@ public final class CityGen {
 
 	/** Builds whatever of the cities and roads falls into this chunk. */
 	public static void generate(WorldGenLevel level, Cities.Terrain t, long seed, ChunkPos cp) {
+		generate(new Writer(level), t, seed, cp);
+	}
+
+	/**
+	 * What the towns, roads, depots and hamlets should have inside {@code box} (1.25.2, for rebuilding after the war):
+	 * the generator run without writing anything, block position (packed) -> state. Nothing for open country.
+	 */
+	public static java.util.Map<Long, BlockState> intended(ServerLevel level, net.minecraft.world.level.levelgen.structure.BoundingBox box) {
+		java.util.Map<Long, BlockState> out = new java.util.HashMap<>();
+		Writer w = new Writer(level, out, box);
+		Cities.Terrain t = Cities.terrain(level);
+		for (int cx = box.minX() >> 4; cx <= box.maxX() >> 4; cx++) {
+			for (int cz = box.minZ() >> 4; cz <= box.maxZ() >> 4; cz++) {
+				generate(w, t, level.getSeed(), new ChunkPos(cx, cz));
+			}
+		}
+		return out;
+	}
+
+	private static void generate(Writer w, Cities.Terrain t, long seed, ChunkPos cp) {
 		long t0 = System.nanoTime();
 		int x0 = cp.getMinBlockX();
 		int z0 = cp.getMinBlockZ();
@@ -111,7 +131,6 @@ public final class CityGen {
 		if (cities.isEmpty() && roads.isEmpty() && hamlets.isEmpty() && depots.isEmpty()) {
 			return;
 		}
-		Writer w = new Writer(level);
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 		Cities.Road.Spot probe = new Cities.Road.Spot();
 		Cities.Road.Spot spot = new Cities.Road.Spot();
@@ -193,8 +212,10 @@ public final class CityGen {
 			depot(w, d, cp);
 		}
 		w.finish();
-		chunks++;
-		nanos += System.nanoTime() - t0;
+		if (!w.capturing()) {
+			chunks++;
+			nanos += System.nanoTime() - t0;
+		}
 	}
 
 	/**
@@ -805,7 +826,7 @@ public final class CityGen {
 					case 5 -> EntityTypes.PIG;
 					default -> EntityTypes.CAT;
 				};
-				var e = type.create(w.level.getLevel(), EntitySpawnReason.STRUCTURE);
+				var e = w.capturing() ? null : type.create(w.level.getLevel(), EntitySpawnReason.STRUCTURE);
 				if (e != null) {
 					e.snapTo(s.x() + 0.5, s.y(), s.z() + 0.5, (float) Math.floorMod(s.x() * 37 + s.z() * 11, 360), 0);
 					if (e instanceof net.minecraft.world.entity.Mob m) {
@@ -872,7 +893,7 @@ public final class CityGen {
 		List<CityDecor.Spawn> spawns = d.spawns.get(cp.pack());
 		if (spawns != null) {
 			for (CityDecor.Spawn s : spawns) {
-				var cat = EntityTypes.CAT.create(w.level.getLevel(), EntitySpawnReason.STRUCTURE);
+				var cat = w.capturing() ? null : EntityTypes.CAT.create(w.level.getLevel(), EntitySpawnReason.STRUCTURE);
 				if (cat != null && w.get(pos.set(s.x(), s.y(), s.z())).isAir()) {
 					cat.snapTo(s.x() + 0.5, s.y(), s.z() + 0.5, 0, 0);
 					cat.setPersistenceRequired();
@@ -908,7 +929,7 @@ public final class CityGen {
 			for (int z = z0; z < z0 + 16; z++) {
 				CityShape.Probe p = sh.probe(x, z);
 				if (p.street && (p.onV && p.dv == 1 || p.onH && p.dh == 1) &&w.get(pos.set(x, c.base + 1, z)).isAir() && w.get(pos.set(x, c.base + 2, z)).isAir()) {
-					var v = EntityTypes.VILLAGER.create(w.level.getLevel(), EntitySpawnReason.STRUCTURE);
+					var v = w.capturing() ? null : EntityTypes.VILLAGER.create(w.level.getLevel(), EntitySpawnReason.STRUCTURE);
 					if (v != null) {
 						v.snapTo(x + 0.5, c.base + 1, z + 0.5, (float) Math.floorMod(h >>> 8, 360), 0);
 						v.setPersistenceRequired();
@@ -933,10 +954,26 @@ public final class CityGen {
 		final WorldGenLevel level;
 		final boolean live;
 		final List<BlockPos> shapes = new ArrayList<>();
+		/** Capture mode (the rebuilding): what would be written, inside {@code box}, instead of writing it. */
+		@org.jetbrains.annotations.Nullable
+		final java.util.Map<Long, BlockState> capture;
+		@org.jetbrains.annotations.Nullable
+		final net.minecraft.world.level.levelgen.structure.BoundingBox box;
 
 		Writer(WorldGenLevel level) {
+			this(level, null, null);
+		}
+
+		Writer(WorldGenLevel level, @org.jetbrains.annotations.Nullable java.util.Map<Long, BlockState> capture,
+				@org.jetbrains.annotations.Nullable net.minecraft.world.level.levelgen.structure.BoundingBox box) {
 			this.level = level;
 			this.live = level instanceof ServerLevel;
+			this.capture = capture;
+			this.box = box;
+		}
+
+		boolean capturing() {
+			return capture != null;
 		}
 
 		int top(int x, int z) {
@@ -944,10 +981,22 @@ public final class CityGen {
 		}
 
 		BlockState get(BlockPos p) {
+			if (capture != null) {
+				BlockState s = capture.get(p.asLong());
+				if (s != null) {
+					return s;
+				}
+			}
 			return level.getBlockState(p);
 		}
 
 		void set(BlockPos p, BlockState s) {
+			if (capture != null) {
+				if (box.isInside(p)) {
+					capture.put(p.asLong(), s);
+				}
+				return;
+			}
 			// No onPlace while building (as in world generation): a pumpkin by an unloaded chunk would look for a golem there.
 			level.setBlock(p, s, Block.UPDATE_CLIENTS | Block.UPDATE_SKIP_ON_PLACE);
 			Block b = s.getBlock();
@@ -962,6 +1011,9 @@ public final class CityGen {
 		}
 
 		void finish() {
+			if (capture != null) {
+				return;
+			}
 			for (BlockPos p : shapes) {
 				BlockState s = level.getBlockState(p);
 				BlockState u = Block.updateFromNeighbourShapes(s, level, p);

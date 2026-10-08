@@ -55,6 +55,15 @@ jobs:
               p=${c#pkg:}; p=${p//./\/}
               echo "=== package $p" >> probe.txt
               for j in $(find build/devkit/cp -name '*.jar'); do jar tf "$j" 2>/dev/null | grep -E "^$p/[^/]+\.class$" | grep -v '\$' ; done | sort -u | sed 's/\.class$//;s/\//./g' >> probe.txt
+            elif [[ $c == res:* ]]; then
+              q=${c#res:}
+              for j in $(find build/devkit/cp ~/.gradle/caches/fabric-loom -name '*.jar' 2>/dev/null); do
+                for e in $(unzip -Z1 "$j" 2>/dev/null | grep -E "^$q" | head -80); do
+                  echo "=== res $e ($(basename $j))" >> probe.txt
+                  unzip -p "$j" "$e" >> probe.txt 2>/dev/null
+                  echo >> probe.txt
+                done
+              done
             elif [[ $c == code:* ]]; then
               q=${c#code:}
               echo "=== code $q" >> probe.txt

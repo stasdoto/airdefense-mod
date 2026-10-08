@@ -21,8 +21,9 @@ public final class Perf {
 	public static final int WORKERS = 9;
 	public static final int LATER = 10;
 	public static final int CITYGEN = 11;
+	public static final int REPAIRS = 12;
 	private static final String[] NAMES = {"nations", "economy", "arsenals", "war", "sirens", "atlas", "missiles", "vehicles", "soldiers",
-			"workers", "later", "citygen"};
+			"workers", "later", "citygen", "repairs"};
 	private static final long[] NOW = new long[NAMES.length];
 	private static final int[] COUNT = new int[NAMES.length];
 	private static long start;

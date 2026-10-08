@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.stasdoto.airdefense.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "ServerExplosionMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
