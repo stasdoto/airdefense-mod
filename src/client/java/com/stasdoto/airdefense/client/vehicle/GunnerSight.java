@@ -50,6 +50,10 @@ public final class GunnerSight {
 	private GunnerSight() {
 	}
 
+	/** Loads the class during the client's start-up, so its keys are registered in time. */
+	public static void init() {
+	}
+
 	/** Does this seat of this vehicle have a sight or a periscope? */
 	public static Kind kindFor(VehicleEntity v, LocalPlayer p) {
 		VehicleType t = v.getVehicleType();

@@ -37,6 +37,7 @@ public final class VehicleClient {
 	}
 
 	public static void init() {
+		GunnerSight.init();
 		for (VehicleType type : VehicleType.values()) {
 			EntityRenderers.register(ModEntities.vehicle(type), ctx -> new VehicleRenderer(ctx, type));
 		}
