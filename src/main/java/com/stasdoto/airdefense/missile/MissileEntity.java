@@ -1066,6 +1066,11 @@ public class MissileEntity extends Entity {
 		if (life % 2 != 1) {
 			return;
 		}
+		// Near a player his own loading keeps the ground ticking; a ticket of ours would only spread more half-made
+		// chunks round it (each ticket readies the chunks a dozen around).
+		if (level.getNearestPlayer(getX(), getY(), getZ(), 120, pl -> !pl.isSpectator()) != null) {
+			return;
+		}
 		// Radius 2 keeps the missile's own chunk "entity ticking", so it never freezes when it flies away from
 		// players (radius 3 kept 49 chunks loaded round every missile - with many in the air, a load on the server).
 		// Also loads ~1 s ahead along the flight path.

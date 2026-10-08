@@ -402,6 +402,20 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (k == 20) {
 				server.runOnServer(s -> com.stasdoto.airdefense.drone.Raids.onPlayer(s.getPlayerList().getPlayers().getFirst(), 12, null));
 			}
+			if (k == 40) {
+				// What fills the heap (the 25 biggest classes).
+				try {
+					Object h = java.lang.management.ManagementFactory.getPlatformMBeanServer().invoke(
+							new javax.management.ObjectName("com.sun.management:type=DiagnosticCommand"), "gcClassHistogram",
+							new Object[]{null}, new String[]{"[Ljava.lang.String;"});
+					String[] lines = String.valueOf(h).split("\n");
+					for (int i = 0; i < Math.min(30, lines.length); i++) {
+						AirDefense.LOGGER.info("[airdefense-test] RESULT heap: {}", lines[i]);
+					}
+				} catch (Exception e) {
+					AirDefense.LOGGER.info("[airdefense-test] RESULT heap: no histogram ({})", e.toString());
+				}
+			}
 			if (k == 50) {
 				server.runOnServer(s -> {
 					var p = com.stasdoto.airdefense.nation.Politics.get(s);

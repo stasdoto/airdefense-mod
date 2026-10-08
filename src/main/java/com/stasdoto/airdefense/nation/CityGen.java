@@ -58,7 +58,8 @@ public final class CityGen {
 	static CityDecor.Result decor(Cities.City c) {
 		CityDecor.Result d = DECOR.get(c.key());
 		if (d == null) {
-			if (DECOR.size() > 12) {
+			// A city's decoration is big (every lamp, tree and bench, chunk by chunk): only the few near players are kept.
+			if (DECOR.size() > 6) {
 				DECOR.clear();
 			}
 			d = CityDecor.build(c);

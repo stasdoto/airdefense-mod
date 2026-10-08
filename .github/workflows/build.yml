@@ -107,7 +107,8 @@ jobs:
               [ -n "$L" ] || continue
               AGE=$(( $(date +%s) - $(stat -c %Y "$L") ))
               if [ "$AGE" -gt 300 ]; then
-                for P in $(pgrep -f 'devlaunchinjector|KnotClient'); do
+                for P in $(pgrep -x java); do
+                  grep -q devlaunchinjector /proc/$P/cmdline 2>/dev/null || continue
                   echo "== pid $P, log quiet for $AGE s" >> /tmp/out/hang-dump.txt
                   jcmd "$P" Thread.print >> /tmp/out/hang-dump.txt 2>&1 || true
                   jcmd "$P" GC.heap_info >> /tmp/out/hang-dump.txt 2>&1 || true

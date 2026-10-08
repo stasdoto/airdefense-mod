@@ -427,7 +427,11 @@ def jet_cockpit(m, p, cab):
     p.box((x0 + T, y0 + 0.3, pz), (x1 - T, sill - 0.02, z1 - T), 'int_navy' if western else 'int_turq_dark', faces=('back', 'top', 'left', 'right'))
     p.box((x0 + 0.06, sill - 0.02, pz - 0.07), (x1 - 0.06, sill + 0.07, pz + 0.32), 'int_black', faces=('top', 'back', 'left', 'right'))
     p.box((-0.11, sill + 0.07, pz + 0.12), (0.11, sill + 0.1, pz + 0.2), 'int_black')
-    p.box((-0.1, sill + 0.1, pz + 0.15), (0.1, sill + 0.28, pz + 0.17), 'hud', faces=('back', 'front'))
+    # The head-up display's combiner: a thin frame you look through (the pane itself is the outer glass's job).
+    for xx in (-0.1, 0.085):
+        p.box((xx, sill + 0.1, pz + 0.15), (xx + 0.015, sill + 0.27, pz + 0.17), 'int_black')
+    p.box((-0.1, sill + 0.255, pz + 0.15), (0.1, sill + 0.27, pz + 0.17), 'int_black')
+    p.box((-0.085, sill + 0.1, pz + 0.155), (0.085, sill + 0.11, pz + 0.165), 'hud')
     if western:
         for dx in (-0.2, 0.2):
             p.box((dx - 0.11, sill - 0.32, pz - 0.02), (dx + 0.11, sill - 0.1, pz), 'int_black', sides={'back': 'screen'},
