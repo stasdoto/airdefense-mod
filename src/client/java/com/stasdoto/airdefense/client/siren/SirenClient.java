@@ -1,19 +1,20 @@
 package com.stasdoto.airdefense.client.siren;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
+
+import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
 
@@ -23,22 +24,34 @@ import com.stasdoto.airdefense.siren.SirenNet;
 import com.stasdoto.airdefense.siren.SirenSounds;
 
 /**
- * What the sirens sound like where you stand. Every siren in sight reports its signal each tick; the nearest few
- * that sound are played: a spin-up from rest, then the rising and falling wail (a near layer and a far, echoing
- * one), the steady all clear, and the long coast-down when they stop. Each siren runs a touch faster or slower than
- * the next, so several together beat against each other as real ones do.
+ * What the sirens sound like where you stand (rebuilt in 1.26). The town's sirens are heard as one: a near voice that
+ * comes from the nearest sounding siren (gliding over to the next one as you walk - never restarting) and a far,
+ * echoing one whose loudness follows the distance and how many sirens there are. It spins up once when the alert
+ * starts, holds its wail through lag and short gaps in the reports, swaps to the steady tone for the all clear and
+ * coasts down when the sirens around stop. (Before, every siren had voices of its own that restarted whenever the
+ * nearest few changed - the "buggy" sound.)
  */
 public final class SirenClient {
-	/** How many sirens are heard at once (the nearest). */
-	private static final int VOICES = 6;
 	private static final double HEARING = 420;
+	/** A siren unheard from for this long (ticks) is taken as gone (lag, a chunk unloading). */
+	private static final int FORGET = 60;
 	private static final Map<Long, Seen> SEEN = new HashMap<>();
-	private static final Map<Long, Voice> PLAYING = new HashMap<>();
 	/** The last page from the server (for the tablet screen). */
 	public static SirenNet.State state;
 	/** Debug counters read by the automated test. */
 	public static int startsPlayed;
 	public static int voicesNow;
+
+	private static SirenBlock.Signal playing = SirenBlock.Signal.OFF;
+	@Nullable
+	private static Loop near;
+	@Nullable
+	private static Loop far;
+	private static Vec3 lastAt = Vec3.ZERO;
+	/** Ticks with nothing sounding in hearing (the voice ends after a short grace). */
+	private static int silent;
+	/** Did a siren in hearing report "off" (they were switched off, rather than left behind)? */
+	private static boolean switchedOff;
 
 	private record Seen(SirenBlock.Signal signal, long tick) {
 	}
@@ -50,7 +63,10 @@ public final class SirenClient {
 		SirenSounds.listener = (pos, signal) -> {
 			Minecraft mc = Minecraft.getInstance();
 			if (mc.level != null) {
-				SEEN.put(pos.asLong(), new Seen(signal, mc.level.getGameTime()));
+				Seen old = SEEN.put(pos.asLong(), new Seen(signal, mc.level.getGameTime()));
+				if (signal == SirenBlock.Signal.OFF && old != null && old.signal != SirenBlock.Signal.OFF) {
+					switchedOff = true;
+				}
 			}
 		};
 		ClientPlayNetworking.registerGlobalReceiver(SirenNet.State.TYPE, (payload, context) -> state = payload);
@@ -65,114 +81,139 @@ public final class SirenClient {
 
 	private static void tick(Minecraft mc) {
 		if (mc.level == null || mc.player == null) {
-			PLAYING.values().forEach(Voice::end);
-			PLAYING.clear();
+			stopAll();
 			SEEN.clear();
 			return;
 		}
 		long now = mc.level.getGameTime();
-		SEEN.values().removeIf(s -> now - s.tick > 10);
-		if (now % 5 != 0) {
+		SEEN.values().removeIf(s -> now - s.tick > FORGET);
+		Vec3 ear = mc.gameRenderer.mainCamera().position();
+		// The nearest sounding siren, its signal, and how many are sounding in hearing.
+		Vec3 nearest = null;
+		double best = Double.MAX_VALUE;
+		SirenBlock.Signal signal = SirenBlock.Signal.OFF;
+		int count = 0;
+		for (Map.Entry<Long, Seen> e : SEEN.entrySet()) {
+			if (e.getValue().signal == SirenBlock.Signal.OFF) {
+				continue;
+			}
+			Vec3 at = Vec3.atCenterOf(BlockPos.of(e.getKey())).add(0, 1.1, 0);
+			double d = at.distanceTo(ear);
+			if (d > HEARING) {
+				continue;
+			}
+			count++;
+			if (d < best) {
+				best = d;
+				nearest = at;
+				signal = e.getValue().signal;
+			}
+		}
+		if (nearest == null) {
+			if (playing != SirenBlock.Signal.OFF && ++silent > 10) {
+				// Everything around went quiet: coast down if they were switched off, else (walked away) just fade.
+				if (switchedOff) {
+					play(mc, ModSounds.SIREN_STOP, lastAt, 1.0f);
+				}
+				stopAll();
+			}
+			switchedOff = false;
+			voicesNow = near != null ? 1 : 0;
 			return;
 		}
-		Vec3 ear = mc.gameRenderer.mainCamera().position();
-		List<Long> sounding = new ArrayList<>();
-		for (Map.Entry<Long, Seen> e : SEEN.entrySet()) {
-			if (e.getValue().signal != SirenBlock.Signal.OFF && Vec3.atCenterOf(BlockPos.of(e.getKey())).distanceTo(ear) < HEARING) {
-				sounding.add(e.getKey());
+		silent = 0;
+		switchedOff = false;
+		if (signal != playing) {
+			boolean fresh = playing == SirenBlock.Signal.OFF;
+			stopAll();
+			playing = signal;
+			int delay = 0;
+			if (signal == SirenBlock.Signal.ALERT && fresh && best < 260) {
+				// The rotor spins up from rest, then the wail takes over.
+				play(mc, ModSounds.SIREN_START, nearest, 1.0f);
+				startsPlayed++;
+				delay = 40;
 			}
-		}
-		sounding.sort((a, b) -> Double.compare(Vec3.atCenterOf(BlockPos.of(a)).distanceToSqr(ear), Vec3.atCenterOf(BlockPos.of(b)).distanceToSqr(ear)));
-		if (sounding.size() > VOICES) {
-			sounding = sounding.subList(0, VOICES);
-		}
-		for (Iterator<Map.Entry<Long, Voice>> it = PLAYING.entrySet().iterator(); it.hasNext(); ) {
-			Map.Entry<Long, Voice> e = it.next();
-			Seen s = SEEN.get(e.getKey());
-			boolean keep = sounding.contains(e.getKey()) && s != null && s.signal == e.getValue().signal;
-			if (!keep) {
-				// Switched off (or changed signal, or too far): the rotor coasts down - unless the siren just left hearing.
-				e.getValue().end();
-				if (s != null && s.signal == SirenBlock.Signal.OFF) {
-					play(mc, ModSounds.SIREN_STOP, BlockPos.of(e.getKey()), 1.0f, e.getValue().pitch);
-				}
-				it.remove();
-			}
-		}
-		for (long key : sounding) {
-			if (!PLAYING.containsKey(key)) {
-				SirenBlock.Signal signal = SEEN.get(key).signal;
-				BlockPos pos = BlockPos.of(key);
-				float pitch = 0.97f + (float) Math.floorMod(pos.hashCode(), 61) / 1000f;
-				boolean start = signal == SirenBlock.Signal.ALERT;
-				if (start) {
-					play(mc, ModSounds.SIREN_START, pos, 1.0f, pitch);
-					startsPlayed++;
-				}
-				PLAYING.put(key, new Voice(mc, pos, signal, pitch, start ? 50 : 0));
-			}
-		}
-		voicesNow = PLAYING.size();
-	}
-
-	private static void play(Minecraft mc, SoundEvent event, BlockPos pos, float volume, float pitch) {
-		mc.getSoundManager().play(new SimpleSoundInstance(event, SoundSource.BLOCKS, volume, pitch, RandomSource.create(), pos.getX() + 0.5,
-				pos.getY() + 1.6, pos.getZ() + 0.5));
-	}
-
-	/** One siren's sound: the near and the far loop of its signal, started after the spin-up. */
-	private static final class Voice {
-		final SirenBlock.Signal signal;
-		final float pitch;
-		final Loop near;
-		final Loop far;
-
-		Voice(Minecraft mc, BlockPos pos, SirenBlock.Signal signal, float pitch, int delay) {
-			this.signal = signal;
-			this.pitch = pitch;
 			boolean alert = signal == SirenBlock.Signal.ALERT;
-			near = new Loop(alert ? ModSounds.SIREN_WAIL : ModSounds.SIREN_CLEAR, pos, 1.0f, pitch, delay);
-			far = new Loop(alert ? ModSounds.SIREN_WAIL_FAR : ModSounds.SIREN_CLEAR_FAR, pos, 1.0f, pitch, delay);
+			near = new Loop(alert ? ModSounds.SIREN_WAIL : ModSounds.SIREN_CLEAR, nearest, delay);
+			far = new Loop(alert ? ModSounds.SIREN_WAIL_FAR : ModSounds.SIREN_CLEAR_FAR, nearest, delay);
 			mc.getSoundManager().play(near);
 			mc.getSoundManager().play(far);
 		}
-
-		void end() {
-			near.finish();
-			far.finish();
+		lastAt = nearest;
+		// Loudness by distance (our own curve: the game's would cut off far too soon or too late).
+		float nearGain = (float) Math.pow(Mth.clamp(1 - best / 190.0, 0, 1), 1.6);
+		float crowd = 1 + 0.12f * Math.min(4, count - 1);
+		float farGain = (float) Mth.clamp((1 - best / HEARING) * 0.85, 0, 0.85) * crowd * (0.55f + 0.45f * (1 - nearGain));
+		if (near != null) {
+			near.aim(nearest, nearGain);
 		}
+		if (far != null) {
+			far.aim(nearest, Math.min(1f, farGain));
+		}
+		voicesNow = near != null ? 1 : 0;
 	}
 
+	private static void stopAll() {
+		if (near != null) {
+			near.finish();
+		}
+		if (far != null) {
+			far.finish();
+		}
+		near = null;
+		far = null;
+		playing = SirenBlock.Signal.OFF;
+	}
+
+	private static void play(Minecraft mc, SoundEvent event, Vec3 at, float volume) {
+		mc.getSoundManager().play(new SimpleSoundInstance(event, SoundSource.BLOCKS, volume, 1.0f, RandomSource.create(), at.x, at.y, at.z));
+	}
+
+	/** One looping layer: follows the nearest siren smoothly, its loudness set by us (no game attenuation). */
 	private static final class Loop extends AbstractTickableSoundInstance {
-		private boolean done;
+		private float target;
+		private Vec3 goal;
 		private int fade = -1;
 
-		Loop(SoundEvent event, BlockPos pos, float volume, float pitch, int delay) {
+		Loop(SoundEvent event, Vec3 at, int delay) {
 			super(event, SoundSource.BLOCKS, RandomSource.create());
 			this.looping = true;
 			this.delay = delay;
-			this.volume = volume;
-			this.pitch = pitch;
-			this.x = pos.getX() + 0.5;
-			this.y = pos.getY() + 1.6;
-			this.z = pos.getZ() + 0.5;
+			this.volume = 0.001f;
+			this.pitch = 1.0f;
+			this.attenuation = SoundInstance.Attenuation.NONE;
+			this.x = at.x;
+			this.y = at.y;
+			this.z = at.z;
+			this.goal = at;
+		}
+
+		void aim(Vec3 at, float gain) {
+			goal = at;
+			target = gain;
 		}
 
 		void finish() {
 			if (fade < 0) {
-				fade = 6;
+				fade = 12;
 			}
 		}
 
 		@Override
 		public void tick() {
 			if (fade >= 0) {
-				volume *= 0.6f;
-				if (--fade <= 0 && !done) {
-					done = true;
+				volume *= 0.7f;
+				if (--fade <= 0) {
 					stop();
 				}
+				return;
 			}
+			// Glide over to a new nearest siren in about a second instead of jumping.
+			x += (goal.x - x) * 0.08;
+			y += (goal.y - y) * 0.08;
+			z += (goal.z - z) * 0.08;
+			volume += (Math.max(0.001f, target) - volume) * 0.1f;
 		}
 	}
 }

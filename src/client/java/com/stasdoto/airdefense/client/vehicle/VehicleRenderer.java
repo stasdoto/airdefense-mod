@@ -11,6 +11,7 @@ import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
@@ -27,6 +28,13 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 	private final VehicleModel model;
 	private final Identifier texture;
 	private final Identifier wreckTexture;
+	/** 1.26: the window glass on its own (see-through near the vehicle) and the cab's inside (drawn only up close). */
+	private final VehicleModel glass;
+	private final VehicleModel glassFar;
+	private final VehicleModel inside;
+	private final Identifier insideTexture;
+	/** Within this distance (blocks) the cab's inside is drawn and the glass is see-through. */
+	private static final double INSIDE_RANGE = 18;
 
 	public VehicleRenderer(EntityRendererProvider.Context context, VehicleType type) {
 		super(context);
@@ -57,6 +65,22 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		this.model = new VehicleModel(root, paths, type.geometry);
 		this.texture = AirDefense.id("textures/entity/vehicle/" + type.id + ".png");
 		this.wreckTexture = AirDefense.id("textures/entity/vehicle/" + type.id + "_wreck.png");
+		String gid = type.id + "_glass";
+		if (GenModels.has(gid)) {
+			glass = new VehicleModel(GenModels.layer(gid).bakeRoot(), GenModels.paths(gid), type.geometry, RenderTypes::entityTranslucentCull);
+			glassFar = new VehicleModel(GenModels.layer(gid).bakeRoot(), GenModels.paths(gid), type.geometry);
+		} else {
+			glass = null;
+			glassFar = null;
+		}
+		String iid = type.id + "_int";
+		if (GenModels.has(iid)) {
+			inside = new VehicleModel(GenModels.layer(iid).bakeRoot(), GenModels.paths(iid), type.geometry);
+			insideTexture = AirDefense.id("textures/entity/vehicle/" + iid + ".png");
+		} else {
+			inside = null;
+			insideTexture = null;
+		}
 		this.shadowRadius = type.geometry.width() * 0.55f;
 		this.shadowStrength = 0.9f;
 	}
@@ -81,6 +105,7 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		s.radarSpin = Mth.lerp(partialTick, v.radarSpinO, v.radarSpin);
 		s.loaded = v.getLoadedMask();
 		s.wreck = !v.isAlive();
+		s.hidden = GunnerSight.hides(v);
 	}
 
 	@Override
@@ -91,13 +116,26 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 
 	@Override
 	public void submit(VehicleRenderState s, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
+		if (s.hidden) {
+			return;
+		}
 		poseStack.pushPose();
 		poseStack.translate(0, s.lift, 0);
 		poseStack.mulPose(new Matrix4f().rotation(Axis.YP.rotationDegrees(-s.yaw)));
 		poseStack.mulPose(new Matrix4f().rotation(Axis.XP.rotationDegrees(-s.pitch)));
 		poseStack.mulPose(new Matrix4f().rotation(Axis.ZP.rotationDegrees(s.roll)));
 		poseStack.scale(-1, -1, 1);
-		collector.submitModel(model, s, poseStack, s.wreck ? wreckTexture : texture, s.lightCoords, OverlayTexture.NO_OVERLAY, s.outlineColor);
+		Identifier tex = s.wreck ? wreckTexture : texture;
+		boolean near = !s.wreck && s.distanceToCameraSq < INSIDE_RANGE * INSIDE_RANGE;
+		collector.submitModel(model, s, poseStack, tex, s.lightCoords, OverlayTexture.NO_OVERLAY, s.outlineColor);
+		if (inside != null && near) {
+			collector.submitModel(inside, s, poseStack, insideTexture, s.lightCoords, OverlayTexture.NO_OVERLAY, s.outlineColor);
+		}
+		if (glass != null) {
+			// Far away (or with nothing inside to show) the panes stay dark and solid; near, you see in through them.
+			collector.submitModel(near && inside != null ? glass : glassFar, s, poseStack, tex, s.lightCoords, OverlayTexture.NO_OVERLAY,
+					s.outlineColor);
+		}
 		poseStack.popPose();
 		super.submit(s, poseStack, collector, camera);
 	}

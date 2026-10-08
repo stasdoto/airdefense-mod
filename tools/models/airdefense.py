@@ -201,6 +201,9 @@ def s300():
         x0, x1 = (s * 0.6, s * 1.52) if s > 0 else (s * 1.52, s * 0.6)
         body.box((x0, 1.2, zf - 2.0), (x1, 2.85, zf), 'ugreen')
         body.box((x0 + 0.08, 2.1, zf), (x1 - 0.08, 2.7, zf + 0.03), 'glass')
+        xo = s * 1.52
+        body.box((xo - (0.0 if s > 0 else 0.02), 2.15, zf - 1.5), (xo + (0.02 if s > 0 else 0.0), 2.65, zf - 0.4), 'glass')
+        m.cab(x0, x1, 1.2, 2.85, zf - 2.0, zf, part='body')
     body.box((-0.6, 1.2, zf - 2.2), (0.6, 2.2, zf - 0.1), 'ugreen')
     body.box((-1.4, 0.95, zf - 0.25), (1.4, 1.3, zf), 'dark')
     lights(body, zf, 1.1, 1.2)
@@ -487,16 +490,19 @@ def iron_dome():
 def hmmwv(body, z0, paint, cargo=True):
     """M1097 Humvee from z0 (back) forward 4.6 m. Returns the z of the windscreen."""
     z1 = z0 + 4.6
-    body.box((-1.09, 0.45, z0), (1.09, 1.15, z1 - 0.1), paint)
+    # Engine bay in front, the crew cab (one box, its floor low between the wheels), the cargo bed behind.
+    body.box((-1.09, 0.45, z0 + 2.9), (1.09, 1.15, z1 - 0.1), paint)
+    body.box((-1.09, 0.45, z0), (1.09, 1.15, z0 + 1.0), paint)
     body.box((-0.95, 1.15, z0 + 2.9), (0.95, 1.3, z1 - 0.15), paint)
     body.box((-1.0, 0.5, z1 - 0.1), (1.0, 1.05, z1), 'dark')
     lights(body, z1, 0.95, 0.75)
-    body.box((-1.0, 1.15, z0 + 1.0), (1.0, 1.9, z0 + 2.9), paint)
-    body.box((-0.9, 1.35, z0 + 2.9), (-0.05, 1.82, z0 + 2.93), 'glass')
-    body.box((0.05, 1.35, z0 + 2.9), (0.9, 1.82, z0 + 2.93), 'glass')
+    body.box((-1.05, 0.45, z0 + 1.0), (1.05, 1.95, z0 + 2.9), paint)
+    body.box((-0.9, 1.3, z0 + 2.9), (-0.05, 1.88, z0 + 2.93), 'glass')
+    body.box((0.05, 1.3, z0 + 2.9), (0.9, 1.88, z0 + 2.93), 'glass')
     for s in (-1, 1):
-        body.box((s * 1.0 - (0.02 if s > 0 else 0.01), 1.35, z0 + 1.3), (s * 1.0 + (0.01 if s > 0 else 0.02), 1.78, z0 + 2.7), 'glass')
+        body.box((s * 1.05 - (0.02 if s > 0 else 0.01), 1.3, z0 + 1.3), (s * 1.05 + (0.01 if s > 0 else 0.02), 1.82, z0 + 2.7), 'glass')
     lights(body, z0, 0.8, 0.85, front=False)
+    body.model.cab(-1.05, 1.05, 0.5, 1.95, z0 + 1.0, z0 + 2.9, part=body.name, hatch=False)
     return z0 + 2.9
 
 
@@ -540,14 +546,17 @@ def mfg():
     m.camera = 8
     body = m.part('body')
     z0, z1 = -2.65, 2.65
-    body.box((-0.92, 0.45, z0), (0.92, 1.0, z1), 'olive')
+    body.box((-0.92, 0.45, 1.0), (0.92, 1.0, z1), 'olive')
+    body.box((-0.92, 0.45, z0), (0.92, 1.0, -0.4), 'olive')
     body.box((-0.9, 1.0, 1.0), (0.9, 1.15, z1 - 0.05), 'olive')
     body.box((-0.92, 0.5, z1), (0.92, 0.95, z1 + 0.08), 'dark')
     lights(body, z1 + 0.08, 0.85, 0.65)
-    body.box((-0.9, 1.0, -0.4), (0.9, 1.75, 1.0), 'olive')
-    body.box((-0.82, 1.2, 1.0), (0.82, 1.68, 1.03), 'glass')
+    # The cab: one box with its floor low, so there is room to sit inside.
+    body.box((-0.92, 0.45, -0.4), (0.92, 1.85, 1.0), 'olive')
+    body.box((-0.82, 1.18, 1.0), (0.82, 1.8, 1.03), 'glass')
     for s in (-1, 1):
-        body.box((s * 0.9 - (0.02 if s > 0 else 0.01), 1.2, -0.2), (s * 0.9 + (0.01 if s > 0 else 0.02), 1.65, 0.85), 'glass')
+        body.box((s * 0.92 - (0.02 if s > 0 else 0.01), 1.18, -0.2), (s * 0.92 + (0.01 if s > 0 else 0.02), 1.75, 0.85), 'glass')
+    m.cab(-0.92, 0.92, 0.5, 1.85, -0.4, 1.0, part='body', hatch=False)
     # Open bed with sides.
     for s in (-1, 1):
         body.box((s * 0.92 - (0.06 if s > 0 else 0.0), 1.0, z0), (s * 0.92 + (0.0 if s < 0 else 0.0) + (0.0 if s > 0 else 0.06), 1.35, -0.4), 'olive')

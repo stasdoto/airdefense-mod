@@ -104,7 +104,7 @@ def sheet(out, ids=None):
     import glob
     fs = []
     for m in build.models():
-        if ids and m.id not in ids:
+        if ids and m.id not in ids or m.stub:
             continue
         fs += [os.path.join(out, m.id + '_a.png'), os.path.join(out, m.id + '_b.png')]
     ims = [Image.open(f).resize((450, 300)) for f in fs]
@@ -119,7 +119,7 @@ if __name__ == '__main__':
     ids = sys.argv[2:]
     os.makedirs(out, exist_ok=True)
     for m in build.models():
-        if ids and m.id not in ids:
+        if ids and m.id not in ids or m.stub:
             continue
         anim = {}
         if m.elevator:

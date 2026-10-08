@@ -6,7 +6,8 @@
   "client": [
     "AbstractClientPlayerMixin",
     "AvatarRendererMixin",
-    "EntityMixin"
+    "EntityMixin",
+    "CameraMixin"
   ],
   "injectors": {
     "defaultRequire": 0

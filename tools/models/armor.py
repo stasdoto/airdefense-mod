@@ -226,10 +226,15 @@ def btr82():
     m.camera = 10
     body = m.part('body')
     z0, z1 = -3.8, 3.85
-    body.box((-1.45, 0.55, z0), (1.45, 1.95, z1 - 1.3), 'rgreen')
-    glacis(body, z1 - 1.3, z1, 0.6, 1.95, 1.35, 'rgreen', steps=4)
+    # Hull up to the driver's windows, the glacis below them sloping to the nose.
+    body.box((-1.45, 0.55, z0), (1.45, 1.95, z1 - 1.0), 'rgreen')
+    glacis(body, z1 - 1.0, z1, 0.6, 1.45, 1.35, 'rgreen', steps=3)
     body.box((-1.2, 1.95, -2.5), (1.2, 2.15, 1.3), 'rgreen')
-    body.box((-1.1, 1.55, z1 - 1.05), (1.1, 1.75, z1 - 0.95), 'glass')
+    body.box((-1.1, 1.5, z1 - 1.0), (-0.1, 1.86, z1 - 0.97), 'glass')
+    body.box((0.1, 1.5, z1 - 1.0), (1.1, 1.86, z1 - 0.97), 'glass')
+    # Armoured shutters folded up above the windows.
+    body.box((-1.15, 1.86, z1 - 1.0), (1.15, 1.95, z1 - 0.75), 'rgreen')
+    m.cab(-1.35, 1.35, 0.55, 1.95, z1 - 2.6, z1 - 1.0, kind='armour', hatch=False)
     lights(body, z1 - 0.4, 1.2, 1.0)
     lights(body, z0, 1.3, 1.0, front=False)
     for s in (-1, 1):
@@ -240,7 +245,7 @@ def btr82():
     turret_dome(tur, 0, tz, 2.15, 1.4, 1.5, 0.55, 'rgreen', layers=2)
     gun(m, tur, (0, 2.45, tz + 0.75), 2.6, 0.08, mantlet=0.35)
     axles(m, [2.7, 1.3, -0.7, -2.1], 0.6, 1.15, width=0.4, steer=2)
-    m.seat('driver', -0.5, 1.45, 2.5)
+    m.seat('driver', -0.5, 1.45, 2.2)
     m.seat('gunner', 0.0, 2.3, tz - 0.2)
     return m
 
@@ -252,12 +257,12 @@ def btr4():
     m.camera = 10
     body = m.part('body')
     z0, z1 = -3.85, 3.9
-    body.box((-1.47, 0.6, z0), (1.47, 2.1, z1 - 0.9), 'ugreen')
-    # Crew cab in front with windows.
-    body.box((-1.4, 1.3, z1 - 0.9), (1.4, 2.1, z1 - 0.2), 'ugreen')
-    body.box((-1.4, 0.6, z1 - 0.9), (1.4, 1.3, z1), 'ugreen')
+    # Hull with the crew cab in front (one box: the cab is its front end), the nose under the windows.
+    body.box((-1.47, 0.6, z0), (1.47, 2.1, z1 - 0.2), 'ugreen')
+    body.box((-1.4, 0.6, z1 - 0.2), (1.4, 1.3, z1), 'ugreen')
     body.box((-1.2, 1.5, z1 - 0.2), (-0.1, 1.95, z1 - 0.17), 'glass')
     body.box((0.1, 1.5, z1 - 0.2), (1.2, 1.95, z1 - 0.17), 'glass')
+    m.cab(-1.4, 1.4, 0.65, 2.1, z1 - 2.0, z1 - 0.2, kind='armour', hatch=False)
     lights(body, z1, 0.9, 1.1)
     lights(body, z0, 1.3, 1.1, front=False)
     body.box((-0.6, 0.8, z0 - 0.08), (0.6, 1.9, z0), 'dark')
@@ -313,6 +318,7 @@ def maxxpro():
     body.box((0.05, 2.0, z1 - 1.62), (1.15, 2.7, z1 - 1.58), 'glass')
     for s in (-1, 1):
         body.box((s * 1.3 - (0.0 if s > 0 else 0.03), 1.9, -0.8), (s * 1.3 + (0.03 if s > 0 else 0.0), 2.5, 1.4), 'glass')
+    m.cab(-1.3, 1.3, 1.0, 2.9, -0.9, z1 - 1.6, kind='armour')
     lights(body, z1 + 0.1, 1.4, 0.95)
     lights(body, z0, 1.3, 1.0, front=False)
     tz = -0.6
@@ -322,7 +328,7 @@ def maxxpro():
     tur.box((-0.6, 3.05, tz + 0.45), (0.6, 3.5, tz + 0.55), 'tan')
     gun(m, tur, (0, 3.3, tz + 0.55), 1.2, 0.05, mantlet=0.2)
     axles(m, [2.0, -1.9], 0.6, 1.0, width=0.42, steer=1)
-    m.seat('driver', -0.5, 1.6, 1.8)
+    m.seat('driver', -0.5, 1.6, 0.9)
     m.seat('gunner', 0.0, 2.6, tz - 0.4)
     return m
 
@@ -341,6 +347,7 @@ def kozak():
     body.box((0.05, 1.75, z1 - 1.52), (1.05, 2.3, z1 - 1.48), 'glass')
     for s in (-1, 1):
         body.box((s * 1.2 - (0.0 if s > 0 else 0.03), 1.75, -0.6), (s * 1.2 + (0.03 if s > 0 else 0.0), 2.2, 0.9), 'glass')
+    m.cab(-1.2, 1.2, 0.6, 2.45, -0.9, z1 - 1.5, kind='armour')
     body.box((-1.15, 0.7, z1), (1.15, 1.1, z1 + 0.08), 'dark')
     lights(body, z1 + 0.08, 1.2, 0.85)
     lights(body, z0, 1.3, 0.9, front=False)
@@ -385,10 +392,14 @@ def gyurza():
     body = m.part('body')
     z0, z1 = boat_hull(body, 23.0, 4.8, 1.6, 'grey')
     body.box((-1.9, 1.6, -6.0), (1.9, 3.6, 4.0), 'grey')
-    body.box((-1.6, 3.6, -3.0), (1.6, 4.4, 2.5), 'grey')
-    body.box((-1.4, 3.85, 2.5), (1.4, 4.25, 2.53), 'glass')
-    body.box((-0.1, 4.4, -1.0), (0.1, 6.5, -0.8), 'dgrey')
-    body.box((-0.8, 6.0, -0.95), (0.8, 6.1, -0.85), 'dgrey')
+    body.box((-1.6, 3.6, -3.0), (1.6, 5.2, 2.5), 'grey')
+    body.box((-1.4, 4.2, 2.5), (-0.05, 5.0, 2.53), 'glass')
+    body.box((0.05, 4.2, 2.5), (1.4, 5.0, 2.53), 'glass')
+    for s in (-1, 1):
+        body.box((s * 1.6 - (0.0 if s > 0 else 0.03), 4.3, -1.5), (s * 1.6 + (0.03 if s > 0 else 0.0), 4.95, 2.1), 'glass')
+    m.cab(-1.6, 1.6, 3.6, 5.2, -1.8, 2.5, kind='boat', hatch=False)
+    body.box((-0.1, 5.2, -1.0), (0.1, 7.3, -0.8), 'dgrey')
+    body.box((-0.8, 6.8, -0.95), (0.8, 6.9, -0.85), 'dgrey')
     body.box((-2.4, 1.6, z0), (2.4, 1.75, z0 + 0.2), 'dgrey')
     lights(body, 4.0, 2.4, 1.6)
     tz = 6.5
@@ -412,6 +423,7 @@ def raptor():
     body.box((-1.5, 2.4, 2.5), (1.5, 3.0, 2.53), 'glass')
     for s in (-1, 1):
         body.box((s * 1.7 - (0.0 if s > 0 else 0.03), 2.4, -2.5), (s * 1.7 + (0.03 if s > 0 else 0.0), 3.0, 1.5), 'glass')
+    m.cab(-1.7, 1.7, 1.4, 3.2, -1.2, 2.5, kind='boat', hatch=False)
     body.box((-0.08, 3.2, -1.0), (0.08, 4.8, -0.84), 'dgrey')
     lights(body, 2.5, 2.0, 1.4)
     tz = 4.6

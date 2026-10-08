@@ -788,5 +788,50 @@
       }
     ],
     "subtitle": "subtitles.airdefense.siren_stop"
+  },
+  "engine_turbine": {
+    "sounds": [
+      {
+        "name": "airdefense:engine_turbine",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.airdefense.engine"
+  },
+  "tracks": {
+    "sounds": [
+      {
+        "name": "airdefense:tracks",
+        "attenuation_distance": 40
+      }
+    ],
+    "subtitle": "subtitles.airdefense.tracks"
+  },
+  "rotor_heavy": {
+    "sounds": [
+      {
+        "name": "airdefense:rotor_heavy",
+        "attenuation_distance": 170
+      }
+    ],
+    "subtitle": "subtitles.airdefense.rotor"
+  },
+  "rotor_coax": {
+    "sounds": [
+      {
+        "name": "airdefense:rotor_coax",
+        "attenuation_distance": 170
+      }
+    ],
+    "subtitle": "subtitles.airdefense.rotor"
+  },
+  "jet": {
+    "sounds": [
+      {
+        "name": "airdefense:jet",
+        "attenuation_distance": 240
+      }
+    ],
+    "subtitle": "subtitles.airdefense.jet"
   }
 }

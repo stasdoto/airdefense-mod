@@ -198,6 +198,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				manualDefense(ctx, server, VehicleType.GEPARD, 16500, "manual_gepard");
 				manualDefense(ctx, server, VehicleType.IRIS_T, 18000, "manual_iris_t");
 			}
+			if (scene("crew")) {
+				crew(ctx, server);
+			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
@@ -891,6 +894,151 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
 		server.runCommand("gamemode spectator @a");
 		server.runOnServer(s -> forVehicles(s.overworld(), List.of(heli, plane), Entity::discard));
+	}
+
+	/**
+	 * 1.26 "Crew": the T-72 gunner's sight (day, magnified, thermal) and the seat view; the insides of a truck's cab,
+	 * an armoured car and the cockpits; a Su-25 flown with the new controls (take-off, a banked turn) with its head-up
+	 * display.
+	 */
+	private void crew(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 60000;
+		camera(server, x, ground + 2, -6, 0, 5);
+		ctx.waitTicks(40);
+		// Targets down range: a BTR, a lorry, a few people.
+		int tank = spawnVehicle(server, VehicleType.T72, x, 0, 0);
+		int btr = spawnVehicle(server, VehicleType.BTR82, x + 6, 110, 60);
+		int lorry = spawnVehicle(server, VehicleType.SUPPLY_TRUCK, x - 14, 160, 120);
+		server.runOnServer(s -> {
+			for (int i = 0; i < 4; i++) {
+				var vill = net.minecraft.world.entity.EntityTypes.VILLAGER.create(s.overworld(), net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+				if (vill != null) {
+					vill.setPos(x - 4 + i * 3, ground, 80);
+					vill.setNoAi(true);
+					s.overworld().addFreshEntity(vill);
+				}
+			}
+		});
+		server.runCommand("gamemode creative @a");
+		server.runOnServer(s -> {
+			if (s.overworld().getEntity(tank) instanceof VehicleEntity v) {
+				s.getPlayerList().getPlayers().getFirst().startRiding(v);
+			}
+		});
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
+		ctx.waitTicks(30);
+		ctx.getInput().lookAt(0, 2);
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("c1_t72_sight");
+		String sight = ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.vehicle.GunnerSight.active() + " frames "
+				+ com.stasdoto.airdefense.client.vehicle.GunnerSight.framesInSight);
+		ctx.getInput().pressKey(o -> com.stasdoto.airdefense.client.vehicle.GunnerSight.ZOOM);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("c2_t72_sight_zoom");
+		ctx.getInput().pressKey(o -> com.stasdoto.airdefense.client.vehicle.GunnerSight.THERMAL);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("c3_t72_thermal");
+		server.runCommand("time set 15000");
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("c3b_t72_thermal_night");
+		server.runCommand("time set 1000");
+		ctx.getInput().pressKey(o -> com.stasdoto.airdefense.client.vehicle.GunnerSight.THERMAL);
+		ctx.getInput().pressKey(o -> com.stasdoto.airdefense.client.vehicle.GunnerSight.ZOOM);
+		ctx.getInput().pressKey(o -> com.stasdoto.airdefense.client.vehicle.GunnerSight.ZOOM);
+		// Turn the turret: the sight swings at once, the gun follows.
+		ctx.getInput().lookAt(40, 2);
+		ctx.waitTicks(6);
+		ctx.takeScreenshot("c4_t72_sight_turning");
+		ctx.waitTicks(60);
+		ctx.getInput().pressKey(o -> com.stasdoto.airdefense.client.vehicle.GunnerSight.VIEW);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("c5_t72_hatch");
+		String seat = ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.vehicle.GunnerSight.active().toString());
+		AirDefense.LOGGER.info("[airdefense-test] RESULT crew_sight: in the tank {}; after C: {}", sight, seat);
+		leave(ctx);
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(tank, btr, lorry), Entity::discard));
+
+		// The insides: sit in the seat, look ahead and to the side; one look from outside through the glass.
+		VehicleType[] cabs = {VehicleType.SUPPLY_TRUCK, VehicleType.MAXXPRO, VehicleType.PATRIOT, VehicleType.MI8, VehicleType.MI24, VehicleType.KA52,
+				VehicleType.SU25, VehicleType.F16};
+		int cx = x + 1500;
+		for (int i = 0; i < cabs.length; i++) {
+			VehicleType t = cabs[i];
+			camera(server, cx + i * 40, ground + 2, -6, 0, 5);
+			ctx.waitTicks(30);
+			int id = spawnVehicle(server, t, cx + i * 40, 0, 0);
+			server.runOnServer(s -> {
+				if (s.overworld().getEntity(id) instanceof VehicleEntity v) {
+					s.getPlayerList().getPlayers().getFirst().startRiding(v);
+				}
+			});
+			ctx.waitTicks(20);
+			ctx.getInput().lookAt(0, 12);
+			ctx.waitTicks(15);
+			ctx.takeScreenshot("c6_" + t.id + "_inside");
+			ctx.getInput().lookAt(t.isAir() ? -55 : 55, 18);
+			ctx.waitTicks(15);
+			ctx.takeScreenshot("c7_" + t.id + "_inside_side");
+			leave(ctx);
+			if (i == 0 || i == 3) {
+				Vec3 at = server.computeOnServer(s -> s.overworld().getEntity(id).position());
+				camera(server, at.x - 3.2, ground + 2.6, at.z + 2.0, -120, 8);
+				ctx.waitTicks(20);
+				ctx.takeScreenshot("c8_" + t.id + "_through_glass");
+			}
+			server.runOnServer(s -> forVehicles(s.overworld(), List.of(id), Entity::discard));
+		}
+
+		// The Su-25 with the new controls: throttle up, rotate, climb; a banked turn to the right; the head-up display.
+		int px = x + 3000;
+		camera(server, px, ground + 2, -10, 0, 0);
+		ctx.waitTicks(40);
+		int plane = spawnVehicle(server, VehicleType.SU25, px, 0, 0);
+		server.runOnServer(s -> {
+			if (s.overworld().getEntity(plane) instanceof VehicleEntity v) {
+				s.getPlayerList().getPlayers().getFirst().startRiding(v);
+			}
+		});
+		ctx.waitTicks(20);
+		ctx.getInput().lookAt(0, 0);
+		ctx.getInput().holdKey(o -> o.keyUp);
+		ctx.waitTicks(140);
+		ctx.getInput().lookAt(0, -18);
+		ctx.waitTicks(120);
+		ctx.takeScreenshot("c9_su25_climb_hud");
+		String climb = ctx.computeOnClient(mc -> mc.player.getVehicle() instanceof VehicleEntity v
+				? String.format(java.util.Locale.ROOT, "alt %.1f speed %.2f pitch %.1f thr %.2f", v.getY() - ground, v.getDeltaMovement().length(), v.getXRot(), v.throttle) : "-");
+		ctx.getInput().lookAt(0, 0);
+		ctx.waitTicks(40);
+		float yaw0 = ctx.computeOnClient(mc -> mc.player.getVehicle() instanceof VehicleEntity v ? v.getYRot() : 0f);
+		ctx.getInput().lookAt(70, 0);
+		ctx.waitTicks(25);
+		String turning = ctx.computeOnClient(mc -> mc.player.getVehicle() instanceof VehicleEntity v
+				? String.format(java.util.Locale.ROOT, "roll %.1f yaw %.1f", v.planeRoll, v.getYRot()) : "-");
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_BACK));
+		ctx.waitTicks(3);
+		ctx.takeScreenshot("c10_su25_banked");
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
+		ctx.waitTicks(80);
+		String after = ctx.computeOnClient(mc -> mc.player.getVehicle() instanceof VehicleEntity v
+				? String.format(java.util.Locale.ROOT, "roll %.1f yaw %.1f alt %.1f speed %.2f", v.planeRoll, v.getYRot(), v.getY() - ground,
+				v.getDeltaMovement().length()) : "-");
+		ctx.getInput().lookAt(70, 30);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("c11_su25_bomb_sight");
+		ctx.getInput().releaseKey(o -> o.keyUp);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT crew_plane: climb {}; turn from yaw {}: {}; after: {}", climb, yaw0, turning, after);
+		leave(ctx);
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
+		server.runCommand("gamemode spectator @a");
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(plane), Entity::discard));
+	}
+
+	private static void leave(ClientGameTestContext ctx) {
+		ctx.getInput().holdKey(o -> o.keyShift);
+		ctx.waitTicks(5);
+		ctx.getInput().releaseKey(o -> o.keyShift);
+		ctx.waitTicks(5);
 	}
 
 	/** Flies a piloted drone (FPV or Magura) from the player's seat into a vehicle; returns {ticks, health before, after}. */

@@ -40,6 +40,9 @@ STYLES = {
     'tan': dict(kind='camo', base=0xB59A6A, c2=0x8C7650, c3=0xC9B486),
     'sand': dict(kind='plain', base=0xB8A27A),
     'grey': dict(kind='plain', base=0x7C8186),
+    # The F-16's two greys.
+    'fgrey': dict(kind='plain', base=0x8C949A),
+    'fgrey_d': dict(kind='plain', base=0x6A737A),
     'lgrey': dict(kind='plain', base=0xA7ADB2),
     'dgrey': dict(kind='plain', base=0x4A4E52),
     'dark': dict(kind='plain', base=0x2C2F31),
@@ -48,7 +51,8 @@ STYLES = {
     'steel': dict(kind='plain', base=0x8A8F94),
     'rust': dict(kind='plain', base=0x6E4A2E),
     'canvas': dict(kind='plain', base=0x6E6B4C),
-    'glass': dict(kind='glass', base=0x2A3946),
+    # Window glass: see-through (drawn translucent near the vehicle, when its inside is drawn too).
+    'glass': dict(kind='glass', base=0x2A3946, alpha=118),
     'light': dict(kind='plain', base=0xF2E7B0, flat=True),
     'redlight': dict(kind='plain', base=0xB82A20, flat=True),
     'orange': dict(kind='plain', base=0xD8792A),
@@ -67,6 +71,28 @@ STYLES = {
     'mesh': dict(kind='mesh', base=0x6F7468, step=3),
     'mesh_dark': dict(kind='mesh', base=0x3E4237, step=3),
     'mesh_fine': dict(kind='mesh', base=0x80857A, step=2),
+    # Insides (1.26): painted walls, the dashboard, seats, dials, screens, switch panels, radios, rubber mats.
+    'int_panel': dict(kind='plain', base=0x6E7964),
+    'int_light': dict(kind='plain', base=0x9AA294),
+    'int_grey': dict(kind='plain', base=0x7E8288),
+    'int_dark': dict(kind='plain', base=0x2B2D2E),
+    'int_black': dict(kind='plain', base=0x161718),
+    # The turquoise of Soviet cockpits and the dark grey of western ones.
+    'int_turq': dict(kind='plain', base=0x4E9C98),
+    'int_turq_dark': dict(kind='plain', base=0x2F6662),
+    'int_navy': dict(kind='plain', base=0x34393F),
+    'rubber': dict(kind='track', base=0x2A2B2C),
+    'seat': dict(kind='seat', base=0x3E4034, stitch=0x2C2E25),
+    'seat_black': dict(kind='seat', base=0x262728, stitch=0x18191A),
+    'gauge': dict(kind='gauge', base=0x121314),
+    'screen': dict(kind='screen', base=0x0C2410, line=0x3CD25A, flat=True),
+    'screen_amber': dict(kind='screen', base=0x241A08, line=0xE0A030, flat=True),
+    'switches': dict(kind='switches', base=0x3A3D40),
+    'radio': dict(kind='radio', base=0x55603C),
+    'red': dict(kind='plain', base=0xA4281E),
+    'yellow': dict(kind='plain', base=0xC9A227),
+    'chrome': dict(kind='plain', base=0xB9BEC2),
+    'hud': dict(kind='glass', base=0x4F8F62, alpha=70),
 }
 
 
@@ -168,8 +194,62 @@ class Painter:
                     region[by, bx, :3] = mul(hub, k * 0.55)
             # Sidewall line.
             region[(d > r * (1 - ring)) & (d < r * (1 - ring) + 1.0), :3] = mul(base, k * 0.6)
+        elif kind == 'seat':
+            region[..., :3] = mul(base, k)
+            region[..., :3] += self.rng.normal(0, 2.5, (h, w, 1))
+            st_c = mul(rgb(st['stitch']), k)
+            step = max(3, min(w, h) // 3)
+            region[:, ::step, :3] = st_c
+            if h >= 6:
+                region[h // 2, :, :3] = st_c
+        elif kind == 'gauge':
+            # A row of round dials: dark face, light ring, tick marks and a needle.
+            region[..., :3] = mul((40, 42, 44), k)
+            n = max(1, int(round(w / max(1, h))))
+            size = w / n
+            yy, xx = np.mgrid[0:h, 0:w]
+            for i in range(n):
+                cx = size * (i + 0.5) - 0.5
+                cy = (h - 1) / 2.0
+                r = min(size, h) / 2.0 - 0.3
+                d = np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2)
+                region[d <= r, :3] = mul(base, 1.0)
+                ring = (d <= r) & (d > r - 1.0)
+                region[ring, :3] = (200, 200, 190)
+                ang = -2.4 + self.rng.random() * 3.2
+                for t in np.linspace(0, r - 1.2, 8):
+                    px = int(round(cx + math.cos(ang) * t))
+                    py = int(round(cy + math.sin(ang) * t))
+                    if 0 <= px < w and 0 <= py < h:
+                        region[py, px, :3] = (235, 225, 120)
+        elif kind == 'screen':
+            region[..., :3] = rgb(st['base'])
+            line = rgb(st['line'])
+            for yy in range(1, h - 1, 3):
+                x0_ = int(self.rng.integers(1, max(2, w // 3)))
+                x1_ = int(self.rng.integers(x0_ + 1, max(x0_ + 2, w - 1)))
+                region[yy, x0_:x1_, :3] = line
+            region[0, :, :3] = mul(line, 0.5)
+            region[-1, :, :3] = mul(line, 0.5)
+            region[:, 0, :3] = mul(line, 0.5)
+            region[:, -1, :3] = mul(line, 0.5)
+        elif kind == 'switches':
+            region[..., :3] = mul(base, k)
+            for yy in range(1, h - 1, 3):
+                for xx in range(1, w - 1, 3):
+                    c = (210, 210, 200) if self.rng.random() < 0.7 else (200, 60, 40) if self.rng.random() < 0.5 else (90, 200, 90)
+                    region[yy, xx, :3] = c
+        elif kind == 'radio':
+            region[..., :3] = mul(base, k)
+            region[..., :3] += self.rng.normal(0, 2.0, (h, w, 1))
+            for xx in range(2, w - 1, 4):
+                region[h // 3, xx, :3] = (30, 30, 30)
+                if h > 4:
+                    region[2 * h // 3, xx, :3] = (220, 200, 120)
         else:
             raise ValueError(kind)
+        if kind == 'glass':
+            region[..., 3] = st.get('alpha', 255)
         if kind in ('plain', 'camo', 'glass') and not flat and w >= 4 and h >= 4:
             region[0, :, :3] *= 0.78
             region[-1, :, :3] *= 0.72
@@ -314,6 +394,12 @@ class Model:
         self.tracked = False
         # Width of the chassis (when antennas or wings stick out further than the body).
         self.width = None
+        # 1.26: the crew compartments (cabs, cockpits) that get an inside: dicts made by cab() / cockpit().
+        self.cabs = []
+        # Set on an inside model: the outside model it belongs to.
+        self.interior_of = None
+        # A stand-in for a hand-made model (VehicleModels.java): only its inside is generated.
+        self.stub = False
 
     def part(self, name, pivot=(0, 0, 0), rot=(0, 0, 0), parent=None):
         p = Part(self, name, pivot, rot, parent)
@@ -326,6 +412,14 @@ class Model:
 
     def seat(self, role, x, y, z):
         self.seats.append((role, x, y, z))
+
+    def cab(self, x0, x1, y0, y1, z0, z1, kind='truck', part='body', **opts):
+        """A crew compartment (inner walls, metres) that gets an inside (see interior.py): kind truck / armour / heli / jet."""
+        self.cabs.append(dict(box=(min(x0, x1), max(x0, x1), min(y0, y1), max(y0, y1), min(z0, z1), max(z0, z1)), kind=kind, part=part, **opts))
+
+    def glass_boxes(self):
+        """Every window pane: (part, box)."""
+        return [(p, b) for p in self.parts for b in p.boxes if b.style == 'glass']
 
     def set_turret(self, part, rate=0):
         self.turret = part.name
@@ -429,9 +523,10 @@ class Model:
                 painter.face(img, x0, y0, fw, fh, b.sides.get(face, b.style), shade[face], face)
         return img
 
-    def java_layer(self, uv, W, H):
+    def java_layer(self, uv, W, H, only=None, suffix='', paths=True):
+        """The model's layer; {only}: 'solid' leaves the window glass out, 'glass' keeps only the glass."""
         lines = []
-        lines.append('\tpublic static LayerDefinition %s() {' % self.id)
+        lines.append('\tpublic static LayerDefinition %s%s() {' % (self.id, suffix))
         lines.append('\t\tMeshDefinition mesh = new MeshDefinition();')
         lines.append('\t\tPartDefinition root = mesh.getRoot();')
         names = {}
@@ -447,6 +542,8 @@ class Model:
             oz = (pz - parent_pivot[2]) * PX
             lines.append('\t\tPartDefinition %s = %s.addOrReplaceChild("%s", CubeListBuilder.create()' % (var, parent_var, p.name))
             for b in p.boxes:
+                if only == 'solid' and b.style == 'glass' or only == 'glass' and b.style != 'glass':
+                    continue
                 u, v = uv[b.key()]
                 w, h, d = b.px_size()
                 # Box min corner relative to the pivot, Minecraft space (y down).
@@ -466,6 +563,8 @@ class Model:
             emit(r, 'root', (0, 0, 0))
         lines.append('\t\treturn LayerDefinition.create(mesh, %d, %d);' % (W, H))
         lines.append('\t}')
+        if not paths:
+            return '\n'.join(lines)
         lines.append('')
         lines.append('\tpublic static Map<String, String> %sPaths() {' % self.id)
         lines.append('\t\treturn Map.ofEntries(')
@@ -564,18 +663,35 @@ def wreck(img, seed):
 
 
 def build(models, java_main, java_client, tex_dir, item_dir, pkg_main, pkg_client):
+    import interior
     layers = []
     geoms = []
+    # Every layer id the client can ask for, and whose part paths it uses.
+    ids = []
+    insides = []
     for m in models:
+        if m.cabs:
+            insides.append(interior.build(m))
+    stubs = [m for m in models if m.stub]
+    for m in stubs:
+        print('%-12s (hand-made) seats now %s' % (m.id, m.seats))
+    for m in [m for m in models if not m.stub] + insides:
         uv, regions, W, H = m.layout()
         img = m.paint_atlas(uv, regions, W, H)
         Image.fromarray(img, 'RGBA').save(os.path.join(tex_dir, m.id + '.png'), optimize=True)
-        Image.fromarray(wreck(img, m.seed + 99), 'RGBA').save(os.path.join(tex_dir, m.id + '_wreck.png'), optimize=True)
-        if item_dir:
-            m.icon(os.path.join(item_dir, m.id + '.png'))
-        layers.append(m.java_layer(uv, W, H))
-        geoms.append(m.java_geometry(W, H))
-        print('%-12s parts %3d boxes %4d atlas %dx%d' % (m.id, len(m.parts), sum(len(p.boxes) for p in m.parts), W, H))
+        if m.interior_of is None:
+            Image.fromarray(wreck(img, m.seed + 99), 'RGBA').save(os.path.join(tex_dir, m.id + '_wreck.png'), optimize=True)
+            if item_dir:
+                m.icon(os.path.join(item_dir, m.id + '.png'))
+            geoms.append(m.java_geometry(W, H))
+        has_glass = m.interior_of is None and any(True for _ in m.glass_boxes())
+        layers.append(m.java_layer(uv, W, H, only='solid' if has_glass else None))
+        ids.append((m.id, m.id))
+        if has_glass:
+            layers.append(m.java_layer(uv, W, H, only='glass', suffix='_glass', paths=False))
+            ids.append((m.id + '_glass', m.id))
+        print('%-12s parts %3d boxes %4d atlas %dx%d%s' % (m.id, len(m.parts), sum(len(p.boxes) for p in m.parts), W, H,
+                                                          ' + glass' if has_glass else ''))
     with open(java_client, 'w') as out:
         out.write('package %s;\n\n' % pkg_client)
         out.write('import java.util.EnumSet;\nimport java.util.Map;\n\n')
@@ -587,13 +703,17 @@ def build(models, java_main, java_client, tex_dir, item_dir, pkg_main, pkg_clien
         out.write('import net.minecraft.core.Direction;\n\n')
         out.write('/** GENERATED by tools/models/build.py - do not edit. Real-size models (1 block = 1 m). */\n')
         out.write('@SuppressWarnings("unused")\npublic final class GenModels {\n\tprivate GenModels() {\n\t}\n\n')
+        out.write('\t/** Is there a layer of this id (a vehicle, its window glass "<id>_glass", its inside "<id>_int")? */\n')
+        out.write('\tpublic static boolean has(String id) {\n\t\treturn switch (id) {\n')
+        out.write('\t\t\tcase %s -> true;\n' % ', '.join('"%s"' % i for i, _ in ids))
+        out.write('\t\t\tdefault -> false;\n\t\t};\n\t}\n\n')
         out.write('\tpublic static LayerDefinition layer(String id) {\n\t\treturn switch (id) {\n')
-        for m in models:
-            out.write('\t\t\tcase "%s" -> %s();\n' % (m.id, m.id))
+        for i, _ in ids:
+            out.write('\t\t\tcase "%s" -> %s();\n' % (i, i))
         out.write('\t\t\tdefault -> throw new IllegalArgumentException(id);\n\t\t};\n\t}\n\n')
         out.write('\tpublic static Map<String, String> paths(String id) {\n\t\treturn switch (id) {\n')
-        for m in models:
-            out.write('\t\t\tcase "%s" -> %sPaths();\n' % (m.id, m.id))
+        for i, base in ids:
+            out.write('\t\t\tcase "%s" -> %sPaths();\n' % (i, base))
         out.write('\t\t\tdefault -> throw new IllegalArgumentException(id);\n\t\t};\n\t}\n\n')
         out.write('\n\n'.join(layers))
         out.write('\n}\n')

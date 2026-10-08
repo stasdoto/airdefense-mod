@@ -14,11 +14,11 @@ import com.stasdoto.airdefense.client.weapon.GunClient;
 public abstract class EntityMixin {
 	@ModifyVariable(method = "turn", at = @At("HEAD"), argsOnly = true, ordinal = 0)
 	private double airdefense$zoomYaw(double value) {
-		return (Object) this instanceof LocalPlayer ? value * GunClient.sensitivity() : value;
+		return (Object) this instanceof LocalPlayer ? value * GunClient.sensitivity() * com.stasdoto.airdefense.client.vehicle.GunnerSight.sensitivity() : value;
 	}
 
 	@ModifyVariable(method = "turn", at = @At("HEAD"), argsOnly = true, ordinal = 1)
 	private double airdefense$zoomPitch(double value) {
-		return (Object) this instanceof LocalPlayer ? value * GunClient.sensitivity() : value;
+		return (Object) this instanceof LocalPlayer ? value * GunClient.sensitivity() * com.stasdoto.airdefense.client.vehicle.GunnerSight.sensitivity() : value;
 	}
 }

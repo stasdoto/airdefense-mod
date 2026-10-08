@@ -45,6 +45,12 @@ public final class ModSounds {
 	public static final SoundEvent LAUNCH_MLRS_FAR = register("launch_mlrs_far", 800);
 	public static final SoundEvent ENGINE_TRUCK = register("engine_truck", 32);
 	public static final SoundEvent ENGINE_TRACKED = register("engine_tracked", 40);
+	/** 1.26: the Abrams' gas turbine, track clatter, helicopter rotors (big five-blade, coaxial), a jet. */
+	public static final SoundEvent ENGINE_TURBINE = register("engine_turbine", 48);
+	public static final SoundEvent TRACKS = register("tracks", 40);
+	public static final SoundEvent ROTOR_HEAVY = register("rotor_heavy", 170);
+	public static final SoundEvent ROTOR_COAX = register("rotor_coax", 170);
+	public static final SoundEvent JET = register("jet", 240);
 	public static final SoundEvent HYDRAULICS = register("hydraulics", 20);
 	public static final SoundEvent TURRET = register("turret", 20);
 	// Stage 7: small arms (near/far layers picked by the client like the big guns) and the gear.

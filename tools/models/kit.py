@@ -48,6 +48,7 @@ def hood_cab(body, zf, width, paint, hood_len=1.5, hood_h=1.8, cab_len=1.4, cab_
     zc = zh - hood_len
     body.box((-hw + 0.05, y0, zc - cab_len), (hw - 0.05, cab_h, zc), paint,
              sides={'front': paint})
+    body.model.cab(-hw + 0.05, hw - 0.05, y0, cab_h, zc - cab_len, zc, part=body.name)
     # Windscreen and side windows.
     body.box((-hw + 0.2, cab_h - 0.75, zc), (-0.06, cab_h - 0.18, zc + 0.03), 'glass')
     body.box((0.06, cab_h - 0.75, zc), (hw - 0.2, cab_h - 0.18, zc + 0.03), 'glass')
@@ -65,6 +66,7 @@ def cabover(body, zf, width, paint, cab_len=1.7, cab_h=3.0, y0=1.0):
     hw = width / 2
     body.box((-hw + 0.1, y0 - 0.3, zf - 0.25), (hw - 0.1, y0 + 0.05, zf), 'dark')
     body.box((-hw, y0, zf - cab_len), (hw, cab_h, zf - 0.1), paint)
+    body.model.cab(-hw, hw, y0, cab_h, zf - cab_len, zf - 0.1, part=body.name, hump=True)
     # Windscreen (two panes) and side windows.
     body.box((-hw + 0.15, cab_h - 0.9, zf - 0.1), (-0.05, cab_h - 0.2, zf - 0.07), 'glass')
     body.box((0.05, cab_h - 0.9, zf - 0.1), (hw - 0.15, cab_h - 0.2, zf - 0.07), 'glass')

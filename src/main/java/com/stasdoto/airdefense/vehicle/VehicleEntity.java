@@ -1026,50 +1026,109 @@ public class VehicleEntity extends LivingEntity {
 		boolean piloted = pilot != null && !outOfFuel();
 		engine = Mth.approach(engine, piloted ? 1 : 0, vtype.air == VehicleType.HELI ? 0.008f : 0.02f);
 		Vec3 v = getDeltaMovement();
-		float turn = in.left() ? -1 : in.right() ? 1 : 0;
 		if (vtype.air == VehicleType.HELI) {
 			travelHeli(in, pilot, v);
 		} else {
-			if (piloted && in.forward()) {
-				throttle = Math.min(1, throttle + 0.01f);
-			}
-			if (in.backward() || !piloted) {
-				throttle = Math.max(0, throttle - 0.015f);
-			}
-			double sp = v.length();
-			double target = throttle * vtype.maxSpeed * engine;
-			sp += Mth.clamp(target - sp, -0.03, vtype.accel);
-			if (onGround() && throttle < 0.05f) {
-				sp *= 0.95;
-			}
-			float rate = vtype.pivotTurn * (float) Mth.clamp(sp / 1.5, 0.15, 1.0);
-			float wantYaw = pilot != null ? pilot.getYRot() + turn * 25 : getYRot();
-			float wantPitch = pilot != null ? Mth.clamp(pilot.getXRot(), -40, 40) : 15;
-			double takeoff = vtype.maxSpeed * 0.4;
-			boolean airborne = !onGround();
-			if (!airborne && sp < takeoff) {
-				wantPitch = 0;
-			}
-			if (airborne || sp > 0.2) {
-				setYRot(getYRot() + Mth.clamp(Mth.wrapDegrees(wantYaw - getYRot()), -rate, rate));
-			}
-			float pitch = getXRot() + Mth.clamp(wantPitch - getXRot(), -rate * 0.8f, rate * 0.8f);
-			if (!airborne && pitch > 0) {
-				pitch = 0;
-			}
-			setXRot(pitch);
-			Vec3 motion = Vec3.directionFromRotation(pitch, getYRot()).scale(sp);
-			if (airborne && sp < takeoff * 0.8) {
-				// Too slow to fly: it sinks.
-				motion = motion.add(0, -0.1 - (takeoff * 0.8 - sp) * 0.4, 0);
-			} else if (!airborne) {
-				motion = new Vec3(motion.x, Math.max(motion.y, -0.04), motion.z);
-			}
-			setDeltaMovement(motion);
-			move(MoverType.SELF, motion);
-			speed = (float) sp;
+			travelPlane(in, pilot, piloted, v);
 		}
 		yBodyRot = yHeadRot = getYRot();
+	}
+
+	/** The plane's bank (degrees, right wing down is positive): it turns by banking (1.26). */
+	public float planeRoll;
+
+	/**
+	 * A plane's flight (rebuilt in 1.26): the pilot looks where he wants to go and the plane goes there the way a
+	 * plane does - it banks into the turn (A / D bank it by hand), pulls its nose round, levels out as the nose comes on
+	 * target. W / S open and close the throttle; speed builds up and bleeds off (climbing costs speed, diving gives
+	 * it), too slow and it stalls - the nose drops and it sinks. On the ground it rolls on its wheels and lifts off past
+	 * the take-off speed.
+	 */
+	private void travelPlane(Input in, @Nullable Player pilot, boolean piloted, Vec3 v) {
+		if (piloted && in.forward()) {
+			throttle = Math.min(1, throttle + 0.012f);
+		}
+		if (in.backward() || !piloted) {
+			throttle = Math.max(0, throttle - 0.018f);
+		}
+		boolean airborne = !onGround();
+		float top = vtype.maxSpeed;
+		float takeoff = top * 0.4f;
+		float stall = top * 0.3f;
+		double sp = v.length();
+		// Thrust against drag (full throttle holds the top speed), gravity along the path.
+		double thrust = throttle * engine * vtype.accel * 1.15;
+		double drag = vtype.accel * 1.15 * (sp / top) * (sp / top);
+		double slope = airborne ? Math.sin(Math.toRadians(getXRot())) * 0.045 : 0;
+		sp = Math.max(0, sp + thrust - drag + slope);
+		if (!airborne && throttle < 0.05f) {
+			// Wheel brakes.
+			sp *= 0.95;
+		}
+		if (in.jump() && airborne) {
+			// Air brake.
+			sp *= 0.985;
+		}
+		// How well the controls bite: little at low speed.
+		float bite = (float) Mth.clamp(sp / (top * 0.55), 0.12, 1.0);
+		float aimYaw = pilot != null ? pilot.getYRot() : getYRot();
+		float aimPitch = pilot != null ? Mth.clamp(pilot.getXRot(), -60, 60) : 6;
+		float yawErr = Mth.wrapDegrees(aimYaw - getYRot());
+		float pitchErr = aimPitch - getXRot();
+		// Bank into the turn (by hand with A / D), back to level as the nose comes round.
+		float wantRoll = Mth.clamp(yawErr * 2.2f, -72, 72);
+		if (in.left()) {
+			wantRoll = -75;
+		} else if (in.right()) {
+			wantRoll = 75;
+		}
+		if (!airborne) {
+			wantRoll = 0;
+		}
+		float rollRate = vtype.pivotTurn * 2.4f * bite;
+		planeRoll += Mth.clamp(wantRoll - planeRoll, -rollRate, rollRate);
+		// A banked plane turns: the steeper the bank and the slower it flies, the quicker.
+		float yawRate = 0;
+		if (airborne) {
+			yawRate = (float) Math.toDegrees(Math.tan(Math.toRadians(planeRoll)) * 0.05 / Math.max(0.6, sp));
+			yawRate = Mth.clamp(yawRate, -vtype.pivotTurn * 1.3f, vtype.pivotTurn * 1.3f) * bite;
+			// A touch of rudder to settle the last few degrees.
+			yawRate += Mth.clamp(yawErr * 0.06f, -0.4f, 0.4f) * bite;
+		} else if (sp > 0.05) {
+			// Nose wheel steering on the ground.
+			yawRate = Mth.clamp(yawErr * 0.1f, -2.0f, 2.0f) * (float) Math.min(1, sp / 0.5);
+		}
+		setYRot(getYRot() + yawRate);
+		// Pitch: towards where the pilot looks; banked hard it pulls the nose round rather than up.
+		float pitchRate = vtype.pivotTurn * 0.75f * bite * (1 - 0.5f * Math.abs(planeRoll) / 75f);
+		float pitch = getXRot() + Mth.clamp(pitchErr, -pitchRate, pitchRate);
+		if (airborne && sp < stall) {
+			// Stalled: the nose falls through.
+			pitch = Math.min(45, pitch + 1.2f);
+		}
+		if (!airborne) {
+			// Rolling: the nose comes up only past the take-off speed.
+			pitch = sp < takeoff ? 0 : Mth.clamp(pitch, -12, 0);
+		}
+		setXRot(Mth.clamp(pitch, -80, 80));
+		Vec3 motion = Vec3.directionFromRotation(getXRot(), getYRot()).scale(sp);
+		if (airborne && sp < stall) {
+			motion = motion.add(0, -0.08 - (stall - sp) * 0.5, 0);
+		} else if (!airborne) {
+			motion = new Vec3(motion.x, sp >= takeoff && getXRot() < -1 ? motion.y : Math.max(motion.y, -0.04), motion.z);
+			if (sp < takeoff) {
+				motion = new Vec3(motion.x, -0.04, motion.z);
+			}
+		}
+		setDeltaMovement(motion);
+		move(MoverType.SELF, motion);
+		if (horizontalCollision && sp > top * 0.5) {
+			// Flown into a hill or a house.
+			if (level() instanceof ServerLevel level) {
+				hurtServer(level, level.damageSources().flyIntoWall(), getMaxHealth());
+			}
+		}
+		speed = (float) sp;
 	}
 
 	/**
@@ -2719,7 +2778,11 @@ public class VehicleEntity extends LivingEntity {
 			float yawDelta = Mth.wrapDegrees(getYRot() - yRotO);
 			if (vtype.air == VehicleType.PLANE) {
 				tiltPitch += (-getXRot() - tiltPitch) * 0.5f;
-				tiltRoll += (Mth.clamp(-yawDelta * 12, -60, 60) - tiltRoll) * 0.15f;
+				if (isLocalDriverSimulated() || !level().isClientSide()) {
+					tiltRoll += (-planeRoll - tiltRoll) * 0.5f;
+				} else {
+					tiltRoll += (Mth.clamp(-yawDelta * 22, -72, 72) - tiltRoll) * 0.15f;
+				}
 			} else if (isLocalDriverSimulated() || !level().isClientSide()) {
 				// The attitude the flight model works with (where it is simulated).
 				tiltPitch += (-heliPitch - tiltPitch) * 0.5f;

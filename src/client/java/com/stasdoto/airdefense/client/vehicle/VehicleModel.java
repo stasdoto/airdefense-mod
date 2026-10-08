@@ -3,10 +3,13 @@ package com.stasdoto.airdefense.client.vehicle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 
 import com.stasdoto.airdefense.vehicle.VehicleGeometry;
@@ -22,10 +25,18 @@ public class VehicleModel extends EntityModel<VehicleRenderState> {
 	private final ModelPart spinner;
 	private final ModelPart[] openParts;
 	private final ModelPart[] railParts;
+	/** The steering wheel in the cab (1.26), turning with the front wheels. */
+	private final ModelPart steeringWheel;
 
 	public VehicleModel(ModelPart root, Map<String, String> paths, VehicleGeometry.Geometry g) {
 		// Back faces culled: from the driver's seat you look out through the cab instead of at its inside.
-		super(root, RenderTypes::entityCutoutCull);
+		this(root, paths, g, RenderTypes::entityCutoutCull);
+	}
+
+	/** A model drawn its own way: the window glass see-through, the inside of a cab. */
+	public VehicleModel(ModelPart root, Map<String, String> paths, VehicleGeometry.Geometry g, Function<Identifier, RenderType> renderType) {
+		super(root, renderType);
+		steeringWheel = find(root, paths, "steering_wheel");
 		for (VehicleGeometry.Wheel w : g.wheels()) {
 			ModelPart p = find(root, paths, w.part());
 			if (p != null) {
@@ -79,6 +90,10 @@ public class VehicleModel extends EntityModel<VehicleRenderState> {
 		}
 		if (spinner != null) {
 			spinner.yRot = s.radarSpin;
+		}
+		if (steeringWheel != null) {
+			// About three turns of the wheel for the road wheels' full lock.
+			steeringWheel.zRot = s.steer * 3.2f * Mth.DEG_TO_RAD;
 		}
 		for (ModelPart p : openParts) {
 			if (p != null) {

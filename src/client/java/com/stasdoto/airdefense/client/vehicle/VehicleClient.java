@@ -60,6 +60,8 @@ public final class VehicleClient {
 	}
 
 	private static void tick(Minecraft mc) {
+		GunnerSight.tick(mc);
+		RotorWash.tick(mc);
 		LocalPlayer player = mc.player;
 		if (player != null) {
 			// On foot with a gun in hand, R reloads (it is the same key as the launcher's).
@@ -109,6 +111,12 @@ public final class VehicleClient {
 		Font font = mc.font;
 		VehicleType type = v.getVehicleType();
 		boolean driver = v.isDriver(player);
+		GunnerSight.Kind sight = GunnerSight.active();
+		if (sight != GunnerSight.Kind.NONE) {
+			// 1.26: the eyepiece of the gun sight or the periscope fills the screen.
+			SightHud.draw(g, delta, v, player, sight);
+			return;
+		}
 		double perTick = driver ? Math.abs(v.getSpeed()) : Math.hypot(v.getX() - v.xo, v.getZ() - v.zo);
 		int kmh = (int) Math.round(perTick * 20 * 3.6);
 		int hp = (int) Math.ceil(v.getHealth() / v.getMaxHealth() * 100);
@@ -164,7 +172,12 @@ public final class VehicleClient {
 		g.text(font, l2, x, y + 10, 0xFFE0E0E0);
 		g.text(font, l3, x, y + 20, 0xFFA0A0A0);
 		GunnerHud.draw(g, delta, v, player);
-		if (type.isArmed() && v.shooter() == player || type.isAir() && driver) {
+		if (type.isAir() && driver) {
+			// 1.26: the pilot's head-up display (gun cross, flight path, ladder, tapes, bomb sight, warnings).
+			FlightHud.draw(g, delta, v, player);
+			return;
+		}
+		if (type.isArmed() && v.shooter() == player) {
 			// Where the gun points: a ring in the middle of the screen.
 			int cx = mc.getWindow().getGuiScaledWidth() / 2;
 			int cy = mc.getWindow().getGuiScaledHeight() / 2;

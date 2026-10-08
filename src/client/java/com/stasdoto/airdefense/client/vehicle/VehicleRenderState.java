@@ -16,4 +16,6 @@ public class VehicleRenderState extends EntityRenderState {
 	public float radarSpin;
 	public int loaded;
 	public boolean wreck;
+	/** The local player looks out of this vehicle's sight: it is not drawn (1.26). */
+	public boolean hidden;
 }
