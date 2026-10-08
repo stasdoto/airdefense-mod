@@ -388,6 +388,14 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			double a = k * 0.06;
 			double r = 120 + k * 4;
 			camera(server, cx + Math.cos(a) * r, base + 40, cz + Math.sin(a) * r, (float) Math.toDegrees(a) + 90, 15);
+			if (k % 10 == 0) {
+				Runtime rt = Runtime.getRuntime();
+				int kk = k;
+				AirDefense.LOGGER.info("[airdefense-test] soak {}: memory {} MB of {} MB, {}", kk, (rt.totalMemory() - rt.freeMemory()) >> 20, rt.maxMemory() >> 20,
+						server.computeOnServer(s -> "entities " + java.util.stream.StreamSupport.stream(s.overworld().getAllEntities().spliterator(), false).count()
+								+ ", chunks " + s.overworld().getChunkSource().getLoadedChunksCount()
+								+ ", later jobs " + com.stasdoto.airdefense.util.Later.pending()));
+			}
 			if (k == 20) {
 				server.runOnServer(s -> com.stasdoto.airdefense.drone.Raids.onPlayer(s.getPlayerList().getPlayers().getFirst(), 12, null));
 			}

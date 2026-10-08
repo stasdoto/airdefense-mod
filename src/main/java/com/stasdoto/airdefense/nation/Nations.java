@@ -36,6 +36,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import com.stasdoto.airdefense.AirDefense;
+import com.stasdoto.airdefense.util.Perf;
 
 /**
  * The politics of the world, run on the server: villages are found as players come near them and get a name and a
@@ -97,25 +98,35 @@ public final class Nations {
 		long t0 = System.nanoTime();
 		if (t % 100 == 0) {
 			raisePendingFlags(level, p);
+			Perf.over("raisePendingFlags", t0);
+			long f0 = System.nanoTime();
 			foundCities(level, p);
+			Perf.over("foundCities", f0);
 			long t1 = System.nanoTime();
 			PROFILE[0] += t1 - t0;
+		}
+		if (t % 100 == 50) {
+			long t1 = System.nanoTime();
 			discover(level, p);
+			Perf.over("discover", t1);
 			t0 = System.nanoTime();
 			PROFILE[1] += t0 - t1;
 		}
 		if (t % 20 == 7) {
 			captureTick(level, p);
+			Perf.over("captureTick", t0);
 		}
 		long t2 = System.nanoTime();
 		PROFILE[2] += t2 - t0;
 		if (t % 200 == 50) {
 			maintain(level, p);
+			Perf.over("maintain", t2);
 		}
 		long t3 = System.nanoTime();
 		PROFILE[3] += t3 - t2;
 		if (t % 1200 == 300) {
 			bandits(level, p);
+			Perf.over("bandits", t3);
 		}
 		long t4 = System.nanoTime();
 		PROFILE[4] += t4 - t3;
@@ -131,9 +142,11 @@ public final class Nations {
 		com.stasdoto.airdefense.util.Perf.add(com.stasdoto.airdefense.util.Perf.ECONOMY, t5 - e0);
 		PROFILE[5] += t5 - t4;
 		Supply.tick(level, p);
+		Perf.over("supply", t5);
 		long t6 = System.nanoTime();
 		PROFILE[6] += t6 - t5;
 		Unrest.tick(level, p);
+		Perf.over("unrest", t6);
 		long t7 = System.nanoTime();
 		PROFILE[7] += t7 - t6;
 		War.tick(level, p);

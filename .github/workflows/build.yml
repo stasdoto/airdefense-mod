@@ -99,6 +99,23 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq xvfb mesa-utils libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-vulkan-drivers > /dev/null
           xvfb-run -a -s "-screen 0 1280x720x24+32 +extension GLX +render -noreset" glxinfo -B 2>&1 | head -20 > glxinfo.txt || true
           cat glxinfo.txt
+          # A hung game: when its log has been quiet for five minutes, every thread's stack and the heap are written
+          # down and the game is stopped (rather than waiting out the whole time limit).
+          mkdir -p /tmp/out
+          ( while sleep 60; do
+              L=$(find . -path ./.gradle -prune -o -name 'latest.log' -path '*logs*' -print 2>/dev/null | head -1)
+              [ -n "$L" ] || continue
+              AGE=$(( $(date +%s) - $(stat -c %Y "$L") ))
+              if [ "$AGE" -gt 300 ]; then
+                for P in $(pgrep -f 'devlaunchinjector|KnotClient'); do
+                  echo "== pid $P, log quiet for $AGE s" >> /tmp/out/hang-dump.txt
+                  jcmd "$P" Thread.print >> /tmp/out/hang-dump.txt 2>&1 || true
+                  jcmd "$P" GC.heap_info >> /tmp/out/hang-dump.txt 2>&1 || true
+                  kill "$P" || true
+                done
+                break
+              fi
+            done ) &
           timeout 100m xvfb-run -a -s "-screen 0 1280x720x24+32 +extension GLX +render -noreset" ./gradlew runClientGameTest --stacktrace 2>&1 | tail -400 > gametest-log.txt || true
           # The game's assets come from Mojang's servers; a failed download is retried once.
           if grep -q "Failed to download" gametest-log.txt; then

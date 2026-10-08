@@ -1238,6 +1238,7 @@ public class VehicleEntity extends LivingEntity {
 		long perf0 = System.nanoTime();
 		tickBoth();
 		com.stasdoto.airdefense.util.Perf.add(com.stasdoto.airdefense.util.Perf.VEHICLES, System.nanoTime() - perf0);
+		com.stasdoto.airdefense.util.Perf.over("vehicle " + getVehicleType().id + " at " + blockPosition().toShortString(), perf0);
 	}
 
 	private void tickBoth() {

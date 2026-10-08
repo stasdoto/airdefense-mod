@@ -278,10 +278,14 @@ public final class Arsenals extends SavedData {
 			}
 			boolean alert = ar.alertUntil > now;
 			if (near || alert) {
+				long m0 = System.nanoTime();
 				a.materialize(level, p, s, ar, near, alert);
+				com.stasdoto.airdefense.util.Perf.over("arsenal of " + s.name + " comes out", m0);
 			}
 			if ((sec + s.id * 13L) % 30 == 0) {
+				long m0 = System.nanoTime();
 				a.produce(level, p, s, ar);
+				com.stasdoto.airdefense.util.Perf.over("arsenal of " + s.name + " produces", m0);
 			}
 		}
 		// Deliveries arriving; a lorry on the road into town when somebody is there to see it come.
@@ -289,7 +293,10 @@ public final class Arsenals extends SavedData {
 			for (Delivery d : List.copyOf(a.deliveries)) {
 				if (d.id() != 0 && d.arrives() - now <= SUPPLY_LEAD && !a.shown.contains(d.id())) {
 					Settlement s = p.settlements.get(d.to());
-					if (s != null && a.supplyLorry(level, p, s, d)) {
+					long m0 = System.nanoTime();
+					boolean sent = s != null && a.supplyLorry(level, p, s, d);
+					com.stasdoto.airdefense.util.Perf.over("supply lorry", m0);
+					if (sent) {
 						a.shown.add(d.id());
 					}
 				}
@@ -309,7 +316,9 @@ public final class Arsenals extends SavedData {
 			}
 		}
 		if (sec % 20 == 10) {
+			long m0 = System.nanoTime();
 			a.war(level, p);
+			com.stasdoto.airdefense.util.Perf.over("arsenals' war", m0);
 		}
 	}
 

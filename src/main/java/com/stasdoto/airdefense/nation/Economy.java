@@ -41,6 +41,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import com.stasdoto.airdefense.AirDefense;
+import com.stasdoto.airdefense.util.Perf;
 import com.stasdoto.airdefense.factory.FactoryBlockEntity;
 import com.stasdoto.airdefense.factory.FactoryBlueprint;
 import com.stasdoto.airdefense.factory.FactoryControllerBlock;
@@ -94,19 +95,27 @@ public final class Economy {
 		for (Settlement s : p.settlements.values()) {
 			VillageEconomy e = s.eco;
 			Building b = e.active();
+			long p0 = System.nanoTime();
 			if (b != null) {
 				construct(level, p, s, b, t);
+				Perf.over("construct " + b.type.id + " in " + s.name, p0);
 			}
-			if (t % 20 == 11 && !e.hangar.isEmpty()) {
+			if (Math.floorMod(t + s.id, 20) == 11 && !e.hangar.isEmpty()) {
+				p0 = System.nanoTime();
 				hangarStep(level, p, s);
+				Perf.over("hangar in " + s.name, p0);
 			}
-			if (t % 40 == 23 && e.count(BuildingType.BARRACKS) > 0) {
+			if (Math.floorMod(t + s.id, 40) == 23 && e.count(BuildingType.BARRACKS) > 0) {
+				p0 = System.nanoTime();
 				barracksHeal(level, s);
+				Perf.over("barracks in " + s.name, p0);
 			}
 			if ((t + s.id * 131L) % 6000 == 3000) {
+				p0 = System.nanoTime();
 				aiGrowth(level, p, s);
+				Perf.over("growth of " + s.name, p0);
 			}
-			if (t % 200 == 117 && level.isLoaded(s.center)) {
+			if (Math.floorMod(t + s.id * 7L, 200) == 117 && level.isLoaded(s.center)) {
 				float chance = birthChance(p, s);
 				if (chance > 0 && level.getRandom().nextFloat() < chance) {
 					birth(level, p, s);

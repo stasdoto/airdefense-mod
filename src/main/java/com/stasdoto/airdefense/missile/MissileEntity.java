@@ -486,6 +486,7 @@ public class MissileEntity extends Entity {
 			long perf0 = System.nanoTime();
 			serverTick(serverLevel);
 			com.stasdoto.airdefense.util.Perf.add(com.stasdoto.airdefense.util.Perf.MISSILES, System.nanoTime() - perf0);
+			com.stasdoto.airdefense.util.Perf.over("missile " + getMissileType() + " at " + blockPosition().toShortString(), perf0);
 		} else {
 			clientTick();
 		}

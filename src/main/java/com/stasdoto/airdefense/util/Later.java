@@ -26,6 +26,11 @@ public final class Later {
 	public static int done;
 	public static int givenUp;
 
+	/** Jobs waiting for their ground. */
+	public static int pending() {
+		return JOBS.size();
+	}
+
 	private Later() {
 	}
 
@@ -68,7 +73,9 @@ public final class Later {
 			}
 		}
 		for (Job j : ready) {
+			long t0 = System.nanoTime();
 			j.work.accept(j.level);
+			Perf.over("later job " + j.work.getClass().getName() + " at " + j.at.toShortString(), t0);
 			done++;
 		}
 	}

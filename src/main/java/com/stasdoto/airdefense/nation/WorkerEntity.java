@@ -69,6 +69,7 @@ public class WorkerEntity extends PathfinderMob {
 		long perf0 = System.nanoTime();
 		super.tick();
 		com.stasdoto.airdefense.util.Perf.add(com.stasdoto.airdefense.util.Perf.WORKERS, System.nanoTime() - perf0);
+		com.stasdoto.airdefense.util.Perf.over("worker at " + blockPosition().toShortString(), perf0);
 	}
 
 	public static final int WOOD = 0;

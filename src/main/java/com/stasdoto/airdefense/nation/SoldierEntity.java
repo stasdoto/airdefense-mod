@@ -363,6 +363,7 @@ public class SoldierEntity extends PathfinderMob {
 		long perf0 = System.nanoTime();
 		super.tick();
 		com.stasdoto.airdefense.util.Perf.add(com.stasdoto.airdefense.util.Perf.SOLDIERS, System.nanoTime() - perf0);
+		com.stasdoto.airdefense.util.Perf.over("soldier at " + blockPosition().toShortString(), perf0);
 	}
 
 	@Override
