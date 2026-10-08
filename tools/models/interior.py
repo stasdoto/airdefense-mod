@@ -112,18 +112,6 @@ def line_walls(m, p, box, style, roof_style=None, floor_style='rubber', open_wal
     """Lines the compartment from the inside, leaving the windows open. Returns the windows per wall."""
     x0, x1, y0, y1, z0, z1 = box
     holes = {w: _holes(m, box, w, given=windows) for w in ('front', 'back', 'left', 'right', 'roof')}
-    if windows is not None:
-        # Painted-on windows outside: a pane of glass in each opening, just inside the wall.
-        for w, hs in holes.items():
-            for a0, a1, b0, b1 in hs:
-                if w == 'front':
-                    p.box((a0, b0, z1 - 0.02), (a1, b1, z1 - 0.01), 'glass', faces=('back',))
-                elif w == 'back':
-                    p.box((a0, b0, z0 + 0.01), (a1, b1, z0 + 0.02), 'glass', faces=('front',))
-                elif w == 'left':
-                    p.box((x0 + 0.01, b0, a0), (x0 + 0.02, b1, a1), 'glass', faces=('right',))
-                elif w == 'right':
-                    p.box((x1 - 0.02, b0, a0), (x1 - 0.01, b1, a1), 'glass', faces=('left',))
     for w in ('front', 'back', 'left', 'right', 'roof'):
         if w in open_walls:
             continue

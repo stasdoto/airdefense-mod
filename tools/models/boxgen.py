@@ -92,7 +92,8 @@ STYLES = {
     'red': dict(kind='plain', base=0xA4281E),
     'yellow': dict(kind='plain', base=0xC9A227),
     'chrome': dict(kind='plain', base=0xB9BEC2),
-    'hud': dict(kind='glass', base=0x4F8F62, alpha=70),
+    # The head-up display's combiner glass (the inside is drawn solid: a dark green tinted pane).
+    'hud': dict(kind='plain', base=0x2F5240, flat=True),
 }
 
 
