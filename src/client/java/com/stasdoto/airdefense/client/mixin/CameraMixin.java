@@ -18,7 +18,8 @@ public abstract class CameraMixin {
 	@Shadow
 	protected abstract void setPosition(Vec3 pos);
 
-	@Inject(method = "update", at = @At("TAIL"))
+	// Right after the camera is put at the player's eyes - before the field of view and the culling frustum are worked out.
+	@Inject(method = "update", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;alignWithEntity(F)V", shift = At.Shift.AFTER))
 	private void airdefense$sight(DeltaTracker delta, CallbackInfo ci) {
 		Vec3 p = GunnerSight.cameraPos(delta.getGameTimeDeltaPartialTick(true));
 		if (p != null) {

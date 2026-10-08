@@ -914,7 +914,7 @@
   "hud.airdefense.sight.thermal": "ТПВ",
   "hud.airdefense.sight.day": "ДЕНЬ",
   "hud.airdefense.sight.status": "%s · броня %s%% · %s км/год · у запасі %s",
-  "hud.airdefense.sight.keys": "ЛКМ — вогонь · %s — з прицілу · %s — кратність · %s — тепловізор · WASD — їхати",
+  "hud.airdefense.sight.keys": "ЛКМ — вогонь · %s — з прицілу · %s — кратність · %s — тепловізор · %s — дим · WASD — їхати",
   "hud.airdefense.sight.driver": "%s км/год · броня %s%%",
   "hud.airdefense.sight.driver_keys": "%s — висунутися з люка",
   "hud.airdefense.flight.kmh": "км/год",
@@ -929,5 +929,8 @@
   "hud.airdefense.flight.pull_up": "ЗЕМЛЯ! ВГОРУ",
   "subtitles.airdefense.rotor": "Гвинт гелікоптера",
   "subtitles.airdefense.jet": "Реактивний двигун",
-  "subtitles.airdefense.tracks": "Брязкіт гусениць"
+  "subtitles.airdefense.tracks": "Брязкіт гусениць",
+  "key.airdefense.smoke": "Димові гранати",
+  "message.airdefense.vehicle.smoke": "Дим!",
+  "message.airdefense.vehicle.smoke_reload": "Димові гранати: перезаряджання, %s с"
 }

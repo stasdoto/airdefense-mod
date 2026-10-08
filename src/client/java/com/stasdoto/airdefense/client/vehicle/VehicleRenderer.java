@@ -127,7 +127,14 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		poseStack.scale(-1, -1, 1);
 		Identifier tex = s.wreck ? wreckTexture : texture;
 		boolean near = !s.wreck && s.distanceToCameraSq < INSIDE_RANGE * INSIDE_RANGE;
-		collector.submitModel(model, s, poseStack, tex, s.lightCoords, OverlayTexture.NO_OVERLAY, s.outlineColor);
+		int light = s.lightCoords;
+		int overlay = OverlayTexture.NO_OVERLAY;
+		if (GunnerSight.thermalOn() && !s.wreck) {
+			// Through the thermal sight a vehicle shows warm (its engine, its tracks), a burnt-out one cold.
+			light = 0xF000F0;
+			overlay = OverlayTexture.pack(0.6f, false);
+		}
+		collector.submitModel(model, s, poseStack, tex, light, overlay, s.outlineColor);
 		if (inside != null && near) {
 			collector.submitModel(inside, s, poseStack, insideTexture, s.lightCoords, OverlayTexture.NO_OVERLAY, s.outlineColor);
 		}

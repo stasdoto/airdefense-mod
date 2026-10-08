@@ -71,8 +71,10 @@ public final class FxClient {
 		CameraShake.tick(mc);
 		if (mc.level == null) {
 			SCHEDULED.clear();
+			SMOKE.clear();
 			return;
 		}
+		feedSmoke(mc, mc.level);
 		List<Runnable> due = new ArrayList<>();
 		for (Iterator<Scheduled> it = SCHEDULED.iterator(); it.hasNext(); ) {
 			Scheduled s = it.next();
@@ -251,6 +253,7 @@ public final class FxClient {
 		switch (p.kind()) {
 			case FxPayload.GROUND_IMPACT -> groundImpact(mc, level, at, p.power(), p.az() < 0.5);
 			case FxPayload.GRENADE -> grenade(mc, level, at);
+			case FxPayload.SMOKE -> smokeScreen(mc, level, at, p.power(), (int) p.ax());
 			case FxPayload.AIR_BURST_THREAT -> airBurst(mc, level, at, p.power(), true);
 			case FxPayload.AIR_BURST_INTERCEPTOR -> airBurst(mc, level, at, p.power(), false);
 			case FxPayload.LAUNCH -> {
@@ -289,6 +292,42 @@ public final class FxClient {
 	}
 
 	/** A hand grenade: a sharp flash, a fountain of dirt and a grey-brown puff, fragments - and no fires. */
+	/** Smoke clouds still being fed (1.26 smoke screens): centre, radius, ticks left. */
+	private record SmokeCloud(Vec3 at, float r, int[] left) {
+	}
+
+	private static final List<SmokeCloud> SMOKE = new ArrayList<>();
+
+	/** A smoke grenade's cloud: a quick thick burst, then fed for as long as it hangs. */
+	private static void smokeScreen(Minecraft mc, ClientLevel level, Vec3 at, float r, int ticks) {
+		RandomSource rnd = level.getRandom();
+		pop(mc, level, at, r, 14, rnd);
+		SMOKE.add(new SmokeCloud(at, r, new int[]{Math.max(20, ticks - 160)}));
+	}
+
+	private static void pop(Minecraft mc, ClientLevel level, Vec3 at, float r, int n, RandomSource rnd) {
+		for (int i = 0; i < n; i++) {
+			double a = rnd.nextDouble() * Mth.TWO_PI;
+			double d = Math.sqrt(rnd.nextDouble()) * r * 0.8;
+			mc.particleEngine.add(smokeWhite(level, at.x + Math.cos(a) * d, at.y - 0.8 + rnd.nextDouble() * 2.0, at.z + Math.sin(a) * d,
+					Math.cos(a) * 0.04, 0.01, Math.sin(a) * 0.04, 1.7f).life(220, 320));
+		}
+	}
+
+	private static void feedSmoke(Minecraft mc, ClientLevel level) {
+		RandomSource rnd = level.getRandom();
+		for (Iterator<SmokeCloud> it = SMOKE.iterator(); it.hasNext(); ) {
+			SmokeCloud c = it.next();
+			if (--c.left()[0] <= 0) {
+				it.remove();
+				continue;
+			}
+			if (c.left()[0] % 4 == 0) {
+				pop(mc, level, c.at(), c.r(), 1, rnd);
+			}
+		}
+	}
+
 	private static void grenade(Minecraft mc, ClientLevel level, Vec3 at) {
 		RandomSource r = level.getRandom();
 		var pe = mc.particleEngine;

@@ -7,7 +7,10 @@
     "AbstractClientPlayerMixin",
     "AvatarRendererMixin",
     "EntityMixin",
-    "CameraMixin"
+    "CameraMixin",
+    "LivingEntityRendererMixin",
+    "LocalPlayerMixin",
+    "HandsRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 0

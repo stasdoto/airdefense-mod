@@ -584,7 +584,7 @@ public class SoldierEntity extends PathfinderMob {
 				return;
 			}
 			double d = s.distanceTo(t);
-			boolean see = s.getSensing().hasLineOfSight(t);
+			boolean see = s.getSensing().hasLineOfSight(t) && !com.stasdoto.airdefense.fx.Smoke.blocks(level, s.getEyePosition(), t.getEyePosition());
 			s.getLookControl().setLookAt(t, 40f, 40f);
 			double good = gun.pistol || gun.pellets > 1 ? 12 : gun.scoped() ? 45 : gun.range < 90 ? 18 : 26;
 			boolean underFire = s.hurtTime > 0 || s.tickCount - s.getLastHurtByMobTimestamp() < 60;

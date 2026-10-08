@@ -914,7 +914,7 @@
   "hud.airdefense.sight.thermal": "ТПВ",
   "hud.airdefense.sight.day": "ДЕНЬ",
   "hud.airdefense.sight.status": "%s · броня %s%% · %s км/ч · в запасе %s",
-  "hud.airdefense.sight.keys": "ЛКМ — огонь · %s — из прицела · %s — кратность · %s — тепловизор · WASD — ехать",
+  "hud.airdefense.sight.keys": "ЛКМ — огонь · %s — из прицела · %s — кратность · %s — тепловизор · %s — дым · WASD — ехать",
   "hud.airdefense.sight.driver": "%s км/ч · броня %s%%",
   "hud.airdefense.sight.driver_keys": "%s — высунуться из люка",
   "hud.airdefense.flight.kmh": "км/ч",
@@ -929,5 +929,8 @@
   "hud.airdefense.flight.pull_up": "ЗЕМЛЯ! ВВЕРХ",
   "subtitles.airdefense.rotor": "Винт вертолёта",
   "subtitles.airdefense.jet": "Реактивный двигатель",
-  "subtitles.airdefense.tracks": "Лязг гусениц"
+  "subtitles.airdefense.tracks": "Лязг гусениц",
+  "key.airdefense.smoke": "Дымовые гранаты",
+  "message.airdefense.vehicle.smoke": "Дым!",
+  "message.airdefense.vehicle.smoke_reload": "Дымовые гранаты: перезарядка, %s с"
 }

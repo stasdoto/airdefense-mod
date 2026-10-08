@@ -17,6 +17,7 @@ public class AirDefenseClient implements ClientModInitializer {
 		EntityRenderers.register(ModEntities.MISSILE, MissileRenderer::new);
 		FxClient.init();
 		VehicleClient.init();
+		com.stasdoto.airdefense.client.vehicle.ThermalView.init();
 		MapClient.init();
 		com.stasdoto.airdefense.client.map.AtlasClient.init();
 		com.stasdoto.airdefense.client.drone.DroneClient.init();

@@ -914,7 +914,7 @@
   "hud.airdefense.sight.thermal": "THERMAL",
   "hud.airdefense.sight.day": "DAY",
   "hud.airdefense.sight.status": "%s · armour %s%% · %s km/h · in reserve %s",
-  "hud.airdefense.sight.keys": "LMB - fire · %s - out of the sight · %s - magnification · %s - thermal · WASD - drive",
+  "hud.airdefense.sight.keys": "LMB - fire · %s - out of the sight · %s - magnification · %s - thermal · %s - smoke · WASD - drive",
   "hud.airdefense.sight.driver": "%s km/h · armour %s%%",
   "hud.airdefense.sight.driver_keys": "%s - head out of the hatch",
   "hud.airdefense.flight.kmh": "km/h",
@@ -929,5 +929,8 @@
   "hud.airdefense.flight.pull_up": "PULL UP",
   "subtitles.airdefense.rotor": "Helicopter rotor",
   "subtitles.airdefense.jet": "Jet engine",
-  "subtitles.airdefense.tracks": "Tracks clatter"
+  "subtitles.airdefense.tracks": "Tracks clatter",
+  "key.airdefense.smoke": "Smoke grenades",
+  "message.airdefense.vehicle.smoke": "Smoke!",
+  "message.airdefense.vehicle.smoke_reload": "Smoke grenades: reloading, %s s"
 }

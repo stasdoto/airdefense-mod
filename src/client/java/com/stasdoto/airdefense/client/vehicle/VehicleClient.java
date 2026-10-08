@@ -75,6 +75,8 @@ public final class VehicleClient {
 			}
 			while (SEAT.consumeClick()) {
 			}
+			while (GunnerSight.SMOKE.consumeClick()) {
+			}
 			return;
 		}
 		v.setClientInput(v.isDriver(player) ? player.input.keyPresses : Input.EMPTY);
@@ -99,6 +101,9 @@ public final class VehicleClient {
 		}
 		while (SEAT.consumeClick()) {
 			send(v, VehicleEntity.ACTION_SEAT);
+		}
+		while (GunnerSight.SMOKE.consumeClick()) {
+			send(v, VehicleEntity.ACTION_SMOKE);
 		}
 	}
 

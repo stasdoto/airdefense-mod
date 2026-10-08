@@ -88,6 +88,8 @@ public class VehicleEntity extends LivingEntity {
 	public static final int ACTION_SEAT = 2;
 	public static final int ACTION_STOW_FOR_MARCH = 3;
 	public static final int ACTION_FIRE = 4;
+	/** 1.26: smoke grenades (fighting vehicles). */
+	public static final int ACTION_SMOKE = 5;
 
 	public static final int MIN_STRIKE_DISTANCE = 24;
 	/** Missile batteries deploy after standing still this long (a blast wave rocking the truck does not count as driving). */
@@ -929,8 +931,46 @@ public class VehicleEntity extends LivingEntity {
 	private boolean sees(ServerLevel level, Entity e) {
 		Vec3 from = position().add(0, vtype.geometry.height() * 0.8, 0);
 		Vec3 to = e.position().add(0, e.getBbHeight() * 0.6, 0);
+		if (com.stasdoto.airdefense.fx.Smoke.blocks(level, from, to)) {
+			return false;
+		}
 		return level.clip(new net.minecraft.world.level.ClipContext(from, to, net.minecraft.world.level.ClipContext.Block.COLLIDER,
 				net.minecraft.world.level.ClipContext.Fluid.NONE, this)).getType() == net.minecraft.world.phys.HitResult.Type.MISS;
+	}
+
+	/** Game time the smoke grenades are loaded again. */
+	private long smokeReady;
+
+	/** Does it carry smoke grenades (fighting vehicles with a turret, armoured cars)? */
+	public boolean hasSmoke() {
+		return vtype.isArmed() && vtype.geometry.turret() != null && !vtype.boat;
+	}
+
+	/**
+	 * 1.26: smoke grenades - a fan of six clouds twenty-odd metres ahead of the turret, hanging for twenty seconds
+	 * (half a minute to reload). Behind it nobody's guns see the vehicle.
+	 */
+	public void smoke(Player player) {
+		if (!hasSmoke() || !(level() instanceof ServerLevel level) || player != shooter() && player != getDriver()) {
+			return;
+		}
+		long now = level.getGameTime();
+		if (now < smokeReady) {
+			player.sendOverlayMessage(Component.translatable("message.airdefense.vehicle.smoke_reload", (int) ((smokeReady - now) / 20) + 1));
+			return;
+		}
+		smokeReady = now + 600;
+		float yaw = getYRot() + (vtype.geometry.turret() != null ? turretYaw : 0);
+		for (int i = 0; i < 6; i++) {
+			float a = (yaw + (i - 2.5f) * 14f) * Mth.DEG_TO_RAD;
+			double d = 18 + (i % 2) * 5;
+			Vec3 at = position().add(-Mth.sin(a) * d, 1.5, Mth.cos(a) * d);
+			int top = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, Mth.floor(at.x), Mth.floor(at.z));
+			com.stasdoto.airdefense.fx.Smoke.lay(level, new Vec3(at.x, Math.max(at.y, top + 1.5), at.z), 5.5, 400);
+		}
+		com.stasdoto.airdefense.fx.Fx.send(level, com.stasdoto.airdefense.fx.FxPayload.LAUNCH, position().add(0, vtype.geometry.height(), 0), 0.4f,
+				new Vec3(com.stasdoto.airdefense.fx.FxPayload.LAUNCH_SOUND_LIGHT, 0, 0));
+		player.sendOverlayMessage(Component.translatable("message.airdefense.vehicle.smoke"));
 	}
 
 	@Override
@@ -2570,6 +2610,7 @@ public class VehicleEntity extends LivingEntity {
 				}
 			}
 			case ACTION_SEAT -> switchSeat(player);
+			case ACTION_SMOKE -> smoke(player);
 			case ACTION_STOW_FOR_MARCH -> {
 				if (!isDriver(player)) {
 					return;

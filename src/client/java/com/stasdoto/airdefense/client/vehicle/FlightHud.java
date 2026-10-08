@@ -56,7 +56,7 @@ public final class FlightHud {
 
 		// Heading tape across the top.
 		float heading = Mth.wrapDegrees(cam.yRot() + 180);
-		int tapeY = 24;
+		int tapeY = 52;
 		g.fill(cx - 90, tapeY + 9, cx + 91, tapeY + 10, C_DIM);
 		for (int d = -40; d <= 40; d += 5) {
 			float hdg = heading + d;

@@ -954,7 +954,14 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(20);
 		ctx.takeScreenshot("c5_t72_hatch");
 		String seat = ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.vehicle.GunnerSight.active().toString());
-		AirDefense.LOGGER.info("[airdefense-test] RESULT crew_sight: in the tank {}; after C: {}", sight, seat);
+		// Smoke grenades: a wall of smoke ahead of the turret.
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_BACK));
+		ctx.getInput().pressKey(o -> com.stasdoto.airdefense.client.vehicle.GunnerSight.SMOKE);
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("c5b_t72_smoke");
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
+		int smokes = server.computeOnServer(s -> com.stasdoto.airdefense.fx.Smoke.laid);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT crew_sight: in the tank {}; after C: {}; smoke clouds laid {}", sight, seat, smokes);
 		leave(ctx);
 		server.runOnServer(s -> forVehicles(s.overworld(), List.of(tank, btr, lorry), Entity::discard));
 

@@ -129,7 +129,8 @@ final class SightHud {
 		int kmh = (int) Math.round(Math.hypot(v.getX() - v.xo, v.getZ() - v.zo) * 20 * 3.6);
 		g.text(font, Component.translatable("hud.airdefense.sight.status", v.getType().getDescription(), hp, kmh, v.getReserve()), 8, 8, TEXT);
 		g.text(font, Component.translatable("hud.airdefense.sight.keys", GunnerSight.VIEW.getTranslatedKeyMessage(),
-				GunnerSight.ZOOM.getTranslatedKeyMessage(), GunnerSight.THERMAL.getTranslatedKeyMessage()), 8, h - 14, 0xFFA09A8A);
+				GunnerSight.ZOOM.getTranslatedKeyMessage(), GunnerSight.THERMAL.getTranslatedKeyMessage(), GunnerSight.SMOKE.getTranslatedKeyMessage()),
+				8, h - 14, 0xFFA09A8A);
 	}
 
 	private static void periscope(GuiGraphicsExtractor g, Font font, VehicleEntity v, int w, int h) {

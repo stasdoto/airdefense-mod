@@ -28,6 +28,8 @@ public final class GunnerSight {
 	public static final KeyMapping ZOOM = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.airdefense.zoom", InputConstants.KEY_Z, CATEGORY));
 	public static final KeyMapping THERMAL = KeyMappingHelper.registerKeyMapping(
 			new KeyMapping("key.airdefense.thermal", InputConstants.KEY_N, CATEGORY));
+	public static final KeyMapping SMOKE = KeyMappingHelper.registerKeyMapping(
+			new KeyMapping("key.airdefense.smoke", InputConstants.KEY_X, CATEGORY));
 
 	/** How the field of view is narrowed at each step of magnification. */
 	private static final float[] ZOOMS = {1f, 1 / 3.5f, 1 / 8f};
@@ -104,6 +106,11 @@ public final class GunnerSight {
 		if (k == Kind.NONE || !through) {
 			thermal = false;
 		}
+	}
+
+	/** Is the picture thermal right now (the sight's thermal channel in use)? */
+	public static boolean thermalOn() {
+		return thermal && active() != Kind.NONE;
 	}
 
 	public static float fovMultiplier() {
