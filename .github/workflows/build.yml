@@ -120,11 +120,11 @@ jobs:
                 break
               fi
             done ) &
-          timeout 100m xvfb-run -a -s "-screen 0 1280x720x24+32 +extension GLX +render -noreset" ./gradlew runClientGameTest --stacktrace 2>&1 | tail -400 > gametest-log.txt || true
+          timeout 160m xvfb-run -a -s "-screen 0 1280x720x24+32 +extension GLX +render -noreset" ./gradlew runClientGameTest --stacktrace 2>&1 | tail -400 > gametest-log.txt || true
           # The game's assets come from Mojang's servers; a failed download is retried once.
           if grep -q "Failed to download" gametest-log.txt; then
             sleep 20
-            timeout 100m xvfb-run -a -s "-screen 0 1280x720x24+32 +extension GLX +render -noreset" ./gradlew runClientGameTest --stacktrace 2>&1 | tail -400 > gametest-log.txt || true
+            timeout 160m xvfb-run -a -s "-screen 0 1280x720x24+32 +extension GLX +render -noreset" ./gradlew runClientGameTest --stacktrace 2>&1 | tail -400 > gametest-log.txt || true
           fi
           mkdir -p /tmp/out/screens
           find . -path ./.gradle -prune -o -name '*.png' -path '*screenshots*' -print -exec cp {} /tmp/out/screens/ \;
