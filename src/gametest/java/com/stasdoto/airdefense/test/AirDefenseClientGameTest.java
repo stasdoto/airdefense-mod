@@ -312,7 +312,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					+ "logs {}, leaves {}, plants {}; e.g. {}", com.stasdoto.airdefense.nation.Orphans.removedAtGeneration,
 					com.stasdoto.airdefense.nation.Orphans.removedLater, orphans[1], orphans[0], com.stasdoto.airdefense.nation.Orphans.FOUND[0],
 					com.stasdoto.airdefense.nation.Orphans.FOUND[1], com.stasdoto.airdefense.nation.Orphans.FOUND[2], com.stasdoto.airdefense.nation.Orphans.SAMPLES);
-			AirDefense.LOGGER.info("[airdefense-test] RESULT real_removed: {}", new java.util.TreeMap<>(com.stasdoto.airdefense.nation.Orphans.REMOVED));
+			AirDefense.LOGGER.info("[airdefense-test] RESULT real_removed: {} (changed before they could go: {})",
+					new java.util.TreeMap<>(com.stasdoto.airdefense.nation.Orphans.REMOVED), com.stasdoto.airdefense.nation.Orphans.changedMeanwhile);
 			// Where they are (town, its margin, by a road...), and a look at a few.
 			java.util.List<BlockPos> seen = new java.util.ArrayList<>();
 			int shots = 0;

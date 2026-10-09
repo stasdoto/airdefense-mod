@@ -443,6 +443,8 @@ public final class CityGen {
 			}
 		}
 		sb.append("; trunks/stems near: ").append(stems).append(stems > 0 ? " (y " + sLo + ".." + sHi + ")" : "");
+		ChunkPos pc = ChunkPos.containing(p);
+		sb.append("; its chunk ").append(levelled(level, pc) ? "levelled" : "not levelled").append(Orphans.looked(pc) ? ", looked over" : ", not looked over");
 		sb.append("; round:");
 		for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
 			sb.append(' ').append(dir.getName().charAt(0)).append('=').append(level.getBlockState(p.relative(dir)).getBlock().getDescriptionId().replace("block.minecraft.", ""));

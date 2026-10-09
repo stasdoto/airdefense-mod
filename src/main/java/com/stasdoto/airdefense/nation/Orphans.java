@@ -42,6 +42,8 @@ public final class Orphans {
 	private static final byte HANGER = 7;
 	/** Grass, flowers, saplings, snow: stand on what is below them. */
 	private static final byte PLANT = 8;
+	/** Natural ground (soil, sand, rock): holds a trunk standing on it, not one that only touches it from the side. */
+	private static final byte TERRAIN = 9;
 
 	/** What a block is to the sweep. */
 	private static byte classify(BlockState s) {
@@ -69,7 +71,10 @@ public final class Orphans {
 		if (s.is(Blocks.SNOW) || s.is(BlockTags.REPLACEABLE_BY_TREES) || s.is(BlockTags.FLOWERS) || s.is(BlockTags.SAPLINGS)) {
 			return PLANT;
 		}
-		return s.canBeReplaced() ? OTHER : SOLID;
+		if (s.canBeReplaced()) {
+			return OTHER;
+		}
+		return Sites.naturalGround(s) ? TERRAIN : SOLID;
 	}
 
 	/** For the tests: blocks removed (by the world generator, by the sweep of older towns), and orphans counted. */
@@ -149,7 +154,10 @@ public final class Orphans {
 				boolean seed = y == 0 || x == 0 || z == 0 || x == w - 1 || z == w - 1 || y == h - 1
 						|| ours.test(BlockPos.asLong(ax + x, yMin + y, az + z));
 				if (!seed) {
-					seed = kind[i - w * w] == SOLID || kind[i + w * w] == SOLID || kind[i - 1] == SOLID || kind[i + 1] == SOLID
+					// Standing on ground or on anything built; touching the ground only from the side (a trunk by the wall of a
+					// cutting) is no hold.
+					byte below = kind[i - w * w];
+					seed = below == SOLID || below == TERRAIN || kind[i + w * w] == SOLID || kind[i - 1] == SOLID || kind[i + 1] == SOLID
 							|| kind[i - w] == SOLID || kind[i + w] == SOLID;
 				}
 				if (seed) {
@@ -290,9 +298,9 @@ public final class Orphans {
 						boolean drop = false;
 						if (pass == 0 && kd == VINE) {
 							byte up = kind[i + w * w];
-							boolean hold = up == SOLID || up == LEAF || up == LOG || up == VINE;
+							boolean hold = up == SOLID || up == TERRAIN || up == LEAF || up == LOG || up == VINE;
 							for (int j : new int[]{i - 1, i + 1, i - w, i + w}) {
-								hold |= kind[j] == SOLID || kind[j] == LEAF || kind[j] == LOG;
+								hold |= kind[j] == SOLID || kind[j] == TERRAIN || kind[j] == LEAF || kind[j] == LOG;
 							}
 							drop = !hold;
 						} else if (pass == 0 && kd == HANGER) {
@@ -424,6 +432,16 @@ public final class Orphans {
 		t.setPriority(Thread.MIN_PRIORITY);
 		return t;
 	});
+	/** For the tests: blocks the sweeping thread found that had changed by the time they were to go. */
+	public static int changedMeanwhile;
+
+	/** For the tests: has this chunk been looked over once complete (this session)? */
+	public static boolean looked(net.minecraft.world.level.ChunkPos cp) {
+		synchronized (QUEUE) {
+			return DONE.contains(cp.pack());
+		}
+	}
+
 	/** For the tests: time the sweeping thread spent. */
 	public static volatile long workerNanos;
 
@@ -442,6 +460,8 @@ public final class Orphans {
 				if (level.isLoaded(p) && level.getBlockState(p) == f.was[i]) {
 					level.setBlock(p, Blocks.AIR.defaultBlockState(), LIVE_FLAGS);
 					removedLater++;
+				} else {
+					changedMeanwhile++;
 				}
 			}
 		}
