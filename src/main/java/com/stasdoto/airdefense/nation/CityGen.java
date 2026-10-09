@@ -388,6 +388,51 @@ public final class CityGen {
 		return false;
 	}
 
+	/** For the tests: what kind of ground {@code p}'s column is (town, its margin, a road...) and what is round {@code p}. */
+	public static String describe(ServerLevel level, BlockPos p) {
+		Cities.Terrain t = Cities.terrain(level);
+		long seed = level.getSeed();
+		int x = p.getX();
+		int z = p.getZ();
+		StringBuilder sb = new StringBuilder();
+		for (Cities.City c : Cities.citiesAround(seed, t, x, z)) {
+			int out = c.outside(x, z);
+			if (out <= Cities.MARGIN + 16) {
+				sb.append(out == 0 ? "in town" : "outside town by " + out + (out <= Cities.MARGIN ? " (margin)" : "")).append(" base ").append(c.base).append("; ");
+			}
+			for (Hamlets.Hamlet h : c.hamlets(seed, t)) {
+				if (h.near(x, z, 8)) {
+					sb.append("by a hamlet; ");
+				}
+			}
+			Depots.Depot d = c.depot(seed, t);
+			if (d != null && d.near(x, z, 8)) {
+				sb.append("by a depot; ");
+			}
+		}
+		Cities.Road.Spot probe = new Cities.Road.Spot();
+		for (Cities.Road r : Cities.roadsNear(seed, t, x, z)) {
+			if (r.locate(x + 0.5, z + 0.5, r.half + 12, probe) && probe.along >= -1 && probe.along <= r.length + 1) {
+				sb.append(String.format(java.util.Locale.ROOT, "road %.1f from its edge at h %.0f; ", Math.abs(probe.across) - r.halfAt(probe.along), r.height(probe.along)));
+			}
+		}
+		int below = 0;
+		BlockPos.MutableBlockPos q = p.mutable();
+		BlockState s;
+		do {
+			q.move(0, -1, 0);
+			s = level.getBlockState(q);
+			below++;
+		} while (s.isAir() && below < 80);
+		sb.append("below: ").append(below - 1).append(" air then ").append(s.getBlock().getDescriptionId().replace("block.minecraft.", "")).append(" at ").append(q.getY());
+		sb.append("; ground ").append(level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1);
+		sb.append("; round:");
+		for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
+			sb.append(' ').append(dir.getName().charAt(0)).append('=').append(level.getBlockState(p.relative(dir)).getBlock().getDescriptionId().replace("block.minecraft.", ""));
+		}
+		return sb.toString();
+	}
+
 	/** Our own logs (the trees the town planted) round {@code pos}'s chunk. */
 	public static java.util.function.LongPredicate ownTrees(ServerLevel level, ChunkPos cp) {
 		Cities.Terrain t = Cities.terrain(level);

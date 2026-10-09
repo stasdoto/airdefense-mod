@@ -42,6 +42,7 @@ public final class Orphans {
 	/** For the tests: what the last counts found (logs, leaves and caps, vines/plants/snow) and a few of them. */
 	public static final int[] FOUND = new int[3];
 	public static final java.util.List<String> SAMPLES = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+	public static final java.util.List<Long> SAMPLE_POS = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
 
 	private Orphans() {
 	}
@@ -255,6 +256,7 @@ public final class Orphans {
 	private static void note(int what, Access a, BlockPos p, int yMin, int h) {
 		FOUND[what]++;
 		if (SAMPLES.size() < 24 && (FOUND[what] % 97 == 1)) {
+			SAMPLE_POS.add(p.asLong());
 			SAMPLES.add(a.get(p).getBlock().getDescriptionId().replace("block.minecraft.", "") + " at " + p.toShortString() + " (" + (p.getY() - yMin) + " of " + h + ")");
 		}
 	}

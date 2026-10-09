@@ -302,6 +302,34 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					+ "logs {}, leaves {}, plants {}; e.g. {}", com.stasdoto.airdefense.nation.Orphans.removedAtGeneration,
 					com.stasdoto.airdefense.nation.Orphans.removedLater, orphans[1], orphans[0], com.stasdoto.airdefense.nation.Orphans.FOUND[0],
 					com.stasdoto.airdefense.nation.Orphans.FOUND[1], com.stasdoto.airdefense.nation.Orphans.FOUND[2], com.stasdoto.airdefense.nation.Orphans.SAMPLES);
+			// Where they are (town, its margin, by a road...), and a look at a few.
+			java.util.List<BlockPos> seen = new java.util.ArrayList<>();
+			int shots = 0;
+			for (int k = 0; k < com.stasdoto.airdefense.nation.Orphans.SAMPLE_POS.size() && seen.size() < 10; k++) {
+				BlockPos p = BlockPos.of(com.stasdoto.airdefense.nation.Orphans.SAMPLE_POS.get(k));
+				boolean dup = false;
+				for (BlockPos o : seen) {
+					dup |= o.distManhattan(p) < 6;
+				}
+				if (dup) {
+					continue;
+				}
+				seen.add(p);
+				String what = com.stasdoto.airdefense.nation.Orphans.SAMPLES.get(k);
+				String info = server.computeOnServer(s -> com.stasdoto.airdefense.nation.CityGen.describe(s.overworld(), p));
+				AirDefense.LOGGER.info("[airdefense-test] RESULT orphan_at: {} | {}", what, info);
+				if (shots < 4) {
+					double ex = p.getX() + 0.5 + 9;
+					double ey = p.getY() + 5;
+					double ez = p.getZ() + 0.5 + 9;
+					float yaw = (float) Math.toDegrees(Math.atan2(-(p.getX() + 0.5 - ex), p.getZ() + 0.5 - ez));
+					float pitch = (float) Math.toDegrees(Math.atan2(ey - p.getY() - 0.5, Math.hypot(9, 9)));
+					camera(server, ex, ey, ez, yaw, pitch);
+					ctx.waitTicks(60);
+					ctx.takeScreenshot("148_orphan_" + shots);
+					shots++;
+				}
+			}
 			camera(server, cx + 0.5, base + 140, cz + 0.5, 0, 90);
 			ctx.waitTicks(100);
 			ctx.takeScreenshot("141_real_capital_top");
