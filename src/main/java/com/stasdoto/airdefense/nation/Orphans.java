@@ -345,17 +345,19 @@ public final class Orphans {
 			}
 		});
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_LEVEL_TICK.register(level -> {
-			if (level.dimension() == net.minecraft.world.level.Level.OVERWORLD && pending() > 0) {
+			if (level.dimension() != net.minecraft.world.level.Level.OVERWORLD) {
+				return;
+			}
+			boolean worked = apply(level);
+			if (pending() > 0) {
 				long t0 = System.nanoTime();
-				// Up to a millisecond and a half a tick, at most four chunks.
-				boolean worked = false;
-				for (int n = 0; n < 4 && pending() > 0 && System.nanoTime() - t0 < 1_500_000; n++) {
+				// Up to a millisecond a tick (the sweeping itself is done on its own thread), at most four chunks.
+				for (int n = 0; n < 4 && pending() > 0 && IN_FLIGHT.get() < 6 && System.nanoTime() - t0 < 1_000_000; n++) {
 					worked |= step(level);
 				}
-				idleTicks = worked ? 0 : idleTicks + 1;
-			} else {
-				idleTicks++;
 			}
+			worked |= IN_FLIGHT.get() > 0;
+			idleTicks = worked ? 0 : idleTicks + 1;
 		});
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
 			synchronized (QUEUE) {
@@ -363,6 +365,9 @@ public final class Orphans {
 				QUEUE.clear();
 				QUEUED.clear();
 			}
+			// What the sweeping thread finds for this world is not to be applied to the next one.
+			SESSION.incrementAndGet();
+			RESULTS.clear();
 		});
 	}
 
@@ -389,6 +394,43 @@ public final class Orphans {
 		synchronized (QUEUE) {
 			return QUEUE.size();
 		}
+	}
+
+	/** What the sweeping thread found to take away (and what each block was when it looked). */
+	private record Found(int session, long[] pos, BlockState[] was) {
+	}
+
+	private static final java.util.concurrent.ConcurrentLinkedQueue<Found> RESULTS = new java.util.concurrent.ConcurrentLinkedQueue<>();
+	private static final java.util.concurrent.atomic.AtomicInteger IN_FLIGHT = new java.util.concurrent.atomic.AtomicInteger();
+	private static final java.util.concurrent.atomic.AtomicInteger SESSION = new java.util.concurrent.atomic.AtomicInteger();
+	private static final java.util.concurrent.ExecutorService WORKER = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+		Thread t = new Thread(r, "AirDefense orphan sweep");
+		t.setDaemon(true);
+		t.setPriority(Thread.MIN_PRIORITY);
+		return t;
+	});
+	/** For the tests: time the sweeping thread spent. */
+	public static volatile long workerNanos;
+
+	/** Takes away what the sweeping thread found, where the blocks are still as it saw them. True if there was any. */
+	private static boolean apply(net.minecraft.server.level.ServerLevel level) {
+		boolean any = false;
+		Found f;
+		BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
+		while ((f = RESULTS.poll()) != null) {
+			any = true;
+			if (f.session != SESSION.get()) {
+				continue;
+			}
+			for (int i = 0; i < f.pos.length; i++) {
+				p.set(f.pos[i]);
+				if (level.isLoaded(p) && level.getBlockState(p) == f.was[i]) {
+					level.setBlock(p, Blocks.AIR.defaultBlockState(), LIVE_FLAGS);
+					removedLater++;
+				}
+			}
+		}
+		return any;
 	}
 
 	/** Trunks, crowns, mushrooms, vines: what can be left hanging (a section without any needs no looking at). */
@@ -462,25 +504,72 @@ public final class Orphans {
 		}
 		yMin = Math.max(Math.max(level.getMinY() + 1, yMin - 3), lo - 1);
 		int yMax = Math.min(hi + 1, yMin + 160);
+		// A copy of the sections in that height (cheap), swept on the sweeping thread; what it finds is taken away here, in
+		// a later tick, where the block is still the same.
+		int s0 = level.getSectionIndex(yMin);
+		int s1 = level.getSectionIndex(yMax);
+		@SuppressWarnings("unchecked")
+		net.minecraft.world.level.chunk.PalettedContainer<BlockState>[] snap = new net.minecraft.world.level.chunk.PalettedContainer[9 * (s1 - s0 + 1)];
+		for (int k = 0; k < 9; k++) {
+			net.minecraft.world.level.chunk.LevelChunkSection[] secs = cs[k].getSections();
+			for (int si = s0; si <= s1; si++) {
+				if (si >= 0 && si < secs.length && !secs[si].hasOnlyAir()) {
+					snap[k * (s1 - s0 + 1) + si - s0] = secs[si].getStates().copy();
+				}
+			}
+		}
 		int cx = cp.x();
 		int cz = cp.z();
-		BlockState air = net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
-		removedLater += sweep(new Access() {
-			@Override
-			public BlockState get(BlockPos p) {
-				net.minecraft.world.level.chunk.LevelChunk c = cs[((p.getX() >> 4) - cx + 1) * 3 + (p.getZ() >> 4) - cz + 1];
-				int si = c.getSectionIndex(p.getY());
-				if (si < 0 || si >= c.getSectionsCount()) {
-					return air;
-				}
-				return c.getSection(si).getBlockState(p.getX() & 15, p.getY() & 15, p.getZ() & 15);
-			}
+		int minSec = level.getMinSectionY();
+		int span = s1 - s0 + 1;
+		int fMin = yMin;
+		int fMax = yMax;
+		LongPredicate ours = CityGen.ownTrees(level, cp);
+		int session = SESSION.get();
+		IN_FLIGHT.incrementAndGet();
+		WORKER.execute(() -> {
+			try {
+				long w0 = System.nanoTime();
+				BlockState air = Blocks.AIR.defaultBlockState();
+				long[] found = new long[64];
+				BlockState[] was = new BlockState[64];
+				int[] n = {0};
+				long[][] foundRef = {found};
+				BlockState[][] wasRef = {was};
+				Access snapshot = new Access() {
+					@Override
+					public BlockState get(BlockPos q) {
+						int k = ((q.getX() >> 4) - cx + 1) * 3 + (q.getZ() >> 4) - cz + 1;
+						int si = (q.getY() >> 4) - minSec - s0;
+						if (k < 0 || k >= 9 || si < 0 || si >= span) {
+							return air;
+						}
+						net.minecraft.world.level.chunk.PalettedContainer<BlockState> c = snap[k * span + si];
+						return c == null ? air : c.get(q.getX() & 15, q.getY() & 15, q.getZ() & 15);
+					}
 
-			@Override
-			public void set(BlockPos p, BlockState s) {
-				level.setBlock(p, s, LIVE_FLAGS);
+					@Override
+					public void set(BlockPos q, BlockState st) {
+						if (n[0] == foundRef[0].length) {
+							foundRef[0] = java.util.Arrays.copyOf(foundRef[0], n[0] * 2);
+							wasRef[0] = java.util.Arrays.copyOf(wasRef[0], n[0] * 2);
+						}
+						foundRef[0][n[0]] = q.asLong();
+						wasRef[0][n[0]] = get(q);
+						n[0]++;
+					}
+				};
+				sweep(snapshot, cx << 4, cz << 4, fMin, fMax, ours, false);
+				workerNanos += System.nanoTime() - w0;
+				if (n[0] > 0) {
+					RESULTS.add(new Found(session, java.util.Arrays.copyOf(foundRef[0], n[0]), java.util.Arrays.copyOf(wasRef[0], n[0])));
+				}
+			} catch (RuntimeException e) {
+				com.stasdoto.airdefense.AirDefense.LOGGER.warn("[airdefense] orphan sweep failed at {}", cp, e);
+			} finally {
+				IN_FLIGHT.decrementAndGet();
 			}
-		}, x0, z0, yMin, yMax, CityGen.ownTrees(level, cp), false);
+		});
 		long dt = System.nanoTime() - t0;
 		stepNanos += dt;
 		stepMax = Math.max(stepMax, dt);
