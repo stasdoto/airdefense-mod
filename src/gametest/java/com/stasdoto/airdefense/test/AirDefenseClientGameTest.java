@@ -305,9 +305,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			int cities = 0;
 			int hamlets = 0;
 			for (var st : p.settlements.values()) {
-				if (st.city >= 0) {
+				if (st.isCity()) {
 					cities++;
-				} else if (st.hamlet >= 0) {
+				} else if (st.isHamlet()) {
 					hamlets++;
 				}
 			}
@@ -448,7 +448,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					var p = com.stasdoto.airdefense.nation.Politics.get(s);
 					var capital = testCapital(s);
 					for (var st : p.settlements.values()) {
-						if (capital != null && st.country != capital.country && st.city >= 0
+						if (capital != null && st.country != capital.country && st.isCity()
 								&& com.stasdoto.airdefense.nation.Arsenals.strikeNow(s.overworld(), st, capital)) {
 							break;
 						}
@@ -1327,7 +1327,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			BlockPos at = new BlockPos(x, ground, 0);
 			var town = new com.stasdoto.airdefense.nation.Settlement(id, "Ключи", at, at.offset(2, 0, 0), -1, java.util.Optional.empty(), 0,
 					java.util.Map.of(), List.of(), List.of());
-			town.city = 987654321L;
+			// A city west of x = 0: its key is negative.
+			town.city = -987654321L;
 			town.population = 15;
 			p.settlements.put(id, town);
 			var country = com.stasdoto.airdefense.nation.Nations.newWorldCountry(p, id);
@@ -1336,7 +1337,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			int id2 = p.newId();
 			var twin = new com.stasdoto.airdefense.nation.Settlement(id2, "Ключи 2", at, at.offset(0, 0, 2), -1, java.util.Optional.empty(), 0,
 					java.util.Map.of(), List.of(), List.of());
-			twin.city = 987654321L;
+			twin.city = -987654321L;
 			twin.country = country.id;
 			p.settlements.put(id2, twin);
 			// An enemy at war with it.
@@ -1395,10 +1396,20 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		look(server, x + 30, ground + 14, 40, x, ground + 1, 6);
 		ctx.waitTicks(20);
 		ctx.takeScreenshot("cl2_cleared");
-		AirDefense.LOGGER.info("[airdefense-test] RESULT cleanup: before {} | after {} | swept {} adopted {} thinned {} sirens down {} stray flags {} twins dropped {}",
+		// A negative city key survives saving and loading.
+		String keyBack = server.computeOnServer(s -> {
+			var town = com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(ids[0]);
+			if (town == null) {
+				return "town gone";
+			}
+			var back = com.stasdoto.airdefense.nation.Settlement.CODEC.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, town)
+					.flatMap(t -> com.stasdoto.airdefense.nation.Settlement.CODEC.parse(net.minecraft.nbt.NbtOps.INSTANCE, t));
+			return back.result().map(b -> "city key " + b.city + " (is city " + b.isCity() + ")").orElse("error " + back.error());
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT cleanup: before {} | after {} | swept {} adopted {} thinned {} sirens down {} stray flags {} twins dropped {} | saved: {}",
 				before, after, com.stasdoto.airdefense.nation.Arsenals.sweptVehicles, com.stasdoto.airdefense.nation.Arsenals.adoptedVehicles,
 				com.stasdoto.airdefense.nation.Nations.thinned, com.stasdoto.airdefense.siren.Sirens.doubled,
-				com.stasdoto.airdefense.nation.Nations.strayFlagsRemoved, com.stasdoto.airdefense.nation.Nations.refounded);
+				com.stasdoto.airdefense.nation.Nations.strayFlagsRemoved, com.stasdoto.airdefense.nation.Nations.refounded, keyBack);
 		language(ctx, "en_us");
 	}
 
@@ -4213,7 +4224,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		double bestD = 300.0 * 300.0;
 		for (var st : com.stasdoto.airdefense.nation.Politics.get(s).settlements.values()) {
 			double d = Math.pow(st.center.getX() - c.x, 2) + Math.pow(st.center.getZ() - c.z, 2);
-			if (st.city >= 0 && d < bestD) {
+			if (st.isCity() && d < bestD) {
 				bestD = d;
 				best = st;
 			}

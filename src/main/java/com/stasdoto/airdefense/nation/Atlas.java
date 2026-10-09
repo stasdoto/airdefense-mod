@@ -209,8 +209,8 @@ public final class Atlas {
 		}
 		List<AtlasPoliticsPayload.Town> ts = new ArrayList<>();
 		for (Settlement s : p.settlements.values()) {
-			int kind = s.city >= 0 ? 0 : s.hamlet >= 0 ? 1 : 2;
-			long key = s.city >= 0 ? s.city : s.hamlet >= 0 ? s.hamlet : 0;
+			int kind = s.isCity() ? 0 : s.isHamlet() ? 1 : 2;
+			long key = s.isCity() ? s.city : s.isHamlet() ? s.hamlet : 0;
 			Country c = p.country(s.country);
 			ts.add(new AtlasPoliticsPayload.Town(s.id, s.name, s.country, kind, key, s.center.getX(), s.center.getZ(), s.people(),
 					c != null && c.capital == s.id));

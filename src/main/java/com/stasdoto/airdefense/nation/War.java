@@ -430,8 +430,8 @@ public final class War {
 		long seed = level.getSeed();
 		Cities.Terrain t = Cities.terrain(level);
 		List<Cities.Road> in = new ArrayList<>();
-		Cities.City city = target.city >= 0 ? Cities.plannedCityAt(seed, target.center.getX(), target.center.getZ(), 400) : null;
-		Hamlets.Hamlet hamlet = target.hamlet >= 0 ? Cities.plannedHamletAt(seed, target.center.getX(), target.center.getZ(), 40) : null;
+		Cities.City city = target.isCity() ? Cities.plannedCityAt(seed, target.center.getX(), target.center.getZ(), 400) : null;
+		Hamlets.Hamlet hamlet = target.isHamlet() ? Cities.plannedHamletAt(seed, target.center.getX(), target.center.getZ(), 40) : null;
 		if (city != null) {
 			for (Cities.Road r : Cities.roadsNear(seed, t, city.x, city.z)) {
 				if (city.outside(r.x0, r.z0) <= 12 || city.outside(r.x1, r.z1) <= 12) {

@@ -200,10 +200,10 @@ public final class Arsenals extends SavedData {
 			a = new Arsenal(s.id);
 			Country c = p.country(s.country);
 			boolean east = east(s.country);
-			boolean capital = c != null && c.capital == s.id && s.city >= 0;
+			boolean capital = c != null && c.capital == s.id && s.isCity();
 			List<VehicleType> kit = new ArrayList<>();
 			Random r = new Random(s.id * 7919L);
-			if (s.city >= 0 && capital) {
+			if (s.isCity() && capital) {
 				kit.addAll(east ? List.of(VehicleType.S300, VehicleType.BUK, VehicleType.PANTSIR, VehicleType.TOR)
 						: List.of(VehicleType.PATRIOT, VehicleType.IRIS_T, VehicleType.NASAMS, VehicleType.GEPARD));
 				// A radar station: the capital's batteries see further and are not fooled by decoys.
@@ -217,7 +217,7 @@ public final class Arsenals extends SavedData {
 				if (east) {
 					kit.add(VehicleType.TOS1);
 				}
-			} else if (s.city >= 0) {
+			} else if (s.isCity()) {
 				kit.add(east ? (r.nextBoolean() ? VehicleType.BUK : VehicleType.TOR) : (r.nextBoolean() ? VehicleType.NASAMS : VehicleType.IRIS_T));
 				kit.add(east ? VehicleType.PANTSIR : VehicleType.GEPARD);
 				kit.add(east ? (r.nextBoolean() ? VehicleType.ISKANDER : VehicleType.SHAHED) : VehicleType.HIMARS);
@@ -377,7 +377,7 @@ public final class Arsenals extends SavedData {
 	private static BlockPos findSpot(ServerLevel level, Settlement s, int index, boolean launcher) {
 		Cities.Terrain t = Cities.terrain(level);
 		long seed = level.getSeed();
-		if (s.city >= 0) {
+		if (s.isCity()) {
 			Cities.City c = Cities.plannedCityAt(seed, s.center.getX(), s.center.getZ(), 400);
 			if (c != null) {
 				if (launcher) {
@@ -618,7 +618,7 @@ public final class Arsenals extends SavedData {
 	 * three times slower and only for itself. No iron or fuel - nothing is made.
 	 */
 	private void produce(ServerLevel level, Politics p, Settlement s, Arsenal ar) {
-		boolean factory = s.city >= 0 && (s.eco.count(BuildingType.ARMS_FACTORY) > 0 || s.eco.count(BuildingType.FACTORY) > 0);
+		boolean factory = s.isCity() && (s.eco.count(BuildingType.ARMS_FACTORY) > 0 || s.eco.count(BuildingType.FACTORY) > 0);
 		VillageEconomy e = s.eco;
 		if (ar.making == null) {
 			// The emptiest store in the country.
@@ -789,7 +789,7 @@ public final class Arsenals extends SavedData {
 		}
 		Vec3 from = Vec3.atCenterOf(to.center).add(600, 0, 0);
 		for (Settlement o : p.settlementsOf(to.country)) {
-			if (o.id != to.id && o.city >= 0) {
+			if (o.id != to.id && o.isCity()) {
 				from = Vec3.atCenterOf(o.center);
 				break;
 			}
@@ -832,7 +832,7 @@ public final class Arsenals extends SavedData {
 	private static List<Vec3> supplyRoute(ServerLevel level, Settlement to, Vec3 from) {
 		long seed = level.getSeed();
 		Cities.Terrain t = Cities.terrain(level);
-		Cities.City city = to.city >= 0 ? Cities.plannedCityAt(seed, to.center.getX(), to.center.getZ(), 400) : null;
+		Cities.City city = to.isCity() ? Cities.plannedCityAt(seed, to.center.getX(), to.center.getZ(), 400) : null;
 		Depots.Depot depot = city == null ? null : city.depot(seed, t);
 		List<Vec3> out = new ArrayList<>();
 		if (depot != null && depot.access != null) {

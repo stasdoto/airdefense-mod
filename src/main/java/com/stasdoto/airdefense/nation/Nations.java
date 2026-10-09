@@ -205,10 +205,10 @@ public final class Nations {
 		Set<Long> have = new HashSet<>();
 		Set<Long> haveHamlets = new HashSet<>();
 		for (Settlement s : p.settlements.values()) {
-			if (s.city >= 0) {
+			if (s.isCity()) {
 				have.add(s.city);
 			}
-			if (s.hamlet >= 0) {
+			if (s.isHamlet()) {
 				haveHamlets.add(s.hamlet);
 			}
 		}
@@ -221,7 +221,17 @@ public final class Nations {
 						for (Hamlets.Hamlet h : c.hamlets(seed, t)) {
 							BlockPos hb = h.bell();
 							if (!haveHamlets.contains(h.key()) && level.isLoaded(hb) && level.getBlockState(hb).is(Blocks.BELL)) {
-								foundHamlet(level, p, h);
+								Settlement orphan = orphanAt(p, hb);
+								if (orphan != null) {
+									// 1.32.2: an older world's settlement of this hamlet that had lost its key.
+									orphan.hamlet = h.key();
+									orphan.radius = 56;
+									orphan.style = h.city.style.ordinal();
+									p.setDirty();
+									AirDefense.LOGGER.info("[airdefense] hamlet {} found again its plan", orphan.name);
+								} else {
+									foundHamlet(level, p, h);
+								}
 								haveHamlets.add(h.key());
 							}
 						}
@@ -229,7 +239,19 @@ public final class Nations {
 						if (have.contains(c.key()) || !level.isLoaded(bell) || !level.getBlockState(bell).is(Blocks.BELL)) {
 							continue;
 						}
-						foundCity(level, p, c);
+						Settlement orphan = orphanAt(p, bell);
+						if (orphan != null) {
+							// 1.32.2: an older world's settlement of this city that had lost its key (a city west of x = 0).
+							orphan.city = c.key();
+							orphan.radius = c.radius();
+							orphan.citizens = c.citizens;
+							orphan.capitalCity = c.capital();
+							orphan.style = c.style.ordinal();
+							p.setDirty();
+							AirDefense.LOGGER.info("[airdefense] city {} found again its plan", orphan.name);
+						} else {
+							foundCity(level, p, c);
+						}
 						have.add(c.key());
 					}
 				}
@@ -553,11 +575,11 @@ public final class Nations {
 		List<Settlement> byId = new ArrayList<>(p.settlements.values());
 		byId.sort(java.util.Comparator.comparingInt(x -> x.id));
 		for (Settlement s : byId) {
-			Map<Long, Settlement> seen = s.city >= 0 ? cities : s.hamlet >= 0 ? hamlets : null;
+			Map<Long, Settlement> seen = s.isCity() ? cities : s.isHamlet() ? hamlets : null;
 			if (seen == null) {
 				continue;
 			}
-			long key = s.city >= 0 ? s.city : s.hamlet;
+			long key = s.isCity() ? s.city : s.hamlet;
 			Settlement first = seen.get(key);
 			if (first == null) {
 				seen.put(key, s);
@@ -573,6 +595,19 @@ public final class Nations {
 			}
 			remove(level, p, drop);
 			refounded++;
+		}
+		for (Settlement s : byId) {
+			if (!p.settlements.containsKey(s.id) || s.isCity() || s.isHamlet() || owned(p, s)) {
+				continue;
+			}
+			for (Settlement k : byId) {
+				if (k != s && (k.isCity() || k.isHamlet()) && p.settlements.containsKey(k.id) && k.center.distSqr(s.center) <= 4 * 4) {
+					// The same town once more, without its key (older worlds).
+					remove(level, p, s);
+					refounded++;
+					break;
+				}
+			}
 		}
 		List<Settlement> all = new ArrayList<>(p.settlements.values());
 		for (int i = 0; i < all.size(); i++) {
@@ -599,6 +634,24 @@ public final class Nations {
 
 	/** For the tests: settlements dropped as a city or hamlet founded twice. */
 	public static int refounded;
+
+	/**
+	 * 1.32.2: a settlement on this town square that does not know it is a planned city or hamlet (an older world's, from
+	 * when the keys west of x = 0 were lost): the player's, else the first.
+	 */
+	@Nullable
+	private static Settlement orphanAt(Politics p, BlockPos square) {
+		Settlement best = null;
+		for (Settlement s : p.settlements.values()) {
+			if (s.isCity() || s.isHamlet() || s.center.distSqr(square) > 4 * 4) {
+				continue;
+			}
+			if (best == null || owned(p, s) && !owned(p, best) || owned(p, s) == owned(p, best) && s.id < best.id) {
+				best = s;
+			}
+		}
+		return best;
+	}
 
 	private static boolean owned(Politics p, Settlement s) {
 		Country c = p.country(s.country);
