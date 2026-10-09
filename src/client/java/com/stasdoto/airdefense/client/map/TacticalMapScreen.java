@@ -338,7 +338,8 @@ public class TacticalMapScreen extends Screen {
 		} else if (e.mode() == VehicleEntity.MODE_OFF) {
 			s = Component.translatable("screen.airdefense.map.st.off");
 		} else if (type.isRadar()) {
-			s = Component.translatable(e.state() == VehicleEntity.DEPLOYED ? "screen.airdefense.map.st.radar_on" : "screen.airdefense.map.st.march");
+			s = Component.translatable(e.state() == VehicleEntity.DEPLOYED ? type.isJammer() ? "screen.airdefense.map.st.ew_on" : "screen.airdefense.map.st.radar_on"
+					: "screen.airdefense.map.st.march");
 		} else if (e.mode() == VehicleEntity.MODE_MANUAL) {
 			s = Component.translatable("screen.airdefense.map.st.manual", Math.max(0, e.ammo()), type.magazine());
 		} else if (e.busy() > 0) {

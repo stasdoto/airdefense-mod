@@ -64,6 +64,7 @@ S = {
     'message.airdefense.vehicle.status_ew': ('%s: health %s%%, jammer %s, reach %s', '%s: прочность %s%%, РЭБ %s, радиус %s',
                                              '%s: міцність %s%%, РЕБ %s, радіус %s'),
     'message.airdefense.drone.jammed': ('Link lost - enemy jamming!', 'Связь потеряна — вражеский РЭБ!', 'Зв\'язок втрачено — ворожий РЕБ!'),
+    'screen.airdefense.map.st.ew_on': ('jamming', 'РЭБ глушит', 'РЕБ глушить'),
     'screen.airdefense.map.ew_range': ('Jamming reach: %s', 'Радиус РЭБ: %s', 'Радіус РЕБ: %s'),
     'nation.airdefense.recon.incoming': ('%s sends a reconnaissance drone (%3$s) over %2$s - their guns will fire more accurately while it is there!',
                                          '%s посылает разведывательный дрон (%3$s) к городу %2$s — пока он там, их артиллерия бьёт точнее!',

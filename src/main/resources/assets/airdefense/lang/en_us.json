@@ -1212,5 +1212,6 @@
   "message.airdefense.drone.jammed": "Link lost - enemy jamming!",
   "screen.airdefense.map.ew_range": "Jamming reach: %s",
   "nation.airdefense.recon.incoming": "%s sends a reconnaissance drone (%3$s) over %2$s - their guns will fire more accurately while it is there!",
-  "guide.airdefense.page.37": "DRONES AND EW\n\nReconnaissance (Orlan-10, TB2): mark a point on the map - the drone circles there and marks the enemy (red on the map, they glow); your guns fire twice as close. The TB2 also drops bombs.\nLoitering munitions (Lancet, Switchblade) pick a vehicle by the point themselves.\nEW (Borisoglebsk-2, Bukovel-AD) jams the enemy's drones round it."
+  "guide.airdefense.page.37": "DRONES AND EW\n\nReconnaissance (Orlan-10, TB2): mark a point on the map - the drone circles there and marks the enemy (red on the map, they glow); your guns fire twice as close. The TB2 also drops bombs.\nLoitering munitions (Lancet, Switchblade) pick a vehicle by the point themselves.\nEW (Borisoglebsk-2, Bukovel-AD) jams the enemy's drones round it.",
+  "screen.airdefense.map.st.ew_on": "jamming"
 }
