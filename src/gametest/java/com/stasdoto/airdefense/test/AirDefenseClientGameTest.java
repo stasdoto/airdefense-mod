@@ -1299,23 +1299,28 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runCommand("time set 3000");
 		camera(server, x + 0.5, ground + 6, -30, 0, 10);
 		ctx.waitTicks(40);
-		VehicleType[] front = {VehicleType.T80BVM, VehicleType.CHALLENGER2, VehicleType.BMP3, VehicleType.CV90, VehicleType.TOS1};
-		VehicleType[] back = {VehicleType.STRYKER, VehicleType.TIGR, VehicleType.HMMWV, VehicleType.BREM1, VehicleType.M88};
+		// Four rows: the tanks, the fighting vehicles, the wheeled ones, the recovery vehicles and the TOS - each shot close.
+		VehicleType[][] rows = {{VehicleType.T80BVM, VehicleType.CHALLENGER2}, {VehicleType.BMP3, VehicleType.CV90},
+				{VehicleType.STRYKER, VehicleType.TIGR, VehicleType.HMMWV}, {VehicleType.BREM1, VehicleType.M88, VehicleType.TOS1}};
+		String[] names = {"b1_tanks", "b2_ifv", "b3_wheeled", "b4_recovery_tos"};
 		List<Integer> ids = new ArrayList<>();
-		for (int i = 0; i < front.length; i++) {
-			ids.add(spawnVehicle(server, front[i], x - 22 + i * 11, 0, 0));
-		}
-		for (int i = 0; i < back.length; i++) {
-			ids.add(spawnVehicle(server, back[i], x - 22 + i * 11, -16, 0));
+		for (int r = 0; r < rows.length; r++) {
+			for (int i = 0; i < rows[r].length; i++) {
+				ids.add(spawnVehicle(server, rows[r][i], x - 6 + i * 10, -r * 40, 0));
+			}
 		}
 		server.runOnServer(s -> forVehicles(s.overworld(), ids, v -> v.country = -1));
 		ctx.waitTicks(30);
-		look(server, x - 30, ground + 5, 14, x - 8, ground + 1.2, -2);
-		ctx.waitTicks(30);
-		ctx.takeScreenshot("b1_armour_front");
-		look(server, x + 30, ground + 6, -32, x + 6, ground + 1.2, -12);
+		for (int r = 0; r < rows.length; r++) {
+			int z = -r * 40;
+			int n = rows[r].length;
+			look(server, x - 16, ground + 3.5, z + 11, x - 6 + (n - 1) * 5, ground + 1.2, z - 1);
+			ctx.waitTicks(25);
+			ctx.takeScreenshot(names[r]);
+		}
+		look(server, x + 22, ground + 4, -14, x + 2, ground + 1.2, -2);
 		ctx.waitTicks(20);
-		ctx.takeScreenshot("b2_armour_back");
+		ctx.takeScreenshot("b5_tanks_back");
 		server.runOnServer(s -> forVehicles(s.overworld(), ids, Entity::discard));
 
 		// A recovery vehicle mends a damaged tank beside it.
@@ -1334,7 +1339,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		float before = server.computeOnServer(s -> s.overworld().getEntity(tank) instanceof VehicleEntity v ? v.getHealth() : -1f);
 		look(server, rx + 14, ground + 4, 10, rx + 3, ground + 1, -2);
 		ctx.waitTicks(200);
-		ctx.takeScreenshot("b3_recovery_mends");
+		ctx.takeScreenshot("b6_recovery_mends");
 		float after = server.computeOnServer(s -> s.overworld().getEntity(tank) instanceof VehicleEntity v ? v.getHealth() : -1f);
 		float max = server.computeOnServer(s -> s.overworld().getEntity(tank) instanceof VehicleEntity v ? v.getMaxHealth() : -1f);
 		// A repair kit by hand: the player stands by the Challenger and right-clicks it.
@@ -1347,7 +1352,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		float kit0 = server.computeOnServer(s -> s.overworld().getEntity(kitTarget) instanceof VehicleEntity v ? v.getHealth() : -1f);
 		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT);
 		ctx.waitTicks(10);
-		ctx.takeScreenshot("b4_repair_kit");
+		ctx.takeScreenshot("b7_repair_kit");
 		float kit1 = server.computeOnServer(s -> s.overworld().getEntity(kitTarget) instanceof VehicleEntity v ? v.getHealth() : -1f);
 		int kitsLeft = server.computeOnServer(s -> s.getPlayerList().getPlayers().getFirst().getInventory().getItem(0).getCount());
 		server.runCommand("clear @a");
@@ -1368,14 +1373,14 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		boolean fired = server.computeOnServer(s -> s.overworld().getEntity(tos) instanceof VehicleEntity v && v.commandFire(field, null, 0));
 		look(server, tx - 16, ground + 4, -12, tx, ground + 2.5, 2);
 		waitUntil(ctx, () -> VehicleEntity.artilleryRounds > r0 + 6, 400);
-		ctx.takeScreenshot("b5_tos_salvo");
+		ctx.takeScreenshot("b8_tos_salvo");
 		look(server, tx + 60, ground + 22, 340, tx + 20, ground + 2, 400);
 		waitUntil(ctx, () -> com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED.size() > landed0 + 6, 700);
 		ctx.waitTicks(6);
-		ctx.takeScreenshot("b6_tos_impacts");
+		ctx.takeScreenshot("b9_tos_impacts");
 		waitUntil(ctx, () -> com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED.size() >= landed0 + 24, 500);
 		ctx.waitTicks(40);
-		ctx.takeScreenshot("b7_tos_field");
+		ctx.takeScreenshot("b10_tos_field");
 		double[] sp = spread(landed0, field);
 		AirDefense.LOGGER.info("[airdefense-test] RESULT armour_tos: ordered {} fired {} landed {} mean {} blocks from the aim", fired,
 				VehicleEntity.artilleryRounds - r0, (int) sp[0], String.format(java.util.Locale.ROOT, "%.1f", sp[1]));
