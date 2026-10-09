@@ -222,8 +222,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("airwar")) {
 				airWar(ctx, server);
 			}
-			if (scene("navy")) {
-				navy(ctx, server);
+			if (scene("strikewave")) {
+				strikeWave(ctx, server);
 			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
@@ -1508,6 +1508,51 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 		});
 		language(ctx, "en_us");
+	}
+
+	/**
+	 * 1.32.1: a country of ten villages at war with the player's town: its strikes come in waves (one to three launch
+	 * sites, one warning), not ten villages each on its own.
+	 */
+	private void strikeWave(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 140000;
+		server.runCommand("gamemode spectator @a");
+		camera(server, x + 0.5, ground + 30, 0.5, 90, 20);
+		ctx.waitTicks(40);
+		int waves0 = com.stasdoto.airdefense.nation.Arsenals.waves;
+		int sites0 = com.stasdoto.airdefense.nation.Arsenals.waveSites;
+		int strikes0 = com.stasdoto.airdefense.nation.Arsenals.strikes;
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var mine = com.stasdoto.airdefense.nation.Nations.countryOf(l, p, pl, true);
+			int id = p.newId();
+			BlockPos at = new BlockPos(x, ground, 0);
+			var town = new com.stasdoto.airdefense.nation.Settlement(id, "Ключи", at, at.above(2), -1, java.util.Optional.empty(), 0,
+					java.util.Map.of(), List.of(), List.of());
+			p.settlements.put(id, town);
+			town.country = mine.id;
+			com.stasdoto.airdefense.nation.Country enemy = null;
+			for (int i = 0; i < 10; i++) {
+				int vid = p.newId();
+				double a = i * Math.PI / 5;
+				BlockPos vat = new BlockPos(x + (int) (Math.cos(a) * 900), ground, (int) (Math.sin(a) * 900));
+				var v = new com.stasdoto.airdefense.nation.Settlement(vid, "Озерки " + i, vat, vat.above(2), -1, java.util.Optional.empty(), 0,
+						java.util.Map.of(), List.of(), List.of());
+				p.settlements.put(vid, v);
+				if (enemy == null) {
+					enemy = com.stasdoto.airdefense.nation.Nations.newWorldCountry(p, vid);
+				}
+				v.country = enemy.id;
+			}
+			com.stasdoto.airdefense.nation.War.declare(l, p, enemy, mine, net.minecraft.network.chat.Component.literal("test"));
+		});
+		ctx.waitTicks(3000);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT strike_waves: in 3000 ticks {} waves from {} launch sites ({} strikes)",
+				com.stasdoto.airdefense.nation.Arsenals.waves - waves0, com.stasdoto.airdefense.nation.Arsenals.waveSites - sites0,
+				com.stasdoto.airdefense.nation.Arsenals.strikes - strikes0);
+		ctx.takeScreenshot("sw_chat");
 	}
 
 	/**
