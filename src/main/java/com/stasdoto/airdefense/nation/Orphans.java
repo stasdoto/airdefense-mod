@@ -230,15 +230,30 @@ public final class Orphans {
 				int[] nb = {x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, z > 0 ? i - w : -1, z < w - 1 ? i + w : -1, y > 0 ? i - w * w : -1,
 						y < h - 1 ? i + w * w : -1};
 				for (int j : nb) {
-					if (j < 0) {
-						continue;
-					}
-					if (kind[j] == LEAF && d < 6 && dist[j] > d + 1) {
+					if (j >= 0 && kind[j] == LEAF && d < 6 && dist[j] > d + 1) {
 						dist[j] = (byte) (d + 1);
 						queue[tail++] = j;
-					} else if (kind[j] == CAP && dist[j] == Byte.MAX_VALUE && (kind[i] == CAP || kind[i] == LOG)) {
-						dist[j] = 1;
-						queue[tail++] = j;
+					}
+				}
+				if (kind[i] == CAP || kind[i] == LOG) {
+					// A cap holds on to its stem and the caps next to it, corners and edges too (a red mushroom's sides meet its
+					// top only edge to edge).
+					for (int dy = -1; dy <= 1; dy++) {
+						for (int dz = -1; dz <= 1; dz++) {
+							for (int dx = -1; dx <= 1; dx++) {
+								int nx = x + dx;
+								int ny = y + dy;
+								int nz = z + dz;
+								if (nx < 0 || nz < 0 || ny < 0 || nx >= w || nz >= w || ny >= h) {
+									continue;
+								}
+								int j = (ny * w + nz) * w + nx;
+								if (kind[j] == CAP && dist[j] == Byte.MAX_VALUE) {
+									dist[j] = 1;
+									queue[tail++] = j;
+								}
+							}
+						}
 					}
 				}
 			}
