@@ -1070,6 +1070,19 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runOnServer(s -> forVehicles(s.overworld(), List.of(plane), Entity::discard));
 	}
 
+	/** Switches the game's language (the pictures for the player are in Russian; the rest of the tests read English). */
+	private static void language(ClientGameTestContext ctx, String code) {
+		java.util.concurrent.atomic.AtomicReference<java.util.concurrent.CompletableFuture<Void>> f = new java.util.concurrent.atomic.AtomicReference<>();
+		ctx.runOnClient(mc -> {
+			mc.options.languageCode = code;
+			mc.getLanguageManager().setSelected(code);
+			f.set(mc.reloadResourcePacks());
+		});
+		int t = waitUntil(ctx, () -> f.get() != null && f.get().isDone(), 2400);
+		ctx.waitTicks(20);
+		AirDefense.LOGGER.info("[airdefense-test] language {} after {} ticks", code, t);
+	}
+
 	/** The camera at {@code from}, looking at {@code to}. */
 	private static void look(TestServerContext server, double fx, double fy, double fz, double tx, double ty, double tz) {
 		double dx = tx - fx;
@@ -1241,7 +1254,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				com.stasdoto.airdefense.radar.CounterBattery.found - found0, answeredAfter,
 				com.stasdoto.airdefense.radar.CounterBattery.answered - answered0, hitWait, (int) nearest, hp0, hp1);
 
-		// The tablet's map: the gun selected, its reach, the enemy battery's red cross.
+		// The tablet's map: the gun selected, its reach, the enemy battery's red cross (in Russian).
+		language(ctx, "ru_ru");
 		server.runCommand("gamemode creative @a");
 		camera(server, cx - 10.5, ground, -30.5, 0, 0);
 		server.runCommand("clear @a");
@@ -1260,6 +1274,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.takeScreenshot("a9_map_counter_battery");
 		int fires = ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.map.MapClient.fires().size());
 		ctx.runOnClient(mc -> mc.gui.setScreen(null));
+		language(ctx, "en_us");
 		server.runCommand("clear @a");
 		server.runCommand("gamemode spectator @a");
 		AirDefense.LOGGER.info("[airdefense-test] RESULT arty_map: enemy batteries on the map {}", fires);
@@ -1908,7 +1923,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			l.addFreshEntity(so);
 			return new int[]{v.getId(), so.getId(), country.id};
 		});
-		// The townsman: hello, then about the town.
+		// The townsman: hello, then about the town (in Russian, as the player plays).
+		language(ctx, "ru_ru");
 		server.runOnServer(s -> {
 			ServerLevel l = s.overworld();
 			com.stasdoto.airdefense.nation.Dialogue.open(l, s.getPlayerList().getPlayers().getFirst(), (net.minecraft.world.entity.LivingEntity) l.getEntity(ids[0]));
@@ -1933,6 +1949,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				new com.stasdoto.airdefense.nation.DialogueActionPayload(ids[1], com.stasdoto.airdefense.nation.Dialogue.FOLLOW)));
 		ctx.waitTicks(10);
 		ctx.runOnClient(mc -> mc.gui.setScreen(null));
+		language(ctx, "en_us");
 		server.runCommand("gamemode survival @a");
 		camera(server, x + 0.5, ground, 20.5, 180, 5);
 		ctx.waitTicks(160);
