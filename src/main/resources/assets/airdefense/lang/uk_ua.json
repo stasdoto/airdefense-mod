@@ -1283,5 +1283,7 @@
   "subtitles.airdefense.city_birds": "Співають птахи",
   "subtitles.airdefense.city_crickets": "Сюрчать цвіркуни",
   "subtitles.airdefense.city_owl": "Ухкає сова",
-  "subtitles.airdefense.town_bell": "Б'ють годинник на ратуші"
+  "subtitles.airdefense.town_bell": "Б'ють годинник на ратуші",
+  "block.airdefense.shelter_entrance": "Вхід до укриття",
+  "block.airdefense.shelter_sign": "Знак «Укриття»"
 }

@@ -59,6 +59,11 @@ public final class SirenClient {
 	private SirenClient() {
 	}
 
+	/** 1.37: the player hears an alert (the passers-by hurry indoors). */
+	public static boolean alertHeard() {
+		return playing == SirenBlock.Signal.ALERT;
+	}
+
 	public static void init() {
 		SirenSounds.listener = (pos, signal) -> {
 			Minecraft mc = Minecraft.getInstance();

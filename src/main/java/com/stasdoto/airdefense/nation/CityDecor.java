@@ -410,7 +410,8 @@ final class CityDecor {
 					trafficLight(x, z, sx, sz);
 				} else if (r2.nextInt(3) == 0) {
 					// 1.35: a road sign at the corner: the pedestrian crossing (big towns) or who gives way (small ones).
-					Block sign = lights ? StreetBlocks.SIGN_CROSSING : ((x / 7 + z / 5) & 1) == 0 ? StreetBlocks.SIGN_GIVE_WAY : StreetBlocks.SIGN_MAIN_ROAD;
+					Block sign = Cities.shelters && r2.nextInt(4) == 0 ? StreetBlocks.SHELTER_SIGN : lights ? StreetBlocks.SIGN_CROSSING
+							: ((x / 7 + z / 5) & 1) == 0 ? StreetBlocks.SIGN_GIVE_WAY : StreetBlocks.SIGN_MAIN_ROAD;
 					onPole(x, z, StreetBlocks.POLE_STEEL, 2, sign, sx < 0 ? Direction.WEST : Direction.EAST);
 				} else {
 					lamp(x, z, sz < 0 ? Direction.NORTH : Direction.SOUTH);
@@ -589,6 +590,18 @@ final class CityDecor {
 			put(x == x0 ? x - 1 : x + 1, base + 1, z0 + 5, st(StreetBlocks.PLANTER, Direction.SOUTH));
 		}
 		put(x0 + 4, base + 1, z0 + 5, st(look() == CityStyle.EUROPEAN ? StreetBlocks.BOOTH_RED : StreetBlocks.BOOTH_SOVIET, Direction.NORTH));
+		// 1.37: the way down to the town's shelter, by the square.
+		if (Cities.shelters) {
+			shelter(v);
+		}
+	}
+
+	/** 1.37: a shelter entrance (three blocks wide, two deep) somewhere free in the lot. */
+	private void shelter(View v) {
+		int[] s = v.rect(3, 2);
+		if (s != null) {
+			put(s[0] + 1, base + 1, s[1] + 1, st(StreetBlocks.SHELTER_ENTRANCE, Direction.SOUTH));
+		}
 	}
 
 	/** Round a park: more trees, benches. */
@@ -598,6 +611,9 @@ final class CityDecor {
 			if ((q = v.rect(3, 3)) != null) {
 				streetTree(q[0] + 1, q[1] + 1, false);
 			}
+		}
+		if (Cities.shelters && r2.nextInt(2) == 0) {
+			shelter(v);
 		}
 	}
 

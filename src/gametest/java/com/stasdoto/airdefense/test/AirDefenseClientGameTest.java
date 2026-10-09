@@ -240,6 +240,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("night")) {
 				night(ctx, server);
 			}
+			if (scene("people")) {
+				people(ctx, server);
+			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
@@ -1751,6 +1754,94 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		}
 		ctx.runOnClient(mc -> mc.options.renderDistance().set(8));
 		AirDefense.LOGGER.info("[airdefense-test] RESULT city_forms: {}", report);
+		language(ctx, "en_us");
+	}
+
+	/**
+	 * 1.37: the passers-by in a town's streets - many in the morning rush, few at night, gone indoors on an alert; the
+	 * shelter entrance by the square.
+	 */
+	private void people(ClientGameTestContext ctx, TestServerContext server) {
+		language(ctx, "ru_ru");
+		server.runCommand("gamemode spectator @a");
+		int cellX = 94;
+		int cellZ = 70;
+		int[] cap = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = com.stasdoto.airdefense.nation.CityStyle.SOVIET;
+			com.stasdoto.airdefense.nation.Cities.FORCE_FORM = com.stasdoto.airdefense.nation.CityForm.SQUARE;
+			var list = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), com.stasdoto.airdefense.nation.Cities.terrain(l), cellX, cellZ);
+			com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = null;
+			com.stasdoto.airdefense.nation.Cities.FORCE_FORM = null;
+			if (list.isEmpty()) {
+				return null;
+			}
+			var c = list.getFirst();
+			var hall = c.shape().hallLot();
+			return new int[]{c.x, c.z, c.half(), c.base, hall.x0, hall.z0, hall.x1, hall.z1};
+		});
+		if (cap == null) {
+			return;
+		}
+		int cx = cap[0];
+		int cz = cap[1];
+		int half = cap[2];
+		int base = cap[3];
+		camera(server, cx + 0.5, base + 60, cz + 0.5, 0, 90);
+		ctx.waitTicks(40);
+		generateCity(server, cx - half - 14, cz - half - 14, cx + half + 14, cz + half + 14);
+		// The morning rush (8 am), standing at the crossing by the town hall.
+		server.runCommand("time set 2000");
+		float[] crossing = {cap[4] - 9.5f, base + 3.5f, cap[5] - 11.5f, -35, 10};
+		camera(server, crossing[0], crossing[1], crossing[2], crossing[3], crossing[4]);
+		int made0 = com.stasdoto.airdefense.client.nation.Pedestrians.made;
+		ctx.waitTicks(500);
+		int rush = com.stasdoto.airdefense.client.nation.Pedestrians.count();
+		ctx.takeScreenshot("p1_morning_rush");
+		camera(server, crossing[0] + 6, base + 2.6, crossing[2] - 2, 160, 8);
+		ctx.waitTicks(100);
+		ctx.takeScreenshot("p2_pavement");
+		int crossings = com.stasdoto.airdefense.client.nation.Pedestrians.crossings;
+		// Midday, then night.
+		server.runCommand("time set 6000");
+		ctx.waitTicks(300);
+		int noon = com.stasdoto.airdefense.client.nation.Pedestrians.count();
+		server.runCommand("time set 19000");
+		ctx.waitTicks(400);
+		int night = com.stasdoto.airdefense.client.nation.Pedestrians.count();
+		ctx.takeScreenshot("p3_night");
+		// Back to day; then the sirens: everybody indoors.
+		server.runCommand("time set 2000");
+		ctx.waitTicks(400);
+		int before = com.stasdoto.airdefense.client.nation.Pedestrians.count();
+		com.stasdoto.airdefense.client.nation.Pedestrians.forceAlert = true;
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("p4_alert_hurry");
+		ctx.waitTicks(250);
+		int alert = com.stasdoto.airdefense.client.nation.Pedestrians.count();
+		com.stasdoto.airdefense.client.nation.Pedestrians.forceAlert = false;
+		// The shelter entrance by the square.
+		int[] sh = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			BlockPos.MutableBlockPos q = new BlockPos.MutableBlockPos();
+			for (int x = cx - half; x <= cx + half; x++) {
+				for (int z = cz - half; z <= cz + half; z++) {
+					if (l.getBlockState(q.set(x, base + 1, z)).is(com.stasdoto.airdefense.street.StreetBlocks.SHELTER_ENTRANCE)) {
+						return new int[]{x, z};
+					}
+				}
+			}
+			return null;
+		});
+		if (sh != null) {
+			look(server, sh[0] + 0.5, base + 3, sh[1] + 7.5, sh[0] + 0.5, base + 1.5, sh[1] + 0.5);
+			ctx.waitTicks(40);
+			ctx.takeScreenshot("p5_shelter");
+		}
+		server.runCommand("time set 6000");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT people: made {}, about the player: morning {}, noon {}, night {}, before the alert {}, "
+				+ "after it {}; crossings {}; shelter entrance {}; villagers sent to cover {}", com.stasdoto.airdefense.client.nation.Pedestrians.made - made0,
+				rush, noon, night, before, alert, crossings, sh != null, com.stasdoto.airdefense.nation.Shelters.hidden);
 		language(ctx, "en_us");
 	}
 
