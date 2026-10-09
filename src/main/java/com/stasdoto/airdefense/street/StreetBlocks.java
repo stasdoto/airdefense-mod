@@ -37,6 +37,12 @@ public final class StreetBlocks {
 	public static final Block POLE_GREEN = pole("pole_green", 3, MapColor.COLOR_GREEN);
 	public static final Block POLE_CONCRETE = pole("pole_concrete", 4, MapColor.STONE);
 
+	/** 1.36: the towns' windows and glass that light up at night (see WindowLights). */
+	public static final Block CITY_WINDOW = register("city_window", CityWindowBlock::new, BlockBehaviour.Properties
+			.ofFullCopy(net.minecraft.world.level.block.Blocks.GLASS_PANE).randomTicks().lightLevel(st -> st.getValue(WindowLights.LIT) ? WindowLights.LIGHT : 0));
+	public static final Block CITY_GLASS = register("city_glass", CityGlassBlock::new, BlockBehaviour.Properties
+			.ofFullCopy(net.minecraft.world.level.block.Blocks.GLASS).randomTicks().lightLevel(st -> st.getValue(WindowLights.LIT) ? WindowLights.LIGHT : 0));
+
 	public static final Block LAMP_MODERN = thing("lamp_modern", 15, MapColor.METAL, SoundType.METAL, 6, 0, 6, 10, 7, 10);
 	public static final Block LAMP_COBRA = thing("lamp_cobra", 15, MapColor.METAL, SoundType.METAL, 6, 0, 6, 10, 11, 10);
 	public static final Block LAMP_LANTERN = thing("lamp_lantern", 15, MapColor.COLOR_BLACK, SoundType.LANTERN, 4.5, 0, 4.5, 11.5, 15, 11.5);
@@ -74,6 +80,19 @@ public final class StreetBlocks {
 	public static final Block KIOSK = thing("kiosk", 8, MapColor.COLOR_BLUE, SoundType.WOOD, 0, 0, 0, 16, 16, 16);
 	public static final Block VENDING = thing("vending", 8, MapColor.COLOR_RED, SoundType.METAL, 2, 0, 4, 14, 16, 14);
 	public static final Block BILLBOARD = thing("billboard", 9, MapColor.METAL, SoundType.METAL, 0, 0, 6, 16, 16, 9);
+
+	// 1.36: playgrounds, sports grounds, the stadium.
+	public static final Block SWING = thing("swing", 0, MapColor.COLOR_BLUE, SoundType.METAL, 0, 0, 1, 16, 16, 15);
+	public static final Block SLIDE = thing("slide", 0, MapColor.COLOR_RED, SoundType.METAL, 2, 0, 0, 14, 16, 16);
+	public static final Block SANDBOX = thing("sandbox", 0, MapColor.WOOD, SoundType.WOOD, 0, 0, 0, 16, 4, 16);
+	public static final Block ROUNDABOUT = thing("roundabout", 0, MapColor.COLOR_RED, SoundType.METAL, 0, 0, 0, 16, 10, 16);
+	public static final Block SEESAW = thing("seesaw", 0, MapColor.WOOD, SoundType.WOOD, 5, 0, 0, 11, 8, 16);
+	public static final Block CLIMBING_FRAME = thing("climbing_frame", 0, MapColor.COLOR_GREEN, SoundType.METAL, 0, 0, 0, 16, 16, 16);
+	public static final Block FOOTBALL_GOAL = thing("football_goal", 0, MapColor.SNOW, SoundType.METAL, 0, 0, 0, 16, 16, 16);
+	public static final Block BASKET_HOOP = thing("basket_hoop", 0, MapColor.SNOW, SoundType.METAL, 0, 0, 0, 16, 16, 14);
+	public static final Block BLEACHERS = thing("bleachers", 0, MapColor.STONE, SoundType.STONE, 0, 0, 0, 16, 16, 16);
+	public static final Block FLOODLIGHT = thing("floodlight", 15, MapColor.METAL, SoundType.METAL, 0, 0, 5, 16, 16, 11);
+	public static final Block SPORT_NET = thing("sport_net", 0, MapColor.SNOW, SoundType.WOOL, 0, 0, 7, 16, 16, 9);
 
 	/** A manhole cover set in the asphalt: a whole block (it is the road surface). */
 	public static final Block MANHOLE = register("manhole", Block::new, BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY).strength(1.8f, 6f)

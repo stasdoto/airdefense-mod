@@ -122,6 +122,8 @@ public final class Cities {
 	 * old blobs); {@link #FORCE_FORM}: for the automated test, the outline of every town planned from now on.
 	 */
 	public static volatile boolean shapes = true;
+	/** 1.36: parks may be playgrounds, sports grounds or a stadium (worlds started since; older parks are half built). */
+	public static volatile boolean parks = true;
 	@Nullable
 	public static volatile CityForm FORCE_FORM;
 

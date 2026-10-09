@@ -1,0 +1,352 @@
+{
+ "parent": "minecraft:block/block",
+ "ambientocclusion": false,
+ "textures": {
+  "steel": "airdefense:block/street/steel",
+  "net": "airdefense:block/street/net",
+  "white": "airdefense:block/street/white",
+  "particle": "airdefense:block/street/steel"
+ },
+ "elements": [
+  {
+   "from": [
+    -15,
+    0,
+    7
+   ],
+   "to": [
+    -13,
+    32,
+    9
+   ],
+   "faces": {
+    "north": {
+     "texture": "#steel",
+     "uv": [
+      0,
+      0,
+      2,
+      16
+     ]
+    },
+    "south": {
+     "texture": "#steel",
+     "uv": [
+      0,
+      0,
+      2,
+      16
+     ]
+    },
+    "east": {
+     "texture": "#steel",
+     "uv": [
+      0,
+      0,
+      2,
+      16
+     ]
+    },
+    "west": {
+     "texture": "#steel",
+     "uv": [
+      0,
+      0,
+      2,
+      16
+     ]
+    },
+    "up": {
+     "texture": "#steel",
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ]
+    },
+    "down": {
+     "texture": "#steel",
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    29,
+    0,
+    7
+   ],
+   "to": [
+    31,
+    32,
+    9
+   ],
+   "faces": {
+    "north": {
+     "texture": "#steel",
+     "uv": [
+      0,
+      0,
+      2,
+      16
+     ]
+    },
+    "south": {
+     "texture": "#steel",
+     "uv": [
+      0,
+      0,
+      2,
+      16
+     ]
+    },
+    "east": {
+     "texture": "#steel",
+     "uv": [
+      0,
+      0,
+      2,
+      16
+     ]
+    },
+    "west": {
+     "texture": "#steel",
+     "uv": [
+      0,
+      0,
+      2,
+      16
+     ]
+    },
+    "up": {
+     "texture": "#steel",
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ]
+    },
+    "down": {
+     "texture": "#steel",
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    -13,
+    20,
+    7.8
+   ],
+   "to": [
+    29,
+    30,
+    8.2
+   ],
+   "faces": {
+    "north": {
+     "texture": "#net",
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ]
+    },
+    "south": {
+     "texture": "#net",
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    -13,
+    29.5,
+    7.6
+   ],
+   "to": [
+    29,
+    30.5,
+    8.4
+   ],
+   "faces": {
+    "north": {
+     "texture": "#white",
+     "uv": [
+      0,
+      0,
+      16,
+      1.0
+     ]
+    },
+    "south": {
+     "texture": "#white",
+     "uv": [
+      0,
+      0,
+      16,
+      1.0
+     ]
+    },
+    "east": {
+     "texture": "#white",
+     "uv": [
+      0,
+      0,
+      0.8,
+      1.0
+     ]
+    },
+    "west": {
+     "texture": "#white",
+     "uv": [
+      0,
+      0,
+      0.8,
+      1.0
+     ]
+    },
+    "up": {
+     "texture": "#white",
+     "uv": [
+      0,
+      0,
+      16,
+      0.8
+     ]
+    },
+    "down": {
+     "texture": "#white",
+     "uv": [
+      0,
+      0,
+      16,
+      0.8
+     ]
+    }
+   }
+  }
+ ],
+ "display": {
+  "gui": {
+   "rotation": [
+    30,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0.0,
+    0
+   ],
+   "scale": [
+    0.3,
+    0.3,
+    0.3
+   ]
+  },
+  "ground": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    3,
+    0
+   ],
+   "scale": [
+    0.25,
+    0.25,
+    0.25
+   ]
+  },
+  "fixed": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.24,
+    0.24,
+    0.24
+   ]
+  },
+  "thirdperson_righthand": {
+   "rotation": [
+    75,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    2.5,
+    0
+   ],
+   "scale": [
+    0.18,
+    0.18,
+    0.18
+   ]
+  },
+  "firstperson_righthand": {
+   "rotation": [
+    0,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.192,
+    0.192,
+    0.192
+   ]
+  },
+  "firstperson_lefthand": {
+   "rotation": [
+    0,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.192,
+    0.192,
+    0.192
+   ]
+  }
+ }
+}

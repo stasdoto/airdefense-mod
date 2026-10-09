@@ -26,5 +26,6 @@ public class AirDefenseClient implements ClientModInitializer {
 		com.stasdoto.airdefense.client.gear.GearClient.init();
 		NationClient.init();
 		com.stasdoto.airdefense.client.siren.SirenClient.init();
+		com.stasdoto.airdefense.client.fx.CityAmbience.init();
 	}
 }

@@ -23,6 +23,14 @@ public final class ModSounds {
 	public static final SoundEvent RADAR_LOCK = register("radar_lock", 48);
 	public static final SoundEvent SIREN = register("siren", 220);
 	public static final SoundEvent RADAR_PING = register("radar_ping", 16);
+	// 1.36: the sounds of a town (played by the client round the player, see client.fx.CityAmbience).
+	public static final SoundEvent CITY_TRAFFIC = register("city_traffic", 48);
+	public static final SoundEvent CITY_CAR = register("city_car", 48);
+	public static final SoundEvent CITY_HORN = register("city_horn", 64);
+	public static final SoundEvent CITY_BIRDS = register("city_birds", 32);
+	public static final SoundEvent CITY_CRICKETS = register("city_crickets", 24);
+	public static final SoundEvent CITY_OWL = register("city_owl", 64);
+	public static final SoundEvent TOWN_BELL = register("town_bell", 160);
 	/** The Shahed's two-stroke buzz, near and far (looped on the client while one flies). */
 	public static final SoundEvent SHAHED_LOOP = register("shahed_loop", 160);
 	public static final SoundEvent SHAHED_FAR = register("shahed_far", 600);

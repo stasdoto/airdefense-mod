@@ -678,6 +678,119 @@ def small():
     model('billboard', e, gui=0.3)
 
 
+# --- 1.36: playgrounds, sports grounds, the stadium ---
+
+def play_textures():
+    save('play_yellow', paint((236, 186, 30), 4))
+    save('play_blue', paint((40, 110, 200), 4))
+    save('play_orange', paint((230, 110, 30), 4))
+    save('rubber_green', paint((70, 140, 70), 6))
+    n = np.zeros((16, 16, 4))
+    for k in range(0, 16, 3):
+        n[k, :, :3] = 235
+        n[k, :, 3] = 230
+        n[:, k, :3] = 235
+        n[:, k, 3] = 230
+    save('net', n)
+    b = paint((240, 240, 236), 2)
+    b[0, :, :3] = b[-1, :, :3] = b[:, 0, :3] = b[:, -1, :3] = (200, 40, 30)
+    b[8:13, 5:11, :3] = (200, 40, 30)
+    b[9:12, 6:10, :3] = (240, 240, 236)
+    save('backboard', b)
+
+
+def play():
+    play_textures()
+    sand = {'sand': 'minecraft:block/sand'}
+    # Swings: a blue frame, two seats on chains.
+    e = [box((-10, 0, 7), (-8, 30, 9), 'play_blue'), box((24, 0, 7), (26, 30, 9), 'play_blue'), box((-10, 28, 7), (26, 30, 9), 'play_blue'),
+         box((-11, 0, 1), (-7, 1, 15), 'play_blue'), box((23, 0, 1), (27, 1, 15), 'play_blue')]
+    for x0 in (-4, 12):
+        e += [box((x0, 7, 5), (x0 + 8, 8, 11), 'wood'), box((x0 + 0.5, 8, 7.8), (x0 + 1, 28, 8.2), 'steel'),
+              box((x0 + 7, 8, 7.8), (x0 + 7.5, 28, 8.2), 'steel')]
+    model('swing', e, gui=0.4)
+    # A slide: a ladder at the back, a platform with rails, the chute down to the front.
+    e = [box((2, 19, 20), (14, 21, 30), 'wood')]
+    for x, z in ((2, 20), (12, 20), (2, 28), (12, 28)):
+        e.append(box((x, 0, z), (x + 2, 28, z + 2), 'red'))
+    e += [box((2, 26, 20), (14, 28, 22), 'red'), box((2, 26, 28), (14, 28, 30), 'red'), box((2, 24, 22), (3, 25, 28), 'red'),
+          box((13, 24, 22), (14, 25, 28), 'red'), box((3, 28, 20), (13, 30, 30), 'play_yellow')]
+    for y in range(3, 19, 4):
+        e.append(box((4, y, 30), (12, y + 1, 31), 'steel'))
+    e += [box((4, 0, 30), (5, 21, 31), 'steel'), box((11, 0, 30), (12, 21, 31), 'steel')]
+    rot = {'origin': [8, 20, 20], 'axis': 'x', 'angle': -30}
+    e += [box((3.5, 19, -16), (12.5, 20, 20), 'play_yellow', rot=rot), box((3, 19, -16), (3.5, 22, 20), 'play_orange', rot=rot),
+          box((12.5, 19, -16), (13, 22, 20), 'play_orange', rot=rot)]
+    model('slide', e, gui=0.4)
+    # A sandbox: a wooden frame two blocks across, sand inside, seats on the corners.
+    e = [box((-7, 0, -7), (23, 2.5, 23), {'up': 'sand'}, uv={'up': FULL}),
+         box((-8, 0, -8), (24, 4, -6), 'wood'), box((-8, 0, 22), (24, 4, 24), 'wood'), box((-8, 0, -6), (-6, 4, 22), 'wood'),
+         box((22, 0, -6), (24, 4, 22), 'wood')]
+    for x, z in ((-8, -8), (18, -8), (-8, 18), (18, 18)):
+        e.append(box((x, 4, z), (x + 6, 5, z + 6), 'wood'))
+    model('sandbox', e, gui=0.4, extra_tex=sand)
+    # A roundabout: an eight-sided platform round a post, handrails.
+    e = [box((7, 0, 7), (9, 14, 9), 'steel'), box((-6, 2, 1), (22, 3.5, 15), 'red'), box((1, 2, -6), (15, 3.5, 22), 'red'),
+         box((-4, 2.2, -4), (20, 3.3, 20), 'play_yellow', rot={'origin': [8, 2, 8], 'axis': 'y', 'angle': 45})]
+    for a in (0, 45):
+        r = {'origin': [8, 10, 8], 'axis': 'y', 'angle': a}
+        e += [box((-4, 9, 7.5), (20, 10, 8.5), 'steel', rot=r), box((7.5, 9, -4), (8.5, 10, 20), 'steel', rot=r)]
+    for x, z in ((-3.5, 7.5), (18.5, 7.5), (7.5, -3.5), (7.5, 18.5)):
+        e.append(box((x, 3.5, z), (x + 1, 10, z + 1), 'steel'))
+    model('roundabout', e, gui=0.45)
+    # A seesaw.
+    e = [box((6, 0, 6), (10, 5, 10), 'steel'), box((6.5, 5, -14), (9.5, 6.5, 30), 'wood', rot={'origin': [8, 5.5, 8], 'axis': 'x', 'angle': 10}),
+         box((5, 6.5, -10), (11, 10, -9), 'red', rot={'origin': [8, 5.5, 8], 'axis': 'x', 'angle': 10}),
+         box((5, 6.5, 25), (11, 10, 26), 'red', rot={'origin': [8, 5.5, 8], 'axis': 'x', 'angle': 10})]
+    model('seesaw', e, gui=0.45)
+    # A climbing frame: four green posts, bars across at three heights, a ladder of bars overhead.
+    e = []
+    for x in (-8, 22):
+        for z in (0, 14):
+            e.append(box((x, 0, z), (x + 2, 28, z + 2), 'green'))
+    for y in (8, 16, 26):
+        e += [box((-8, y, 0.5), (24, y + 1, 1.5), 'play_yellow'), box((-8, y, 14.5), (24, y + 1, 15.5), 'play_yellow')]
+    for x in range(-6, 22, 4):
+        e.append(box((x, 26, 1), (x + 1, 27, 15), 'steel'))
+    model('climbing_frame', e, gui=0.4)
+    # A goal (for five-a-side): three blocks wide, net at the back and the sides.
+    e = [box((-16, 0, 0), (-14, 32, 2), 'white'), box((30, 0, 0), (32, 32, 2), 'white'), box((-16, 30, 0), (32, 32, 2), 'white'),
+         box((-14, 0, 15.5), (30, 30, 16), {'north': 'net', 'south': 'net'}, uv={'north': FULL, 'south': FULL}),
+         box((-14, 29.5, 2), (30, 30, 16), {'up': 'net', 'down': 'net'}, uv={'up': FULL, 'down': FULL}),
+         box((-14.5, 0, 2), (-14, 30, 16), {'east': 'net', 'west': 'net'}, uv={'east': FULL, 'west': FULL}),
+         box((30, 0, 2), (30.5, 30, 16), {'east': 'net', 'west': 'net'}, uv={'east': FULL, 'west': FULL}),
+         box((-15, 0, 15), (31, 1, 16), 'white')]
+    model('football_goal', e, gui=0.3)
+    # A basketball hoop: put on a pole block; board, ring and net face the front.
+    e = [box((7, 0, 7), (9, 28, 9), 'steel'), box((7, 24, 6), (9, 26, 7), 'steel'),
+         box((0, 18, 5), (16, 32, 6), {'north': 'backboard', 'south': 'white', 'east': 'white', 'west': 'white', 'up': 'white', 'down': 'white'},
+             uv={'north': FULL}),
+         box((4, 20, -2), (12, 20.6, -1.4), 'play_orange'), box((4, 20, 4.4), (12, 20.6, 5), 'play_orange'),
+         box((4, 20, -1.4), (4.6, 20.6, 4.4), 'play_orange'), box((11.4, 20, -1.4), (12, 20.6, 4.4), 'play_orange'),
+         box((4.6, 16, -1.4), (11.4, 20, -1.3), {'north': 'net', 'south': 'net'}, uv={'north': FULL, 'south': FULL}),
+         box((4.6, 16, 4.3), (11.4, 20, 4.4), {'north': 'net', 'south': 'net'}, uv={'north': FULL, 'south': FULL})]
+    model('basket_hoop', e, gui=0.45)
+    # Stands: three rows of seats stepping up to the back, three blocks wide.
+    e = []
+    for k, col in enumerate(('play_blue', 'red', 'play_blue')):
+        z0 = -8 + k * 8
+        e += [box((-16, 0, z0), (32, 4 + k * 5, z0 + 8), 'concrete'), box((-15, 4 + k * 5, z0 + 3), (31, 6 + k * 5, z0 + 7), col)]
+    e += [box((-16, 14, 15), (32, 24, 16), 'steel'), box((-16, 23, 13), (32, 24, 16), 'steel')]
+    model('bleachers', e, gui=0.3, extra_tex={'concrete': 'minecraft:block/light_gray_concrete'})
+    # A floodlight: a frame of six lamps tilted down at the field, put on top of a tall pole.
+    rot = {'origin': [8, 8, 8], 'axis': 'x', 'angle': 22.5}
+    e = [box((7, 0, 7), (9, 6, 9), 'steel'), box((-6, 4, 7), (22, 18, 10), 'steel', rot=rot)]
+    for i in range(3):
+        for j in range(2):
+            e.append(box((-5 + i * 9, 5 + j * 6.5, 6.6), (3 + i * 9, 10.5 + j * 6.5, 7), {'north': 'lamp_glow'}, uv={'north': FULL}, emit=15, rot=rot))
+    model('floodlight', e, gui=0.45)
+    # A volleyball net: two posts, the net between them at head height.
+    e = [box((-15, 0, 7), (-13, 32, 9), 'steel'), box((29, 0, 7), (31, 32, 9), 'steel'),
+         box((-13, 20, 7.8), (29, 30, 8.2), {'north': 'net', 'south': 'net'}, uv={'north': FULL, 'south': FULL}),
+         box((-13, 29.5, 7.6), (29, 30.5, 8.4), 'white')]
+    model('sport_net', e, gui=0.3)
+
+
 # ----------------------------------------------------------------------------------------------------------------
 # Blockstates and items
 
@@ -697,6 +810,8 @@ BLOCKS = {
     'booth_red': 'facing', 'booth_soviet': 'facing', 'advert_column': 'facing', 'bollard': 'facing', 'planter': 'facing',
     'bike_rack': 'facing', 'kiosk': 'facing', 'vending': 'facing', 'billboard': 'facing',
     'manhole': 'plain',
+    'swing': 'facing', 'slide': 'facing', 'sandbox': 'facing', 'roundabout': 'facing', 'seesaw': 'facing', 'climbing_frame': 'facing',
+    'football_goal': 'facing', 'basket_hoop': 'facing', 'bleachers': 'facing', 'floodlight': 'facing', 'sport_net': 'facing',
 }
 
 
@@ -727,5 +842,6 @@ if __name__ == '__main__':
     bins()
     bus_stops()
     small()
+    play()
     blockstates()
     print('ok', len(BLOCKS), 'blocks')

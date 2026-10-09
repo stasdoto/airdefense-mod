@@ -148,7 +148,7 @@ final class ModernDesigns {
 	}
 
 	/** A street lamp: a post with a lantern hanging from it. */
-	private static void lamp(Plan p, int x, int z, int h) {
+	static void lamp(Plan p, int x, int z, int h) {
 		for (int y = 1; y <= h; y++) {
 			p.set(x, y, z, Blocks.IRON_BARS.defaultBlockState());
 		}
@@ -156,7 +156,7 @@ final class ModernDesigns {
 		p.lantern(x, h, z, true);
 	}
 
-	private static void tree(Plan p, int x, int z, Block log, Block leaves) {
+	static void tree(Plan p, int x, int z, Block log, Block leaves) {
 		for (int y = 1; y <= 4; y++) {
 			p.set(x, y, z, log.defaultBlockState());
 		}
@@ -188,6 +188,25 @@ final class ModernDesigns {
 	private static void park(Plan p, int variant) {
 		int hw = p.b.type.halfWidth();
 		int d = p.b.type.depth - 1;
+		// 1.36 (worlds started since): some parks are playgrounds, sports grounds or a small stadium.
+		if (Cities.parks) {
+			switch (Math.floorMod(variant, 6)) {
+				case 2, 3 -> {
+					Play.playground(p, variant);
+					return;
+				}
+				case 4 -> {
+					Play.sports(p, variant);
+					return;
+				}
+				case 5 -> {
+					Play.stadium(p, variant);
+					return;
+				}
+				default -> {
+				}
+			}
+		}
 		p.fill(-hw, -1, 0, hw, -1, d, Blocks.DIRT.defaultBlockState());
 		p.fill(-hw, 0, 0, hw, 0, d, Blocks.GRASS_BLOCK.defaultBlockState());
 		int cz = d / 2;
