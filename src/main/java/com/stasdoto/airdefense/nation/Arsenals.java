@@ -1329,6 +1329,7 @@ public final class Arsenals extends SavedData {
 			MissileEntity me = MissileEntity.launchStrike(l, m, pos, tc.add(0, 1, 0), back, back);
 			me.setCountry(side);
 			me.setOrigin(home);
+			me.startInFlight();
 		});
 		return true;
 	}

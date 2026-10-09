@@ -1552,6 +1552,11 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runCommand("time set 3000");
 		camera(server, x + 0.5, ground + 20, -30.5, 0, 20);
 		ctx.waitTicks(60);
+		// The ground the targets stand on is kept loaded (they are put there, and given their side, before anybody is near).
+		server.runCommand(String.format("forceload add %d %d %d %d", x - 176, 288, x + 184, 352));
+		server.runCommand(String.format("forceload add %d %d %d %d", x - 432, 8, x - 384, 56));
+		server.runCommand(String.format("forceload add %d %d %d %d", x + 16, -336, x + 48, -320));
+		ctx.waitTicks(60);
 		VehicleType[] types = {VehicleType.ORLAN, VehicleType.TB2_GCS, VehicleType.LANCET, VehicleType.SWITCHBLADE, VehicleType.BORISOGLEBSK,
 				VehicleType.BUKOVEL};
 		int[] own = new int[types.length];
@@ -1565,20 +1570,19 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		}));
 		// The targets: a column by the point the Orlan watches, a tank and a BTR for the Lancet and the Switchblade, a
 		// BMP for the TB2.
-		int[] col = {spawnVehicle(server, VehicleType.T72, x - 20, 300, 180), spawnVehicle(server, VehicleType.BMP2, x, 306, 180),
-				spawnVehicle(server, VehicleType.BTR82, x + 20, 300, 180), spawnVehicle(server, VehicleType.SUPPLY_TRUCK, x + 8, 322, 180),
-				spawnVehicle(server, VehicleType.T72, x + 150, 330, 180), spawnVehicle(server, VehicleType.BTR82, x + 168, 336, 180),
-				spawnVehicle(server, VehicleType.BMP2, x - 150, 330, 180)};
+		int[] col = {spawnAs(server, VehicleType.T72, x - 20, 300, 180, 777), spawnAs(server, VehicleType.BMP2, x, 306, 180, 777),
+				spawnAs(server, VehicleType.BTR82, x + 20, 300, 180, 777), spawnAs(server, VehicleType.SUPPLY_TRUCK, x + 8, 322, 180, 777),
+				spawnAs(server, VehicleType.T72, x + 150, 330, 180, 777), spawnAs(server, VehicleType.BTR82, x + 168, 336, 180, 777),
+				spawnAs(server, VehicleType.BMP2, x - 150, 330, 180, 777)};
 		List<Integer> colList = java.util.Arrays.stream(col).boxed().toList();
-		server.runOnServer(s -> forVehicles(s.overworld(), colList, v -> v.country = 777));
 		ctx.waitTicks(200);
-		look(server, x + 12, ground + 10, -30, x + 4, ground + 1.5, 2);
+		look(server, x - 30, ground + 6, 26, x - 22, ground + 1.5, 0);
 		ctx.waitTicks(20);
 		ctx.takeScreenshot("u1_lineup");
-		look(server, x - 50, ground + 4.5, 13, x - 40, ground + 2.2, 0);
+		look(server, x - 47, ground + 4, 12, x - 40, ground + 2.2, -1);
 		ctx.waitTicks(10);
 		ctx.takeScreenshot("u1b_orlan_catapult");
-		look(server, x + 58, ground + 5, 18, x + 32, ground + 4, 0);
+		look(server, x + 22, ground + 6, 26, x + 28, ground + 3, 0);
 		ctx.waitTicks(10);
 		ctx.takeScreenshot("u1c_ew_masts");
 		int jammers = server.computeOnServer(s -> com.stasdoto.airdefense.drone.Jammers.jammers(s.overworld()).size());
@@ -1723,9 +1727,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 
 		// Electronic warfare: an enemy Bukovel by an enemy BTR - the player's Lancet loses its link on the way in; an
 		// enemy Shahed over the player's jammers strays off its aim.
-		int ebuk = spawnVehicle(server, VehicleType.BUKOVEL, x - 420, 20, 90);
-		int ebtr = spawnVehicle(server, VehicleType.BTR82, x - 400, 40, 90);
-		server.runOnServer(s -> forVehicles(s.overworld(), List.of(ebuk, ebtr), v -> v.country = 777));
+		int ebuk = spawnAs(server, VehicleType.BUKOVEL, x - 420, 20, 90, 777);
+		int ebtr = spawnAs(server, VehicleType.BTR82, x - 400, 40, 90, 777);
 		ctx.waitTicks(220);
 		int lost0 = com.stasdoto.airdefense.drone.Jammers.linksLost;
 		int drift0 = com.stasdoto.airdefense.drone.Jammers.drifted;
@@ -1734,7 +1737,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		int enemyJammers = server.computeOnServer(s -> com.stasdoto.airdefense.drone.Jammers.jammers(s.overworld()).size());
 		boolean jamOk = server.computeOnServer(s -> {
 			boolean ok = s.overworld().getEntity(own[2]) instanceof VehicleEntity v && v.commandStrike(new BlockPos(x - 400, ground, 40), null);
-			MissileEntity sh = MissileEntity.launchStrike(s.overworld(), MissileType.SHAHED, new Vec3(x + 30, ground + 70, -420),
+			MissileEntity sh = MissileEntity.launchStrike(s.overworld(), MissileType.SHAHED, new Vec3(x + 30, ground + 70, -328),
 					new Vec3(x + 30, ground, 80), new Vec3(0, 0, 1));
 			sh.setCountry(777);
 			return ok;
@@ -1810,8 +1813,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		AirDefense.LOGGER.info("[airdefense-test] RESULT uav_ai_recon: sent {} ({} flights), circling over the town after {} ticks, the town watched by them {}",
 				sent, com.stasdoto.airdefense.nation.Arsenals.reconFlights - flights0, over, enemyWatches);
 
-		int tank = spawnVehicle(server, VehicleType.T72, x + 100, -580, 90);
-		server.runOnServer(s -> forVehicles(s.overworld(), List.of(tank), v -> v.country = -1));
+		int tank = spawnAs(server, VehicleType.T72, x + 100, -580, 90, -1);
 		camera(server, x + 70.5, ground + 12, -620.5, -40, 10);
 		ctx.waitTicks(40);
 		int hits3 = MissileEntity.LOITER_HITS.get();
@@ -1841,6 +1843,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			forVehicles(s.overworld(), colList, Entity::discard);
 			forVehicles(s.overworld(), List.of(gunA, gunB, ebuk, ebtr, tank), Entity::discard);
 		});
+		server.runCommand(String.format("forceload remove %d %d %d %d", x - 176, 288, x + 184, 352));
+		server.runCommand(String.format("forceload remove %d %d %d %d", x - 432, 8, x - 384, 56));
+		server.runCommand(String.format("forceload remove %d %d %d %d", x + 16, -336, x + 48, -320));
 		language(ctx, "en_us");
 	}
 
@@ -6332,6 +6337,15 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				// The tests' launchers play the enemy: the air defence (the player's) shoots at what they fire.
 				v.country = 900;
 			}
+			return v.getId();
+		});
+	}
+
+	/** 1.34: a vehicle of this side (set as it is put down: one far off is not found by its id until its ground runs). */
+	private int spawnAs(TestServerContext server, VehicleType type, int x, int z, float yaw, int country) {
+		return server.computeOnServer(s -> {
+			VehicleEntity v = VehicleEntity.spawn(s.overworld(), type, new Vec3(x + 0.5, ground, z + 0.5), yaw);
+			v.country = country;
 			return v.getId();
 		});
 	}

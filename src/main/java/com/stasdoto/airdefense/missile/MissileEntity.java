@@ -1090,6 +1090,17 @@ public class MissileEntity extends Entity {
 		homeVehicle = v;
 	}
 
+	/** 1.34: a drone that turns up already in the air (a country's, on its way in): no catapult run. */
+	public void startInFlight() {
+		if (getMissileType().loiters()) {
+			phase = TRANSIT;
+			boostTicks = 0;
+			speed = getMissileType().maxSpeed * 0.8;
+			lastVel = launchDir.multiply(1, 0, 1).normalize().scale(speed);
+			setMotor(false);
+		}
+	}
+
 	/** 1.34: lost its link to a jammer. */
 	public boolean jammed() {
 		return jammed;
@@ -1134,7 +1145,8 @@ public class MissileEntity extends Entity {
 
 	private Vec3 loiterStep(ServerLevel level, MissileType type) {
 		Vec3 pos = position();
-		setMotor(true);
+		// (The "motor" is the launch puff off the catapult: an electric or piston pusher leaves no trail.)
+		setMotor(phase == 0);
 		if (phase == 0) {
 			speed = Math.min(type.maxSpeed, speed + type.accel * 2);
 			if (--boostTicks <= 0) {
