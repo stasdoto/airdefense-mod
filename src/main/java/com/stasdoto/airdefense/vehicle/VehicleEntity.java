@@ -829,6 +829,11 @@ public class VehicleEntity extends LivingEntity {
 	public long cargoDelivery;
 	private int unloadedTicks = -1;
 
+	/** On its own way out (an unloaded lorry, an attacker's column vehicle at the end of its road). */
+	public boolean leaving() {
+		return unloadedTicks >= 0;
+	}
+
 	/** Drives along these points (no driver needed), at this share of its top speed. */
 	public void drive(List<Vec3> waypoints, float speedShare) {
 		route = new ArrayList<>(waypoints);
@@ -900,6 +905,11 @@ public class VehicleEntity extends LivingEntity {
 			return;
 		}
 		arrivals++;
+		if (garrison) {
+			// 1.32.2: an attacker's column vehicle at the end of its road: it leaves once nobody is near (or after five
+			// minutes) instead of standing at the town for good.
+			unloadedTicks = 0;
+		}
 		if (troops <= 0) {
 			return;
 		}
@@ -914,6 +924,10 @@ public class VehicleEntity extends LivingEntity {
 					com.stasdoto.airdefense.nation.SoldierEntity.SOLDIER, country, c == null ? 0 : c.color, home, new Vec3(at.x, y, at.z), r.nextInt());
 			if (troopTarget != null) {
 				e.orderTo(troopTarget);
+			}
+			if (garrison) {
+				// An attacker's column: its men stay a while, then go.
+				e.raidSince = level.getGameTime();
 			}
 			level.addFreshEntity(e);
 			dismounted++;

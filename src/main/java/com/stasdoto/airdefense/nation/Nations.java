@@ -547,6 +547,33 @@ public final class Nations {
 	 * no stock) is dropped, with its flag.
 	 */
 	private static void mergeTwins(ServerLevel level, Politics p) {
+		// 1.32.2: one planned city (or hamlet) is one settlement - one founded again goes (a player's stays, else the first).
+		Map<Long, Settlement> cities = new java.util.HashMap<>();
+		Map<Long, Settlement> hamlets = new java.util.HashMap<>();
+		List<Settlement> byId = new ArrayList<>(p.settlements.values());
+		byId.sort(java.util.Comparator.comparingInt(x -> x.id));
+		for (Settlement s : byId) {
+			Map<Long, Settlement> seen = s.city >= 0 ? cities : s.hamlet >= 0 ? hamlets : null;
+			if (seen == null) {
+				continue;
+			}
+			long key = s.city >= 0 ? s.city : s.hamlet;
+			Settlement first = seen.get(key);
+			if (first == null) {
+				seen.put(key, s);
+				continue;
+			}
+			boolean sOwned = owned(p, s);
+			Settlement drop = sOwned && !owned(p, first) ? first : s;
+			if (owned(p, drop)) {
+				continue;
+			}
+			if (drop == first) {
+				seen.put(key, s);
+			}
+			remove(level, p, drop);
+			refounded++;
+		}
 		List<Settlement> all = new ArrayList<>(p.settlements.values());
 		for (int i = 0; i < all.size(); i++) {
 			Settlement a = all.get(i);
@@ -568,6 +595,14 @@ public final class Nations {
 				}
 			}
 		}
+	}
+
+	/** For the tests: settlements dropped as a city or hamlet founded twice. */
+	public static int refounded;
+
+	private static boolean owned(Politics p, Settlement s) {
+		Country c = p.country(s.country);
+		return c != null && c.owner != null;
 	}
 
 	private static boolean droppable(Politics p, Settlement s) {
@@ -625,11 +660,95 @@ public final class Nations {
 			s.guardsAlive = guards.size();
 			Country c = p.country(s.country);
 			int want = c != null ? Math.max(1, Math.min(5, s.population / 3)) + (c.cityState ? 1 : 0) : s.population >= 5 ? 1 : 0;
+			if ((level.getGameTime() / 20 + s.id) % 10 == 0) {
+				thinOut(level, p, s, want);
+			}
 			if (guards.size() < want && s.captureTicks == 0 && !s.riot && s.aiCaptureTicks == 0 && level.getNearestPlayer(s.flag.getX(), s.flag.getY(), s.flag.getZ(), 12, false) == null
 					&& level.getNearestPlayer(s.flag.getX(), s.flag.getY(), s.flag.getZ(), 160, false) != null) {
 				spawnGuard(level, s, c);
 			}
+			if ((level.getGameTime() / 20 + s.id) % 30 == 0) {
+				strayFlags(level, s);
+			}
 			placeFlag(level, p, s);
+		}
+	}
+
+	/**
+	 * 1.32.2: banners standing where a town's flag could be (round its square) other than its flag: left by the same
+	 * town founded again in older worlds. They come down.
+	 */
+	private static void strayFlags(ServerLevel level, Settlement s) {
+		for (int ring = 2; ring <= 5; ring++) {
+			for (Direction d : Direction.Plane.HORIZONTAL) {
+				int x = s.center.getX() + d.getStepX() * ring;
+				int z = s.center.getZ() + d.getStepZ() * ring;
+				for (int dy = -3; dy <= 4; dy++) {
+					BlockPos pos = new BlockPos(x, s.center.getY() + dy, z);
+					if (!pos.equals(s.flag) && level.isLoaded(pos) && level.getBlockState(pos).getBlock() instanceof BannerBlock) {
+						level.removeBlock(pos, false);
+						strayFlagsRemoved++;
+					}
+				}
+			}
+		}
+	}
+
+	/** For the tests: stray banners taken down. */
+	public static int strayFlagsRemoved;
+
+	/** For the tests: soldiers taken away by {@link #thinOut}. */
+	public static int thinned;
+
+	/**
+	 * 1.32.2: no crowds round a town. Its guards (wherever round it they have wandered) are kept to what it needs, guards
+	 * of towns that are gone are taken away, and of attackers no more than 20 stay round it (the farthest from the
+	 * players go first; nobody right by a player is taken). Old worlds had a hundred and more round the flags.
+	 */
+	private static void thinOut(ServerLevel level, Politics p, Settlement s, int want) {
+		int reach = s.radius + 80;
+		List<SoldierEntity> round = level.getEntitiesOfClass(SoldierEntity.class, new AABB(s.center).inflate(reach, 48, reach),
+				e -> e.isAlive() && e.role() != SoldierEntity.BANDIT && e.role() != SoldierEntity.REBEL);
+		List<SoldierEntity> mine = new ArrayList<>();
+		List<SoldierEntity> attackers = new ArrayList<>();
+		for (SoldierEntity e : round) {
+			if (e.role() == SoldierEntity.GUARD) {
+				if (e.home() == s.id) {
+					mine.add(e);
+				} else if (e.home() < 0 || !p.settlements.containsKey(e.home())) {
+					// A guard of a town that is no more.
+					if (level.getNearestPlayer(e, 16) == null) {
+						e.discard();
+						thinned++;
+					}
+				}
+			} else if (e.role() == SoldierEntity.SOLDIER && e.country() >= 0 && e.country() != s.country && !s.soldiers.contains(e.getUUID())) {
+				// (Never a player's own army.)
+				Country ec = p.country(e.country());
+				if (ec == null || ec.owner == null) {
+					attackers.add(e);
+				}
+			}
+		}
+		drop(level, mine, want + 2);
+		drop(level, attackers, 20);
+	}
+
+	/** Takes away the ones over {@code keep}, the farthest from any player first (never one right by a player). */
+	private static void drop(ServerLevel level, List<SoldierEntity> list, int keep) {
+		if (list.size() <= keep) {
+			return;
+		}
+		list.sort(java.util.Comparator.comparingDouble((SoldierEntity e) -> {
+			Player pl = level.getNearestPlayer(e, 512);
+			return pl == null ? Double.MAX_VALUE : e.distanceToSqr(pl);
+		}).reversed());
+		for (int i = 0; i < list.size() - keep; i++) {
+			SoldierEntity e = list.get(i);
+			if (level.getNearestPlayer(e, 16) == null) {
+				e.discard();
+				thinned++;
+			}
 		}
 	}
 

@@ -278,6 +278,10 @@ public final class Arsenals extends SavedData {
 		long sec = now / 20;
 		Politics p = Politics.get(level.getServer());
 		Arsenals a = get(level.getServer());
+		// 1.32.2: the arsenal of a town that is no more goes (its vehicles are leftovers then, cleared away).
+		if (a.arsenals.keySet().removeIf(id -> !p.settlements.containsKey(id))) {
+			a.setDirty();
+		}
 		for (Settlement s : p.settlements.values()) {
 			Arsenal ar = a.of(p, s);
 			boolean near = level.isLoaded(s.center) && level.getNearestPlayer(s.center.getX(), s.center.getY(), s.center.getZ(), 240,
@@ -430,9 +434,66 @@ public final class Arsenals extends SavedData {
 		return new BlockPos(s.center.getX() + (int) Math.round(Math.cos(a) * r), s.center.getY(), s.center.getZ() + (int) Math.round(Math.sin(a) * r));
 	}
 
+	/** For the tests: leftover vehicles cleared away, and taken over by a town's unit still without its vehicle. */
+	public static int sweptVehicles;
+	public static int adoptedVehicles;
+
+	/**
+	 * 1.32.2: the leftovers round a town - garrison vehicles that no unit of any town's arsenal owns (a vehicle not
+	 * found in time and made anew; an attacker's column parked for good in older versions). A unit of this town still
+	 * without its vehicle takes one of its kind; the rest go, unless a player stands right by them. They had piled up
+	 * in old worlds by the dozen, with the lag that goes with it.
+	 */
+	private void sweep(ServerLevel level, Politics p, Settlement s, Arsenal ar) {
+		java.util.Set<UUID> claimed = new java.util.HashSet<>();
+		for (Arsenal a : arsenals.values()) {
+			for (Unit u : a.units) {
+				if (u.entity != null) {
+					claimed.add(u.entity);
+				}
+			}
+		}
+		int reach = s.radius + 140;
+		AABB box = new AABB(s.center).inflate(reach, 96, reach);
+		for (VehicleEntity v : level.getEntitiesOfClass(VehicleEntity.class, box, v -> v.isAlive() && v.garrison && v.cargoDelivery == 0
+				&& !v.driving() && v.troops == 0 && !v.leaving() && !v.isVehicle())) {
+			if (claimed.contains(v.getUUID())) {
+				continue;
+			}
+			Unit free = null;
+			for (Unit u : ar.units) {
+				if (!u.lost && u.type == v.getVehicleType() && (u.entity == null || !(level.getEntity(u.entity) instanceof VehicleEntity))) {
+					free = u;
+					break;
+				}
+			}
+			if (free != null) {
+				if (free.entity != null) {
+					MISSING.remove(free.entity);
+				}
+				free.entity = v.getUUID();
+				v.home = s.id;
+				v.country = side(s);
+				claimed.add(v.getUUID());
+				adoptedVehicles++;
+				setDirty();
+			} else if (level.getNearestPlayer(v, 16) == null) {
+				v.discard();
+				sweptVehicles++;
+			}
+		}
+	}
+
+	/** When each town was last swept (game time; not saved). */
+	private static final Map<Integer, Long> SWEPT = new HashMap<>();
+
 	/** Puts the town's vehicles into the world (those that are not there), tops up their stores from the depot. */
 	private void materialize(ServerLevel level, Politics p, Settlement s, Arsenal ar, boolean near, boolean alert) {
 		int side = side(s);
+		if (near && level.getGameTime() - SWEPT.getOrDefault(s.id, -1000L) >= 200) {
+			SWEPT.put(s.id, level.getGameTime());
+			sweep(level, p, s, ar);
+		}
 		// A couple of vehicles a second: a whole city's arsenal at once froze the server for a second or two.
 		int budget = 2;
 		for (int i = 0; i < ar.units.size(); i++) {

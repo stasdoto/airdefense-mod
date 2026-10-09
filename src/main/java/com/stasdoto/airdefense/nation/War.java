@@ -212,6 +212,11 @@ public final class War {
 					continue;
 				}
 				Settlement target = nearestTarget(level, p, ai, enemy);
+				// 1.32.2: no new troops while plenty of this attacker's are still round the town.
+				if (target != null && level.getEntitiesOfClass(SoldierEntity.class, new net.minecraft.world.phys.AABB(target.center).inflate(target.radius + 80, 48,
+						target.radius + 80), e -> e.isAlive() && e.country() == ai.id).size() >= 12) {
+					target = null;
+				}
 				if (target != null) {
 					// 1.30: the attacker's guns in reach shell the town first.
 					Arsenals.barrage(level, p, ai, target);
@@ -602,6 +607,7 @@ public final class War {
 				SoldierEntity e = SoldierEntity.create(level, SoldierEntity.SOLDIER, ai.id, ai.color, home == null ? -1 : home.id,
 						new Vec3(x + 0.5, y, z + 0.5), r.nextInt());
 				e.orderTo(target.flag);
+				e.raidSince = level.getGameTime();
 				level.addFreshEntity(e);
 				squad.add(e);
 			}
