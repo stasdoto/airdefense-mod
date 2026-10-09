@@ -444,4 +444,46 @@ public final class GenGeometry {
 			null, new float[]{0F, 0F, 0F}, "pod", new float[]{0F, 1.25F, -2.9F},
 			35F, 0F, new Rail[]{new Rail("cap_0", -0.48F, 0.43F, 4.05F), new Rail("cap_1", 0.48F, 0.43F, 4.05F)}, null, new String[]{}, 10F,
 			1024, 96);
+
+	public static final Geometry ORLAN = new Geometry("orlan", 7.54F, 2.55F, 3.5F, 4.2F, false,
+			new Seat[]{new Seat("driver", -0.55F, 1.55F, 2.6F), new Seat("gunner", 0.55F, 1.55F, 2.6F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.6F, true), new Wheel("wheel_1_r", 0.6F, true), new Wheel("wheel_2_l", 0.6F, false), new Wheel("wheel_2_r", 0.6F, false), new Wheel("wheel_3_l", 0.6F, false), new Wheel("wheel_3_r", 0.6F, false)},
+			null, new float[]{0F, 0F, 0F}, "catapult", new float[]{0F, 1.4F, -3.6F},
+			12F, 6F, new Rail[]{new Rail("uav_0", 0F, 0.35F, 4F), new Rail("box_1", 0F, 0.35F, 4F)}, null, new String[]{}, 12F,
+			1024, 160);
+
+	public static final Geometry TB2_GCS = new Geometry("tb2_gcs", 13.84F, 2.55F, 5.2F, 4F, false,
+			new Seat[]{new Seat("driver", -0.55F, 1.55F, 3.2F), new Seat("gunner", 0.55F, 1.55F, 3.2F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.6F, true), new Wheel("wheel_1_r", 0.6F, true), new Wheel("wheel_2_l", 0.6F, false), new Wheel("wheel_2_r", 0.6F, false), new Wheel("wheel_3_l", 0.6F, false), new Wheel("wheel_3_r", 0.6F, false), new Wheel("trailer_l", 0.5F, false), new Wheel("trailer_r", 0.5F, false)},
+			null, new float[]{0F, 0F, 0F}, "runway", new float[]{0F, 1.2F, 6F},
+			4F, 4F, new Rail[]{new Rail("crate_0", 0F, 0.3293F, 1.0255F), new Rail("crate_1", 0F, 0.3293F, 1.0255F)}, null, new String[]{}, 14F,
+			1024, 208);
+
+	public static final Geometry LANCET = new Geometry("lancet", 7.54F, 2.55F, 2.9F, 4.2F, false,
+			new Seat[]{new Seat("driver", -0.55F, 1.55F, 2.6F), new Seat("gunner", 0.55F, 1.55F, 2.6F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.6F, true), new Wheel("wheel_1_r", 0.6F, true), new Wheel("wheel_2_l", 0.6F, false), new Wheel("wheel_2_r", 0.6F, false), new Wheel("wheel_3_l", 0.6F, false), new Wheel("wheel_3_r", 0.6F, false)},
+			null, new float[]{0F, 0F, 0F}, "catapult", new float[]{0F, 1.4F, -3.6F},
+			15F, 8F, new Rail[]{new Rail("uav_0", 0F, 0.28F, 4.2F), new Rail("box_1", 0F, 0.28F, 4.2F), new Rail("box_2", 0F, 0.28F, 4.2F), new Rail("box_3", 0F, 0.28F, 4.2F)}, null, new String[]{}, 12F,
+			1024, 128);
+
+	public static final Geometry SWITCHBLADE = new Geometry("switchblade", 6.34F, 2.5F, 2.35F, 3.6F, false,
+			new Seat[]{new Seat("driver", -0.5F, 1.04F, 0.8F), new Seat("gunner", 0.5F, 1.04F, 0.8F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.55F, true), new Wheel("wheel_1_r", 0.55F, true), new Wheel("wheel_2_l", 0.55F, false), new Wheel("wheel_2_r", 0.55F, false)},
+			null, new float[]{0F, 0F, 0F}, "pod", new float[]{0F, 1.15F, -2.8F},
+			45F, 0F, new Rail[]{new Rail("tube_0", -0.5F, 0.23F, 2.35F), new Rail("tube_1", 0F, 0.23F, 2.35F), new Rail("tube_2", 0.5F, 0.23F, 2.35F), new Rail("tube_3", -0.5F, 0.69F, 2.35F), new Rail("tube_4", 0F, 0.69F, 2.35F), new Rail("tube_5", 0.5F, 0.69F, 2.35F)}, null, new String[]{}, 10F,
+			1024, 64);
+
+	public static final Geometry BORISOGLEBSK = new Geometry("borisoglebsk", 6.9F, 2.85F, 4.05F, 0F, true,
+			new Seat[]{new Seat("driver", -0.6F, 1F, 1.9F), new Seat("gunner", 0.6F, 1F, 1.9F)},
+			new Wheel[]{new Wheel("road_0_l", 0.3F, false), new Wheel("road_1_l", 0.3F, false), new Wheel("road_2_l", 0.3F, false), new Wheel("road_3_l", 0.3F, false), new Wheel("road_4_l", 0.3F, false), new Wheel("road_5_l", 0.3F, false), new Wheel("sprocket_l", 0.3F, false), new Wheel("idler_l", 0.28F, false), new Wheel("road_0_r", 0.3F, false), new Wheel("road_1_r", 0.3F, false), new Wheel("road_2_r", 0.3F, false), new Wheel("road_3_r", 0.3F, false), new Wheel("road_4_r", 0.3F, false), new Wheel("road_5_r", 0.3F, false), new Wheel("sprocket_r", 0.3F, false), new Wheel("idler_r", 0.28F, false)},
+			null, new float[]{0F, 0F, 0F}, "mast", new float[]{0F, 2.75F, -2.2F},
+			90F, 0F, new Rail[]{}, null, new String[]{}, 11F,
+			1024, 208);
+
+	public static final Geometry BUKOVEL = new Geometry("bukovel", 5.18F, 2F, 2.4F, 3.1F, false,
+			new Seat[]{new Seat("driver", -0.4F, 0.77F, 0.4F), new Seat("gunner", 0.4F, 0.77F, 0.4F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.42F, true), new Wheel("wheel_1_r", 0.42F, true), new Wheel("wheel_2_l", 0.42F, false), new Wheel("wheel_2_r", 0.42F, false)},
+			null, new float[]{0F, 0F, 0F}, "mast", new float[]{0F, 1.7F, -2F},
+			90F, 0F, new Rail[]{}, null, new String[]{}, 9F,
+			1024, 48);
 }

@@ -132,7 +132,7 @@ public final class CounterBattery {
 	// Sides
 
 	/** The player's side: his own vehicles (-1) and the country he runs. */
-	static boolean playerSide(Politics p, int country) {
+	public static boolean playerSide(Politics p, int country) {
 		if (country == -1) {
 			return true;
 		}

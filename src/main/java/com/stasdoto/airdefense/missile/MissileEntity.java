@@ -182,11 +182,12 @@ public class MissileEntity extends Entity {
 				m.speed = 0.6;
 			}
 			case DRONE -> {
-				// Rocket-assisted take-off from the rail.
+				// Rocket-assisted take-off from the rail (1.34: the Orlan's and the Lancet's catapult, the TB2's run).
 				m.phase = 0;
-				m.boostTicks = 22;
+				m.boostTicks = type.loiters() ? 16 : 22;
 				m.launchDir = horiz.add(0, 0.55, 0).normalize();
 				m.speed = 0.7;
+				m.bombs = type == MissileType.TB2 ? 4 : 0;
 			}
 			case INTERCEPTOR -> throw new IllegalArgumentException("use launchInterceptor");
 			case DIRECT -> throw new IllegalArgumentException("use launchDirect");
@@ -556,10 +557,13 @@ public class MissileEntity extends Entity {
 		}
 		keepChunksLoaded(level);
 
+		if ((type.kind == MissileType.Kind.DRONE && !type.track() || type.piloted()) && !jammed && (life + getId()) % 10 == 0) {
+			jamCheck(level, type);
+		}
 		Vec3 from = position();
 		Vec3 vel = switch (type.kind) {
 			case BALLISTIC, ROCKET -> ballisticStep(type);
-			case CRUISE, DRONE -> cruiseStep(level, type);
+			case CRUISE, DRONE -> type.loiters() ? loiterStep(level, type) : cruiseStep(level, type);
 			case INTERCEPTOR -> interceptorStep(level, type);
 			case DIRECT -> directStep(type);
 		};
@@ -607,6 +611,9 @@ public class MissileEntity extends Entity {
 	private Vec3 directStep(MissileType type) {
 		if (type.piloted()) {
 			return pilotedStep(type);
+		}
+		if (type == MissileType.MAML) {
+			return bombStep(type);
 		}
 		if (type == MissileType.FAB250) {
 			// A bomb: falls, keeping the aircraft's speed.
@@ -707,7 +714,7 @@ public class MissileEntity extends Entity {
 		setMotor(true);
 		Vec3 dir = lastVel.lengthSqr() > 1e-6 ? lastVel.normalize() : launchDir;
 		net.minecraft.server.level.ServerPlayer p = pilot == null || level().getServer() == null ? null : level().getServer().getPlayerList().getPlayer(pilot);
-		boolean flown = p != null && p.getCamera() == this;
+		boolean flown = !jammed && p != null && p.getCamera() == this;
 		if (type == MissileType.MAGURA) {
 			// On the water: turns where the pilot looks, keeps to the surface; runs aground = goes off.
 			Vec3 look = flown ? p.getLookAngle() : dir;
@@ -847,6 +854,18 @@ public class MissileEntity extends Entity {
 	/** 1.32: the track of an aircraft of the player's side (his own, nobody's): the old air defence blocks let it be. */
 	public boolean friendlyAircraft() {
 		return getMissileType().track() && (carrier == null || carrier.country < 0);
+	}
+
+	/** 1.34: a drone of the player's side (his vehicles' or his country's) that stays over the field: his air defence blocks let it be. */
+	public boolean friendlyDrone() {
+		if (!getMissileType().loiters()) {
+			return false;
+		}
+		if (country == -1) {
+			return true;
+		}
+		return country >= 0 && level().getServer() != null
+				&& com.stasdoto.airdefense.radar.CounterBattery.playerSide(com.stasdoto.airdefense.nation.Politics.get(level().getServer()), country);
 	}
 
 	/** 1.33: the ship an anti-ship missile's seeker has locked on to, and where it was first aimed. */
@@ -1037,6 +1056,327 @@ public class MissileEntity extends Entity {
 		double vy = Double.isNaN(desiredY) ? 0 : Mth.clamp((desiredY - pos.y) * 0.08, -0.35, 0.45);
 		double h = Math.sqrt(Math.max(0.01, speed * speed - vy * vy));
 		return new Vec3(Math.sin(yaw) * h, vy, Math.cos(yaw) * h);
+	}
+
+	// --- 1.34: drones that circle over a point: reconnaissance drones and loitering munitions ---
+
+	/** Loitering: 0 off the catapult, 1 on the way, 3 circling, 4 diving on its prey, 5 flying home, 6 blind (jammed). */
+	private static final int TRANSIT = 1;
+	private static final int CIRCLING = 3;
+	private static final int ATTACK = 4;
+	private static final int HOMEWARD = 5;
+	private static final int BLIND = 6;
+	private int loiterTicks;
+	/** The vehicle a loitering munition dives on (or the TB2 bombs), and where it was last aimed. */
+	@org.jetbrains.annotations.Nullable
+	private Entity prey;
+	@org.jetbrains.annotations.Nullable
+	private Vec3 preyAt;
+	private int bombs;
+	private int bombTimer;
+	/** Lost its link to an enemy jammer (or, a Shahed, its satellite navigation was fooled). */
+	private boolean jammed;
+	/** The launcher it came from: a reconnaissance drone flies back to it and is loaded again. */
+	@org.jetbrains.annotations.Nullable
+	private com.stasdoto.airdefense.vehicle.VehicleEntity homeVehicle;
+	/** For the tests: loitering munitions that hit a vehicle, prey found, TB2 bombs dropped, drones back home. */
+	public static final java.util.concurrent.atomic.AtomicInteger LOITER_HITS = new java.util.concurrent.atomic.AtomicInteger();
+	public static final java.util.concurrent.atomic.AtomicInteger PREY_FOUND = new java.util.concurrent.atomic.AtomicInteger();
+	public static final java.util.concurrent.atomic.AtomicInteger BOMBS_DROPPED = new java.util.concurrent.atomic.AtomicInteger();
+	public static final java.util.concurrent.atomic.AtomicInteger DRONES_HOME = new java.util.concurrent.atomic.AtomicInteger();
+
+	/** 1.34: the launcher this drone came from (a reconnaissance drone flies home to it). */
+	public void setHome(@org.jetbrains.annotations.Nullable com.stasdoto.airdefense.vehicle.VehicleEntity v) {
+		homeVehicle = v;
+	}
+
+	/** 1.34: a drone that turns up already in the air (a country's, on its way in): no catapult run. */
+	public void startInFlight() {
+		if (getMissileType().loiters()) {
+			phase = TRANSIT;
+			boostTicks = 0;
+			speed = getMissileType().maxSpeed * 0.8;
+			lastVel = launchDir.multiply(1, 0, 1).normalize().scale(speed);
+			setMotor(false);
+		}
+	}
+
+	/** 1.34: lost its link to a jammer. */
+	public boolean jammed() {
+		return jammed;
+	}
+
+	/** 1.34: circling over its point now (a reconnaissance drone or a loitering munition). */
+	public boolean circling() {
+		return phase == CIRCLING && getMissileType().loiters();
+	}
+
+	/**
+	 * Every half second a drone in an enemy jammer's reach may lose its link (see {@link com.stasdoto.airdefense.drone.Jammers}):
+	 * an FPV drops, a loitering munition flies on blind, a reconnaissance drone flies home; a Shahed strays off its aim.
+	 */
+	private void jamCheck(ServerLevel level, MissileType type) {
+		double chance = com.stasdoto.airdefense.drone.Jammers.chance(level, position(), country());
+		if (chance <= 0 || random.nextDouble() >= chance) {
+			return;
+		}
+		if (type.loiters() || type.piloted()) {
+			jammed = true;
+			com.stasdoto.airdefense.drone.Jammers.linksLost++;
+			MissileStats.log("{} lost its link (jammed) at {}", type, fmt(position()));
+			if (type.recon()) {
+				phase = HOMEWARD;
+				com.stasdoto.airdefense.drone.Recon.gone(level, getId());
+			} else if (type.loitering()) {
+				phase = BLIND;
+			} else if (pilot != null && level.getServer().getPlayerList().getPlayer(pilot) instanceof net.minecraft.server.level.ServerPlayer p) {
+				p.sendOverlayMessage(net.minecraft.network.chat.Component.translatable("message.airdefense.drone.jammed"));
+			}
+		} else if (phase < 2) {
+			// Its satellite navigation fooled: it flies on to a wrong point.
+			jammed = true;
+			double a = random.nextDouble() * Math.PI * 2;
+			double r = 25 + random.nextDouble() * 35;
+			target = target.add(Math.cos(a) * r, 0, Math.sin(a) * r);
+			com.stasdoto.airdefense.drone.Jammers.drifted++;
+			MissileStats.log("{} navigation jammed at {}: now flies to {}", type, fmt(position()), fmt(target));
+		}
+	}
+
+	private Vec3 loiterStep(ServerLevel level, MissileType type) {
+		Vec3 pos = position();
+		// (The "motor" is the launch puff off the catapult: an electric or piston pusher leaves no trail.)
+		setMotor(phase == 0);
+		if (phase == 0) {
+			speed = Math.min(type.maxSpeed, speed + type.accel * 2);
+			if (--boostTicks <= 0) {
+				phase = TRANSIT;
+			}
+			Vec3 dir = turnTowards(currentDir(), new Vec3(launchDir.x, Math.max(0.15, launchDir.y), launchDir.z).normalize(), 0.03);
+			return dir.scale(Math.max(speed, 0.5));
+		}
+		if (type.recon() && (phase == TRANSIT || phase == CIRCLING) && (life + getId()) % 20 == 0) {
+			com.stasdoto.airdefense.drone.Recon.look(level, this);
+		}
+		double alt = cruiseAlt > 0 ? cruiseAlt : type.loiterAltitude();
+		double top = type.maxSpeed * speedFactor;
+		switch (phase) {
+			case TRANSIT -> {
+				double dx = target.x - pos.x;
+				double dz = target.z - pos.z;
+				if (dx * dx + dz * dz < Mth.square(type.loiterRadius() + 8)) {
+					phase = CIRCLING;
+					loiterTicks = 0;
+					MissileStats.log("{} circles over {}", type, fmt(target));
+				}
+				speed = Math.min(top, speed + type.accel);
+				return fly(level, type, Math.atan2(dx, dz), alt, speed);
+			}
+			case CIRCLING -> {
+				loiterTicks++;
+				speed = speed > top * 0.8 ? Math.max(top * 0.8, speed - type.accel) : Math.min(top * 0.8, speed + type.accel);
+				if (type == MissileType.TB2) {
+					dropBombs(level);
+				}
+				if (type.loitering() && (life + getId()) % 10 == 0) {
+					prey = findPrey(level, type);
+					if (prey != null) {
+						phase = ATTACK;
+						PREY_FOUND.incrementAndGet();
+						MissileStats.log("{} found its prey: {} at {}", type, prey.getType().getDescriptionId(), fmt(prey.position()));
+					}
+				}
+				if (phase == CIRCLING && loiterTicks > type.loiterTime()) {
+					if (type.recon()) {
+						phase = HOMEWARD;
+						com.stasdoto.airdefense.drone.Recon.gone(level, getId());
+					} else {
+						// Nothing found: it dives on the point itself.
+						phase = ATTACK;
+						preyAt = target;
+					}
+				}
+				return fly(level, type, orbitYaw(pos, target, type.loiterRadius()), alt, speed);
+			}
+			case ATTACK -> {
+				return diveStep(type, pos);
+			}
+			case HOMEWARD -> {
+				boolean own = homeVehicle != null && homeVehicle.isAlive() && homeVehicle.level() == level;
+				Vec3 home = own ? homeVehicle.position() : launchPos;
+				double dx = home.x - pos.x;
+				double dz = home.z - pos.z;
+				double hd = Math.sqrt(dx * dx + dz * dz);
+				if (hd < 14 || !own && hd < 60 && level.getNearestPlayer(this, 120) == null) {
+					landed(level, own);
+					return null;
+				}
+				speed = Math.min(top, speed + type.accel);
+				return fly(level, type, Math.atan2(dx, dz), hd < 80 ? Math.max(12, alt * hd / 80) : alt, speed);
+			}
+			default -> {
+				// Blind: no link - on straight ahead, down slowly, until it hits something.
+				Vec3 d = currentDir();
+				Vec3 flat = new Vec3(d.x, 0, d.z);
+				flat = flat.lengthSqr() > 1e-4 ? flat.normalize() : new Vec3(0, 0, 1);
+				speed = Math.max(0.5, speed * 0.995);
+				return flat.scale(speed).add(0, -0.2, 0);
+			}
+		}
+	}
+
+	/** Heading round the point it circles: along the circle, and back onto it from inside or outside. */
+	private static double orbitYaw(Vec3 pos, Vec3 c, double radius) {
+		double rx = pos.x - c.x;
+		double rz = pos.z - c.z;
+		double r = Math.sqrt(rx * rx + rz * rz);
+		if (r < 1e-3) {
+			return 0;
+		}
+		double ux = rx / r;
+		double uz = rz / r;
+		double k = Mth.clamp((r - radius) / radius * 2.0, -1, 1);
+		return Math.atan2(-uz - ux * k, ux - uz * k);
+	}
+
+	/** Flies on a heading at a height over the ground (as the cruise flight does, turning no faster than it can). */
+	private Vec3 fly(ServerLevel level, MissileType type, double desiredYaw, double alt, double spd) {
+		Vec3 pos = position();
+		Vec3 cur = currentDir();
+		double curYaw = Math.atan2(cur.x, cur.z);
+		double yaw = curYaw + Mth.clamp(Mth.wrapDegrees((desiredYaw - curYaw) * Mth.RAD_TO_DEG) * Mth.DEG_TO_RAD, -type.turnRate, type.turnRate);
+		if (life % 5 == 0 || Double.isNaN(desiredY)) {
+			double ground = Double.NEGATIVE_INFINITY;
+			for (int k = 0; k <= 3; k++) {
+				BlockPos p = BlockPos.containing(pos.x + Math.sin(yaw) * k * 8, pos.y, pos.z + Math.cos(yaw) * k * 8);
+				if (level.hasChunkAt(p)) {
+					ground = Math.max(ground, level.getHeight(Heightmap.Types.MOTION_BLOCKING, p.getX(), p.getZ()));
+				}
+			}
+			if (ground > Double.NEGATIVE_INFINITY) {
+				desiredY = ground + alt;
+			}
+		}
+		double vy = Double.isNaN(desiredY) ? 0 : Mth.clamp((desiredY - pos.y) * 0.06, -0.3, 0.4);
+		double h = Math.sqrt(Math.max(0.01, spd * spd - vy * vy));
+		return new Vec3(Math.sin(yaw) * h, vy, Math.cos(yaw) * h);
+	}
+
+	/** The enemy vehicle on the ground nearest the point it circles, within its camera's sight. */
+	@org.jetbrains.annotations.Nullable
+	private Entity findPrey(ServerLevel level, MissileType type) {
+		com.stasdoto.airdefense.nation.Politics p = com.stasdoto.airdefense.nation.Politics.get(level.getServer());
+		double r = type.sightRange();
+		Vec3 c = target;
+		Entity best = null;
+		double bestD = r * r;
+		for (com.stasdoto.airdefense.vehicle.VehicleEntity v : level.getEntitiesOfClass(com.stasdoto.airdefense.vehicle.VehicleEntity.class,
+				new AABB(c.x - r, c.y - 60, c.z - r, c.x + r, c.y + 80, c.z + r),
+				v -> v.isAlive() && !v.airborne() && com.stasdoto.airdefense.drone.Recon.enemy(p, country(), v))) {
+			double d = Mth.square(v.getX() - c.x) + Mth.square(v.getZ() - c.z);
+			if (d < bestD) {
+				bestD = d;
+				best = v;
+			}
+		}
+		return best;
+	}
+
+	/** The dive: at where its prey will be, harder and harder; past it (or on the point) it noses down where it is. */
+	private Vec3 diveStep(MissileType type, Vec3 pos) {
+		diveTicks++;
+		Vec3 aim;
+		if (prey != null && prey.isAlive() && !prey.isRemoved()) {
+			Vec3 c = prey.getBoundingBox().getCenter();
+			double lead = Math.min(15, c.distanceTo(pos) / Math.max(0.6, speed));
+			aim = c.add(prey.getDeltaMovement().scale(lead));
+			preyAt = aim;
+		} else {
+			prey = null;
+			aim = preyAt != null ? preyAt : target;
+		}
+		Vec3 rel = aim.subtract(pos);
+		double dist = rel.length();
+		if (dist < 1.6) {
+			if (prey != null) {
+				directHit = prey;
+			}
+			detonate(pos, false);
+			return null;
+		}
+		if (dist < diveClosest) {
+			diveClosest = dist;
+		}
+		speed = Math.min(type.maxSpeed * 1.9, speed + type.accel * 2);
+		if (dist > diveClosest + 4 && diveClosest < 14 || diveTicks > 400) {
+			return turnTowards(currentDir(), new Vec3(0, -1, 0), 0.3).scale(speed);
+		}
+		double turn = type.turnRate * (dist < 30 ? 4 : 2.5);
+		return turnTowards(currentDir(), rel.scale(1 / dist), turn).scale(speed);
+	}
+
+	/** The TB2 over its point: a guided bomb at an enemy vehicle under it, one every five seconds while it has them. */
+	private void dropBombs(ServerLevel level) {
+		if (bombs <= 0) {
+			return;
+		}
+		if (bombTimer > 0) {
+			bombTimer--;
+			return;
+		}
+		if ((life + getId()) % 10 != 0) {
+			return;
+		}
+		com.stasdoto.airdefense.nation.Politics p = com.stasdoto.airdefense.nation.Politics.get(level.getServer());
+		Vec3 pos = position();
+		double r = 64;
+		Entity best = null;
+		double bestD = r * r;
+		for (com.stasdoto.airdefense.vehicle.VehicleEntity v : level.getEntitiesOfClass(com.stasdoto.airdefense.vehicle.VehicleEntity.class,
+				new AABB(pos.x - r, pos.y - 140, pos.z - r, pos.x + r, pos.y, pos.z + r),
+				v -> v.isAlive() && !v.airborne() && com.stasdoto.airdefense.drone.Recon.enemy(p, country(), v))) {
+			double d = Mth.square(v.getX() - pos.x) + Mth.square(v.getZ() - pos.z);
+			if (d < bestD) {
+				bestD = d;
+				best = v;
+			}
+		}
+		if (best == null) {
+			return;
+		}
+		MissileEntity b = launchWithVelocity(level, MissileType.MAML, pos.add(0, -1.2, 0), lastVel.scale(0.5).add(0, -0.3, 0), owner, null);
+		b.guidedTarget = best;
+		b.target = best.getBoundingBox().getCenter();
+		b.setCountry(country());
+		b.setMotor(false);
+		bombs--;
+		bombTimer = 100;
+		BOMBS_DROPPED.incrementAndGet();
+		MissileStats.log("TB2 drops a MAM-L on {} at {}", best.getType().getDescriptionId(), fmt(best.position()));
+	}
+
+	/** A MAM-L: glides down on its laser spot (the vehicle it was dropped on), gathering speed. */
+	private Vec3 bombStep(MissileType type) {
+		setMotor(false);
+		Vec3 aim = guidedTarget != null && guidedTarget.isAlive() ? guidedTarget.getBoundingBox().getCenter() : target;
+		speed = Math.min(type.maxSpeed, speed + 0.05);
+		Vec3 want = aim.subtract(position());
+		if (want.lengthSqr() < 1e-4) {
+			return currentDir().scale(speed);
+		}
+		return turnTowards(currentDir(), want.normalize(), type.turnRate).scale(speed);
+	}
+
+	/** Back at its launcher: it lands and is packed back in (or, a country's drone, it is home out of sight). */
+	private void landed(ServerLevel level, boolean own) {
+		detonated = true;
+		com.stasdoto.airdefense.drone.Recon.gone(level, getId());
+		DRONES_HOME.incrementAndGet();
+		if (own) {
+			homeVehicle.droneBack();
+		}
+		MissileStats.log("{} back home at {}", getMissileType(), fmt(position()));
+		discard();
 	}
 
 	// --- Interceptors: lead pursuit with a turn-rate limit and a proximity fuse ---
@@ -1283,6 +1623,9 @@ public class MissileEntity extends Entity {
 			targetMissile.engagedBy = Math.max(0, targetMissile.engagedBy - 1);
 		}
 		discard();
+		if (type.recon()) {
+			com.stasdoto.airdefense.drone.Recon.gone(level, getId());
+		}
 		if (type.track()) {
 			// A missile got the aircraft: it is badly hit (often out of the sky at once).
 			if (carrier != null && carrier.isAlive() && inAir) {
@@ -1337,6 +1680,17 @@ public class MissileEntity extends Entity {
 			(inAir ? MissileStats.DECOYS_DOWN : MissileStats.DECOYS_LANDED).incrementAndGet();
 			MissileStats.log("{} {} at {}", type, inAir ? "decoy shot down" : "decoy landed", fmt(at));
 			com.stasdoto.airdefense.fx.Fx.send(level, com.stasdoto.airdefense.fx.FxPayload.AIR_BURST_INTERCEPTOR, at, 0.8f, Vec3.ZERO);
+			return;
+		}
+		if (type.loitering() && !inAir) {
+			// 1.34: a loitering munition's shaped charge, on the vehicle it dived on (or wherever it came down).
+			MissileStats.GROUND_IMPACTS.incrementAndGet();
+			if (directHit instanceof com.stasdoto.airdefense.vehicle.VehicleEntity) {
+				LOITER_HITS.incrementAndGet();
+			}
+			MissileStats.log("{} IMPACT at {} after {} ticks{}", type, fmt(at), life,
+					directHit == null ? "" : " on " + directHit.getType().getDescriptionId());
+			Effects.rpgImpact(level, this, at, owner, directHit, type.vehicleDamage(), type.power);
 			return;
 		}
 		if (type.threat) {

@@ -66,7 +66,16 @@ public enum MissileType {
 	// supersonic), the Naval Strike Missile (NMESIS), RBS15 (the Visby). Their item models reuse the Kalibr's, scaled.
 	ONIKS("oniks_missile", Kind.CRUISE, true, 3.4, 0.08, 7.5f, false, 4f, 3.0f, 0, 3000, 0.09, Trail.JET, null),
 	NSM("nsm_missile", Kind.CRUISE, true, 1.8, 0.05, 4.5f, false, 3f, 1.35f, 0, 3000, 0.1, Trail.JET, null),
-	RBS15("rbs15_missile", Kind.CRUISE, true, 1.9, 0.05, 5.5f, false, 3f, 1.5f, 0, 3000, 0.08, Trail.JET, null);
+	RBS15("rbs15_missile", Kind.CRUISE, true, 1.9, 0.05, 5.5f, false, 3f, 1.5f, 0, 3000, 0.08, Trail.JET, null),
+	// 1.34: drones that stay over the battlefield. Reconnaissance - the Orlan-10 and the Bayraktar TB2 (with four MAM-L
+	// bombs) fly to a point, circle over it marking what they see, and fly home; loitering munitions - the Lancet-3 and
+	// the Switchblade 600 - circle over a point, pick a vehicle and dive on it. They are drawn smaller than they are (the
+	// item model's limits), hence the render scales. The MAM-L is a small guided bomb.
+	ORLAN10("orlan10_drone", Kind.DRONE, true, 0.75, 0.03, 0.6f, false, 2f, 2.0f, 0, 2400, 0.07, Trail.NONE, null),
+	TB2("tb2_drone", Kind.DRONE, true, 0.9, 0.025, 1.5f, true, 4f, 6.0f, 0, 2600, 0.05, Trail.NONE, null),
+	LANCET("lancet_drone", Kind.DRONE, true, 1.1, 0.05, 2.6f, false, 1f, 1.65f, 0, 700, 0.09, Trail.NONE, null),
+	SWITCHBLADE("switchblade_drone", Kind.DRONE, true, 1.2, 0.06, 3.0f, false, 1f, 1.3f, 0, 600, 0.1, Trail.NONE, null),
+	MAML("maml_bomb", Kind.DIRECT, false, 2.6, 0, 3.2f, false, 1f, 1.0f, 0, 400, 0.12, Trail.NONE, null);
 
 	public enum Kind { BALLISTIC, ROCKET, CRUISE, DRONE, INTERCEPTOR, DIRECT }
 
@@ -134,6 +143,9 @@ public enum MissileType {
 			case G40 -> 30f;
 			case FPV -> 260f;
 			case MAGURA -> 600f;
+			case LANCET -> 750f;
+			case SWITCHBLADE -> 1100f;
+			case MAML -> 900f;
 			default -> 70f;
 		};
 	}
@@ -151,6 +163,65 @@ public enum MissileType {
 			case RBS15 -> 1200f;
 			case NSM -> 1100f;
 			default -> 0f;
+		};
+	}
+
+	/** 1.34: a reconnaissance drone (circles over a point, marks what it sees, flies home). */
+	public boolean recon() {
+		return this == ORLAN10 || this == TB2;
+	}
+
+	/** 1.34: a loitering munition (circles over a point, dives on a vehicle it finds there). */
+	public boolean loitering() {
+		return this == LANCET || this == SWITCHBLADE;
+	}
+
+	/** 1.34: stays over its point for a while (a reconnaissance drone or a loitering munition). */
+	public boolean loiters() {
+		return recon() || loitering();
+	}
+
+	/** 1.34: how long it circles over its point (ticks) before it flies home (or dives on the point itself). */
+	public int loiterTime() {
+		return switch (this) {
+			case ORLAN10 -> 3600;
+			case TB2 -> 4800;
+			case LANCET -> 1800;
+			case SWITCHBLADE -> 1400;
+			default -> 0;
+		};
+	}
+
+	/** 1.34: the radius of its circle over the point (blocks). */
+	public double loiterRadius() {
+		return switch (this) {
+			case ORLAN10 -> 50;
+			case TB2 -> 70;
+			case LANCET -> 32;
+			case SWITCHBLADE -> 28;
+			default -> 40;
+		};
+	}
+
+	/** 1.34: how high over the ground it circles (blocks). */
+	public double loiterAltitude() {
+		return switch (this) {
+			case ORLAN10 -> 55;
+			case TB2 -> 75;
+			case LANCET -> 38;
+			case SWITCHBLADE -> 32;
+			default -> 50;
+		};
+	}
+
+	/** 1.34: how far round it its camera finds vehicles and soldiers (blocks, over the ground). */
+	public double sightRange() {
+		return switch (this) {
+			case ORLAN10 -> 120;
+			case TB2 -> 140;
+			case LANCET -> 75;
+			case SWITCHBLADE -> 65;
+			default -> 0;
 		};
 	}
 

@@ -49,6 +49,18 @@ public final class MapClient {
 		return p == null ? List.of() : p.fires();
 	}
 
+	/** 1.34: what the player's reconnaissance drones see. */
+	public static List<MapStatusPayload.Spot> spots() {
+		MapStatusPayload p = latest;
+		return p == null ? List.of() : p.spots();
+	}
+
+	/** 1.34: the player's reconnaissance drones over the field. */
+	public static List<MapStatusPayload.Eye> eyes() {
+		MapStatusPayload p = latest;
+		return p == null ? List.of() : p.eyes();
+	}
+
 	/** Russian or Ukrainian game: grid squares get Cyrillic letters. */
 	public static boolean cyrillic() {
 		String lang = Minecraft.getInstance().options.languageCode;

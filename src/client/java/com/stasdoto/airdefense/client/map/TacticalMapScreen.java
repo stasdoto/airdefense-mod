@@ -338,7 +338,8 @@ public class TacticalMapScreen extends Screen {
 		} else if (e.mode() == VehicleEntity.MODE_OFF) {
 			s = Component.translatable("screen.airdefense.map.st.off");
 		} else if (type.isRadar()) {
-			s = Component.translatable(e.state() == VehicleEntity.DEPLOYED ? "screen.airdefense.map.st.radar_on" : "screen.airdefense.map.st.march");
+			s = Component.translatable(e.state() == VehicleEntity.DEPLOYED ? type.isJammer() ? "screen.airdefense.map.st.ew_on" : "screen.airdefense.map.st.radar_on"
+					: "screen.airdefense.map.st.march");
 		} else if (e.mode() == VehicleEntity.MODE_MANUAL) {
 			s = Component.translatable("screen.airdefense.map.st.manual", Math.max(0, e.ammo()), type.magazine());
 		} else if (e.busy() > 0) {
@@ -762,6 +763,7 @@ public class TacticalMapScreen extends Screen {
 		drawRanges(g);
 		drawVillages(g);
 		drawFires(g);
+		drawRecon(g);
 		drawTarget(g);
 		drawMissiles(g, partialTick);
 		drawVehicles(g);
@@ -978,7 +980,9 @@ public class TacticalMapScreen extends Screen {
 			VehicleType type = typeOf(e);
 			if (type.radar != null) {
 				boolean on = e.state() == VehicleEntity.DEPLOYED;
-				int color = e == sel ? 0xC05FE07A : on ? 0x505FE07A : 0x30808080;
+				// 1.34: a jammer's reach in violet.
+				int rgb = type.isJammer() ? 0xB98CFF : 0x5FE07A;
+				int color = e == sel ? 0xC0000000 | rgb : on ? 0x50000000 | rgb : 0x30808080;
 				circle(g, toScreenX(e.x()), toScreenY(e.z()), type.radar.range * scale(), color, e == sel ? 0 : 5);
 			} else if (type.defense != null) {
 				boolean on = e.mode() != VehicleEntity.MODE_OFF;
@@ -1021,6 +1025,47 @@ public class TacticalMapScreen extends Screen {
 			String age = f.age() < 60 ? f.age() + Component.translatable("screen.airdefense.map.sec").getString()
 					: f.age() / 60 + Component.translatable("screen.airdefense.map.min").getString();
 			small(g, Component.translatable("screen.airdefense.map.fire_pos", age).getString(), x + 10, y - 3, c);
+		}
+	}
+
+	/**
+	 * 1.34: the player's reconnaissance drones (a small cyan cross, the ground they see round it) and what they have
+	 * seen - enemy vehicles as red diamonds with their names, soldiers as red dots; it fades out over a minute.
+	 */
+	private void drawRecon(GuiGraphicsExtractor g) {
+		for (MapStatusPayload.Eye e : MapClient.eyes()) {
+			double sx = toScreenX(e.x() + 0.5);
+			double sy = toScreenY(e.z() + 0.5);
+			circle(g, sx, sy, e.range() * scale(), 0x7046D8FF, 3);
+			int x = (int) sx;
+			int y = (int) sy;
+			g.fill(x - 5, y, x + 6, y + 1, 0xFF46D8FF);
+			g.fill(x, y - 2, x + 1, y + 4, 0xFF46D8FF);
+			g.fill(x - 2, y + 3, x + 3, y + 4, 0xFF46D8FF);
+			small(g, Component.translatable("radar.airdefense.contact." + com.stasdoto.airdefense.missile.MissileType.byId(e.type()).name()
+					.toLowerCase(java.util.Locale.ROOT)).getString(), x + 7, y - 3, 0xFF46D8FF);
+		}
+		for (MapStatusPayload.Spot s : MapClient.spots()) {
+			double sx = toScreenX(s.x() + 0.5);
+			double sy = toScreenY(s.z() + 0.5);
+			if (sx < mx0 - 10 || sx > mx1 + 10 || sy < my0 - 10 || sy > my1 + 10) {
+				continue;
+			}
+			int a = (int) (255 * Math.max(0.35, 1 - s.age() / 60.0));
+			int c = (a << 24) | 0xFF4A3A;
+			int x = (int) sx;
+			int y = (int) sy;
+			if (s.type() < 0) {
+				g.fill(x - 1, y - 1, x + 2, y + 2, c);
+				continue;
+			}
+			for (int k = 0; k <= 4; k++) {
+				g.fill(x - 4 + k, y - k, x + 5 - k, y - k + 1, c);
+				g.fill(x - 4 + k, y + k, x + 5 - k, y + k + 1, c);
+			}
+			if (scale() >= 0.25f) {
+				small(g, Component.translatable("map.airdefense.short." + VehicleType.byId(s.type()).id).getString(), x + 6, y - 3, c);
+			}
 		}
 	}
 
@@ -1449,7 +1494,8 @@ public class TacticalMapScreen extends Screen {
 			}
 		} else if (typeOf(sel).isRadar()) {
 			l1 = Component.translatable("entity.airdefense." + typeOf(sel).id);
-			l2 = Component.translatable("screen.airdefense.map.radar_range", (int) typeOf(sel).radar.range);
+			l2 = Component.translatable(typeOf(sel).isJammer() ? "screen.airdefense.map.ew_range" : "screen.airdefense.map.radar_range",
+					(int) typeOf(sel).radar.range);
 		} else {
 			l1 = Component.translatable("entity.airdefense." + typeOf(sel).id);
 			l2 = Component.translatable("screen.airdefense.map.ad_range", (int) typeOf(sel).defense.range);

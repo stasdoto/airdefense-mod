@@ -49,7 +49,7 @@ public class MissileRenderer extends EntityRenderer<MissileEntity, MissileRender
 		MissileType type = entity.getMissileType();
 		// Engines that burn glow: rockets while the motor runs, jets and drone engines (exhaust) all the way.
 		boolean burning = entity.isMotorOn() || type.kind == MissileType.Kind.CRUISE || type.kind == MissileType.Kind.DRONE;
-		if (!burning || type.kind == MissileType.Kind.DIRECT || type.track()) {
+		if (!burning || type.kind == MissileType.Kind.DIRECT || type.track() || type.loiters()) {
 			state.glow = 0;
 		} else if (type.kind == MissileType.Kind.DRONE) {
 			state.glow = 0.75f;

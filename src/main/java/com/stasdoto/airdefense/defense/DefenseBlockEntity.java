@@ -73,7 +73,7 @@ public class DefenseBlockEntity extends BlockEntity {
 		double range = type.range;
 		AABB box = new AABB(radar.x - range, radar.y - range, radar.z - range, radar.x + range, radar.y + range, radar.z + range);
 		List<MissileEntity> threats = MissileEntity.find(level, box,
-				m -> m.getMissileType().threat && m.isAlive() && m.distanceToSqr(radar) < range * range && !m.friendlyAircraft());
+				m -> m.getMissileType().threat && m.isAlive() && m.distanceToSqr(radar) < range * range && !m.friendlyAircraft() && !m.friendlyDrone());
 		if (threats.isEmpty()) {
 			return;
 		}

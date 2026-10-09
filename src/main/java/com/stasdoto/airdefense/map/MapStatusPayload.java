@@ -11,7 +11,18 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import com.stasdoto.airdefense.AirDefense;
 
 /** Server → tablet map: every vehicle in the dimension with what the map needs to show and command it. */
-public record MapStatusPayload(List<Entry> vehicles, List<Fire> fires) implements CustomPacketPayload {
+public record MapStatusPayload(List<Entry> vehicles, List<Fire> fires, List<Spot> spots, List<Eye> eyes) implements CustomPacketPayload {
+	/**
+	 * 1.34: something the player's reconnaissance drones have seen: where, a vehicle (its type) or soldiers (type -1),
+	 * how long ago it was last seen (s).
+	 */
+	public record Spot(int x, int y, int z, int type, int age) {
+	}
+
+	/** 1.34: one of the player's reconnaissance drones over the field: where, how far it sees, which drone. */
+	public record Eye(int x, int z, int range, int type) {
+	}
+
 	/** 1.30: an enemy firing position found by the player's counter-battery radars: where, how long ago (s), rounds seen. */
 	public record Fire(int x, int y, int z, int age, int rounds) {
 	}
@@ -58,6 +69,21 @@ public record MapStatusPayload(List<Entry> vehicles, List<Fire> fires) implement
 			buf.writeShort(f.age);
 			buf.writeShort(f.rounds);
 		}
+		buf.writeShort(p.spots.size());
+		for (Spot s : p.spots) {
+			buf.writeInt(s.x);
+			buf.writeShort(s.y);
+			buf.writeInt(s.z);
+			buf.writeShort(s.type);
+			buf.writeShort(s.age);
+		}
+		buf.writeShort(p.eyes.size());
+		for (Eye e : p.eyes) {
+			buf.writeInt(e.x);
+			buf.writeInt(e.z);
+			buf.writeShort(e.range);
+			buf.writeShort(e.type);
+		}
 	}
 
 	private static MapStatusPayload read(ByteBuf buf) {
@@ -73,7 +99,17 @@ public record MapStatusPayload(List<Entry> vehicles, List<Fire> fires) implement
 		for (int i = 0; i < nf; i++) {
 			fires.add(new Fire(buf.readInt(), buf.readInt(), buf.readInt(), buf.readShort(), buf.readShort()));
 		}
-		return new MapStatusPayload(list, fires);
+		int ns = buf.readShort();
+		List<Spot> spots = new ArrayList<>(ns);
+		for (int i = 0; i < ns; i++) {
+			spots.add(new Spot(buf.readInt(), buf.readShort(), buf.readInt(), buf.readShort(), buf.readShort()));
+		}
+		int ne = buf.readShort();
+		List<Eye> eyes = new ArrayList<>(ne);
+		for (int i = 0; i < ne; i++) {
+			eyes.add(new Eye(buf.readInt(), buf.readInt(), buf.readShort(), buf.readShort()));
+		}
+		return new MapStatusPayload(list, fires, spots, eyes);
 	}
 
 	@Override

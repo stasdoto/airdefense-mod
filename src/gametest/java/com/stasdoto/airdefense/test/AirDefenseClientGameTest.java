@@ -231,6 +231,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("navy")) {
 				navy(ctx, server);
 			}
+			if (scene("uav")) {
+				uav(ctx, server);
+			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
@@ -1522,6 +1525,332 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				}
 			}
 		});
+		language(ctx, "en_us");
+	}
+
+	/** 1.34: a drone of this type in flight near {@code x} (the scene's), or null. */
+	@org.jetbrains.annotations.Nullable
+	private static MissileEntity droneOf(ServerLevel level, MissileType type, int x) {
+		for (MissileEntity m : MissileEntity.find(level, new net.minecraft.world.phys.AABB(x - 3000, -64, -3000, x + 3000, 600, 3000),
+				m -> m.isAlive() && m.getMissileType() == type)) {
+			return m;
+		}
+		return null;
+	}
+
+	/**
+	 * 1.34: drones and electronic warfare - the six vehicles lined up (catapults raised, masts up); an Orlan-10 over an
+	 * enemy column marks it (glow, the tablet's map) and corrects the guns (their rounds closer round the aim than at a
+	 * point it does not watch); a Lancet, a TB2's bombs and a Switchblade on the column's vehicles; an enemy jammer cuts
+	 * a Lancet's link, the player's jammer sends an enemy Shahed astray; a country at war sends its recon drone over the
+	 * player's town and a loitering munition at his tank.
+	 */
+	private void uav(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 150000;
+		language(ctx, "ru_ru");
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 3000");
+		camera(server, x + 0.5, ground + 20, -30.5, 0, 20);
+		ctx.waitTicks(60);
+		// The ground the targets stand on is kept loaded (they are put there, and given their side, before anybody is near).
+		server.runCommand(String.format("forceload add %d %d %d %d", x - 176, 288, x + 184, 352));
+		server.runCommand(String.format("forceload add %d %d %d %d", x - 432, 8, x - 384, 56));
+		server.runCommand(String.format("forceload add %d %d %d %d", x + 16, -336, x + 48, -320));
+		ctx.waitTicks(60);
+		VehicleType[] types = {VehicleType.ORLAN, VehicleType.TB2_GCS, VehicleType.LANCET, VehicleType.SWITCHBLADE, VehicleType.BORISOGLEBSK,
+				VehicleType.BUKOVEL};
+		int[] own = new int[types.length];
+		for (int i = 0; i < types.length; i++) {
+			own[i] = spawnVehicle(server, types[i], x - 40 + i * 16, 0, 0);
+		}
+		List<Integer> ownList = java.util.Arrays.stream(own).boxed().toList();
+		server.runOnServer(s -> forVehicles(s.overworld(), ownList, v -> {
+			v.country = -1;
+			v.raiseLauncher();
+		}));
+		// The targets: a column by the point the Orlan watches, a tank and a BTR for the Lancet and the Switchblade, a
+		// BMP for the TB2.
+		int[] col = {spawnAs(server, VehicleType.T72, x - 20, 300, 180, 777), spawnAs(server, VehicleType.BMP2, x, 306, 180, 777),
+				spawnAs(server, VehicleType.BTR82, x + 20, 300, 180, 777), spawnAs(server, VehicleType.SUPPLY_TRUCK, x + 8, 322, 180, 777),
+				spawnAs(server, VehicleType.T72, x + 150, 330, 180, 777), spawnAs(server, VehicleType.BTR82, x + 168, 336, 180, 777),
+				spawnAs(server, VehicleType.BMP2, x - 150, 330, 180, 777)};
+		List<Integer> colList = java.util.Arrays.stream(col).boxed().toList();
+		ctx.waitTicks(200);
+		look(server, x - 30, ground + 6, 26, x - 22, ground + 1.5, 0);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("u1_lineup");
+		look(server, x - 47, ground + 4, 12, x - 40, ground + 2.2, -1);
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("u1b_orlan_catapult");
+		look(server, x + 22, ground + 6, 26, x + 28, ground + 3, 0);
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("u1c_ew_masts");
+		int jammers = server.computeOnServer(s -> com.stasdoto.airdefense.drone.Jammers.jammers(s.overworld()).size());
+
+		// The Orlan over the column.
+		int spotted0 = com.stasdoto.airdefense.drone.Recon.spotted;
+		boolean orlanOk = server.computeOnServer(s -> s.overworld().getEntity(own[0]) instanceof VehicleEntity v
+				&& v.commandStrike(new BlockPos(x, ground, 300), null));
+		look(server, x - 54, ground + 5, 10, x - 40, ground + 3, 8);
+		int up = waitUntil(ctx, () -> server.computeOnServer(s -> droneOf(s.overworld(), MissileType.ORLAN10, x) != null), 300);
+		ctx.waitTicks(6);
+		ctx.takeScreenshot("u2_orlan_launch");
+		int circling = waitUntil(ctx, () -> server.computeOnServer(s -> {
+			MissileEntity m = droneOf(s.overworld(), MissileType.ORLAN10, x);
+			return m != null && m.circling();
+		}), 1200);
+		ctx.waitTicks(80);
+		Vec3 dp = server.computeOnServer(s -> {
+			MissileEntity m = droneOf(s.overworld(), MissileType.ORLAN10, x);
+			return m == null ? new Vec3(x, ground + 50, 300) : m.position().add(m.getFlightVelocity().scale(4));
+		});
+		look(server, dp.x - 7, dp.y + 2.5, dp.z - 7, dp.x, dp.y, dp.z);
+		ctx.waitTicks(3);
+		ctx.takeScreenshot("u3_orlan_over");
+		look(server, x + 45, ground + 22, 255, x, ground + 1, 308);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("u4_column_marked");
+		int spotted = com.stasdoto.airdefense.drone.Recon.spotted - spotted0;
+		int onMap = server.computeOnServer(s -> com.stasdoto.airdefense.drone.Recon.seen(s.overworld(), -1).size());
+
+		// The tablet's map: the drone and what it sees.
+		server.runCommand("gamemode creative @a");
+		camera(server, x + 0.5, ground, -20.5, 0, 0);
+		server.runCommand("clear @a");
+		server.runCommand("item replace entity @a hotbar.0 with airdefense:designator");
+		ctx.runOnClient(mc -> mc.player.getInventory().setSelectedSlot(0));
+		ctx.waitTicks(40);
+		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT);
+		ctx.waitForScreen(com.stasdoto.airdefense.client.map.TacticalMapScreen.class);
+		ctx.runOnClient(mc -> ((com.stasdoto.airdefense.client.map.TacticalMapScreen) mc.gui.screen()).centerOn(x, 260, 3));
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("u5_map_recon");
+		int[] mapSeen = ctx.computeOnClient(mc -> new int[]{com.stasdoto.airdefense.client.map.MapClient.spots().size(),
+				com.stasdoto.airdefense.client.map.MapClient.eyes().size()});
+		ctx.runOnClient(mc -> mc.gui.setScreen(null));
+		server.runCommand("clear @a");
+		server.runCommand("gamemode spectator @a");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT uav_recon: jammers up {}, ordered {}, launched after {} ticks, circling after {}, spotted {}, "
+				+ "on the side's map {}, on the client's map {} marks and {} drones", jammers, orlanOk, up, circling, spotted, onMap, mapSeen[0], mapSeen[1]);
+
+		// The guns: one fires at the column the Orlan watches, the other at a point it does not; where the rounds fall.
+		int gunA = spawnVehicle(server, VehicleType.MSTA_S, x - 70, -40, 0);
+		int gunB = spawnVehicle(server, VehicleType.MSTA_S, x + 70, -40, 0);
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(gunA, gunB), v -> v.country = -1));
+		ctx.waitTicks(20);
+		int landed0 = MissileEntity.ARTY_LANDED.size();
+		int corr0 = com.stasdoto.airdefense.drone.Recon.corrected;
+		BlockPos pa = new BlockPos(x, ground, 300);
+		BlockPos pb = new BlockPos(x + 360, ground, 300);
+		boolean watchedNow = server.computeOnServer(s -> {
+			boolean w = com.stasdoto.airdefense.drone.Recon.watched(s.overworld(), Vec3.atCenterOf(pa), -1);
+			forVehicles(s.overworld(), List.of(gunA), v -> v.commandFire(pa, null, 8));
+			forVehicles(s.overworld(), List.of(gunB), v -> v.commandFire(pb, null, 8));
+			return w;
+		});
+		look(server, x + 40, ground + 14, 262, x, ground + 1, 304);
+		waitUntil(ctx, () -> MissileEntity.ARTY_LANDED.size() > landed0, 900);
+		ctx.waitTicks(2);
+		ctx.takeScreenshot("u12_guns_corrected");
+		waitUntil(ctx, () -> MissileEntity.ARTY_LANDED.size() >= landed0 + 16, 900);
+		double sa = 0;
+		double sb = 0;
+		int na = 0;
+		int nb = 0;
+		synchronized (MissileEntity.ARTY_LANDED) {
+			for (int i = landed0; i < MissileEntity.ARTY_LANDED.size(); i++) {
+				Vec3 l = MissileEntity.ARTY_LANDED.get(i);
+				double da = Math.sqrt(Mth.square(l.x - pa.getX() - 0.5) + Mth.square(l.z - pa.getZ() - 0.5));
+				double db = Math.sqrt(Mth.square(l.x - pb.getX() - 0.5) + Mth.square(l.z - pb.getZ() - 0.5));
+				if (da < db) {
+					sa += da;
+					na++;
+				} else {
+					sb += db;
+					nb++;
+				}
+			}
+		}
+		AirDefense.LOGGER.info(String.format(java.util.Locale.ROOT, "[airdefense-test] RESULT uav_guns: drone over the aim %s, rounds corrected %d; "
+				+ "watched point: %d rounds, %.1f blocks off on average; unwatched: %d rounds, %.1f blocks off", watchedNow,
+				com.stasdoto.airdefense.drone.Recon.corrected - corr0, na, na == 0 ? -1 : sa / na, nb, nb == 0 ? -1 : sb / nb));
+
+		// A Lancet at the tank by (x+150, 330).
+		int hits0 = MissileEntity.LOITER_HITS.get();
+		int prey0 = MissileEntity.PREY_FOUND.get();
+		float t72hp0 = server.computeOnServer(s -> s.overworld().getEntity(col[4]) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		boolean lancetOk = server.computeOnServer(s -> s.overworld().getEntity(own[2]) instanceof VehicleEntity v
+				&& v.commandStrike(new BlockPos(x + 150, ground, 320), null));
+		look(server, x - 14, ground + 4, 12, x - 8, ground + 2.5, 2);
+		waitUntil(ctx, () -> server.computeOnServer(s -> droneOf(s.overworld(), MissileType.LANCET, x) != null), 300);
+		ctx.waitTicks(5);
+		ctx.takeScreenshot("u6_lancet_launch");
+		// The camera by the tank before the Lancet gets there (its ground drawn by then).
+		look(server, x + 132, ground + 7, 310, x + 150, ground + 8, 330);
+		int found = waitUntil(ctx, () -> MissileEntity.PREY_FOUND.get() > prey0, 1200);
+		ctx.waitTicks(7);
+		ctx.takeScreenshot("u7_lancet_dive");
+		int hit = waitUntil(ctx, () -> MissileEntity.LOITER_HITS.get() > hits0, 400);
+		ctx.waitTicks(3);
+		ctx.takeScreenshot("u8_lancet_hit");
+		float t72hp1 = server.computeOnServer(s -> s.overworld().getEntity(col[4]) instanceof VehicleEntity v && v.isAlive() ? v.getHealth() : 0f);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT uav_lancet: ordered {}, prey found after {} ticks, hit after {} more ({} hits), tank health {} -> {}",
+				lancetOk, found, hit, MissileEntity.LOITER_HITS.get() - hits0, (int) t72hp0, (int) t72hp1);
+
+		// The TB2 off the road in front of its station, its bombs on the BMP by (x-150, 330).
+		int bombs0 = MissileEntity.BOMBS_DROPPED.get();
+		float bmphp0 = server.computeOnServer(s -> s.overworld().getEntity(col[6]) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		boolean tb2Ok = server.computeOnServer(s -> s.overworld().getEntity(own[1]) instanceof VehicleEntity v
+				&& v.commandStrike(new BlockPos(x - 150, ground, 320), null));
+		look(server, x - 34, ground + 5, 22, x - 24, ground + 2, 8);
+		waitUntil(ctx, () -> server.computeOnServer(s -> droneOf(s.overworld(), MissileType.TB2, x) != null), 300);
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("u9_tb2_takeoff");
+		look(server, x - 126, ground + 5, 316, x - 150, ground + 14, 330);
+		int dropped = waitUntil(ctx, () -> MissileEntity.BOMBS_DROPPED.get() > bombs0, 1500);
+		ctx.waitTicks(14);
+		ctx.takeScreenshot("u10_tb2_bomb");
+		waitUntil(ctx, () -> server.computeOnServer(s -> !(s.overworld().getEntity(col[6]) instanceof VehicleEntity v) || v.getHealth() < bmphp0), 200);
+		ctx.waitTicks(2);
+		ctx.takeScreenshot("u10b_tb2_bomb_hit");
+		ctx.waitTicks(200);
+		float bmphp1 = server.computeOnServer(s -> s.overworld().getEntity(col[6]) instanceof VehicleEntity v && v.isAlive() ? v.getHealth() : 0f);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT uav_tb2: ordered {}, first bomb after {} ticks, bombs {}, BMP health {} -> {}", tb2Ok, dropped,
+				MissileEntity.BOMBS_DROPPED.get() - bombs0, (int) bmphp0, (int) bmphp1);
+
+		// A Switchblade at the BTR by (x+168, 336).
+		int hits1 = MissileEntity.LOITER_HITS.get();
+		look(server, x + 17, ground + 4, 12, x + 8, ground + 2.5, 0);
+		ctx.waitTicks(40);
+		boolean swOk = server.computeOnServer(s -> s.overworld().getEntity(own[3]) instanceof VehicleEntity v
+				&& v.commandStrike(new BlockPos(x + 168, ground, 340), null));
+		waitUntil(ctx, () -> server.computeOnServer(s -> droneOf(s.overworld(), MissileType.SWITCHBLADE, x) != null), 300);
+		ctx.waitTicks(3);
+		ctx.takeScreenshot("u11_switchblade_launch");
+		int swHit = waitUntil(ctx, () -> MissileEntity.LOITER_HITS.get() > hits1, 1500);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT uav_switchblade: ordered {}, hit after {} ticks", swOk, swHit);
+
+		// Electronic warfare: an enemy Bukovel by an enemy BTR - the player's Lancet loses its link on the way in; an
+		// enemy Shahed over the player's jammers strays off its aim.
+		int ebuk = spawnAs(server, VehicleType.BUKOVEL, x - 420, 20, 90, 777);
+		int ebtr = spawnAs(server, VehicleType.BTR82, x - 400, 40, 90, 777);
+		ctx.waitTicks(220);
+		int lost0 = com.stasdoto.airdefense.drone.Jammers.linksLost;
+		int drift0 = com.stasdoto.airdefense.drone.Jammers.drifted;
+		int hits2 = MissileEntity.LOITER_HITS.get();
+		float ebtrhp0 = server.computeOnServer(s -> s.overworld().getEntity(ebtr) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		int enemyJammers = server.computeOnServer(s -> com.stasdoto.airdefense.drone.Jammers.jammers(s.overworld()).size());
+		boolean jamOk = server.computeOnServer(s -> {
+			boolean ok = s.overworld().getEntity(own[2]) instanceof VehicleEntity v && v.commandStrike(new BlockPos(x - 400, ground, 40), null);
+			MissileEntity sh = MissileEntity.launchStrike(s.overworld(), MissileType.SHAHED, new Vec3(x + 30, ground + 70, -328),
+					new Vec3(x + 30, ground, 80), new Vec3(0, 0, 1));
+			sh.setCountry(777);
+			return ok;
+		});
+		int jammed = waitUntil(ctx, () -> com.stasdoto.airdefense.drone.Jammers.linksLost > lost0, 900);
+		Vec3 jp = server.computeOnServer(s -> {
+			MissileEntity m = droneOf(s.overworld(), MissileType.LANCET, x);
+			return m == null ? new Vec3(x - 300, ground + 30, 30) : m.position().add(m.getFlightVelocity().scale(4));
+		});
+		look(server, jp.x + 4, jp.y + 2, jp.z - 5, jp.x, jp.y - 1, jp.z);
+		ctx.waitTicks(3);
+		ctx.takeScreenshot("u13_lancet_jammed");
+		int drifted = waitUntil(ctx, () -> com.stasdoto.airdefense.drone.Jammers.drifted > drift0, 900);
+		ctx.waitTicks(300);
+		float ebtrhp1 = server.computeOnServer(s -> s.overworld().getEntity(ebtr) instanceof VehicleEntity v && v.isAlive() ? v.getHealth() : 0f);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT uav_ew: jammers {}, Lancet ordered {}, link lost after {} ticks ({}), hits {}, enemy BTR health {} -> {}; "
+				+ "Shahed astray after {} ticks ({})", enemyJammers, jamOk, jammed, com.stasdoto.airdefense.drone.Jammers.linksLost - lost0,
+				MissileEntity.LOITER_HITS.get() - hits2, (int) ebtrhp0, (int) ebtrhp1, drifted, com.stasdoto.airdefense.drone.Jammers.drifted - drift0);
+
+		// A country at war: its recon drone over the player's town, a loitering munition at his tank.
+		int[] towns = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var mine = com.stasdoto.airdefense.nation.Nations.countryOf(l, p, pl, true);
+			int id = p.newId();
+			BlockPos at = new BlockPos(x, ground, -600);
+			var town = new com.stasdoto.airdefense.nation.Settlement(id, "Сосновка", at, at.above(2), -1, java.util.Optional.empty(), 0,
+					java.util.Map.of(), List.of(), List.of());
+			p.settlements.put(id, town);
+			town.country = mine.id;
+			int eid = p.newId();
+			BlockPos eat = new BlockPos(x + 650, ground, -600);
+			var et = new com.stasdoto.airdefense.nation.Settlement(eid, "Дронск", eat, eat.above(2), -1, java.util.Optional.empty(), 0,
+					java.util.Map.of(), List.of(), List.of());
+			p.settlements.put(eid, et);
+			var enemy = com.stasdoto.airdefense.nation.Nations.newWorldCountry(p, eid);
+			et.country = enemy.id;
+			com.stasdoto.airdefense.nation.War.declare(l, p, enemy, mine, net.minecraft.network.chat.Component.literal("test"));
+			for (int t : new int[]{id, eid}) {
+				var ar = com.stasdoto.airdefense.nation.Arsenals.get(s).of(p, p.settlements.get(t));
+				ar.units.clear();
+				ar.stock.clear();
+			}
+			return new int[]{id, eid, enemy.id};
+		});
+		camera(server, x + 0.5, ground + 30, -640.5, 0, 25);
+		ctx.waitTicks(40);
+		int flights0 = com.stasdoto.airdefense.nation.Arsenals.reconFlights;
+		boolean sent = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			return com.stasdoto.airdefense.nation.Arsenals.reconNow(s.overworld(), p.settlements.get(towns[1]), p.settlements.get(towns[0]));
+		});
+		MissileType enemyRecon = server.computeOnServer(s -> droneOf(s.overworld(), MissileType.ORLAN10, x) != null ? MissileType.ORLAN10 : MissileType.TB2);
+		int over = waitUntil(ctx, () -> server.computeOnServer(s -> {
+			MissileEntity m = droneOf(s.overworld(), MissileType.ORLAN10, x + 300);
+			MissileEntity t = droneOf(s.overworld(), MissileType.TB2, x + 300);
+			MissileEntity d = m != null && m.country() == towns[2] ? m : t != null && t.country() == towns[2] ? t : null;
+			return d != null && d.circling();
+		}), 1200);
+		ctx.waitTicks(40);
+		Vec3 ep = server.computeOnServer(s -> {
+			MissileEntity m = droneOf(s.overworld(), MissileType.ORLAN10, x + 300);
+			if (m == null || m.country() != towns[2]) {
+				m = droneOf(s.overworld(), MissileType.TB2, x + 300);
+			}
+			return m == null ? new Vec3(x, ground + 55, -600) : m.position().add(m.getFlightVelocity().scale(4));
+		});
+		look(server, ep.x - 9, ep.y - 2, ep.z - 9, ep.x, ep.y, ep.z);
+		ctx.waitTicks(3);
+		ctx.takeScreenshot("u14_enemy_recon");
+		boolean enemyWatches = server.computeOnServer(s -> com.stasdoto.airdefense.drone.Recon.watched(s.overworld(), new Vec3(x, ground, -600), towns[2]));
+		AirDefense.LOGGER.info("[airdefense-test] RESULT uav_ai_recon: sent {} ({} flights), circling over the town after {} ticks, the town watched by them {}",
+				sent, com.stasdoto.airdefense.nation.Arsenals.reconFlights - flights0, over, enemyWatches);
+
+		int tank = spawnAs(server, VehicleType.T72, x + 100, -580, 90, -1);
+		camera(server, x + 70.5, ground + 12, -620.5, -40, 10);
+		ctx.waitTicks(40);
+		int hits3 = MissileEntity.LOITER_HITS.get();
+		float tankhp0 = server.computeOnServer(s -> s.overworld().getEntity(tank) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		boolean hunt = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			return com.stasdoto.airdefense.nation.Arsenals.huntNow(s.overworld(), p.settlements.get(towns[1]));
+		});
+		int huntHit = waitUntil(ctx, () -> MissileEntity.LOITER_HITS.get() > hits3, 1500);
+		look(server, x + 85, ground + 6, -600, x + 100, ground + 1, -580);
+		ctx.waitTicks(5);
+		ctx.takeScreenshot("u15_enemy_lancet_hit");
+		float tankhp1 = server.computeOnServer(s -> s.overworld().getEntity(tank) instanceof VehicleEntity v && v.isAlive() ? v.getHealth() : 0f);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT uav_ai_hunt: sent {} ({}), hit after {} ticks, the player's tank health {} -> {}", hunt,
+				com.stasdoto.airdefense.nation.Arsenals.hunts, huntHit, (int) tankhp0, (int) tankhp1);
+
+		server.runOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var enemy = p.country(towns[2]);
+			if (enemy != null) {
+				for (var c : p.countries.values()) {
+					c.wars.remove(enemy.id);
+				}
+				enemy.wars.clear();
+			}
+			forVehicles(s.overworld(), ownList, Entity::discard);
+			forVehicles(s.overworld(), colList, Entity::discard);
+			forVehicles(s.overworld(), List.of(gunA, gunB, ebuk, ebtr, tank), Entity::discard);
+		});
+		server.runCommand(String.format("forceload remove %d %d %d %d", x - 176, 288, x + 184, 352));
+		server.runCommand(String.format("forceload remove %d %d %d %d", x - 432, 8, x - 384, 56));
+		server.runCommand(String.format("forceload remove %d %d %d %d", x + 16, -336, x + 48, -320));
 		language(ctx, "en_us");
 	}
 
@@ -6013,6 +6342,15 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				// The tests' launchers play the enemy: the air defence (the player's) shoots at what they fire.
 				v.country = 900;
 			}
+			return v.getId();
+		});
+	}
+
+	/** 1.34: a vehicle of this side (set as it is put down: one far off is not found by its id until its ground runs). */
+	private int spawnAs(TestServerContext server, VehicleType type, int x, int z, float yaw, int country) {
+		return server.computeOnServer(s -> {
+			VehicleEntity v = VehicleEntity.spawn(s.overworld(), type, new Vec3(x + 0.5, ground, z + 0.5), yaw);
+			v.country = country;
 			return v.getId();
 		});
 	}

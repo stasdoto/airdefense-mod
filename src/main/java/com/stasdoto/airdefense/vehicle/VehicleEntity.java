@@ -1480,6 +1480,10 @@ public class VehicleEntity extends LivingEntity {
 				return;
 			}
 		}
+		if (markedUntil != 0 && level.getGameTime() > markedUntil) {
+			markedUntil = 0;
+			setGlowingTag(false);
+		}
 		if (vtype.repairs() && (tickCount + getId()) % 20 == 0) {
 			mendAround(level);
 		}
@@ -2043,7 +2047,14 @@ public class VehicleEntity extends LivingEntity {
 		VehicleGeometry.Geometry g = vtype.geometry;
 		setElevationTarget(active ? g.deployElevation() : g.fixedElevation());
 		boolean up = active && Math.abs(elevation - getElevationTarget()) < 2;
-		if (vtype.radar.counterBattery) {
+		if (vtype.radar.jammer) {
+			// 1.34: electronic warfare: with the mast up it jams the other side's drones round it.
+			if (up) {
+				com.stasdoto.airdefense.drone.Jammers.report(level, this, position().add(0, g.height() + 3, 0), vtype.radar.range);
+			} else {
+				com.stasdoto.airdefense.drone.Jammers.remove(level, getId());
+			}
+		} else if (vtype.radar.counterBattery) {
 			// 1.30: a counter-battery radar is not part of the air picture: it watches for shells and rockets.
 			if (up) {
 				com.stasdoto.airdefense.radar.CounterBattery.report(level, this, position().add(0, g.height() * 0.85, 0), getYRot(), vtype.radar);
@@ -2055,6 +2066,27 @@ public class VehicleEntity extends LivingEntity {
 		} else {
 			RadarNetwork.remove(level, getId());
 		}
+	}
+
+	/** 1.34: seen by one of the player's reconnaissance drones until this game time: it glows (marked) till then. */
+	private long markedUntil;
+
+	public void markSeen(long until) {
+		markedUntil = until;
+		if (!hasGlowingTag()) {
+			setGlowingTag(true);
+		}
+	}
+
+	/** 1.34: a reconnaissance drone of this launcher came back: it is packed in to fly again. */
+	public void droneBack() {
+		if (isUnlimited()) {
+			return;
+		}
+		if (getReserve() >= reserveCapacity() && getLoadedMask() != fullMask()) {
+			reloadRails();
+		}
+		addReserve(1);
 	}
 
 	/** Whether this radar is up and working (server). */
@@ -2265,6 +2297,10 @@ public class VehicleEntity extends LivingEntity {
 		}
 		MissileEntity m = MissileEntity.launchStrike(level, missile, from, aim, forward(), dir);
 		m.setCountry(country);
+		if (missile.loiters()) {
+			// 1.34: a reconnaissance drone flies back to this launcher when it is done.
+			m.setHome(this);
+		}
 		MissileType.Kind kind = missile.kind;
 		if (plan != null && (kind == MissileType.Kind.DRONE || kind == MissileType.Kind.CRUISE)) {
 			m.applyPlan(plan, salvoIndex % 2 == 0);
@@ -2297,6 +2333,11 @@ public class VehicleEntity extends LivingEntity {
 		RandomSource r = level.getRandom();
 		double d = Math.sqrt(strikeTarget.distToCenterSqr(position()));
 		double spread = type.spread * (0.35 + 0.65 * Math.min(1.0, d / type.maxRange));
+		if (com.stasdoto.airdefense.drone.Recon.watched(level, Vec3.atCenterOf(strikeTarget), country)) {
+			// 1.34: a reconnaissance drone of ours over the target corrects the fire.
+			spread *= 0.5;
+			com.stasdoto.airdefense.drone.Recon.corrected++;
+		}
 		// Along the line of fire the fall is longer than across it (range errors are bigger than direction errors).
 		Vec3 line = new Vec3(strikeTarget.getX() + 0.5 - getX(), 0, strikeTarget.getZ() + 0.5 - getZ());
 		line = line.lengthSqr() > 1e-4 ? line.normalize() : forward();
@@ -2991,7 +3032,8 @@ public class VehicleEntity extends LivingEntity {
 			mode = mode == MODE_OFF ? MODE_OFF : MODE_AUTO;
 			setMode(mode);
 			if (player != null) {
-				player.sendOverlayMessage(Component.translatable(mode == MODE_OFF ? "message.airdefense.radar.off" : "message.airdefense.radar.on"));
+				player.sendOverlayMessage(Component.translatable(vtype.isJammer() ? (mode == MODE_OFF ? "message.airdefense.ew.off" : "message.airdefense.ew.on")
+						: mode == MODE_OFF ? "message.airdefense.radar.off" : "message.airdefense.radar.on"));
 			}
 			return;
 		}
@@ -3080,7 +3122,8 @@ public class VehicleEntity extends LivingEntity {
 			RadarType r = vtype.radar;
 			Component state = Component.translatable(getMode() == MODE_OFF ? "message.airdefense.status.off"
 					: radarWorking() ? "message.airdefense.radar.working" : "message.airdefense.radar.deploying");
-			return Component.translatable("message.airdefense.vehicle.status_radar", name, hp, state, (int) r.range);
+			return Component.translatable(vtype.isJammer() ? "message.airdefense.vehicle.status_ew" : "message.airdefense.vehicle.status_radar",
+					name, hp, state, (int) r.range);
 		}
 		DefenseType type = vtype.defense;
 		Component mode = Component.translatable(getMode() == MODE_AUTO ? "message.airdefense.status.on"
@@ -4031,6 +4074,8 @@ public class VehicleEntity extends LivingEntity {
 	@Override
 	protected void readAdditionalSaveData(ValueInput input) {
 		super.readAdditionalSaveData(input);
+		// A drone's mark does not outlive a restart (a vehicle glows only while it is seen).
+		setGlowingTag(false);
 		setMode(input.getIntOr("vehicle_mode", vtype.hasMode() ? MODE_AUTO : MODE_OFF));
 		setLoadedMask(input.getIntOr("vehicle_loaded", fullMask()));
 		setAmmo(input.getIntOr("vehicle_ammo", vtype.magazine()));

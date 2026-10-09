@@ -274,6 +274,41 @@ public final class Arsenals extends SavedData {
 		AirDefense.LOGGER.info("[airdefense] {} by the sea keeps {}", s.name, kit);
 	}
 
+	/** Towns already given their drones this session (1.34). */
+	private static final java.util.Set<Integer> DRONES_CHECKED = new java.util.HashSet<>();
+
+	/**
+	 * 1.34: a city keeps a reconnaissance drone complex and, one in two, an electronic warfare station (Orlan-10 and
+	 * Borisoglebsk-2 in the east, the TB2 and the Bukovel-AD in the west); a capital both, and loitering munitions too
+	 * (Lancet, Switchblade). Once per town (towns founded before 1.34 get them too; a lost one is not sent again).
+	 */
+	private void drones(Politics p, Settlement s, Arsenal ar) {
+		for (Unit u : ar.units) {
+			if (u.type.isDroneLauncher() || u.type.isJammer()) {
+				return;
+			}
+		}
+		boolean east = east(s.country);
+		Country c = p.country(s.country);
+		boolean capital = c != null && c.capital == s.id;
+		List<VehicleType> kit = new ArrayList<>();
+		kit.add(east ? VehicleType.ORLAN : VehicleType.TB2_GCS);
+		if (capital || new Random(s.id * 104729L).nextBoolean()) {
+			kit.add(east ? VehicleType.BORISOGLEBSK : VehicleType.BUKOVEL);
+		}
+		if (capital) {
+			kit.add(east ? VehicleType.LANCET : VehicleType.SWITCHBLADE);
+		}
+		for (VehicleType t : kit) {
+			ar.units.add(new Unit(t, null, false, t.isLauncher() ? t.strikeLoad() : 0));
+			MissileType m = missileOf(t);
+			if (m != null) {
+				ar.add(m, t.strikeLoad());
+			}
+		}
+		setDirty();
+	}
+
 	/** 1.33: where a town's warship lies at anchor (off its port) or its coastal battery stands (on the quay). */
 	@Nullable
 	private static BlockPos navalSpot(ServerLevel level, Settlement s, int index, boolean ship) {
@@ -343,6 +378,9 @@ public final class Arsenals extends SavedData {
 			if (s.isCity() && !NAVY_CHECKED.contains(s.id) && level.getNearestPlayer(s.center.getX(), s.center.getY(), s.center.getZ(), 700, pl -> true) != null) {
 				NAVY_CHECKED.add(s.id);
 				a.navy(level, p, s, ar);
+			}
+			if (s.isCity() && DRONES_CHECKED.add(s.id)) {
+				a.drones(p, s, ar);
 			}
 			boolean near = level.isLoaded(s.center) && level.getNearestPlayer(s.center.getX(), s.center.getY(), s.center.getZ(), 240,
 					pl -> true) != null;
@@ -769,6 +807,7 @@ public final class Arsenals extends SavedData {
 			if (c.owner != null || c.wars.isEmpty()) {
 				continue;
 			}
+			hunt(level, p, c, now, r);
 			Long next = NEXT_WAVE.get(c.id);
 			if (next != null && next > now || r.nextInt(100) >= 30) {
 				continue;
@@ -788,7 +827,7 @@ public final class Arsenals extends SavedData {
 					}
 					for (int i = 0; i < ar.units.size(); i++) {
 						Unit u = ar.units.get(i);
-						if (u.lost || !u.type.isLauncher()) {
+						if (u.lost || !u.type.isLauncher() || u.type.isDroneLauncher()) {
 							continue;
 						}
 						MissileType m = missileOf(u.type);
@@ -831,6 +870,8 @@ public final class Arsenals extends SavedData {
 				TARGET_NEXT.put(waveTarget.id, now + 1800);
 				waves++;
 				waveSites += sites;
+				// 1.34: a reconnaissance drone goes over the target: the guns that follow are corrected by it.
+				recon(level, p, c, waveTarget);
 				Country owner = p.country(waveTarget.country);
 				if (owner != null && owner.owner != null && level.getServer().getPlayerList().getPlayer(owner.owner) instanceof ServerPlayer pl) {
 					pl.sendSystemMessage(sites == 1 ? Component.translatable("nation.airdefense.strike.incoming", first.name, waveTarget.name)
@@ -1063,6 +1104,11 @@ public final class Arsenals extends SavedData {
 			double start = Math.min(dist, m.kind == MissileType.Kind.DRONE ? 300 : 360);
 			boolean arty = m.artillery();
 			double artySpread = arty && u.type.launcher != null ? u.type.launcher.spread : 3;
+			if (arty && com.stasdoto.airdefense.drone.Recon.watched(level, Vec3.atCenterOf(aimAt), side(from))) {
+				// 1.34: their reconnaissance drone over the target corrects the fire.
+				artySpread *= 0.5;
+				com.stasdoto.airdefense.drone.Recon.corrected++;
+			}
 			Vec3 gunsAt = Vec3.atCenterOf(from.center);
 			for (int k = 0; k < salvo; k++) {
 				// Artillery comes in as one bunch (a salvo from one battery); missiles and drones in a line.
@@ -1154,6 +1200,180 @@ public final class Arsenals extends SavedData {
 		setDirty();
 		tellStrike(level, p, target, from, true, salvo, salvo - hits);
 		AirDefense.LOGGER.info("[airdefense] {} -> {}: {} x{}, {} shot down (out of sight)", from.name, target.name, m, salvo, salvo - hits);
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// 1.34: drones - a reconnaissance drone over the town a wave strikes, loitering munitions at the player's vehicles
+
+	/** When each town may send its loitering munitions again (game time; not saved). */
+	private static final Map<Integer, Long> HUNT_NEXT = new HashMap<>();
+	/** For the tests: reconnaissance flights sent over a town, loitering munitions sent at the player's vehicles. */
+	public static int reconFlights;
+	public static int hunts;
+
+	/** The town's unit in the world, if it is there. */
+	@Nullable
+	private static VehicleEntity entity(ServerLevel level, Unit u) {
+		return u.entity == null ? null : level.getEntity(u.entity) instanceof VehicleEntity ve && ve.isAlive() ? ve : null;
+	}
+
+	/** Rounds ready for a unit that is not in the world (reloaded at the depot when empty). */
+	private static int ready(Arsenal ar, Unit u) {
+		MissileType m = missileOf(u.type);
+		if (u.ammo == 0 && m != null && ar.stock(m) > 0) {
+			int n = Math.min(u.type.strikeLoad(), ar.stock(m));
+			ar.add(m, -n);
+			u.ammo = n;
+		}
+		return u.ammo;
+	}
+
+	/** A country's reconnaissance drone in reach of {@code target} flies over it. */
+	private void recon(ServerLevel level, Politics p, Country c, Settlement target) {
+		for (Settlement s : p.settlementsOf(c.id)) {
+			Arsenal ar = arsenals.get(s.id);
+			if (ar == null) {
+				continue;
+			}
+			for (Unit u : ar.units) {
+				if (!u.lost && u.type.isDroneLauncher() && u.type.launcher.missile.recon()
+						&& Math.sqrt(s.center.distSqr(target.center)) <= u.type.launcher.maxRange && sendDrone(level, s, ar, u, target.center)) {
+					reconFlights++;
+					Country owner = p.country(target.country);
+					if (owner != null && owner.owner != null && level.getServer().getPlayerList().getPlayer(owner.owner) instanceof ServerPlayer pl) {
+						pl.sendSystemMessage(Component.translatable("nation.airdefense.recon.incoming", s.name, target.name,
+								Component.translatable("item.airdefense." + u.type.launcher.missile.itemId)));
+					}
+					AirDefense.LOGGER.info("[airdefense] {} sends its {} over {}", s.name, u.type.id, target.name);
+					return;
+				}
+			}
+		}
+	}
+
+	/**
+	 * The towns of a country at war with the player send their loitering munitions at his vehicles in reach (one town
+	 * every one to two and a half minutes).
+	 */
+	private void hunt(ServerLevel level, Politics p, Country c, long now, Random r) {
+		if (!com.stasdoto.airdefense.drone.Recon.atWarWithPlayer(p, c)) {
+			return;
+		}
+		for (Settlement s : p.settlementsOf(c.id)) {
+			Arsenal ar = arsenals.get(s.id);
+			if (ar == null || HUNT_NEXT.getOrDefault(s.id, 0L) > now) {
+				continue;
+			}
+			for (Unit u : ar.units) {
+				if (u.lost || !u.type.isDroneLauncher() || !u.type.launcher.missile.loitering()) {
+					continue;
+				}
+				VehicleEntity prey = prey(level, p, s, u.type.launcher.maxRange);
+				if (prey != null && sendDrone(level, s, ar, u, prey.blockPosition())) {
+					hunts++;
+					HUNT_NEXT.put(s.id, now + 1200 + r.nextInt(1800));
+					AirDefense.LOGGER.info("[airdefense] {} sends its {} at a {} at {}", s.name, u.type.id, prey.getVehicleType().id,
+							prey.blockPosition().toShortString());
+					return;
+				}
+			}
+		}
+	}
+
+	/** A vehicle of the player's side on the ground in reach of the town (near a player: that is where they are). */
+	@Nullable
+	private static VehicleEntity prey(ServerLevel level, Politics p, Settlement s, double reach) {
+		Vec3 c = Vec3.atCenterOf(s.center);
+		int side = side(s);
+		for (ServerPlayer pl : level.players()) {
+			if (pl.distanceToSqr(c) > Mth.square(reach + 150)) {
+				continue;
+			}
+			for (VehicleEntity v : level.getEntitiesOfClass(VehicleEntity.class, pl.getBoundingBox().inflate(150, 60, 150),
+					v -> v.isAlive() && !v.airborne() && !v.getVehicleType().isShip() && com.stasdoto.airdefense.drone.Recon.enemy(p, side, v))) {
+				double d = Math.sqrt(Mth.square(v.getX() - c.x) + Mth.square(v.getZ() - c.z));
+				if (d > 60 && d <= reach) {
+					return v;
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * One drone from a town's launcher to {@code aim}: off the launcher itself if it stands in the world; else, if a
+	 * player is near the point, it turns up in the air on its way in (with nobody there to see it, it is not sent).
+	 */
+	private boolean sendDrone(ServerLevel level, Settlement from, Arsenal ar, Unit u, BlockPos aim) {
+		VehicleEntity v = entity(level, u);
+		if (v != null) {
+			return v.loadedRounds() > 0 && v.commandStrike(aim, null);
+		}
+		if (level.getNearestPlayer(aim.getX(), aim.getY(), aim.getZ(), 400, pl -> true) == null || ready(ar, u) <= 0) {
+			return false;
+		}
+		u.ammo--;
+		setDirty();
+		MissileType m = u.type.launcher.missile;
+		Vec3 tc = Vec3.atBottomCenterOf(aim);
+		Vec3 dir = new Vec3(from.center.getX() - aim.getX(), 0, from.center.getZ() - aim.getZ());
+		double dist = dir.length();
+		dir = dist > 1e-3 ? dir.scale(1 / dist) : new Vec3(1, 0, 0);
+		Vec3 at = tc.add(dir.scale(Math.min(dist, m.recon() ? 260 : 200)));
+		Vec3 back = dir.scale(-1);
+		int side = side(from);
+		Vec3 home = Vec3.atCenterOf(from.center);
+		com.stasdoto.airdefense.util.Later.whenLoaded(level, BlockPos.containing(at), 200, l -> {
+			int ground = l.getHeight(Heightmap.Types.MOTION_BLOCKING, Mth.floor(at.x), Mth.floor(at.z));
+			Vec3 pos = new Vec3(at.x, ground + m.loiterAltitude(), at.z);
+			MissileEntity me = MissileEntity.launchStrike(l, m, pos, tc.add(0, 1, 0), back, back);
+			me.setCountry(side);
+			me.setOrigin(home);
+			me.startInFlight();
+		});
+		return true;
+	}
+
+	/** For the tests: a town sends its reconnaissance drone over another town now. */
+	public static boolean reconNow(ServerLevel level, Settlement from, Settlement target) {
+		Arsenals a = get(level.getServer());
+		Politics p = Politics.get(level.getServer());
+		Arsenal ar = a.of(p, from);
+		a.drones(p, from, ar);
+		for (Unit u : ar.units) {
+			if (!u.lost && u.type.isDroneLauncher() && u.type.launcher.missile.recon() && a.sendDrone(level, from, ar, u, target.center)) {
+				reconFlights++;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** For the tests: a town sends its loitering munition at the player's vehicle in reach now. */
+	public static boolean huntNow(ServerLevel level, Settlement from) {
+		Arsenals a = get(level.getServer());
+		Politics p = Politics.get(level.getServer());
+		Arsenal ar = a.of(p, from);
+		a.drones(p, from, ar);
+		boolean any = false;
+		for (Unit u : ar.units) {
+			any |= !u.lost && u.type.isDroneLauncher() && u.type.launcher.missile.loitering();
+		}
+		if (!any) {
+			VehicleType t = east(from.country) ? VehicleType.LANCET : VehicleType.SWITCHBLADE;
+			ar.units.add(new Unit(t, null, false, t.strikeLoad()));
+		}
+		for (Unit u : ar.units) {
+			if (u.lost || !u.type.isDroneLauncher() || !u.type.launcher.missile.loitering()) {
+				continue;
+			}
+			VehicleEntity prey = prey(level, p, from, u.type.launcher.maxRange);
+			if (prey != null && a.sendDrone(level, from, ar, u, prey.blockPosition())) {
+				hunts++;
+				return true;
+			}
+		}
+		return false;
 	}
 
 	// ------------------------------------------------------------------------------------------------
