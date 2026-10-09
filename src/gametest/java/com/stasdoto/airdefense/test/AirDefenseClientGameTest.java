@@ -1396,13 +1396,17 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 			ctx.waitTicks(60);
 		}
-		float bhp1 = server.computeOnServer(s -> s.overworld().getEntity(btr) instanceof VehicleEntity v && v.isAlive() ? v.getHealth() : 0f);
-		AirDefense.LOGGER.info("[airdefense-test] RESULT navy_gun: BTR health {} -> {}", (int) bhp0, (int) bhp1);
+		// Where the shells went: the BTR on the shore.
 		ctx.getInput().holdKey(o -> o.keyShift);
 		ctx.waitTicks(5);
 		ctx.getInput().releaseKey(o -> o.keyShift);
 		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
 		server.runCommand("gamemode spectator @a");
+		look(server, x - 25, ground + 6, -62, x - 40, ground + 1, -45);
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("n4b_btr_hit");
+		float bhp1 = server.computeOnServer(s -> s.overworld().getEntity(btr) instanceof VehicleEntity v && v.isAlive() ? v.getHealth() : 0f);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT navy_gun: BTR health {} -> {}", (int) bhp0, (int) bhp1);
 		server.runOnServer(s -> forVehicles(s.overworld(), List.of(btr), Entity::discard));
 
 		// The close-in gun: three Shaheds of somebody else's at the Buyan-M.
@@ -1427,7 +1431,12 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 
 		// A Bastion-P on the shore against an enemy Visby: aimed at a point 25 blocks off the ship, the Oniks finds it.
 		int bastion = spawnVehicle(server, VehicleType.BASTION, x + 60, -45, 0);
-		server.runOnServer(s -> forVehicles(s.overworld(), List.of(bastion), v -> v.country = -1));
+		int nmesis = spawnVehicle(server, VehicleType.NMESIS, x + 75, -42, 0);
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(bastion, nmesis), v -> v.country = -1));
+		ctx.waitTicks(20);
+		look(server, x + 82, ground + 3.5, -28, x + 66, ground + 1.5, -44);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("n5b_coastal");
 		server.runOnServer(s -> forVehicles(s.overworld(), List.of(visby), v -> {
 			v.country = 777;
 			v.snapTo(x + 20.5, ground - 0.1, 150.5, 270, 0);
@@ -1451,7 +1460,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		AirDefense.LOGGER.info("[airdefense-test] RESULT navy_coastal: ordered {}, launched after {} ticks, seeker locks {}, hits {} (first after {} ticks), "
 				+ "Visby health {} -> {}", fired, up, com.stasdoto.airdefense.missile.MissileEntity.SHIP_LOCKS.get() - locks0,
 				com.stasdoto.airdefense.missile.MissileEntity.SHIP_HITS.get() - hits0, hit, (int) vhp0, (int) vhp1);
-		server.runOnServer(s -> forVehicles(s.overworld(), List.of(buyan, visby, bastion), Entity::discard));
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(buyan, visby, bastion, nmesis), Entity::discard));
 
 		// A naval raid: an enemy Buyan-M comes in from the open sea to a town on the shore.
 		int[] ids = server.computeOnServer(s -> {
