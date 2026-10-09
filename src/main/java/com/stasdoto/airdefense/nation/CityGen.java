@@ -430,6 +430,19 @@ public final class CityGen {
 		} while (s.isAir() && below < 80);
 		sb.append("below: ").append(below - 1).append(" air then ").append(s.getBlock().getDescriptionId().replace("block.minecraft.", "")).append(" at ").append(q.getY());
 		sb.append("; ground ").append(level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1);
+		// Trunks and mushroom stems close by (the ones its crown or cap would hang on).
+		int stems = 0;
+		int sLo = Integer.MAX_VALUE;
+		int sHi = Integer.MIN_VALUE;
+		for (BlockPos b : BlockPos.betweenClosed(p.offset(-3, -14, -3), p.offset(3, 3, 3))) {
+			BlockState bs = level.getBlockState(b);
+			if (bs.is(BlockTags.LOGS) || bs.is(Blocks.MUSHROOM_STEM)) {
+				stems++;
+				sLo = Math.min(sLo, b.getY());
+				sHi = Math.max(sHi, b.getY());
+			}
+		}
+		sb.append("; trunks/stems near: ").append(stems).append(stems > 0 ? " (y " + sLo + ".." + sHi + ")" : "");
 		sb.append("; round:");
 		for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
 			sb.append(' ').append(dir.getName().charAt(0)).append('=').append(level.getBlockState(p.relative(dir)).getBlock().getDescriptionId().replace("block.minecraft.", ""));

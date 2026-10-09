@@ -78,6 +78,8 @@ public final class Orphans {
 	/** For the tests: what the last counts found (logs, leaves and caps, vines/plants/snow) and a few of them. */
 	public static final int[] FOUND = new int[3];
 	public static final java.util.List<String> SAMPLES = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+	/** For the tests: what the sweeps took away (trunks, crowns, caps), by block. */
+	public static final java.util.concurrent.ConcurrentHashMap<String, Integer> REMOVED = new java.util.concurrent.ConcurrentHashMap<>();
 	public static final java.util.List<Long> SAMPLE_POS = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
 
 	private Orphans() {
@@ -186,7 +188,9 @@ public final class Orphans {
 						if (dryRun) {
 							note(0, a, p.set(ax + x, yMin + i / (w * w), az + z), yMin, h);
 						} else {
-							a.set(p.set(ax + x, yMin + i / (w * w), az + z), Blocks.AIR.defaultBlockState());
+							p.set(ax + x, yMin + i / (w * w), az + z);
+							REMOVED.merge(a.get(p).getBlock().getDescriptionId().replace("block.minecraft.", ""), 1, Integer::sum);
+							a.set(p, Blocks.AIR.defaultBlockState());
 						}
 						kind[i] = AIR;
 						removed++;
@@ -246,7 +250,9 @@ public final class Orphans {
 						if (dryRun) {
 							note(1, a, p.set(ax + x, yMin + i / (w * w), az + z), yMin, h);
 						} else {
-							a.set(p.set(ax + x, yMin + i / (w * w), az + z), Blocks.AIR.defaultBlockState());
+							p.set(ax + x, yMin + i / (w * w), az + z);
+							REMOVED.merge(a.get(p).getBlock().getDescriptionId().replace("block.minecraft.", ""), 1, Integer::sum);
+							a.set(p, Blocks.AIR.defaultBlockState());
 						}
 						kind[i] = AIR;
 						removed++;
@@ -324,6 +330,8 @@ public final class Orphans {
 	/** For the tests: time spent looking chunks over (all, the longest). */
 	public static long stepNanos;
 	public static long stepMax;
+	public static long stepCpu;
+	private static final java.lang.management.ThreadMXBean CPU = java.lang.management.ManagementFactory.getThreadMXBean();
 
 	public static void init() {
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents.CHUNK_LOAD.register((level, chunk, fresh) -> {
@@ -421,6 +429,7 @@ public final class Orphans {
 		}
 		chunksLooked++;
 		long t0 = System.nanoTime();
+		long c0 = CPU.getCurrentThreadCpuTime();
 		int x0 = cp.getMinBlockX();
 		int z0 = cp.getMinBlockZ();
 		// The chunk and its neighbours, read straight from their sections; only the heights where any of them may hold
@@ -475,6 +484,7 @@ public final class Orphans {
 		long dt = System.nanoTime() - t0;
 		stepNanos += dt;
 		stepMax = Math.max(stepMax, dt);
+		stepCpu += CPU.getCurrentThreadCpuTime() - c0;
 		return true;
 	}
 

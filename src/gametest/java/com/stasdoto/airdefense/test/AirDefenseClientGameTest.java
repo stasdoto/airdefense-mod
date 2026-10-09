@@ -279,9 +279,10 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			// the chunks the generator cut back afterwards have been looked over again.
 			int swept = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Orphans.idleTicks >= 80, 1500);
 			AirDefense.LOGGER.info("[airdefense-test] RESULT real_recheck: {} chunks looked over again once complete ({} looked at, {} still waiting for "
-					+ "their neighbours), done within {} ticks; {} us a chunk on average, longest {} us", com.stasdoto.airdefense.nation.Orphans.rechecks,
+					+ "their neighbours), done within {} ticks; {} us a chunk on average ({} us of it working), longest {} us", com.stasdoto.airdefense.nation.Orphans.rechecks,
 					com.stasdoto.airdefense.nation.Orphans.chunksLooked, com.stasdoto.airdefense.nation.Orphans.pending(), swept,
 					com.stasdoto.airdefense.nation.Orphans.stepNanos / 1000 / Math.max(1, com.stasdoto.airdefense.nation.Orphans.chunksLooked),
+					com.stasdoto.airdefense.nation.Orphans.stepCpu / 1000 / Math.max(1, com.stasdoto.airdefense.nation.Orphans.chunksLooked),
 					com.stasdoto.airdefense.nation.Orphans.stepMax / 1000);
 			int half = cap[2];
 			int[] orphans = server.computeOnServer(s -> {
@@ -309,6 +310,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					+ "logs {}, leaves {}, plants {}; e.g. {}", com.stasdoto.airdefense.nation.Orphans.removedAtGeneration,
 					com.stasdoto.airdefense.nation.Orphans.removedLater, orphans[1], orphans[0], com.stasdoto.airdefense.nation.Orphans.FOUND[0],
 					com.stasdoto.airdefense.nation.Orphans.FOUND[1], com.stasdoto.airdefense.nation.Orphans.FOUND[2], com.stasdoto.airdefense.nation.Orphans.SAMPLES);
+			AirDefense.LOGGER.info("[airdefense-test] RESULT real_removed: {}", new java.util.TreeMap<>(com.stasdoto.airdefense.nation.Orphans.REMOVED));
 			// Where they are (town, its margin, by a road...), and a look at a few.
 			java.util.List<BlockPos> seen = new java.util.ArrayList<>();
 			int shots = 0;
