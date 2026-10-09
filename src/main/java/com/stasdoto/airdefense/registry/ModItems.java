@@ -105,6 +105,13 @@ public final class ModItems {
 	public static final Item VISBY = vehicle("visby", VehicleType.VISBY);
 	public static final Item BASTION = vehicle("bastion", VehicleType.BASTION);
 	public static final Item NMESIS = vehicle("nmesis", VehicleType.NMESIS);
+	// 1.34: drones and electronic warfare.
+	public static final Item ORLAN = vehicle("orlan", VehicleType.ORLAN);
+	public static final Item TB2_GCS = vehicle("tb2_gcs", VehicleType.TB2_GCS);
+	public static final Item LANCET = vehicle("lancet", VehicleType.LANCET);
+	public static final Item SWITCHBLADE = vehicle("switchblade", VehicleType.SWITCHBLADE);
+	public static final Item BORISOGLEBSK = vehicle("borisoglebsk", VehicleType.BORISOGLEBSK);
+	public static final Item BUKOVEL = vehicle("bukovel", VehicleType.BUKOVEL);
 	public static final Item AVENGER = vehicle("avenger", VehicleType.AVENGER);
 	public static final Item MFG = vehicle("mfg", VehicleType.MFG);
 	public static final Item ZU23 = vehicle("zu23", VehicleType.ZU23);
@@ -160,6 +167,12 @@ public final class ModItems {
 	public static final Item ONIKS_MISSILE = missile(MissileType.ONIKS);
 	public static final Item NSM_MISSILE = missile(MissileType.NSM);
 	public static final Item RBS15_MISSILE = missile(MissileType.RBS15);
+	// 1.34: the drones (one item = one drone for its launcher) and the TB2's bomb (made with the drone, not on its own).
+	public static final Item ORLAN10_DRONE = missile(MissileType.ORLAN10);
+	public static final Item TB2_DRONE = missile(MissileType.TB2);
+	public static final Item LANCET_DRONE = missile(MissileType.LANCET);
+	public static final Item SWITCHBLADE_DRONE = missile(MissileType.SWITCHBLADE);
+	public static final Item MAML_BOMB = missile(MissileType.MAML);
 	/** 1.31: right-click a vehicle with it - a quarter of its strength back. */
 	public static final Item REPAIR_KIT = register("repair_kit", Item::new, new Item.Properties().stacksTo(16));
 
@@ -295,6 +308,12 @@ public final class ModItems {
 				output.accept(VISBY);
 				output.accept(BASTION);
 				output.accept(NMESIS);
+				output.accept(ORLAN);
+				output.accept(TB2_GCS);
+				output.accept(LANCET);
+				output.accept(SWITCHBLADE);
+				output.accept(BORISOGLEBSK);
+				output.accept(BUKOVEL);
 				output.accept(AVENGER);
 				output.accept(MFG);
 				output.accept(ZU23);
@@ -336,6 +355,10 @@ public final class ModItems {
 				output.accept(ONIKS_MISSILE);
 				output.accept(NSM_MISSILE);
 				output.accept(RBS15_MISSILE);
+				output.accept(ORLAN10_DRONE);
+				output.accept(TB2_DRONE);
+				output.accept(LANCET_DRONE);
+				output.accept(SWITCHBLADE_DRONE);
 				output.accept(REPAIR_KIT);
 				output.accept(MANPADS);
 				output.accept(FACTORY_KIT);

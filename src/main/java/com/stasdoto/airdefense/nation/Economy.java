@@ -963,6 +963,11 @@ public final class Economy {
 			case VISBY -> new int[]{60, 90, 380, 230};
 			case BASTION -> new int[]{30, 60, 200, 120};
 			case NMESIS -> new int[]{20, 40, 140, 85};
+			case ORLAN, LANCET -> new int[]{20, 30, 110, 70};
+			case TB2_GCS -> new int[]{25, 40, 150, 90};
+			case SWITCHBLADE -> new int[]{20, 25, 90, 60};
+			case BORISOGLEBSK -> new int[]{25, 50, 160, 95};
+			case BUKOVEL -> new int[]{15, 20, 80, 50};
 		};
 	}
 

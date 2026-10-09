@@ -25,7 +25,12 @@ public enum LauncherType {
 	KALIBR_SHIP(MissileType.KALIBR, 2, 40, 300, 1.8, 1.6, 0.3, ModSounds.LAUNCH_LIGHT, 2500),
 	RBS15_SHIP(MissileType.RBS15, 2, 36, 300, 1.5, 1.6, 0.3, ModSounds.LAUNCH_LIGHT, 1200),
 	BASTION(MissileType.ONIKS, 2, 60, 400, 1.2, 2.0, 0.3, ModSounds.LAUNCH_HEAVY, 1200),
-	NMESIS(MissileType.NSM, 2, 40, 300, 1.2, 1.6, 0.3, ModSounds.LAUNCH_LIGHT, 900);
+	NMESIS(MissileType.NSM, 2, 40, 300, 1.2, 1.6, 0.3, ModSounds.LAUNCH_LIGHT, 900),
+	// 1.34: drones off their catapults and launch tubes, one at a time (a reconnaissance drone comes back to fly again).
+	ORLAN(MissileType.ORLAN10, 1, 40, 200, 0, 1.6, 0.3, ModSounds.LAUNCH_LIGHT, 300),
+	TB2(MissileType.TB2, 1, 60, 300, 0, 1.6, 0.3, ModSounds.LAUNCH_LIGHT, 400),
+	LANCET(MissileType.LANCET, 1, 30, 160, 0, 1.6, 0.3, ModSounds.LAUNCH_LIGHT, 160),
+	SWITCHBLADE(MissileType.SWITCHBLADE, 1, 20, 100, 0, 1.6, 0.3, ModSounds.LAUNCH_LIGHT, 140);
 
 	public final MissileType missile;
 	public final int salvo;

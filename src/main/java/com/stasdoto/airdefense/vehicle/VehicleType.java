@@ -96,7 +96,16 @@ public enum VehicleType {
 	VISBY("visby", GenGeometry.VISBY, Weapon.NAVAL_57, LauncherType.RBS15_SHIP,
 			new ShipFit(0, 3.5, -6.0, 4, 2, 1.1, 0, 5.6, 28.5, 80, 3), 0.4f, 900, 1.45f, 0.007f, 1.0f, 1.6f, 4.0f, 10.4f, 7f),
 	BASTION("bastion", GenGeometry.BASTION, LauncherType.BASTION, null, 300, 0.8f, 0.011f, 28, 0, 1.0f, 0, 3.1f, 3.9f),
-	NMESIS("nmesis", GenGeometry.NMESIS, LauncherType.NMESIS, null, 180, 1.1f, 0.02f, 34, 0, 1.0f, 0, 2.5f, 2.4f);
+	NMESIS("nmesis", GenGeometry.NMESIS, LauncherType.NMESIS, null, 180, 1.1f, 0.02f, 34, 0, 1.0f, 0, 2.5f, 2.4f),
+	// 1.34: drones - the Orlan-10 complex (its catapult on a KamAZ), the Bayraktar TB2's ground control station, the
+	// Lancet's catapult truck, the Switchblade 600's launch tubes on a JLTV; electronic warfare - the Borisoglebsk-2 and
+	// the Bukovel-AD jam the drones round them.
+	ORLAN("orlan", GenGeometry.ORLAN, LauncherType.ORLAN, null, 200, 0.82f, 0.011f, 30, 0, 0.6f, 0, 2.55f, 3.2f),
+	TB2_GCS("tb2_gcs", GenGeometry.TB2_GCS, LauncherType.TB2, null, 200, 0.8f, 0.011f, 30, 0, 0.6f, 0, 2.55f, 3.4f),
+	LANCET("lancet", GenGeometry.LANCET, LauncherType.LANCET, null, 200, 0.82f, 0.011f, 30, 0, 0.6f, 0, 2.55f, 3.2f),
+	SWITCHBLADE("switchblade", GenGeometry.SWITCHBLADE, LauncherType.SWITCHBLADE, null, 220, 1.0f, 0.018f, 34, 0, 1.5f, 0, 2.5f, 2.5f),
+	BORISOGLEBSK("borisoglebsk", GenGeometry.BORISOGLEBSK, RadarType.BORISOGLEBSK, 260, 0.85f, 0.014f, 0, 2.6f, 1.2f, 2.85f, 2.9f),
+	BUKOVEL("bukovel", GenGeometry.BUKOVEL, RadarType.BUKOVEL, 140, 1.15f, 0.022f, 34, 0, 1.5f, 2.0f, 2.2f);
 
 	public static final int HELI = 1;
 	public static final int PLANE = 2;
@@ -405,6 +414,16 @@ public enum VehicleType {
 	/** 1.30: a howitzer or a rocket artillery launcher. */
 	public boolean isArtillery() {
 		return launcher != null && launcher.artillery();
+	}
+
+	/** 1.34: an electronic warfare station (jams drones; not a radar). */
+	public boolean isJammer() {
+		return radar != null && radar.jammer;
+	}
+
+	/** 1.34: a launcher of drones that stay over the battlefield (reconnaissance drones, loitering munitions). */
+	public boolean isDroneLauncher() {
+		return launcher != null && launcher.missile.loiters();
 	}
 
 	/** A counter-battery radar. */

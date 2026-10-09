@@ -82,16 +82,20 @@ public class VehicleItem extends Item {
 		tooltip.accept(Component.translatable("item.airdefense.vehicle.hint").withStyle(ChatFormatting.GRAY));
 		tooltip.accept(Component.translatable(type.isShip() ? "item.airdefense.vehicle.hint_ship" : type.isCoastal() ? "item.airdefense.vehicle.hint_coastal"
 				: type.repairs() ? "item.airdefense.vehicle.hint_recovery" : type.isArtillery() ? "item.airdefense.vehicle.hint_artillery"
-				: type.isCounterBattery() ? "item.airdefense.vehicle.hint_cb" : type.isLauncher() ? "item.airdefense.vehicle.hint_launcher"
+				: type.isCounterBattery() ? "item.airdefense.vehicle.hint_cb"
+				: type.launcher != null && type.launcher.missile.recon() ? "item.airdefense.vehicle.hint_recon"
+				: type.isDroneLauncher() ? "item.airdefense.vehicle.hint_loiter" : type.isLauncher() ? "item.airdefense.vehicle.hint_launcher"
 				: type.isTruck() ? "item.airdefense.vehicle.hint_truck" : type.isAir() ? "item.airdefense.vehicle.hint_air"
-				: type.isRadar() ? "item.airdefense.vehicle.hint_radar" : type.boat ? "item.airdefense.vehicle.hint_boat"
+				: type.isJammer() ? "item.airdefense.vehicle.hint_ew" : type.isRadar() ? "item.airdefense.vehicle.hint_radar" : type.boat ? "item.airdefense.vehicle.hint_boat"
 				: type.isArmed() ? "item.airdefense.vehicle.hint_armed" : "item.airdefense.vehicle.hint_defense")
 				.withStyle(ChatFormatting.DARK_GRAY));
 		if (type.isArtillery()) {
 			tooltip.accept(Component.translatable("item.airdefense.arty.stats", type.launcher.maxRange, type.launcher.rounds, type.launcher.salvo)
 					.withStyle(ChatFormatting.DARK_AQUA));
 		}
-		if (type.isRadar()) {
+		if (type.isJammer()) {
+			tooltip.accept(Component.translatable("item.airdefense.ew.stats", (int) type.radar.range).withStyle(ChatFormatting.DARK_AQUA));
+		} else if (type.isRadar()) {
 			tooltip.accept(Component.translatable("item.airdefense.radar.stats", (int) type.radar.range, (int) type.radar.minAltitude,
 					Component.translatable(type.radar.rotates() ? "item.airdefense.radar.rotating" : "item.airdefense.radar.sector", (int) type.radar.sector))
 					.withStyle(ChatFormatting.DARK_AQUA));

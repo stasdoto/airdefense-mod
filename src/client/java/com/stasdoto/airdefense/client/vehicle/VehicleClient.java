@@ -145,6 +145,9 @@ public final class VehicleClient {
 					Component.translatable("item.airdefense." + type.launcher.missile.itemId), Math.max(0, v.getAmmo()), type.strikeLoad());
 		} else if (type.isArmed()) {
 			l2 = Component.translatable("hud.airdefense.vehicle.weapon", type.weapon.caliber, Math.max(0, v.getAmmo()));
+		} else if (type.isJammer()) {
+			l2 = Component.translatable(v.getMode() == VehicleEntity.MODE_OFF ? "hud.airdefense.vehicle.ew_off"
+					: v.radarWorking() ? "hud.airdefense.vehicle.ew_on" : "hud.airdefense.vehicle.ew_deploying", (int) type.radar.range);
 		} else if (type.isRadar()) {
 			l2 = Component.translatable(v.getMode() == VehicleEntity.MODE_OFF ? "hud.airdefense.vehicle.radar_off"
 					: v.radarWorking() ? "hud.airdefense.vehicle.radar_on" : "hud.airdefense.vehicle.radar_deploying", (int) type.radar.range);

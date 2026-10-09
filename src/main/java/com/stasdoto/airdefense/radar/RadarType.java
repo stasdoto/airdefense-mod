@@ -20,7 +20,11 @@ public enum RadarType {
 	// 1.30: counter-battery radars - a fixed array watching 90 degrees ahead for shells and rockets in flight; from the
 	// rising part of their arc they work out where they were fired from. They see nothing else (no aircraft, no drones).
 	ZOOPARK(360, 2, 90, 0, 0f, 0.0, 0, true),
-	TPQ36(300, 2, 90, 180, 0f, 0.0, 0, true);
+	TPQ36(300, 2, 90, 180, 0f, 0.0, 0, true),
+	// 1.34: electronic warfare - not radars at all: with the mast up they jam the control links and the satellite
+	// navigation of the other side's drones round them (the range is how far). Borisoglebsk-2, Bukovel-AD.
+	BORISOGLEBSK(50),
+	BUKOVEL(36);
 
 	public final double range;
 	public final double minAltitude;
@@ -31,6 +35,8 @@ public enum RadarType {
 	public final int rpm;
 	/** Watches for artillery (not part of the air picture). */
 	public final boolean counterBattery;
+	/** 1.34: a jammer (electronic warfare), not a radar: it sees nothing, it jams drones. */
+	public final boolean jammer;
 
 	RadarType(double range, double minAltitude, double sector, float facing, float spin, double discrimination, int rpm) {
 		this.range = range * com.stasdoto.airdefense.missile.MissileType.RANGE_SCALE;
@@ -41,6 +47,20 @@ public enum RadarType {
 		this.discrimination = discrimination;
 		this.rpm = rpm;
 		this.counterBattery = false;
+		this.jammer = false;
+	}
+
+	/** 1.34: an electronic warfare station jamming drones within {@code range} (before the range scale). */
+	RadarType(double range) {
+		this.range = range * com.stasdoto.airdefense.missile.MissileType.RANGE_SCALE;
+		this.minAltitude = 0;
+		this.sector = 360;
+		this.facing = 0;
+		this.spin = 0;
+		this.discrimination = 0;
+		this.rpm = 0;
+		this.counterBattery = false;
+		this.jammer = true;
 	}
 
 	RadarType(double range, double minAltitude, double sector, float facing, float spin, double discrimination, int rpm, boolean counterBattery) {
@@ -52,6 +72,7 @@ public enum RadarType {
 		this.discrimination = discrimination;
 		this.rpm = rpm;
 		this.counterBattery = counterBattery;
+		this.jammer = false;
 	}
 
 	public boolean rotates() {

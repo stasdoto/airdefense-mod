@@ -179,6 +179,23 @@ public final class MapServer {
 						Math.min(32000, f.rounds)));
 			}
 		}
-		return new MapStatusPayload(entries, fires);
+		// 1.34: what the side's reconnaissance drones see, and the drones themselves.
+		List<MapStatusPayload.Spot> spots = new ArrayList<>();
+		for (com.stasdoto.airdefense.drone.Recon.Seen s : com.stasdoto.airdefense.drone.Recon.seen(level, ownId)) {
+			if (spots.size() >= 160) {
+				break;
+			}
+			if (s.pos.distanceToSqr(player.position()) < LIST_RANGE * LIST_RANGE) {
+				spots.add(new MapStatusPayload.Spot((int) Math.floor(s.pos.x), (int) s.pos.y, (int) Math.floor(s.pos.z), s.vtype,
+						(int) Math.min(32000, (now - s.last) / 20)));
+			}
+		}
+		List<MapStatusPayload.Eye> eyes = new ArrayList<>();
+		for (com.stasdoto.airdefense.drone.Recon.Eye e : com.stasdoto.airdefense.drone.Recon.eyes(level, ownId)) {
+			if (eyes.size() < 16) {
+				eyes.add(new MapStatusPayload.Eye((int) Math.floor(e.pos().x), (int) Math.floor(e.pos().z), (int) e.range(), e.type()));
+			}
+		}
+		return new MapStatusPayload(entries, fires, spots, eyes);
 	}
 }

@@ -62,7 +62,12 @@ public enum Product {
 	// 1.33: anti-ship missiles (the Buyan-M fires Kalibrs).
 	ONIKS("oniks_missile", 1000, 1, cost(Items.IRON_INGOT, 14, Items.GUNPOWDER, 8, Items.REDSTONE, 4, Items.GOLD_INGOT, 2)),
 	NSM("nsm_missile", 700, 1, cost(Items.IRON_INGOT, 8, Items.GUNPOWDER, 5, Items.REDSTONE, 4, Items.COPPER_INGOT, 2)),
-	RBS15("rbs15_missile", 800, 1, cost(Items.IRON_INGOT, 10, Items.GUNPOWDER, 6, Items.REDSTONE, 4, Items.COPPER_INGOT, 3));
+	RBS15("rbs15_missile", 800, 1, cost(Items.IRON_INGOT, 10, Items.GUNPOWDER, 6, Items.REDSTONE, 4, Items.COPPER_INGOT, 3)),
+	// 1.34: drones - the reconnaissance drones (a lost one is made anew) and the loitering munitions.
+	ORLAN10("orlan10_drone", 600, 1, cost(Items.IRON_INGOT, 3, Items.COPPER_INGOT, 4, Items.REDSTONE, 4, Items.GLASS_PANE, 1)),
+	TB2("tb2_drone", 1400, 1, cost(Items.IRON_INGOT, 10, Items.COPPER_INGOT, 6, Items.REDSTONE, 6, Items.GOLD_INGOT, 2, Items.TNT, 2)),
+	LANCET("lancet_drone", 500, 1, cost(Items.IRON_INGOT, 3, Items.COPPER_INGOT, 3, Items.REDSTONE, 3, Items.TNT, 1)),
+	SWITCHBLADE("switchblade_drone", 600, 1, cost(Items.IRON_INGOT, 4, Items.COPPER_INGOT, 3, Items.REDSTONE, 3, Items.TNT, 2));
 
 	public record Cost(Item item, int count) {
 	}
@@ -110,6 +115,10 @@ public enum Product {
 			case VISBY -> RBS15;
 			case BASTION -> ONIKS;
 			case NMESIS -> NSM;
+			case ORLAN -> ORLAN10;
+			case TB2_GCS -> TB2;
+			case LANCET -> LANCET;
+			case SWITCHBLADE -> SWITCHBLADE;
 			case T80BVM, CHALLENGER2 -> SHELL_TANK;
 			case BMP3, CV90 -> AMMO_30;
 			case STRYKER, TIGR, HMMWV, BREM1, M88 -> AMMO_127;

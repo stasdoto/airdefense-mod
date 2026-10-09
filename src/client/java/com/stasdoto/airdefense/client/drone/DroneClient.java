@@ -94,9 +94,13 @@ public final class DroneClient {
 			if (!LOOPS.containsKey(m.getId())) {
 				List<Loop> list = new ArrayList<>();
 				float pitch = 0.94f + RANDOM.nextFloat() * 0.12f;
-				if (m.getMissileType().kind == MissileType.Kind.DRONE) {
-					list.add(new Loop(ModSounds.SHAHED_LOOP, m, 1.0f, pitch));
-					list.add(new Loop(ModSounds.SHAHED_FAR, m, 0.55f, pitch));
+				MissileType mt = m.getMissileType();
+				if (mt.kind == MissileType.Kind.DRONE) {
+					// 1.34: the small drones buzz higher and quieter (the Orlan's little engine, the electric Lancet), the TB2 lower.
+					float k = mt == MissileType.TB2 ? 0.85f : mt.loiters() ? 1.4f : 1.0f;
+					float v = mt.loiters() && mt != MissileType.TB2 ? 0.6f : 1.0f;
+					list.add(new Loop(ModSounds.SHAHED_LOOP, m, v, pitch * k));
+					list.add(new Loop(ModSounds.SHAHED_FAR, m, 0.55f * v, pitch * k));
 				} else {
 					list.add(new Loop(ModSounds.CRUISE_LOOP, m, 1.0f, pitch));
 				}
