@@ -380,8 +380,12 @@ public final class CityGen {
 				return true;
 			}
 		}
+		Cities.Road.Spot probe = new Cities.Road.Spot();
 		for (Cities.Road r : Cities.roadsNear(seed, t, mx, mz)) {
-			if (r.maxX >= mx - 30 && r.minX <= mx + 30 && r.maxZ >= mz - 30 && r.minZ <= mz + 30) {
+			// Near the road itself (its cuttings and embankments reach out up to 8 blocks), not just inside the box round it -
+			// a long diagonal road's box covers a great square of untouched country.
+			if (r.maxX >= mx - 30 && r.minX <= mx + 30 && r.maxZ >= mz - 30 && r.minZ <= mz + 30
+					&& r.locate(mx + 0.5, mz + 0.5, r.half + 30, probe) && probe.along >= -30 && probe.along <= r.length + 30) {
 				return true;
 			}
 		}
