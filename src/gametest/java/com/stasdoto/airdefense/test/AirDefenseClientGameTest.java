@@ -1409,7 +1409,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runOnServer(s -> {
 			for (int i = 0; i < 3; i++) {
 				var m = com.stasdoto.airdefense.missile.MissileEntity.launchStrike(s.overworld(), com.stasdoto.airdefense.missile.MissileType.SHAHED,
-						new Vec3(x - 40 - 30 + i * 30, ground + 40, 330), new Vec3(x - 40.5, ground + 2, 50.5), new Vec3(0, 0, -1));
+						new Vec3(x - 40 - 30 + i * 30, ground + 30, 170), new Vec3(x - 40.5, ground + 2, 50.5), new Vec3(0, 0, -1));
 				m.setCountry(777);
 			}
 		});

@@ -1959,6 +1959,11 @@ public class VehicleEntity extends LivingEntity {
 			hit = ent.getEntity();
 		}
 		double dist = end.distanceTo(muzzle);
+		if (vtype.isShip()) {
+			com.stasdoto.airdefense.missile.MissileStats.log("{} gun: turret {} (wants {}), elevation {} (wants {}), from {} to {} ({} blocks){}", vtype.id,
+					(int) turretYaw, (int) getTurretTarget(), (int) elevation, (int) getElevationTarget(), muzzle, end, (int) dist,
+					hit == null ? "" : " on " + hit.getType().getDescriptionId());
+		}
 		rounds.add(new Round(end, hit, w, new int[]{Math.max(1, (int) Math.round(dist / w.speed))}));
 		Effects.tracer(level, muzzle, end, (float) w.speed);
 		if (w.cannon() && !vtype.isAir()) {
@@ -3889,6 +3894,16 @@ public class VehicleEntity extends LivingEntity {
 	protected void tickDeath() {
 		if (crashing && level() instanceof ServerLevel server) {
 			tickCrash(server);
+		}
+		if (vtype.isShip() && deathTime < 500 && level() instanceof ServerLevel server) {
+			// 1.33: a warship that is done for settles by the stern and goes down, burning and smoking.
+			setPos(getX(), getY() - 0.012, getZ());
+			setXRot(Math.max(-9f, getXRot() - 0.03f));
+			if (tickCount % 3 == 0) {
+				Vec3 at = toWorld(0, 4, -vtype.geometry.length() * 0.2);
+				server.sendParticles(net.minecraft.core.particles.ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, at.x, at.y, at.z, 2, 2.0, 1.0, 2.0, 0.01);
+				server.sendParticles(net.minecraft.core.particles.ParticleTypes.FLAME, at.x, at.y, at.z, 3, 2.0, 0.6, 2.0, 0.02);
+			}
 		}
 		deathTime++;
 		if (deathTime >= 1200 && !level().isClientSide()) {

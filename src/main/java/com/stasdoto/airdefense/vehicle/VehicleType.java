@@ -92,10 +92,10 @@ public enum VehicleType {
 	// 1.33: the navy - the Buyan-M small missile ship and the Visby corvette (a gun, eight cruise missiles in vertical
 	// cells, a close-in gun of their own against drones and missiles); the coastal anti-ship launchers Bastion-P and NMESIS.
 	BUYAN_M("buyan_m", GenGeometry.BUYAN_M, Weapon.NAVAL_100, LauncherType.KALIBR_SHIP,
-			new ShipFit(0, 4.1, -8.0, 4, 2, 0.75, 0, 7.05, -16.0, 90, 2), 0.35f, 1600, 1.25f, 0.006f, 0.9f, 1.2f, 3.0f, 11f, 8f),
+			new ShipFit(0, 4.1, -8.0, 4, 2, 0.75, 0, 7.05, -16.0, 90, 2), 0.35f, 1000, 1.25f, 0.006f, 0.9f, 1.2f, 3.0f, 11f, 8f),
 	VISBY("visby", GenGeometry.VISBY, Weapon.NAVAL_57, LauncherType.RBS15_SHIP,
-			new ShipFit(0, 3.5, -6.0, 4, 2, 1.1, 0, 5.6, 28.5, 80, 3), 0.4f, 1300, 1.45f, 0.007f, 1.0f, 1.6f, 4.0f, 10.4f, 7f),
-	BASTION("bastion", GenGeometry.BASTION, LauncherType.BASTION, null, 300, 0.8f, 0.011f, 28, 0, 0.6f, 0, 3.1f, 3.9f),
+			new ShipFit(0, 3.5, -6.0, 4, 2, 1.1, 0, 5.6, 28.5, 80, 3), 0.4f, 900, 1.45f, 0.007f, 1.0f, 1.6f, 4.0f, 10.4f, 7f),
+	BASTION("bastion", GenGeometry.BASTION, LauncherType.BASTION, null, 300, 0.8f, 0.011f, 28, 0, 1.0f, 0, 3.1f, 3.9f),
 	NMESIS("nmesis", GenGeometry.NMESIS, LauncherType.NMESIS, null, 180, 1.1f, 0.02f, 34, 0, 1.0f, 0, 2.5f, 2.4f);
 
 	public static final int HELI = 1;

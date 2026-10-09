@@ -146,10 +146,10 @@ public enum MissileType {
 	/** 1.33: what a direct hit of an anti-ship missile does to a ship (on top of its blast). */
 	public float shipDamage() {
 		return switch (this) {
-			case ONIKS -> 760f;
-			case KALIBR -> 620f;
-			case RBS15 -> 560f;
-			case NSM -> 480f;
+			case ONIKS -> 1500f;
+			case KALIBR -> 1300f;
+			case RBS15 -> 1200f;
+			case NSM -> 1100f;
 			default -> 0f;
 		};
 	}
