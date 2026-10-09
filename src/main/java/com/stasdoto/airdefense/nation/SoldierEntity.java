@@ -389,6 +389,16 @@ public class SoldierEntity extends PathfinderMob {
 		}
 		long perf0 = System.nanoTime();
 		super.tick();
+		// 1.27: night goggles down after dark, up by day.
+		if ((tickCount + getId()) % 100 == 0) {
+			ItemStack head = getItemBySlot(EquipmentSlot.HEAD);
+			if (head.getItem() instanceof com.stasdoto.airdefense.weapon.NvgItem) {
+				boolean night = level().isDarkOutside();
+				if (com.stasdoto.airdefense.weapon.NvgItem.isOn(head) != night) {
+					head.set(com.stasdoto.airdefense.registry.ModComponents.NVG_ON, night);
+				}
+			}
+		}
 		com.stasdoto.airdefense.util.Perf.add(com.stasdoto.airdefense.util.Perf.SOLDIERS, System.nanoTime() - perf0);
 		com.stasdoto.airdefense.util.Perf.over("soldier at " + blockPosition().toShortString(), perf0);
 	}

@@ -1,3 +1,9 @@
 {
-  "layers": {}
+  "layers": {
+    "wolf_body": [
+      {
+        "texture": "airdefense:none"
+      }
+    ]
+  }
 }

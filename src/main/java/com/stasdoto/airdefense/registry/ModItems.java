@@ -191,6 +191,7 @@ public final class ModItems {
 	public static final Item POUCH_RADIO = register("pouch_radio", PouchItem::new, new Item.Properties().stacksTo(16));
 	public static final Item THERMAL_MONOCULAR = register("thermal_monocular", ThermalMonocularItem::new,
 			new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
+	public static final Item AMMO_CRATE = register("ammo_crate", com.stasdoto.airdefense.gear.AmmoCrateItem::new, new Item.Properties().stacksTo(16));
 	/** Field dressing: two seconds to apply, heals four hearts at once and more over the next ten seconds. */
 	public static final Item MEDKIT = register("medkit", Item::new, new Item.Properties().stacksTo(8)
 			.component(DataComponents.CONSUMABLE, Consumable.builder()
@@ -321,6 +322,7 @@ public final class ModItems {
 				output.accept(POUCH_RADIO);
 				output.accept(MEDKIT);
 				output.accept(THERMAL_MONOCULAR);
+				output.accept(AMMO_CRATE);
 			})
 			.build();
 

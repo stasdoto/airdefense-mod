@@ -32,12 +32,12 @@ P = 1.0 / 16
 GEAR_PX = 64
 
 # Russian digital (EMR "tsifra"), Multicam-like blobs, coyote, ranger green, black polymer.
-EMR = dict(camo='pixel', base=0x6B6E4E, colors=(0x4F5A3A, 0x8A8463, 0x2F3426), cell=2, blob=3)
+EMR = dict(camo='pixel', base=0x5F6747, colors=(0x46553A, 0x7F7D5C, 0x2C3324), cell=2, blob=3)
 MC = dict(camo='blobs', base=0x9C8A62, colors=(0x6E6A45, 0x7B5C3E, 0xC4B48A, 0x3F3A2A), blob=6)
 STYLES.update({
     'emr': dict(kind='pixel', **EMR),
     'emr_molle': dict(kind='molle', step=5, tape=2, gap=6, **EMR),
-    'emr_velcro': dict(kind='velcro', base=0x5E6246),
+    'emr_velcro': dict(kind='velcro', base=0x56603F),
     'mc': dict(kind='multicam', **MC),
     'mc_molle': dict(kind='molle', step=5, tape=2, gap=6, **MC),
     'mc_velcro': dict(kind='velcro', base=0x8E7E58),
@@ -58,6 +58,8 @@ STYLES.update({
     'olive_drab': dict(kind='plain', base=0x55583A),
     'tq_red': dict(kind='plain', base=0xA0221C),
     'id_patch': dict(kind='plain', base=0x2E3326),
+    'crate_wood': dict(kind='track', base=0x4F5A34),
+    'stencil': dict(kind='plain', base=0xC9B04A, flat=True),
 })
 
 
@@ -372,6 +374,19 @@ def monocular():
     return m
 
 
+def ammo_crate():
+    """A green-painted wooden ammunition crate (its item icon): planks, a lid, rope handles, a stencilled band."""
+    m = gear_model('ammo_crate', 'olive_drab', tex_width=256, seed=42)
+    g = G(m, m.part('crate'))
+    g.box(-6.0, 6.0, 0.0, 6.0, -4.0, 4.0, 'crate_wood')
+    g.box(-6.3, 6.3, 6.0, 7.2, -4.3, 4.3, 'crate_wood')
+    g.box(-2.2, 2.2, 2.4, 3.6, 4.0, 4.06, 'stencil', faces=('front',))
+    for sx in (-1, 1):
+        g.box(sx * 6.0, sx * 6.5, 3.6, 4.4, -1.8, 1.8, 'strap_tan')
+        g.box(sx * 4.6, sx * 5.4, -0.2, 7.4, -4.4, 4.4, 'steel_dark', faces=('front', 'back', 'top'))
+    return m
+
+
 # ---------------------------------------------------------------------------------------------------------------
 # Item icons: the models themselves, textured, seen from the front and a little above
 
@@ -500,6 +515,7 @@ ICONS_OF = {
     'pouch_medkit': ('pouch_medkit_mc', 28, 18),
     'pouch_radio': ('pouch_radio_mc', 28, 18),
     'thermal_monocular': ('thermal_monocular', 70, 25),
+    'ammo_crate': ('ammo_crate', 30, 28),
 }
 
 
@@ -540,11 +556,11 @@ def main():
     models = all_models()
     layers = []
     atlases = {}
-    for m in models + [monocular()]:
+    for m in models + [monocular(), ammo_crate()]:
         uv, regions, W, H = m.layout()
         img = m.paint_atlas(uv, regions, W, H)
         atlases[m.id] = (m, uv, img)
-        if m.id == 'thermal_monocular':
+        if m.id in ('thermal_monocular', 'ammo_crate'):
             continue
         Image.fromarray(img, 'RGBA').save(os.path.join(TEX, m.id + '.png'), optimize=True)
         layers.append(m.java_layer(uv, W, H))

@@ -1199,6 +1199,22 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			return String.format(java.util.Locale.ROOT, "health 7 -> %.1f, dressed %d, kits left %d", pl.getHealth(),
 					com.stasdoto.airdefense.gear.GearServer.woundsDressed, pl.getInventory().getItem(6).getCount());
 		});
+		// The ammunition crate: rounds for the rifle on the hotbar.
+		String crate = server.computeOnServer(s -> {
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			pl.getInventory().setItem(8, new ItemStack(com.stasdoto.airdefense.registry.ModItems.AMMO_CRATE));
+			pl.getInventory().setSelectedSlot(8);
+			pl.getInventory().getItem(8).getItem().use(s.overworld(), pl, net.minecraft.world.InteractionHand.MAIN_HAND);
+			int rounds = 0;
+			for (int i = 0; i < pl.getInventory().getContainerSize(); i++) {
+				if (pl.getInventory().getItem(i).is(com.stasdoto.airdefense.registry.ModItems.AMMO_545)) {
+					rounds += pl.getInventory().getItem(i).getCount();
+				}
+			}
+			pl.getInventory().setSelectedSlot(0);
+			return "5.45 rounds " + rounds + ", crates left " + pl.getInventory().getItem(8).getCount();
+		});
+		medkit = medkit + "; crate: " + crate;
 		server.runCommand("gamemode creative @a");
 
 		// The radio: a drone sent at a spot 40 blocks off.
@@ -1212,7 +1228,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runCommand("time set 15000");
 		camera(server, x + 0.5, ground, -14.5, 0, 4);
 		ctx.waitTicks(10);
-		server.runOnServer(s -> s.getPlayerList().getPlayers().getFirst().getInventory().setSelectedSlot(1));
+		ctx.getInput().pressKey(o -> o.keyHotbarSlots[1]);
 		ctx.waitTicks(5);
 		ctx.getInput().holdKey(o -> o.keyUse);
 		ctx.waitTicks(25);

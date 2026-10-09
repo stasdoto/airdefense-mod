@@ -974,5 +974,9 @@
   "hud.airdefense.monocular.keys": "%s - magnification",
   "subtitles.airdefense.radio": "Radio crackles",
   "guide.airdefense.page.27": "GEAR\n\nHelmets: 6B47, FAST, FAST with night goggles (N - goggles down / up).\nVests: plate carrier, heavy 6B45 - six pouches each, seen on you.\nPouch on the cursor, right-click the vest - on; empty hand - off.",
-  "guide.airdefense.page.28": "POUCHES\n\nMagazines - quicker reload (15% each, up to three).\nGrenades - B: a grenade without putting the gun away.\nFirst aid - H: dress a wound in 1.5 s.\nRadio - warns of missiles and drones coming at you.\nThermal monocular: hold RMB, Z - 2.5x / 6x."
+  "guide.airdefense.page.28": "POUCHES\n\nMagazines - quicker reload (15% each, up to three).\nGrenades - B: a grenade without putting the gun away.\nFirst aid - H: dress a wound in 1.5 s.\nRadio - warns of missiles and drones coming at you.\nThermal monocular: hold RMB, Z - 2.5x / 6x.",
+  "item.airdefense.ammo_crate": "Ammunition crate",
+  "tooltip.airdefense.ammo_crate": "Open (RMB): three magazines for every gun on your hotbar.",
+  "message.airdefense.ammo_crate.no_guns": "No guns on your hotbar",
+  "message.airdefense.ammo_crate.opened": "Rounds for %s guns taken"
 }
