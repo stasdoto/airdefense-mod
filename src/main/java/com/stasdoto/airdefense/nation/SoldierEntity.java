@@ -82,6 +82,15 @@ public class SoldierEntity extends PathfinderMob {
 	/** The whole villager he was (trades, experience, gossip, homes), for going home as him. */
 	@Nullable
 	private net.minecraft.nbt.CompoundTag villagerTag;
+	/** 1.29: the commander he follows (not kept over a restart), and whether he is his squad's medic. */
+	@Nullable
+	private UUID follow;
+	private boolean medic;
+	/** When he last called for help on the radio. */
+	private long radioAt = -10000;
+	public static int healedOthers;
+	public static int radioCalls;
+	public static int flanked;
 	private int ammo = -1;
 	private int reload;
 	private int cooldown;
@@ -114,7 +123,10 @@ public class SoldierEntity extends PathfinderMob {
 	@Override
 	protected void registerGoals() {
 		goalSelector.addGoal(0, new FloatGoal(this));
+		// 1.29: a medic runs to a wounded comrade even in a fight; a soldier told to follow keeps near his commander.
+		goalSelector.addGoal(0, new MedicGoal(this));
 		goalSelector.addGoal(1, new ShootGoal(this));
+		goalSelector.addGoal(2, new FollowGoal(this));
 		goalSelector.addGoal(3, new OrderGoal(this));
 		goalSelector.addGoal(4, new MoveTowardsRestrictionGoal(this, 1.0));
 		goalSelector.addGoal(6, new WaterAvoidingRandomStrollGoal(this, 0.6));
@@ -201,10 +213,15 @@ public class SoldierEntity extends PathfinderMob {
 		if (marksman || random.nextInt(100) < 25) {
 			com.stasdoto.airdefense.gear.Pouches.attach(vest, com.stasdoto.airdefense.gear.Pouch.RADIO);
 		}
+		// 1.29: about one in six is the squad's medic, with a second first-aid kit on his vest.
+		if (!marksman && !mg && random.nextInt(6) == 0) {
+			com.stasdoto.airdefense.gear.Pouches.attach(vest, com.stasdoto.airdefense.gear.Pouch.MEDKIT);
+			medic = true;
+		}
 		setItemSlot(EquipmentSlot.HEAD, helmet);
 		setItemSlot(EquipmentSlot.CHEST, vest);
 		grenades = 1 + 2 * com.stasdoto.airdefense.gear.Pouches.count(vest, com.stasdoto.airdefense.gear.Pouch.GRENADE);
-		medkits = com.stasdoto.airdefense.gear.Pouches.count(vest, com.stasdoto.airdefense.gear.Pouch.MEDKIT);
+		medkits = com.stasdoto.airdefense.gear.Pouches.count(vest, com.stasdoto.airdefense.gear.Pouch.MEDKIT) * (medic ? 3 : 1);
 	}
 
 	/** Weapons from the town's arsenal (1.23): a machine gun or a marksman's rifle instead of what he got. */
@@ -284,6 +301,30 @@ public class SoldierEntity extends PathfinderMob {
 	@Nullable
 	public UUID originId() {
 		return originId;
+	}
+
+	/** 1.29: follow this player (null: stop following). */
+	public void follow(@Nullable Player p) {
+		follow = p == null ? null : p.getUUID();
+		if (p != null) {
+			order = null;
+			clearHome();
+		}
+	}
+
+	public boolean following(Player p) {
+		return follow != null && follow.equals(p.getUUID());
+	}
+
+	public boolean medic() {
+		return medic;
+	}
+
+	public void setMedic(boolean medic) {
+		this.medic = medic;
+		if (medic) {
+			medkits = Math.max(medkits, 4);
+		}
 	}
 
 	/** Go there and hold the place (null = back to the home village). */
@@ -371,6 +412,20 @@ public class SoldierEntity extends PathfinderMob {
 					s -> s != this && s.isFriend(this) && s.getTarget() == null)) {
 				s.setTarget(attacker);
 			}
+			// 1.29: with a radio he calls for help - every free comrade within 64 blocks comes over.
+			long now = level.getGameTime();
+			if (com.stasdoto.airdefense.gear.Pouches.worn(this, com.stasdoto.airdefense.gear.Pouch.RADIO) > 0 && now - radioAt > 600) {
+				radioAt = now;
+				radioCalls++;
+				level.playSound(null, getX(), getEyeY(), getZ(), com.stasdoto.airdefense.registry.ModSounds.RADIO,
+						net.minecraft.sounds.SoundSource.HOSTILE, 0.6f, 1.0f);
+				BlockPos here = blockPosition();
+				for (SoldierEntity s : level.getEntitiesOfClass(SoldierEntity.class, getBoundingBox().inflate(64),
+						s -> s != this && s.isFriend(this) && s.getTarget() == null && s.follow == null && s.role() != GUARD)) {
+					s.order = here;
+					s.clearHome();
+				}
+			}
 			if (attacker instanceof Player p) {
 				Nations.offended(level, this, p);
 			}
@@ -451,6 +506,10 @@ public class SoldierEntity extends PathfinderMob {
 			return;
 		}
 		float spread = role() == BANDIT ? 3.0f : role() == REBEL ? 2.5f : 1.4f;
+		// 1.29: under fire (pinned down) he shoots wide.
+		if (hurtTime > 0 || tickCount - getLastHurtByMobTimestamp() < 40) {
+			spread *= 1.7f;
+		}
 		Vec3 dir = cone(straight, spread + gun.aimSpread);
 		GunServer.shoot(level, this, gun, eye, dir, GunServer.muzzle(this, straight), ++round);
 		ammo--;
@@ -548,6 +607,9 @@ public class SoldierEntity extends PathfinderMob {
 		output.putInt("look", look());
 		output.putInt("country", country);
 		output.putInt("home", home);
+		output.putInt("grenades", grenades);
+		output.putInt("medkits", medkits);
+		output.putBoolean("medic", medic);
 		if (order != null) {
 			output.store("order", BlockPos.CODEC, order);
 		}
@@ -570,6 +632,9 @@ public class SoldierEntity extends PathfinderMob {
 		entityData.set(DATA_LOOK, input.getIntOr("look", 0));
 		country = input.getIntOr("country", -1);
 		home = input.getIntOr("home", -1);
+		grenades = input.getIntOr("grenades", 2);
+		medkits = input.getIntOr("medkits", 0);
+		medic = input.getBooleanOr("medic", false);
 		order = input.read("order", BlockPos.CODEC).orElse(null);
 		origin = input.read("origin", VillagerData.CODEC).orElse(null);
 		originId = input.read("origin_id", UUIDUtil.CODEC).orElse(null);
@@ -597,6 +662,10 @@ public class SoldierEntity extends PathfinderMob {
 	static final class ShootGoal extends Goal {
 		private final SoldierEntity s;
 		private int repath;
+		@Nullable
+		private BlockPos flankTo;
+		private int flankTimer;
+		private int flankCheck;
 		@Nullable
 		private BlockPos cover;
 		private int coverSearch;
@@ -701,6 +770,35 @@ public class SoldierEntity extends PathfinderMob {
 				}
 				return;
 			}
+			// 1.29: an enemy dug in out of sight - every other man works round his flank instead of walking at him.
+			if (flankTo != null) {
+				if (--flankTimer <= 0 || see || s.blockPosition().distSqr(flankTo) < 4) {
+					flankTo = null;
+				} else {
+					if (--repath <= 0) {
+						repath = 10;
+						s.getNavigation().moveTo(flankTo.getX() + 0.5, flankTo.getY(), flankTo.getZ() + 0.5, 1.15);
+					}
+					return;
+				}
+			}
+			if (!see && d > 10 && d < 45 && (s.getId() & 1) == 1 && --flankCheck <= 0) {
+				flankCheck = 120;
+				Vec3 to = t.position().subtract(s.position()).multiply(1, 0, 1);
+				if (to.lengthSqr() > 1e-4) {
+					to = to.normalize();
+					Vec3 side = new Vec3(-to.z, 0, to.x).scale((s.getId() & 2) == 0 ? 1 : -1);
+					Vec3 at = t.position().add(side.scale(14)).subtract(to.scale(3));
+					int fy = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mth.floor(at.x), Mth.floor(at.z));
+					if (Math.abs(fy - s.getY()) < 6) {
+						flankTo = new BlockPos(Mth.floor(at.x), fy, Mth.floor(at.z));
+						flankTimer = 160;
+						repath = 0;
+						flanked++;
+						return;
+					}
+				}
+			}
 			if (!see || d > good) {
 				if (--repath <= 0) {
 					repath = 10;
@@ -792,6 +890,140 @@ public class SoldierEntity extends PathfinderMob {
 	}
 
 	/** Marching orders: there in legs of ~30 blocks (long paths are not found in one go), then hold the spot. */
+	/** 1.29: the medic: to a wounded comrade within 16 blocks, a field dressing, back to the fight. */
+	static final class MedicGoal extends Goal {
+		private final SoldierEntity s;
+		@Nullable
+		private SoldierEntity patient;
+		private int timer;
+		private int scan;
+
+		MedicGoal(SoldierEntity s) {
+			this.s = s;
+			setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
+		}
+
+		@Override
+		public boolean canUse() {
+			if (!s.medic || s.medkits <= 0 || --scan > 0) {
+				return false;
+			}
+			scan = 20;
+			patient = null;
+			double best = Double.MAX_VALUE;
+			for (SoldierEntity o : s.level().getEntitiesOfClass(SoldierEntity.class, s.getBoundingBox().inflate(16),
+					o -> o != s && o.isAlive() && o.isFriend(s) && o.getHealth() < o.getMaxHealth() * 0.6f)) {
+				double d = o.distanceToSqr(s);
+				if (d < best) {
+					best = d;
+					patient = o;
+				}
+			}
+			return patient != null;
+		}
+
+		@Override
+		public boolean canContinueToUse() {
+			return patient != null && patient.isAlive() && s.medkits > 0 && timer < 200 && patient.getHealth() < patient.getMaxHealth() * 0.9f;
+		}
+
+		@Override
+		public void start() {
+			timer = 0;
+		}
+
+		@Override
+		public void stop() {
+			patient = null;
+			s.getNavigation().stop();
+		}
+
+		@Override
+		public void tick() {
+			timer++;
+			if (patient == null) {
+				return;
+			}
+			s.getLookControl().setLookAt(patient, 30f, 30f);
+			if (s.distanceToSqr(patient) > 2.5 * 2.5) {
+				if (timer % 10 == 1) {
+					s.getNavigation().moveTo(patient, 1.25);
+				}
+				return;
+			}
+			s.getNavigation().stop();
+			s.medkits--;
+			patient.heal(10.0f);
+			patient.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.REGENERATION, 200, 0));
+			s.level().playSound(null, patient.getX(), patient.getY(), patient.getZ(), com.stasdoto.airdefense.registry.ModSounds.MEDKIT,
+					net.minecraft.sounds.SoundSource.HOSTILE, 0.8f, 1.0f);
+			healedOthers++;
+			patient = null;
+		}
+	}
+
+	/** 1.29: following the commander who told him to: keeps a few steps behind, catches up if left far behind. */
+	static final class FollowGoal extends Goal {
+		private final SoldierEntity s;
+		private int repath;
+
+		FollowGoal(SoldierEntity s) {
+			this.s = s;
+			setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
+		}
+
+		@Nullable
+		private Player leader() {
+			if (s.follow == null || !(s.level() instanceof ServerLevel sl)) {
+				return null;
+			}
+			Player p = sl.getPlayerByUUID(s.follow);
+			return p != null && p.isAlive() && !p.isSpectator() ? p : null;
+		}
+
+		@Override
+		public boolean canUse() {
+			Player p = leader();
+			return p != null && s.getTarget() == null && s.distanceToSqr(p) > 5 * 5;
+		}
+
+		@Override
+		public boolean canContinueToUse() {
+			Player p = leader();
+			return p != null && s.getTarget() == null && s.distanceToSqr(p) > 3 * 3;
+		}
+
+		@Override
+		public void start() {
+			repath = 0;
+		}
+
+		@Override
+		public void stop() {
+			s.getNavigation().stop();
+		}
+
+		@Override
+		public void tick() {
+			Player p = leader();
+			if (p == null) {
+				return;
+			}
+			s.getLookControl().setLookAt(p, 20f, 20f);
+			if (s.distanceToSqr(p) > 40 * 40 && p.onGround()) {
+				// Left far behind: he catches up (as a dog would).
+				Vec3 back = p.position().subtract(p.getLookAngle().multiply(1, 0, 1).normalize().scale(3));
+				s.teleportTo(back.x, p.getY(), back.z);
+				s.getNavigation().stop();
+				return;
+			}
+			if (--repath <= 0) {
+				repath = 10;
+				s.getNavigation().moveTo(p, s.distanceToSqr(p) > 12 * 12 ? 1.25 : 1.0);
+			}
+		}
+	}
+
 	static final class OrderGoal extends Goal {
 		private final SoldierEntity s;
 		private int repath;

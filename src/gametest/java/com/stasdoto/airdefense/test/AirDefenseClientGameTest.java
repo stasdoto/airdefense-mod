@@ -210,6 +210,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("port")) {
 				port(ctx, server);
 			}
+			if (scene("life")) {
+				life(ctx, server);
+			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
@@ -1682,6 +1685,126 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(20);
 		shot(ctx, server, new float[]{cx + 0.5f, base + 30, wz0 + 70, 180, 25}, "p5_port_night", 40);
 		server.runCommand("time set 5000");
+	}
+
+	/** 1.29: talking to a townsman and to one's own soldier (follow me), a medic at work, a small fight (cover, flanks, radio). */
+	private void life(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 90000;
+		server.runCommand("gamemode creative @a");
+		server.runCommand("time set 1000");
+		camera(server, x + 0.5, ground, -6.5, 0, 5);
+		ctx.waitTicks(40);
+		int[] ids = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var country = com.stasdoto.airdefense.nation.Nations.countryOf(l, p, pl, true);
+			var v = net.minecraft.world.entity.EntityTypes.VILLAGER.create(l, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+			v.snapTo(x - 1.5, ground, -2.5, 180f, 0f);
+			v.setNoAi(true);
+			l.addFreshEntity(v);
+			var so = com.stasdoto.airdefense.nation.SoldierEntity.create(l, com.stasdoto.airdefense.nation.SoldierEntity.SOLDIER, country.id, 5, -1,
+					new Vec3(x + 2.5, ground, -2.5), 7);
+			l.addFreshEntity(so);
+			return new int[]{v.getId(), so.getId(), country.id};
+		});
+		// The townsman: hello, then about the town.
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			com.stasdoto.airdefense.nation.Dialogue.open(l, s.getPlayerList().getPlayers().getFirst(), (net.minecraft.world.entity.LivingEntity) l.getEntity(ids[0]));
+		});
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("l1_talk_townsman");
+		ctx.runOnClient(mc -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+				new com.stasdoto.airdefense.nation.DialogueActionPayload(ids[0], com.stasdoto.airdefense.nation.Dialogue.HOW)));
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("l2_talk_how");
+		String screen = ctx.computeOnClient(mc -> mc.gui.screen() instanceof com.stasdoto.airdefense.client.nation.DialogueScreen d
+				? d.talk().name() + " / " + d.talk().title().getString() + " / " + d.talk().speech().getString() + " / options " + d.talk().options() : "no screen");
+		ctx.runOnClient(mc -> mc.gui.setScreen(null));
+		// One's own soldier: follow me, then walk away from him.
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			com.stasdoto.airdefense.nation.Dialogue.open(l, s.getPlayerList().getPlayers().getFirst(), (net.minecraft.world.entity.LivingEntity) l.getEntity(ids[1]));
+		});
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("l3_talk_soldier");
+		ctx.runOnClient(mc -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+				new com.stasdoto.airdefense.nation.DialogueActionPayload(ids[1], com.stasdoto.airdefense.nation.Dialogue.FOLLOW)));
+		ctx.waitTicks(10);
+		ctx.runOnClient(mc -> mc.gui.setScreen(null));
+		server.runCommand("gamemode survival @a");
+		camera(server, x + 0.5, ground, 20.5, 180, 5);
+		ctx.waitTicks(160);
+		double follow = server.computeOnServer(s -> {
+			var e = s.overworld().getEntity(ids[1]);
+			return e == null ? -1 : e.distanceTo(s.getPlayerList().getPlayers().getFirst());
+		});
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_BACK));
+		ctx.waitTicks(5);
+		ctx.takeScreenshot("l4_soldier_follows");
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
+		server.runCommand("gamemode creative @a");
+		// A medic and a wounded comrade.
+		int healedBefore = server.computeOnServer(s -> com.stasdoto.airdefense.nation.SoldierEntity.healedOthers);
+		float[] wounded = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var m = com.stasdoto.airdefense.nation.SoldierEntity.create(l, com.stasdoto.airdefense.nation.SoldierEntity.SOLDIER, ids[2], 5, -1,
+					new Vec3(x + 10.5, ground, 30.5), 9);
+			m.setMedic(true);
+			l.addFreshEntity(m);
+			var w = com.stasdoto.airdefense.nation.SoldierEntity.create(l, com.stasdoto.airdefense.nation.SoldierEntity.SOLDIER, ids[2], 5, -1,
+					new Vec3(x + 18.5, ground, 30.5), 11);
+			l.addFreshEntity(w);
+			w.setHealth(6f);
+			w.setNoAi(true);
+			return new float[]{w.getId(), w.getHealth()};
+		});
+		ctx.waitTicks(120);
+		String medic = server.computeOnServer(s -> {
+			var w = (net.minecraft.world.entity.LivingEntity) s.overworld().getEntity((int) wounded[0]);
+			return String.format(java.util.Locale.ROOT, "wounded %.1f -> %.1f, healed %d", wounded[1], w == null ? -1f : w.getHealth(),
+					com.stasdoto.airdefense.nation.SoldierEntity.healedOthers - healedBefore);
+		});
+		// A small fight: five soldiers against bandits dug in behind a wall.
+		int fx = x + 300;
+		camera(server, fx + 0.5, ground + 12, -20.5, 0, 30);
+		ctx.waitTicks(40);
+		int[] counts0 = server.computeOnServer(s -> new int[]{com.stasdoto.airdefense.nation.SoldierEntity.tookCover,
+				com.stasdoto.airdefense.nation.SoldierEntity.flanked, com.stasdoto.airdefense.nation.SoldierEntity.radioCalls});
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			for (int i = 0; i < 9; i++) {
+				l.setBlockAndUpdate(new BlockPos(fx - 4 + i, ground, 22), Blocks.STONE_BRICKS.defaultBlockState());
+				l.setBlockAndUpdate(new BlockPos(fx - 4 + i, ground + 1, 22), Blocks.STONE_BRICKS.defaultBlockState());
+			}
+			for (int i = 0; i < 5; i++) {
+				var so = com.stasdoto.airdefense.nation.SoldierEntity.create(l, com.stasdoto.airdefense.nation.SoldierEntity.SOLDIER, ids[2], 5, -1,
+						new Vec3(fx - 4 + i * 2 + 0.5, ground, -4.5), 20 + i);
+				l.addFreshEntity(so);
+			}
+			for (int i = 0; i < 3; i++) {
+				var b = com.stasdoto.airdefense.nation.SoldierEntity.create(l, com.stasdoto.airdefense.nation.SoldierEntity.BANDIT, -1, -1, -1,
+						new Vec3(fx - 2 + i * 2 + 0.5, ground, 24.5), 40 + i);
+				l.addFreshEntity(b);
+			}
+		});
+		ctx.waitTicks(200);
+		ctx.takeScreenshot("l5_fight");
+		ctx.waitTicks(200);
+		String fight = server.computeOnServer(s -> {
+			int alive = s.overworld().getEntitiesOfClass(com.stasdoto.airdefense.nation.SoldierEntity.class,
+					new net.minecraft.world.phys.AABB(fx - 60, ground - 10, -60, fx + 60, ground + 20, 60),
+					e -> e.isAlive() && e.role() == com.stasdoto.airdefense.nation.SoldierEntity.BANDIT).size();
+			return "bandits left " + alive + ", took cover " + (com.stasdoto.airdefense.nation.SoldierEntity.tookCover - counts0[0]) + ", flanked "
+					+ (com.stasdoto.airdefense.nation.SoldierEntity.flanked - counts0[1]) + ", radio calls "
+					+ (com.stasdoto.airdefense.nation.SoldierEntity.radioCalls - counts0[2]);
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT life_talk: {}; opened {} answered {}", screen,
+				server.computeOnServer(s -> com.stasdoto.airdefense.nation.Dialogue.opened), server.computeOnServer(s -> com.stasdoto.airdefense.nation.Dialogue.answered));
+		AirDefense.LOGGER.info("[airdefense-test] RESULT life_army: follow distance {}; medic: {}; fight: {}", String.format(java.util.Locale.ROOT, "%.1f", follow),
+				medic, fight);
+		server.runCommand("gamemode spectator @a");
 	}
 
 	/** The flat world's terrain with a sea dug into it (see {@link #port}). */

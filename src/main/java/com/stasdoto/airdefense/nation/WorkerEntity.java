@@ -122,6 +122,8 @@ public class WorkerEntity extends PathfinderMob {
 		goalSelector.addGoal(1, new PanicGoal(this, 0.75));
 		goalSelector.addGoal(2, new AvoidEntityGoal<>(this, Monster.class, 10f, 0.6, 0.75));
 		goalSelector.addGoal(2, new AvoidEntityGoal<>(this, SoldierEntity.class, 14f, 0.6, 0.75, e -> e instanceof SoldierEntity s && s.role() == SoldierEntity.BANDIT));
+		// 1.29: after dark home to bed; work again in the morning.
+		goalSelector.addGoal(3, new NightGoal(this));
 		goalSelector.addGoal(3, new WorkGoal(this));
 		goalSelector.addGoal(5, new MoveTowardsRestrictionGoal(this, 0.5));
 		goalSelector.addGoal(6, new WaterAvoidingRandomStrollGoal(this, 0.4));
@@ -331,6 +333,82 @@ public class WorkerEntity extends PathfinderMob {
 		};
 	}
 
+	/** 1.29: the night: home to a free bed in the town and asleep till morning (a builder on a building put up for free works on). */
+	static final class NightGoal extends Goal {
+		private final WorkerEntity w;
+		@Nullable
+		private BlockPos bed;
+		private int repath;
+		private int walking;
+		public static int asleep;
+
+		NightGoal(WorkerEntity w) {
+			this.w = w;
+			setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK, Flag.JUMP));
+		}
+
+		static boolean resting(WorkerEntity w, Settlement s) {
+			if (!w.level().isDarkOutside()) {
+				return false;
+			}
+			Building b = s.eco.active();
+			return !(w.job() == BUILD && b != null && b.free);
+		}
+
+		@Override
+		public boolean canUse() {
+			Settlement s = w.settlement();
+			return s != null && resting(w, s);
+		}
+
+		@Override
+		public boolean canContinueToUse() {
+			return canUse();
+		}
+
+		@Override
+		public void start() {
+			repath = 0;
+			walking = 0;
+			bed = ((ServerLevel) w.level()).getPoiManager().findClosest(h -> h.is(net.minecraft.world.entity.ai.village.poi.PoiTypes.HOME),
+					w.blockPosition(), 48, net.minecraft.world.entity.ai.village.poi.PoiManager.Occupancy.ANY).orElse(null);
+		}
+
+		@Override
+		public void stop() {
+			if (w.isSleeping()) {
+				w.stopSleeping();
+			}
+			w.getNavigation().stop();
+		}
+
+		@Override
+		public void tick() {
+			if (w.isSleeping()) {
+				return;
+			}
+			Settlement s = w.settlement();
+			BlockPos to = bed != null ? bed : s != null ? s.flag : w.blockPosition();
+			if (w.blockPosition().distSqr(to) <= 2 * 2) {
+				w.getNavigation().stop();
+				if (bed != null && w.level().getBlockState(bed).getBlock() instanceof net.minecraft.world.level.block.BedBlock) {
+					w.startSleeping(bed);
+					asleep++;
+				}
+				return;
+			}
+			// A bed he cannot get to (up a ladder): the night by the flag instead.
+			if (++walking > 600 && bed != null) {
+				bed = null;
+				walking = 0;
+			}
+			if (--repath <= 0) {
+				repath = 20;
+				w.getNavigation().moveTo(to.getX() + 0.5, to.getY(), to.getZ() + 0.5, 0.6);
+			}
+		}
+	}
+
 	/**
 	 * Gatherers: out to a tree or rock, work it, back with the load. Builders: to the building going up, and work
 	 * around it. With nothing to do (a builder without a building), the goal gives way to strolling about the village.
@@ -361,6 +439,9 @@ public class WorkerEntity extends PathfinderMob {
 			}
 			Settlement s = w.settlement();
 			if (s == null) {
+				return false;
+			}
+			if (NightGoal.resting(w, s)) {
 				return false;
 			}
 			if (w.job() == BUILD) {

@@ -27,12 +27,25 @@ public final class NationNet {
 		PayloadTypeRegistry.clientboundPlay().register(NationMapPayload.TYPE, NationMapPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(VillageEconomyPayload.TYPE, VillageEconomyPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(NationActionPayload.TYPE, (payload, context) -> handle(context.player(), payload));
+		// 1.29: talking to people.
+		PayloadTypeRegistry.clientboundPlay().register(DialoguePayload.TYPE, DialoguePayload.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(DialogueActionPayload.TYPE, DialogueActionPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(DialogueActionPayload.TYPE, (payload, context) -> Dialogue.handle(context.player(), payload));
 		// Shift + right click on a villager: the village's affairs (trading is a plain right click).
 		UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
 			if (entity instanceof Villager villager && !player.isShiftKeyDown() && !player.isSpectator()
 					&& Economy.foodPoints(player.getItemInHand(hand)) > 0) {
 				if (player instanceof ServerPlayer sp && level instanceof ServerLevel sl) {
 					Economy.feed(sl, sp, villager, player.getItemInHand(hand));
+				}
+				return InteractionResult.SUCCESS;
+			}
+			// 1.29: a plain right click (with nothing that does something else in hand) starts a talk with anyone in a town.
+			if (!player.isShiftKeyDown() && !player.isSpectator() && hand == net.minecraft.world.InteractionHand.MAIN_HAND && Dialogue.talks(entity)
+					&& !(player.getItemInHand(hand).getItem() instanceof com.stasdoto.airdefense.weapon.GunItem)
+					&& !player.getItemInHand(hand).is(net.minecraft.world.item.Items.NAME_TAG) && !player.getItemInHand(hand).is(net.minecraft.world.item.Items.LEAD)) {
+				if (player instanceof ServerPlayer sp && level instanceof ServerLevel sl) {
+					Dialogue.open(sl, sp, (net.minecraft.world.entity.LivingEntity) entity);
 				}
 				return InteractionResult.SUCCESS;
 			}

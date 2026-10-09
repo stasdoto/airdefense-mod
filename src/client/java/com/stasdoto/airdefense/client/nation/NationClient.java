@@ -33,6 +33,15 @@ public final class NationClient {
 				s.update(payload);
 			}
 		});
+		// 1.29: a talk with someone in a town.
+		ClientPlayNetworking.registerGlobalReceiver(com.stasdoto.airdefense.nation.DialoguePayload.TYPE, (payload, context) -> {
+			Minecraft mc = context.client();
+			if (mc.gui.screen() instanceof DialogueScreen d && (d.entity() == payload.entity() || !payload.open())) {
+				d.update(payload);
+			} else if (payload.open()) {
+				mc.gui.setScreen(new DialogueScreen(payload));
+			}
+		});
 		ClientPlayNetworking.registerGlobalReceiver(SettlementInfoPayload.TYPE, (payload, context) -> {
 			Minecraft mc = context.client();
 			if (mc.gui.screen() instanceof SettlementScreen s && s.id() == payload.id()) {
