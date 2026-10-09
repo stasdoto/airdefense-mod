@@ -82,7 +82,7 @@ public class MissileRenderer extends EntityRenderer<MissileEntity, MissileRender
 		poseStack.mulPose(new Matrix4f().rotation(Axis.XP.rotationDegrees(-state.pitch)));
 		poseStack.scale(state.scale, state.scale, state.scale);
 		// Through a thermal sight a flying drone or missile glows (its engine, its motor).
-		boolean hot = com.stasdoto.airdefense.client.vehicle.GunnerSight.thermalOn();
+		boolean hot = com.stasdoto.airdefense.client.vehicle.ThermalView.wanted();
 		state.item.submit(poseStack, collector, hot ? 0xF000F0 : state.lightCoords, hot ? OverlayTexture.pack(1.0f, false) : OverlayTexture.NO_OVERLAY,
 				state.outlineColor);
 		poseStack.popPose();

@@ -129,7 +129,7 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		boolean near = !s.wreck && s.distanceToCameraSq < INSIDE_RANGE * INSIDE_RANGE;
 		int light = s.lightCoords;
 		int overlay = OverlayTexture.NO_OVERLAY;
-		if (GunnerSight.thermalOn() && !s.wreck) {
+		if (ThermalView.wanted() && !s.wreck) {
 			// Through the thermal sight a vehicle shows warm (its engine, its tracks), a burnt-out one cold.
 			light = 0xF000F0;
 			overlay = OverlayTexture.pack(0.78f, false);

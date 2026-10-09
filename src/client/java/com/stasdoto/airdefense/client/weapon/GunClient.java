@@ -467,7 +467,10 @@ public final class GunClient {
 		}
 		int w = g.guiWidth();
 		int h = g.guiHeight();
-		if (NvgItem.isOn(p.getItemBySlot(EquipmentSlot.HEAD)) && mc.options.getCameraType().isFirstPerson()) {
+		// Not over a thermal picture (the hand-held imager, a vehicle's sight): that has its own eyepiece.
+		if (NvgItem.isOn(p.getItemBySlot(EquipmentSlot.HEAD)) && mc.options.getCameraType().isFirstPerson()
+				&& !com.stasdoto.airdefense.client.gear.MonocularView.active()
+				&& com.stasdoto.airdefense.client.vehicle.GunnerSight.active() == com.stasdoto.airdefense.client.vehicle.GunnerSight.Kind.NONE) {
 			nightVision(g, w, h);
 		}
 		if (scoped()) {
