@@ -1319,10 +1319,11 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		int apache = spawnVehicle(server, VehicleType.AH64, lx, 0, 30);
 		int warthog = spawnVehicle(server, VehicleType.A10, lx + 24, 0, 30);
 		ctx.waitTicks(30);
-		look(server, lx - 9, ground + 3.5, 11, lx, ground + 2, 0);
+		// From the front quarter (both face yaw 30).
+		look(server, lx + 4, ground + 3.5, 12.5, lx, ground + 1.8, 0);
 		ctx.waitTicks(20);
 		ctx.takeScreenshot("w0_ah64");
-		look(server, lx + 12, ground + 5, 16, lx + 24, ground + 1.5, 0);
+		look(server, lx + 28.5, ground + 5, 16.5, lx + 24, ground + 1.5, 0);
 		ctx.waitTicks(20);
 		ctx.takeScreenshot("w0b_a10");
 		server.runOnServer(s -> forVehicles(s.overworld(), List.of(apache, warthog), Entity::discard));
