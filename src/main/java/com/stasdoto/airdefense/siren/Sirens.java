@@ -233,6 +233,9 @@ public final class Sirens extends SavedData {
 		if (!pending.isEmpty()) {
 			placePending(level);
 		}
+		if (++thinClock % 10 == 0) {
+			thinOut(level);
+		}
 		boolean changed = false;
 		var it = autoUntil.entrySet().iterator();
 		while (it.hasNext()) {
@@ -329,6 +332,64 @@ public final class Sirens extends SavedData {
 		get(level.getServer()).plan(center.getX() + 3, center.getY(), center.getZ() + 2, Direction.SOUTH, NEAR_CENTRE);
 	}
 
+	/** For the tests: sirens taken down as one too many. */
+	public static int doubled;
+	/** Seconds counted for {@link #thinOut} (every ten). */
+	private int thinClock;
+
+	/** A siren already stands within this many blocks of the place (along the street): no second one there. */
+	private boolean sirenNear(BlockPos p, int r) {
+		for (long k : known) {
+			BlockPos q = BlockPos.of(k);
+			if (Math.abs(q.getX() - p.getX()) <= r && Math.abs(q.getZ() - p.getZ()) <= r && Math.abs(q.getY() - p.getY()) <= SirenItem.MAST + 4) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 1.32.2: sirens in a row - a town founded again in older worlds put up its sirens again beside the ones that stood
+	 * there. Of sirens standing within a few blocks of each other (loaded, nobody right by them) one stays: the others
+	 * come down with their masts.
+	 */
+	private void thinOut(ServerLevel level) {
+		List<BlockPos> all = new ArrayList<>();
+		for (long k : known) {
+			BlockPos q = BlockPos.of(k);
+			if (level.isLoaded(q)) {
+				all.add(q);
+			}
+		}
+		all.sort(java.util.Comparator.comparingLong(BlockPos::asLong));
+		java.util.Set<BlockPos> kept = new java.util.HashSet<>();
+		for (BlockPos q : all) {
+			boolean twin = false;
+			for (BlockPos o : kept) {
+				if (Math.abs(o.getX() - q.getX()) <= 6 && Math.abs(o.getZ() - q.getZ()) <= 6 && Math.abs(o.getY() - q.getY()) <= 4) {
+					twin = true;
+					break;
+				}
+			}
+			if (!twin || level.getNearestPlayer(q.getX() + 0.5, q.getY(), q.getZ() + 0.5, 12, false) != null) {
+				kept.add(q);
+				continue;
+			}
+			if (level.getBlockState(q).getBlock() instanceof SirenBlock) {
+				level.setBlock(q, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+			}
+			for (int i = 1; i <= SirenItem.MAST; i++) {
+				BlockPos m = q.below(i);
+				if (level.getBlockState(m).getBlock() instanceof SirenMastBlock) {
+					level.setBlock(m, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+				}
+			}
+			known.remove(q.asLong());
+			doubled++;
+			setDirty();
+		}
+	}
+
 	/** Puts up the planned sirens whose place is loaded (a few each second). */
 	private void placePending(ServerLevel level) {
 		int budget = 4;
@@ -344,6 +405,10 @@ public final class Sirens extends SavedData {
 			setDirty();
 			Direction facing = Direction.from2DDataValue((int) (e.getValue() & 0xFF));
 			int how = (int) (e.getValue() >> 8);
+			if (sirenNear(p, 8)) {
+				// One stands here already (a town founded twice).
+				continue;
+			}
 			BlockPos at = placeAt(level, p, facing, how);
 			if (at != null) {
 				// The siren six metres up on its mast, like the ones in real towns.

@@ -181,7 +181,7 @@ public final class Ports {
 	/** 1.33: the port of a town (planned cities only; null inland, or when its city is not planned yet). */
 	@Nullable
 	public static Port of(net.minecraft.server.level.ServerLevel level, Settlement s) {
-		if (s.city < 0) {
+		if (!s.isCity()) {
 			return null;
 		}
 		Cities.City c = Cities.plannedCityAt(level.getSeed(), s.center.getX(), s.center.getZ(), 400);

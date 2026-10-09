@@ -200,10 +200,10 @@ public final class Arsenals extends SavedData {
 			a = new Arsenal(s.id);
 			Country c = p.country(s.country);
 			boolean east = east(s.country);
-			boolean capital = c != null && c.capital == s.id && s.city >= 0;
+			boolean capital = c != null && c.capital == s.id && s.isCity();
 			List<VehicleType> kit = new ArrayList<>();
 			Random r = new Random(s.id * 7919L);
-			if (s.city >= 0 && capital) {
+			if (s.isCity() && capital) {
 				kit.addAll(east ? List.of(VehicleType.S300, VehicleType.BUK, VehicleType.PANTSIR, VehicleType.TOR)
 						: List.of(VehicleType.PATRIOT, VehicleType.IRIS_T, VehicleType.NASAMS, VehicleType.GEPARD));
 				// A radar station: the capital's batteries see further and are not fooled by decoys.
@@ -217,7 +217,7 @@ public final class Arsenals extends SavedData {
 				if (east) {
 					kit.add(VehicleType.TOS1);
 				}
-			} else if (s.city >= 0) {
+			} else if (s.isCity()) {
 				kit.add(east ? (r.nextBoolean() ? VehicleType.BUK : VehicleType.TOR) : (r.nextBoolean() ? VehicleType.NASAMS : VehicleType.IRIS_T));
 				kit.add(east ? VehicleType.PANTSIR : VehicleType.GEPARD);
 				kit.add(east ? (r.nextBoolean() ? VehicleType.ISKANDER : VehicleType.SHAHED) : VehicleType.HIMARS);
@@ -333,10 +333,14 @@ public final class Arsenals extends SavedData {
 		long sec = now / 20;
 		Politics p = Politics.get(level.getServer());
 		Arsenals a = get(level.getServer());
+		// 1.32.2: the arsenal of a town that is no more goes (its vehicles are leftovers then, cleared away).
+		if (a.arsenals.keySet().removeIf(id -> !p.settlements.containsKey(id))) {
+			a.setDirty();
+		}
 		for (Settlement s : p.settlements.values()) {
 			Arsenal ar = a.of(p, s);
 			// (Looked at once a player comes within a few hundred blocks: finding a port reads the terrain.)
-			if (s.city >= 0 && !NAVY_CHECKED.contains(s.id) && level.getNearestPlayer(s.center.getX(), s.center.getY(), s.center.getZ(), 700, pl -> true) != null) {
+			if (s.isCity() && !NAVY_CHECKED.contains(s.id) && level.getNearestPlayer(s.center.getX(), s.center.getY(), s.center.getZ(), 700, pl -> true) != null) {
 				NAVY_CHECKED.add(s.id);
 				a.navy(level, p, s, ar);
 			}
@@ -433,7 +437,7 @@ public final class Arsenals extends SavedData {
 	private static BlockPos findSpot(ServerLevel level, Settlement s, int index, boolean launcher) {
 		Cities.Terrain t = Cities.terrain(level);
 		long seed = level.getSeed();
-		if (s.city >= 0) {
+		if (s.isCity()) {
 			Cities.City c = Cities.plannedCityAt(seed, s.center.getX(), s.center.getZ(), 400);
 			if (c != null) {
 				if (launcher) {
@@ -490,9 +494,66 @@ public final class Arsenals extends SavedData {
 		return new BlockPos(s.center.getX() + (int) Math.round(Math.cos(a) * r), s.center.getY(), s.center.getZ() + (int) Math.round(Math.sin(a) * r));
 	}
 
+	/** For the tests: leftover vehicles cleared away, and taken over by a town's unit still without its vehicle. */
+	public static int sweptVehicles;
+	public static int adoptedVehicles;
+
+	/**
+	 * 1.32.2: the leftovers round a town - garrison vehicles that no unit of any town's arsenal owns (a vehicle not
+	 * found in time and made anew; an attacker's column parked for good in older versions). A unit of this town still
+	 * without its vehicle takes one of its kind; the rest go, unless a player stands right by them. They had piled up
+	 * in old worlds by the dozen, with the lag that goes with it.
+	 */
+	private void sweep(ServerLevel level, Politics p, Settlement s, Arsenal ar) {
+		java.util.Set<UUID> claimed = new java.util.HashSet<>();
+		for (Arsenal a : arsenals.values()) {
+			for (Unit u : a.units) {
+				if (u.entity != null) {
+					claimed.add(u.entity);
+				}
+			}
+		}
+		int reach = s.radius + 140;
+		AABB box = new AABB(s.center).inflate(reach, 96, reach);
+		for (VehicleEntity v : level.getEntitiesOfClass(VehicleEntity.class, box, v -> v.isAlive() && v.garrison && v.cargoDelivery == 0
+				&& !v.driving() && v.troops == 0 && !v.leaving() && !v.isVehicle())) {
+			if (claimed.contains(v.getUUID())) {
+				continue;
+			}
+			Unit free = null;
+			for (Unit u : ar.units) {
+				if (!u.lost && u.type == v.getVehicleType() && (u.entity == null || !(level.getEntity(u.entity) instanceof VehicleEntity))) {
+					free = u;
+					break;
+				}
+			}
+			if (free != null) {
+				if (free.entity != null) {
+					MISSING.remove(free.entity);
+				}
+				free.entity = v.getUUID();
+				v.home = s.id;
+				v.country = side(s);
+				claimed.add(v.getUUID());
+				adoptedVehicles++;
+				setDirty();
+			} else if (level.getNearestPlayer(v, 16) == null) {
+				v.discard();
+				sweptVehicles++;
+			}
+		}
+	}
+
+	/** When each town was last swept (game time; not saved). */
+	private static final Map<Integer, Long> SWEPT = new HashMap<>();
+
 	/** Puts the town's vehicles into the world (those that are not there), tops up their stores from the depot. */
 	private void materialize(ServerLevel level, Politics p, Settlement s, Arsenal ar, boolean near, boolean alert) {
 		int side = side(s);
+		if (near && level.getGameTime() - SWEPT.getOrDefault(s.id, -1000L) >= 200) {
+			SWEPT.put(s.id, level.getGameTime());
+			sweep(level, p, s, ar);
+		}
 		// A couple of vehicles a second: a whole city's arsenal at once froze the server for a second or two.
 		int budget = 2;
 		for (int i = 0; i < ar.units.size(); i++) {
@@ -620,7 +681,7 @@ public final class Arsenals extends SavedData {
 	 * three times slower and only for itself. No iron or fuel - nothing is made.
 	 */
 	private void produce(ServerLevel level, Politics p, Settlement s, Arsenal ar) {
-		boolean factory = s.city >= 0 && (s.eco.count(BuildingType.ARMS_FACTORY) > 0 || s.eco.count(BuildingType.FACTORY) > 0);
+		boolean factory = s.isCity() && (s.eco.count(BuildingType.ARMS_FACTORY) > 0 || s.eco.count(BuildingType.FACTORY) > 0);
 		VillageEconomy e = s.eco;
 		if (ar.making == null) {
 			// The emptiest store in the country.
@@ -791,7 +852,7 @@ public final class Arsenals extends SavedData {
 		}
 		Vec3 from = Vec3.atCenterOf(to.center).add(600, 0, 0);
 		for (Settlement o : p.settlementsOf(to.country)) {
-			if (o.id != to.id && o.city >= 0) {
+			if (o.id != to.id && o.isCity()) {
 				from = Vec3.atCenterOf(o.center);
 				break;
 			}
@@ -834,7 +895,7 @@ public final class Arsenals extends SavedData {
 	private static List<Vec3> supplyRoute(ServerLevel level, Settlement to, Vec3 from) {
 		long seed = level.getSeed();
 		Cities.Terrain t = Cities.terrain(level);
-		Cities.City city = to.city >= 0 ? Cities.plannedCityAt(seed, to.center.getX(), to.center.getZ(), 400) : null;
+		Cities.City city = to.isCity() ? Cities.plannedCityAt(seed, to.center.getX(), to.center.getZ(), 400) : null;
 		Depots.Depot depot = city == null ? null : city.depot(seed, t);
 		List<Vec3> out = new ArrayList<>();
 		if (depot != null && depot.access != null) {

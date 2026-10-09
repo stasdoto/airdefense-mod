@@ -436,6 +436,11 @@ public class SoldierEntity extends PathfinderMob {
 	// ------------------------------------------------------------------------------------------------
 	// Shooting
 
+	/** 1.32.2: when an attacker set off (game time; 0 = not one), how long they stay; for the tests: attackers gone. */
+	public long raidSince;
+	public static final long RAID_LIFE = 6000;
+	public static int raidersGone;
+
 	@Override
 	public void tick() {
 		if (level().isClientSide()) {
@@ -444,6 +449,14 @@ public class SoldierEntity extends PathfinderMob {
 		}
 		long perf0 = System.nanoTime();
 		super.tick();
+		// 1.32.2: an attacker sent in a column or a squad does not stay for ever: after five minutes he is gone (back
+		// home) once nobody is near enough to see him go - troops kept coming and crowded round the towns' flags.
+		if (raidSince > 0 && (tickCount + getId()) % 100 == 0 && level().getGameTime() - raidSince > RAID_LIFE
+				&& level().getNearestPlayer(this, 48) == null) {
+			raidersGone++;
+			discard();
+			return;
+		}
 		// 1.27: night goggles down after dark, up by day.
 		if ((tickCount + getId()) % 100 == 0) {
 			ItemStack head = getItemBySlot(EquipmentSlot.HEAD);
@@ -607,6 +620,7 @@ public class SoldierEntity extends PathfinderMob {
 		output.putInt("look", look());
 		output.putInt("country", country);
 		output.putInt("home", home);
+		output.putLong("raid_since", raidSince);
 		output.putInt("grenades", grenades);
 		output.putInt("medkits", medkits);
 		output.putBoolean("medic", medic);
@@ -632,6 +646,7 @@ public class SoldierEntity extends PathfinderMob {
 		entityData.set(DATA_LOOK, input.getIntOr("look", 0));
 		country = input.getIntOr("country", -1);
 		home = input.getIntOr("home", -1);
+		raidSince = input.getLongOr("raid_since", 0L);
 		grenades = input.getIntOr("grenades", 2);
 		medkits = input.getIntOr("medkits", 0);
 		medic = input.getBooleanOr("medic", false);

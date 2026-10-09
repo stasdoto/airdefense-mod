@@ -225,6 +225,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("strikewave")) {
 				strikeWave(ctx, server);
 			}
+			if (scene("cleanup")) {
+				cleanup(ctx, server);
+			}
 			if (scene("navy")) {
 				navy(ctx, server);
 			}
@@ -305,9 +308,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			int cities = 0;
 			int hamlets = 0;
 			for (var st : p.settlements.values()) {
-				if (st.city >= 0) {
+				if (st.isCity()) {
 					cities++;
-				} else if (st.hamlet >= 0) {
+				} else if (st.isHamlet()) {
 					hamlets++;
 				}
 			}
@@ -448,7 +451,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					var p = com.stasdoto.airdefense.nation.Politics.get(s);
 					var capital = testCapital(s);
 					for (var st : p.settlements.values()) {
-						if (capital != null && st.country != capital.country && st.city >= 0
+						if (capital != null && st.country != capital.country && st.isCity()
 								&& com.stasdoto.airdefense.nation.Arsenals.strikeNow(s.overworld(), st, capital)) {
 							break;
 						}
@@ -1565,6 +1568,150 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				com.stasdoto.airdefense.nation.Arsenals.waves - waves0, com.stasdoto.airdefense.nation.Arsenals.waveSites - sites0,
 				com.stasdoto.airdefense.nation.Arsenals.strikes - strikes0);
 		ctx.takeScreenshot("sw_chat");
+	}
+
+	/**
+	 * 1.32.2: what had piled up round the towns in old worlds is cleared away - a town of somebody's (and the same town
+	 * founded a second time), with a dozen leftover garrison vehicles, forty attackers and fifteen guards round its flag,
+	 * stray banners round its square and five sirens in a row.
+	 */
+	private void cleanup(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 150000;
+		language(ctx, "ru_ru");
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 3000");
+		camera(server, x + 0.5, ground + 30, -40, 0, 35);
+		ctx.waitTicks(60);
+		int[] ids = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			int id = p.newId();
+			BlockPos at = new BlockPos(x, ground, 0);
+			var town = new com.stasdoto.airdefense.nation.Settlement(id, "Ключи", at, at.offset(2, 0, 0), -1, java.util.Optional.empty(), 0,
+					java.util.Map.of(), List.of(), List.of());
+			// A city west of x = 0: its key is negative.
+			town.city = -987654321L;
+			town.population = 15;
+			p.settlements.put(id, town);
+			var country = com.stasdoto.airdefense.nation.Nations.newWorldCountry(p, id);
+			town.country = country.id;
+			// The same town founded again.
+			int id2 = p.newId();
+			var twin = new com.stasdoto.airdefense.nation.Settlement(id2, "Ключи 2", at, at.offset(0, 0, 2), -1, java.util.Optional.empty(), 0,
+					java.util.Map.of(), List.of(), List.of());
+			twin.city = -987654321L;
+			twin.country = country.id;
+			p.settlements.put(id2, twin);
+			// An enemy at war with it.
+			int eid = p.newId();
+			var et = new com.stasdoto.airdefense.nation.Settlement(eid, "Вражеск", new BlockPos(x + 3000, ground, 0), new BlockPos(x + 3000, ground + 2, 0), -1,
+					java.util.Optional.empty(), 0, java.util.Map.of(), List.of(), List.of());
+			p.settlements.put(eid, et);
+			var enemy = com.stasdoto.airdefense.nation.Nations.newWorldCountry(p, eid);
+			et.country = enemy.id;
+			com.stasdoto.airdefense.nation.War.declare(l, p, enemy, country, net.minecraft.network.chat.Component.literal("test"));
+			var r = new java.util.Random(3);
+			// A dozen leftover garrison vehicles in a heap by the square.
+			VehicleType[] heap = {VehicleType.BUK, VehicleType.TOR, VehicleType.PANTSIR, VehicleType.ISKANDER, VehicleType.SHAHED, VehicleType.T72};
+			for (int i = 0; i < 12; i++) {
+				VehicleEntity v = VehicleEntity.spawn(l, heap[i % heap.length], new Vec3(x - 20 + (i % 4) * 2.5, ground, 20 + (i / 4) * 3.0), r.nextFloat() * 360);
+				v.garrison = true;
+				v.home = id;
+				v.country = country.id;
+			}
+			// Forty attackers and fifteen guards round the flag.
+			for (int i = 0; i < 40; i++) {
+				var e = com.stasdoto.airdefense.nation.SoldierEntity.create(l, com.stasdoto.airdefense.nation.SoldierEntity.SOLDIER, enemy.id, enemy.color, eid,
+						new Vec3(x + 4 + r.nextGaussian() * 4, ground, 6 + r.nextGaussian() * 4), r.nextInt());
+				e.setNoAi(true);
+				l.addFreshEntity(e);
+			}
+			for (int i = 0; i < 15; i++) {
+				var g = com.stasdoto.airdefense.nation.SoldierEntity.create(l, com.stasdoto.airdefense.nation.SoldierEntity.GUARD, country.id, country.color, id,
+						new Vec3(x - 4 + r.nextGaussian() * 3, ground, 4 + r.nextGaussian() * 3), r.nextInt());
+				g.setNoAi(true);
+				l.addFreshEntity(g);
+			}
+			// Stray banners round the square, five sirens in a row on the pavement.
+			for (int k = 3; k <= 5; k++) {
+				l.setBlockAndUpdate(new BlockPos(x - k, ground, 0), net.minecraft.world.level.block.Blocks.BANNER.pick(net.minecraft.world.item.DyeColor.BLUE).defaultBlockState());
+				l.setBlockAndUpdate(new BlockPos(x, ground, -k), net.minecraft.world.level.block.Blocks.BANNER.pick(net.minecraft.world.item.DyeColor.BLUE).defaultBlockState());
+			}
+			var sirens = com.stasdoto.airdefense.siren.Sirens.get(s);
+			for (int k = 0; k < 5; k++) {
+				BlockPos head = new BlockPos(x + 8 + k, ground + com.stasdoto.airdefense.siren.SirenItem.MAST, 12);
+				com.stasdoto.airdefense.siren.SirenItem.buildMast(l, head, net.minecraft.core.Direction.SOUTH);
+				l.setBlock(head, com.stasdoto.airdefense.registry.ModBlocks.SIREN.defaultBlockState(), 3);
+				sirens.register(head);
+			}
+			return new int[]{id, id2, eid, country.id};
+		});
+		ctx.waitTicks(20);
+		String before = cleanupCounts(server, x, ids);
+		look(server, x + 30, ground + 14, 40, x, ground + 1, 6);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("cl1_piled_up");
+		// The player watches from a little way off (nothing is taken from right under his nose).
+		camera(server, x + 0.5, ground + 30, -40, 0, 35);
+		ctx.waitTicks(700);
+		String after = cleanupCounts(server, x, ids);
+		look(server, x + 30, ground + 14, 40, x, ground + 1, 6);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("cl2_cleared");
+		// A negative city key survives saving and loading.
+		String keyBack = server.computeOnServer(s -> {
+			var town = com.stasdoto.airdefense.nation.Politics.get(s).settlements.get(ids[0]);
+			if (town == null) {
+				return "town gone";
+			}
+			var back = com.stasdoto.airdefense.nation.Settlement.CODEC.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, town)
+					.flatMap(t -> com.stasdoto.airdefense.nation.Settlement.CODEC.parse(net.minecraft.nbt.NbtOps.INSTANCE, t));
+			return back.result().map(b -> "city key " + b.city + " (is city " + b.isCity() + ")").orElse("error " + back.error());
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT cleanup: before {} | after {} | swept {} adopted {} thinned {} sirens down {} stray flags {} twins dropped {} | saved: {}",
+				before, after, com.stasdoto.airdefense.nation.Arsenals.sweptVehicles, com.stasdoto.airdefense.nation.Arsenals.adoptedVehicles,
+				com.stasdoto.airdefense.nation.Nations.thinned, com.stasdoto.airdefense.siren.Sirens.doubled,
+				com.stasdoto.airdefense.nation.Nations.strayFlagsRemoved, com.stasdoto.airdefense.nation.Nations.refounded, keyBack);
+		language(ctx, "en_us");
+	}
+
+	private String cleanupCounts(TestServerContext server, int x, int[] ids) {
+		return server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var box = new net.minecraft.world.phys.AABB(x - 120, ground - 10, -120, x + 120, ground + 40, 120);
+			int vehicles = l.getEntitiesOfClass(VehicleEntity.class, box, v -> v.isAlive() && v.garrison).size();
+			int enemy = otherCountry(s, ids);
+			int attackers = l.getEntitiesOfClass(com.stasdoto.airdefense.nation.SoldierEntity.class, box,
+					e -> e.isAlive() && e.role() == com.stasdoto.airdefense.nation.SoldierEntity.SOLDIER && e.country() == enemy).size();
+			int guards = l.getEntitiesOfClass(com.stasdoto.airdefense.nation.SoldierEntity.class, box,
+					e -> e.isAlive() && e.role() == com.stasdoto.airdefense.nation.SoldierEntity.GUARD).size();
+			int banners = 0;
+			for (int dx = -6; dx <= 6; dx++) {
+				for (int dz = -6; dz <= 6; dz++) {
+					for (int dy = -1; dy <= 3; dy++) {
+						if (l.getBlockState(new BlockPos(x + dx, ground + dy, dz)).getBlock() instanceof net.minecraft.world.level.block.BannerBlock) {
+							banners++;
+						}
+					}
+				}
+			}
+			int sirens = 0;
+			for (int k = 0; k < 5; k++) {
+				if (l.getBlockState(new BlockPos(x + 8 + k, ground + com.stasdoto.airdefense.siren.SirenItem.MAST, 12)).getBlock()
+						instanceof com.stasdoto.airdefense.siren.SirenBlock) {
+					sirens++;
+				}
+			}
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			int towns = (p.settlements.containsKey(ids[0]) ? 1 : 0) + (p.settlements.containsKey(ids[1]) ? 1 : 0);
+			return "vehicles " + vehicles + ", attackers " + attackers + ", guards " + guards + ", banners " + banners + ", sirens " + sirens + ", towns " + towns;
+		});
+	}
+
+	private static int otherCountry(net.minecraft.server.MinecraftServer s, int[] ids) {
+		var p = com.stasdoto.airdefense.nation.Politics.get(s);
+		var et = p.settlements.get(ids[2]);
+		return et == null ? -99 : et.country;
 	}
 
 	/**
@@ -4294,7 +4441,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		double bestD = 300.0 * 300.0;
 		for (var st : com.stasdoto.airdefense.nation.Politics.get(s).settlements.values()) {
 			double d = Math.pow(st.center.getX() - c.x, 2) + Math.pow(st.center.getZ() - c.z, 2);
-			if (st.city >= 0 && d < bestD) {
+			if (st.isCity() && d < bestD) {
 				bestD = d;
 				best = st;
 			}

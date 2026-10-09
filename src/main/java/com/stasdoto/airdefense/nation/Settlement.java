@@ -20,6 +20,12 @@ import net.minecraft.core.UUIDUtil;
  */
 public final class Settlement {
 	public static final int RADIUS = 48;
+	/**
+	 * 1.32.2: "no planned city / hamlet". The keys of the cities west of x = 0 are negative: with -1 for "none" (and
+	 * "city >= 0" tests) such a city was taken for no city at all - founded again every few seconds, each time with its
+	 * flag, sirens, arsenal and guards, until the towns there drowned in vehicles and soldiers.
+	 */
+	public static final long NONE = Long.MIN_VALUE;
 
 	public static final Codec<Settlement> CODEC = RecordCodecBuilder.create(i -> i.group(
 			Codec.INT.fieldOf("id").forGetter(s -> s.id),
@@ -36,15 +42,16 @@ public final class Settlement {
 			Codec.LONG.optionalFieldOf("captured_at", -1L).forGetter(s -> s.capturedAt),
 			Codec.LONG.optionalFieldOf("calm_until", 0L).forGetter(s -> s.calmUntil),
 			Codec.BOOL.optionalFieldOf("riot", false).forGetter(s -> s.riot),
-			Codec.LONG.listOf().optionalFieldOf("city", List.of()).forGetter(s -> s.city < 0 ? List.of() : List.of(s.city, (long) s.radius,
+			Codec.LONG.listOf().optionalFieldOf("city", List.of()).forGetter(s -> s.city == NONE ? List.of() : List.of(s.city, (long) s.radius,
 					(long) s.citizens, s.capitalCity ? 1L : 0L, (long) s.style)),
-			Codec.LONG.optionalFieldOf("hamlet", -1L).forGetter(s -> s.hamlet)
+			// (Before 1.32.2 -1 stood for "none".)
+			Codec.LONG.optionalFieldOf("hamlet", NONE).forGetter(s -> s.hamlet)
 	).apply(i, (id, name, center, flag, country, elder, population, bonus, guards, soldiers, eco, capturedAt, calmUntil, riot, city, hamlet) -> {
 		Settlement s = new Settlement(id, name, center, flag, country, elder, population, bonus, guards, soldiers, eco);
 		s.capturedAt = capturedAt;
 		s.calmUntil = calmUntil;
 		s.riot = riot;
-		s.hamlet = hamlet;
+		s.hamlet = hamlet == -1L ? NONE : hamlet;
 		if (city.size() >= 4) {
 			s.city = city.get(0);
 			s.radius = (int) (long) city.get(1);
@@ -79,10 +86,10 @@ public final class Settlement {
 	public long calmUntil;
 	/** A riot is going on. */
 	public boolean riot;
-	/** A planned city ({@link Cities.City#key()}), or -1 for a village found in the wild. */
-	public long city = -1;
-	/** A planned hamlet round a city ({@link Hamlets.Hamlet#key()}), or -1. */
-	public long hamlet = -1;
+	/** A planned city ({@link Cities.City#key()}), or {@link #NONE} for a village found in the wild. */
+	public long city = NONE;
+	/** A planned hamlet round a city ({@link Hamlets.Hamlet#key()}), or {@link #NONE}. */
+	public long hamlet = NONE;
 	/** How far the settlement reaches. */
 	public int radius = RADIUS;
 	/** People living here (cities: a number; only some of them walk the streets). */
@@ -125,7 +132,11 @@ public final class Settlement {
 	}
 
 	public boolean isCity() {
-		return city >= 0;
+		return city != NONE;
+	}
+
+	public boolean isHamlet() {
+		return hamlet != NONE;
 	}
 
 	/** People to show: the city's number, or the villagers counted around. */

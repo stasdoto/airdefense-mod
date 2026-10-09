@@ -212,6 +212,11 @@ public final class War {
 					continue;
 				}
 				Settlement target = nearestTarget(level, p, ai, enemy);
+				// 1.32.2: no new troops while plenty of this attacker's are still round the town.
+				if (target != null && level.getEntitiesOfClass(SoldierEntity.class, new net.minecraft.world.phys.AABB(target.center).inflate(target.radius + 80, 48,
+						target.radius + 80), e -> e.isAlive() && e.country() == ai.id).size() >= 12) {
+					target = null;
+				}
 				if (target != null) {
 					// 1.30: the attacker's guns in reach shell the town first.
 					Arsenals.barrage(level, p, ai, target);
@@ -490,8 +495,8 @@ public final class War {
 		long seed = level.getSeed();
 		Cities.Terrain t = Cities.terrain(level);
 		List<Cities.Road> in = new ArrayList<>();
-		Cities.City city = target.city >= 0 ? Cities.plannedCityAt(seed, target.center.getX(), target.center.getZ(), 400) : null;
-		Hamlets.Hamlet hamlet = target.hamlet >= 0 ? Cities.plannedHamletAt(seed, target.center.getX(), target.center.getZ(), 40) : null;
+		Cities.City city = target.isCity() ? Cities.plannedCityAt(seed, target.center.getX(), target.center.getZ(), 400) : null;
+		Hamlets.Hamlet hamlet = target.isHamlet() ? Cities.plannedHamletAt(seed, target.center.getX(), target.center.getZ(), 40) : null;
 		if (city != null) {
 			for (Cities.Road r : Cities.roadsNear(seed, t, city.x, city.z)) {
 				if (city.outside(r.x0, r.z0) <= 12 || city.outside(r.x1, r.z1) <= 12) {
@@ -667,6 +672,7 @@ public final class War {
 				SoldierEntity e = SoldierEntity.create(level, SoldierEntity.SOLDIER, ai.id, ai.color, home == null ? -1 : home.id,
 						new Vec3(x + 0.5, y, z + 0.5), r.nextInt());
 				e.orderTo(target.flag);
+				e.raidSince = level.getGameTime();
 				level.addFreshEntity(e);
 				squad.add(e);
 			}
