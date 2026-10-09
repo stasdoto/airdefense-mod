@@ -2,6 +2,7 @@ package com.stasdoto.airdefense.nation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.core.BlockPos;
@@ -35,7 +36,91 @@ public final class CityGen {
 	public static volatile int chunks;
 	public static volatile long nanos;
 
-	private static final ConcurrentHashMap<Long, List<Blueprints.Placement>> PLANS = new ConcurrentHashMap<>();
+	/**
+	 * Building plans by key, packed; the least recently used are dropped beyond {@link #PLAN_CAP}. (Up to 1.29 the
+	 * whole cache was emptied at 160: a capital of 140 buildings with its villages and port did not fit, so the chunks
+	 * kept working their buildings out again - city chunks took three times as long.)
+	 */
+	private static final int PLAN_CAP = 640;
+	private static final Map<Long, Packed> PLANS = java.util.Collections.synchronizedMap(new java.util.LinkedHashMap<>(1024, 0.75f, true) {
+		@Override
+		protected boolean removeEldestEntry(Map.Entry<Long, Packed> eldest) {
+			return size() > PLAN_CAP;
+		}
+	});
+
+	/** A building's blocks, packed tight (positions as longs), in the order they are set. */
+	static final class Packed {
+		final long[] pos;
+		final BlockState[] state;
+		/** The two-block things (doors, beds, tall plants): their index in the list, the second position and state. */
+		final int[] pairAt;
+		final long[] pos2;
+		final BlockState[] state2;
+
+		Packed(List<Blueprints.Placement> list) {
+			int n = list.size();
+			pos = new long[n];
+			state = new BlockState[n];
+			int pairs = 0;
+			for (Blueprints.Placement pl : list) {
+				if (pl.pair()) {
+					pairs++;
+				}
+			}
+			pairAt = new int[pairs];
+			pos2 = new long[pairs];
+			state2 = new BlockState[pairs];
+			int k = 0;
+			for (int i = 0; i < n; i++) {
+				Blueprints.Placement pl = list.get(i);
+				pos[i] = pl.pos().asLong();
+				state[i] = pl.state();
+				if (pl.pair()) {
+					pairAt[k] = i;
+					pos2[k] = pl.pos2().asLong();
+					state2[k] = pl.state2();
+					k++;
+				}
+			}
+		}
+
+		/** Sets the blocks that fall in the chunk at {@code (x0, z0)} (a pair goes in whole if either half does). */
+		void write(Writer w, int x0, int z0) {
+			BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
+			int k = 0;
+			for (int i = 0; i < pos.length; i++) {
+				long p = pos[i];
+				boolean mine = in(p, x0, z0);
+				if (k < pairAt.length && pairAt[k] == i) {
+					long q = pos2[k];
+					if (mine || in(q, x0, z0)) {
+						w.set(m.set(BlockPos.getX(p), BlockPos.getY(p), BlockPos.getZ(p)), state[i]);
+						w.set(m.set(BlockPos.getX(q), BlockPos.getY(q), BlockPos.getZ(q)), state2[k]);
+					}
+					k++;
+				} else if (mine) {
+					w.set(m.set(BlockPos.getX(p), BlockPos.getY(p), BlockPos.getZ(p)), state[i]);
+				}
+			}
+		}
+	}
+
+	private static boolean in(long p, int x0, int z0) {
+		int x = BlockPos.getX(p) - x0;
+		int z = BlockPos.getZ(p) - z0;
+		return x >= 0 && x < 16 && z >= 0 && z < 16;
+	}
+
+	/** The packed plan of a building (worked out once, kept while it is in use). */
+	private static Packed packed(long key, Building b, int color) {
+		Packed p = PLANS.get(key);
+		if (p == null) {
+			p = new Packed(Blueprints.placements(b, DyeColor.byId(color)));
+			PLANS.put(key, p);
+		}
+		return p;
+	}
 
 	private static final BlockState ASPHALT = Blocks.CONCRETE.pick(DyeColor.GRAY).defaultBlockState();
 	private static final BlockState ASPHALT_SLAB = Blocks.CONCRETE_SLAB.pick(DyeColor.GRAY).defaultBlockState();
@@ -663,26 +748,7 @@ public final class CityGen {
 			if (b.origin.getX() + reach < x0 || b.origin.getX() - reach > x0 + 15 || b.origin.getZ() + reach < z0 || b.origin.getZ() - reach > z0 + 15) {
 				continue;
 			}
-			long key = -(p.key() * 64 + b.id) - 9_000_000L;
-			List<Blueprints.Placement> plan = PLANS.get(key);
-			if (plan == null) {
-				if (PLANS.size() > 160) {
-					PLANS.clear();
-				}
-				plan = Blueprints.placements(b, DyeColor.byId(p.city.color));
-				PLANS.put(key, plan);
-			}
-			for (Blueprints.Placement pl : plan) {
-				boolean mine = in(pl.pos(), x0, z0);
-				if (pl.pair()) {
-					if (mine || in(pl.pos2(), x0, z0)) {
-						w.set(pl.pos(), pl.state());
-						w.set(pl.pos2(), pl.state2());
-					}
-				} else if (mine) {
-					w.set(pl.pos(), pl.state());
-				}
-			}
+			packed(-(p.key() * 64 + b.id) - 9_000_000L, b, p.city.color).write(w, x0, z0);
 		}
 		List<long[]> list = p.blocks().get(ChunkPos.pack(cp.x(), cp.z()));
 		if (list != null) {
@@ -732,26 +798,7 @@ public final class CityGen {
 			if (b.origin.getX() + reach < x0 || b.origin.getX() - reach > x0 + 15 || b.origin.getZ() + reach < z0 || b.origin.getZ() - reach > z0 + 15) {
 				continue;
 			}
-			long key = -(d.key() * 64 + b.id) - 7_000_000L;
-			List<Blueprints.Placement> plan = PLANS.get(key);
-			if (plan == null) {
-				if (PLANS.size() > 160) {
-					PLANS.clear();
-				}
-				plan = Blueprints.placements(b, DyeColor.byId(d.city.color));
-				PLANS.put(key, plan);
-			}
-			for (Blueprints.Placement pl : plan) {
-				boolean mine = in(pl.pos(), x0, z0);
-				if (pl.pair()) {
-					if (mine || in(pl.pos2(), x0, z0)) {
-						w.set(pl.pos(), pl.state());
-						w.set(pl.pos2(), pl.state2());
-					}
-				} else if (mine) {
-					w.set(pl.pos(), pl.state());
-				}
-			}
+			packed(-(d.key() * 64 + b.id) - 7_000_000L, b, d.city.color).write(w, x0, z0);
 		}
 	}
 
@@ -859,17 +906,8 @@ public final class CityGen {
 
 	private static final ConcurrentHashMap<Long, CityDecor.Result> HAMLET_DECOR = new ConcurrentHashMap<>();
 
-	private static List<Blueprints.Placement> hamletPlan(Hamlets.Hamlet h, Building b) {
-		long key = -(h.key() * 64 + b.id) - 1;
-		List<Blueprints.Placement> plan = PLANS.get(key);
-		if (plan == null) {
-			if (PLANS.size() > 160) {
-				PLANS.clear();
-			}
-			plan = Blueprints.placements(b, DyeColor.byId(h.city.color));
-			PLANS.put(key, plan);
-		}
-		return plan;
+	private static Packed hamletPlan(Hamlets.Hamlet h, Building b) {
+		return packed(-(h.key() * 64 + b.id) - 1, b, h.city.color);
 	}
 
 	/** Positions in this chunk where the building's plan puts a log. */
@@ -878,10 +916,10 @@ public final class CityGen {
 		return !(b.origin.getX() + reach < x0 || b.origin.getX() - reach > x0 + 15 || b.origin.getZ() + reach < z0 || b.origin.getZ() - reach > z0 + 15);
 	}
 
-	private static void keepLogs(java.util.Set<Long> keep, List<Blueprints.Placement> plan, int x0, int z0) {
-		for (Blueprints.Placement pl : plan) {
-			if (pl.state().is(BlockTags.LOGS) && in(pl.pos(), x0, z0)) {
-				keep.add(pl.pos().asLong());
+	private static void keepLogs(java.util.Set<Long> keep, Packed plan, int x0, int z0) {
+		for (int i = 0; i < plan.pos.length; i++) {
+			if (plan.state[i].is(BlockTags.LOGS) && in(plan.pos[i], x0, z0)) {
+				keep.add(plan.pos[i]);
 			}
 		}
 	}
@@ -895,17 +933,7 @@ public final class CityGen {
 			if (b.origin.getX() + reach < x0 || b.origin.getX() - reach > x0 + 15 || b.origin.getZ() + reach < z0 || b.origin.getZ() - reach > z0 + 15) {
 				continue;
 			}
-			for (Blueprints.Placement pl : hamletPlan(h, b)) {
-				boolean mine = in(pl.pos(), x0, z0);
-				if (pl.pair()) {
-					if (mine || in(pl.pos2(), x0, z0)) {
-						w.set(pl.pos(), pl.state());
-						w.set(pl.pos2(), pl.state2());
-					}
-				} else if (mine) {
-					w.set(pl.pos(), pl.state());
-				}
-			}
+			hamletPlan(h, b).write(w, x0, z0);
 		}
 		CityDecor.Result d = HAMLET_DECOR.get(h.key());
 		if (d == null) {
@@ -955,17 +983,8 @@ public final class CityGen {
 	// ------------------------------------------------------------------------------------------------
 	// Buildings and details
 
-	private static List<Blueprints.Placement> plan(Cities.City c, Building b) {
-		long key = c.key() * 4096 + b.id;
-		List<Blueprints.Placement> p = PLANS.get(key);
-		if (p == null) {
-			if (PLANS.size() > 160) {
-				PLANS.clear();
-			}
-			p = Blueprints.placements(b, DyeColor.byId(c.color));
-			PLANS.put(key, p);
-		}
-		return p;
+	private static Packed plan(Cities.City c, Building b) {
+		return packed(c.key() * 4096 + b.id, b, c.color);
 	}
 
 	private static void buildings(Writer w, Cities.City c, ChunkPos cp) {
@@ -976,17 +995,7 @@ public final class CityGen {
 			if (b.origin.getX() + reach < x0 || b.origin.getX() - reach > x0 + 15 || b.origin.getZ() + reach < z0 || b.origin.getZ() - reach > z0 + 15) {
 				continue;
 			}
-			for (Blueprints.Placement pl : plan(c, b)) {
-				boolean mine = in(pl.pos(), x0, z0);
-				if (pl.pair()) {
-					if (mine || in(pl.pos2(), x0, z0)) {
-						w.set(pl.pos(), pl.state());
-						w.set(pl.pos2(), pl.state2());
-					}
-				} else if (mine) {
-					w.set(pl.pos(), pl.state());
-				}
-			}
+			plan(c, b).write(w, x0, z0);
 		}
 	}
 
