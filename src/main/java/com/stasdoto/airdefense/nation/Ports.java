@@ -161,6 +161,20 @@ public final class Ports {
 			return null;
 		}
 		int sea = t.sea();
+		// Most towns are inland: a quick look round first (a ring of samples), the careful search only if there is water.
+		boolean water = false;
+		for (int k = 0; k < 16 && !water; k++) {
+			double a = k * Math.PI / 8;
+			for (int r = c.half() + 40; r <= c.half() + 200; r += 60) {
+				if (t.top(c.x + (int) (Math.cos(a) * r), c.z + (int) (Math.sin(a) * r)) < sea) {
+					water = true;
+					break;
+				}
+			}
+		}
+		if (!water) {
+			return null;
+		}
 		Port best = null;
 		double bestScore = Double.MAX_VALUE;
 		for (Direction dir : Direction.Plane.HORIZONTAL) {
@@ -170,7 +184,7 @@ public final class Ports {
 				int v0 = cl[1] + off;
 				// The shore: walking out from the middle of the town, the first spot where most of three samples are water.
 				int shore = Integer.MIN_VALUE;
-				for (int u = cl[0] + 30; u <= cl[0] + c.half() + 200; u += 4) {
+				for (int u = cl[0] + 30; u <= cl[0] + c.half() + 200; u += 6) {
 					int wet = 0;
 					for (int dv = -16; dv <= 16; dv += 16) {
 						int[] w = probe.world(u, v0 + dv);
