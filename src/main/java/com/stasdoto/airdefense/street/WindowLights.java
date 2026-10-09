@@ -31,13 +31,13 @@ public final class WindowLights {
 			return 0.04;
 		}
 		if (t < 13500) {
-			return lerp(0.04, 0.75, (t - 11000) / 2500);
+			return lerp(0.04, 0.6, (t - 11000) / 2500);
 		}
 		if (t < 17000) {
-			return 0.75;
+			return 0.6;
 		}
 		if (t < 20000) {
-			return lerp(0.75, 0.12, (t - 17000) / 3000);
+			return lerp(0.6, 0.12, (t - 17000) / 3000);
 		}
 		if (t < 23000) {
 			return 0.12;

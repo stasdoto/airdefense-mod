@@ -146,8 +146,8 @@ final class Play {
 		for (int x = -5; x <= 5; x++) {
 			p.set(x, 0, 10, LINE);
 		}
-		// The centre circle, near enough.
-		for (int[] c : new int[][]{{-2, 9}, {-2, 10}, {-2, 11}, {2, 9}, {2, 10}, {2, 11}, {-1, 8}, {0, 8}, {1, 8}, {-1, 12}, {0, 12}, {1, 12}}) {
+		// The centre circle, near enough (its corners left out).
+		for (int[] c : new int[][]{{-2, 9}, {-2, 11}, {2, 9}, {2, 11}, {-1, 8}, {1, 8}, {-1, 12}, {1, 12}, {0, 8}, {0, 12}}) {
 			p.set(c[0], 0, c[1], LINE);
 		}
 		// The penalty boxes.
