@@ -166,6 +166,15 @@ public final class Orphans {
 				if (kind[i] == LOG) {
 					dist[i] = 0;
 					queue[tail++] = i;
+				} else if (kind[i] == LEAF || kind[i] == CAP) {
+					// On the bottom or the sides of the region: the crown of a tree standing lower down or further off (its trunk
+					// out of sight here) - it stays.
+					int x = i % w;
+					int z = (i / w) % w;
+					if (i < w * w || x == 0 || z == 0 || x == w - 1 || z == w - 1) {
+						dist[i] = 0;
+						queue[tail++] = i;
+					}
 				}
 			}
 			while (head < tail) {
