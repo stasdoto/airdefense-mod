@@ -346,6 +346,12 @@ public final class Orphans {
 		}
 	}
 
+	/** Trunks, crowns, mushrooms, vines: what can be left hanging (a section without any needs no looking at). */
+	private static boolean treeish(BlockState s) {
+		return s.is(BlockTags.LOGS) || s.is(BlockTags.LEAVES) || s.is(Blocks.MUSHROOM_STEM) || s.is(Blocks.RED_MUSHROOM_BLOCK)
+				|| s.is(Blocks.BROWN_MUSHROOM_BLOCK) || s.getBlock() instanceof VineBlock || s.is(Blocks.COCOA) || s.is(Blocks.BEE_NEST);
+	}
+
 	/** Looks over the next chunk in the queue if its neighbours are there; true if it did. */
 	private static boolean step(net.minecraft.server.level.ServerLevel level) {
 		long key;
@@ -380,24 +386,48 @@ public final class Orphans {
 		long t0 = System.nanoTime();
 		int x0 = cp.getMinBlockX();
 		int z0 = cp.getMinBlockZ();
+		// The chunk and its neighbours, read straight from their sections; only the heights where any of them may hold
+		// trees, mushrooms or vines are looked at (not the empty sky, not the top floors of the towers).
+		net.minecraft.world.level.chunk.LevelChunk[] cs = new net.minecraft.world.level.chunk.LevelChunk[9];
+		int lo = Integer.MAX_VALUE;
+		int hi = Integer.MIN_VALUE;
+		for (int dx = -1; dx <= 1; dx++) {
+			for (int dz = -1; dz <= 1; dz++) {
+				net.minecraft.world.level.chunk.LevelChunk c = level.getChunk(cp.x() + dx, cp.z() + dz);
+				cs[(dx + 1) * 3 + dz + 1] = c;
+				net.minecraft.world.level.chunk.LevelChunkSection[] secs = c.getSections();
+				for (int si = 0; si < secs.length; si++) {
+					if (!secs[si].hasOnlyAir() && secs[si].maybeHas(Orphans::treeish)) {
+						int sy = c.getSectionYFromSectionIndex(si) << 4;
+						lo = Math.min(lo, sy);
+						hi = Math.max(hi, sy + 15);
+					}
+				}
+			}
+		}
+		if (lo > hi) {
+			return true;
+		}
 		int yMin = Integer.MAX_VALUE;
-		int yMax = Integer.MIN_VALUE;
 		for (int x = x0; x < x0 + 16; x += 2) {
 			for (int z = z0; z < z0 + 16; z += 2) {
 				yMin = Math.min(yMin, level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.OCEAN_FLOOR, x, z));
 			}
 		}
-		for (int x = x0 - REACH; x < x0 + 16 + REACH; x++) {
-			for (int z = z0 - REACH; z < z0 + 16 + REACH; z++) {
-				yMax = Math.max(yMax, level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z));
-			}
-		}
-		yMin = Math.max(level.getMinY() + 1, yMin - 3);
-		yMax = Math.min(yMax + 1, yMin + 160);
+		yMin = Math.max(Math.max(level.getMinY() + 1, yMin - 3), lo - 1);
+		int yMax = Math.min(hi + 1, yMin + 160);
+		int cx = cp.x();
+		int cz = cp.z();
+		BlockState air = net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
 		removedLater += sweep(new Access() {
 			@Override
 			public BlockState get(BlockPos p) {
-				return level.getBlockState(p);
+				net.minecraft.world.level.chunk.LevelChunk c = cs[((p.getX() >> 4) - cx + 1) * 3 + (p.getZ() >> 4) - cz + 1];
+				int si = c.getSectionIndex(p.getY());
+				if (si < 0 || si >= c.getSectionsCount()) {
+					return air;
+				}
+				return c.getSection(si).getBlockState(p.getX() & 15, p.getY() & 15, p.getZ() & 15);
 			}
 
 			@Override
