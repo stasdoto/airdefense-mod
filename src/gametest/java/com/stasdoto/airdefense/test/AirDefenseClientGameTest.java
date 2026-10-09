@@ -1312,6 +1312,20 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		language(ctx, "ru_ru");
 		server.runCommand("gamemode spectator @a");
 		server.runCommand("time set 3000");
+		// The new aircraft first: the AH-64 and the A-10 on the ground, close.
+		int lx = x - 400;
+		camera(server, lx + 0.5, ground + 6, -30, 0, 10);
+		ctx.waitTicks(40);
+		int apache = spawnVehicle(server, VehicleType.AH64, lx, 0, 30);
+		int warthog = spawnVehicle(server, VehicleType.A10, lx + 24, 0, 30);
+		ctx.waitTicks(30);
+		look(server, lx - 9, ground + 3.5, 11, lx, ground + 2, 0);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("w0_ah64");
+		look(server, lx + 12, ground + 5, 16, lx + 24, ground + 1.5, 0);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("w0b_a10");
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(apache, warthog), Entity::discard));
 		camera(server, x + 0.5, ground + 6, -30, 0, 10);
 		ctx.waitTicks(40);
 		int[] ids = server.computeOnServer(s -> {
@@ -1402,7 +1416,17 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		look(server, x - 20, ground + 6, -25, x + 120, ground + 30, 0);
 		int downAfter = waitUntil(ctx, () -> VehicleEntity.aircraftDown > down0, 1200);
 		ctx.takeScreenshot("w3_heli_shot_down");
-		ctx.waitTicks(30);
+		// Then close to the falling helicopter, from its side.
+		Vec3 fall = server.computeOnServer(s -> {
+			for (Entity e : s.overworld().getAllEntities()) {
+				if (e instanceof VehicleEntity v && !v.isAlive() && v.onSortie()) {
+					return v.position();
+				}
+			}
+			return new Vec3(x + 150, ground + 20, 0);
+		});
+		look(server, fall.x - 18, Math.max(ground + 3, fall.y - 6), fall.z - 34, fall.x, fall.y - 6, fall.z);
+		ctx.waitTicks(12);
 		ctx.takeScreenshot("w4_heli_falls");
 		ctx.waitTicks(100);
 		AirDefense.LOGGER.info("[airdefense-test] RESULT air_defence: aircraft shot down {} after {} ticks, hits on it {} (missiles {}, gun {})",
@@ -1423,7 +1447,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runOnServer(s -> {
 			var p = com.stasdoto.airdefense.nation.Politics.get(s);
 			com.stasdoto.airdefense.nation.War.airStrike(s.overworld(), p, p.country(ids[1]), p.settlements.get(ids[0]), new java.util.Random(7),
-					VehicleType.SU25);
+					VehicleType.A10);
 		});
 		look(server, x - 60, ground + 15, -60, x, ground + 20, 0);
 		int bombed = waitUntil(ctx, () -> VehicleEntity.aiBombs > bombs0, 900);

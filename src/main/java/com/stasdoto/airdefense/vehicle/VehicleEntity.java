@@ -1005,7 +1005,11 @@ public class VehicleEntity extends LivingEntity {
 
 	@Override
 	public void travel(Vec3 ignored) {
-		if (vtype.isAir() && onSortie() && getControllingPassenger() == null && level() instanceof ServerLevel server) {
+		if (crashing) {
+			// A downed aircraft falls by itself (tickCrash).
+			return;
+		}
+		if (vtype.isAir() && onSortie() && isAlive() && getControllingPassenger() == null && level() instanceof ServerLevel server) {
 			aiFly(server);
 			return;
 		}
