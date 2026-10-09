@@ -358,8 +358,14 @@ def make_textures():
     b = paint((240, 240, 236), 2, 32)
     text(b, 'TEЛEФOH', 1, 13, (30, 60, 140), 1)
     save('booth_sign', b)
-    m = paint((32, 80, 168), 4, 16)
-    text(m, 'ПOЧ', 1, 5, (240, 240, 236))
+    m = paint((32, 80, 168), 4, 32)
+    # A white envelope over the word.
+    m[5:13, 10:22, :3] = (240, 240, 236)
+    for k in range(6):
+        m[5 + k, 10 + k, :3] = (32, 80, 168)
+        m[5 + k, 21 - k, :3] = (32, 80, 168)
+    text(m, 'ПOЧTA', 6, 16, (240, 240, 236))
+    m[24:26, 9:23, :3] = (20, 30, 60)
     save('mail_soviet', m)
     y = paint((228, 182, 36), 4, 16)
     y[5:11, 4:12, :3] = (30, 30, 30)
@@ -489,32 +495,40 @@ def lamps():
 
 # --- Traffic lights: two heads, one for each street of the crossing (north and east here), lights changing in turn ---
 
-def head(front, phase):
-    """One traffic light head facing `front` ('north' or 'east')."""
-    els = []
-    if front == 'north':
-        els.append(box((5, 1, 3), (11, 15, 6), 'black'))
-        els.append(box((7, 7, 6), (9, 9, 7.5), 'black'))
-        for i, (c, y) in enumerate((('red', 10.6), ('yellow', 6.4), ('green', 2.2))):
-            els.append(box((6.4, y, 2.7), (9.6, y + 3.2, 3), {'north': 'lens_%s_%s' % (c, phase)}, uv={'north': FULL}, emit=15))
-            els.append(box((6, y + 3.2, 1), (10, y + 3.6, 3), 'black'))
-            els.append(box((6, y, 1.5), (6.3, y + 3.4, 3), 'black'))
-            els.append(box((9.7, y, 1.5), (10, y + 3.4, 3), 'black'))
-    else:
-        els.append(box((10, 1, 5), (13, 15, 11), 'black'))
-        els.append(box((8.5, 7, 7), (10, 9, 9), 'black'))
-        for i, (c, y) in enumerate((('red', 10.6), ('yellow', 6.4), ('green', 2.2))):
-            els.append(box((13, y, 6.4), (13.3, y + 3.2, 9.6), {'east': 'lens_%s_%s' % (c, phase)}, uv={'east': FULL}, emit=15))
-            els.append(box((13, y + 3.2, 6), (15, y + 3.6, 10), 'black'))
-            els.append(box((13, y, 6), (14.5, y + 3.4, 6.3), 'black'))
-            els.append(box((13, y, 9.7), (14.5, y + 3.4, 10), 'black'))
+def turn_east(e):
+    """The same element turned to face east (90 degrees clockwise seen from above): (x, z) -> (16 - z, x)."""
+    f, t = e['from'], e['to']
+    out = dict(e)
+    out['from'] = [16 - t[2], f[1], f[0]]
+    out['to'] = [16 - f[2], t[1], t[0]]
+    names = {'north': 'east', 'east': 'south', 'south': 'west', 'west': 'north', 'up': 'up', 'down': 'down'}
+    out['faces'] = {names[k]: v for k, v in e['faces'].items()}
+    if 'rotation' in e:
+        out.pop('rotation')
+    return out
+
+
+def head(c, phase):
+    """A traffic light head facing north, its middle at x = c: three 5-pixel lenses under hoods in a black housing
+    1.6 blocks tall on a white-edged backplate (seen from down the street), and the bracket to the pole."""
+    plate = {f: 'black' for f in FACES}
+    plate['north'] = 'white'
+    els = [box((c - 4.5, 3, 5), (c + 4.5, 30, 5.5), plate),
+           box((c - 3.5, 4, 2), (c + 3.5, 29, 5), 'black'),
+           box((c - 1, 14, 5.5), (c + 1, 18, 7.5), 'black')]
+    for col, y in (('red', 21.5), ('yellow', 14), ('green', 6.5)):
+        els.append(box((c - 2.5, y, 1.7), (c + 2.5, y + 5, 2), {'north': 'lens_%s_%s' % (col, phase)}, uv={'north': FULL}, emit=15))
+        els.append(box((c - 3, y + 5, -1), (c + 3, y + 5.6, 2), 'black'))
+        els.append(box((c - 3, y + 1.5, -0.5), (c - 2.6, y + 5, 2), 'black'))
+        els.append(box((c + 2.6, y + 1.5, -0.5), (c + 3, y + 5, 2), 'black'))
     return els
 
 
 def traffic():
-    e = [box((7, 0, 7), (9, 15, 9), 'black'), box((6.5, 15, 6.5), (9.5, 16, 9.5), 'black')]
-    e += head('north', 'a') + head('east', 'b')
-    model('traffic_light', e, gui=0.9)
+    # The pole up the middle; one head for each street of the crossing (north, and east turned), lights changing in turn.
+    e = [box((7, 0, 7), (9, 30, 9), 'black'), box((6.5, 30, 6.5), (9.5, 31, 9.5), 'black')]
+    e += head(7, 'a') + [turn_east(x) for x in head(9.5, 'b')]
+    model('traffic_light', e, gui=0.6)
 
 
 # --- Road signs: a plate on the top of a thin pole ---

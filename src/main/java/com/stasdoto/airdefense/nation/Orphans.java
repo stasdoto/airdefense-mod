@@ -280,30 +280,59 @@ public final class Orphans {
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents.CHUNK_LOAD.register((level, chunk, fresh) -> {
 			if (!fresh && liveSweep && CityFeature.enabled && level.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
 				long key = chunk.getPos().pack();
-				if (!DONE.contains(key) && QUEUED.add(key)) {
-					QUEUE.add(key);
+				synchronized (QUEUE) {
+					if (!DONE.contains(key) && QUEUED.add(key)) {
+						QUEUE.add(key);
+					}
 				}
 			}
 		});
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_LEVEL_TICK.register(level -> {
-			if (level.dimension() == net.minecraft.world.level.Level.OVERWORLD && !QUEUE.isEmpty()) {
+			if (level.dimension() == net.minecraft.world.level.Level.OVERWORLD && pending() > 0) {
 				long t0 = System.nanoTime();
 				// Up to a millisecond and a half a tick, at most four chunks.
-				for (int n = 0; n < 4 && !QUEUE.isEmpty() && System.nanoTime() - t0 < 1_500_000; n++) {
+				for (int n = 0; n < 4 && pending() > 0 && System.nanoTime() - t0 < 1_500_000; n++) {
 					step(level);
 				}
 			}
 		});
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
-			DONE.clear();
-			QUEUE.clear();
-			QUEUED.clear();
+			synchronized (QUEUE) {
+				DONE.clear();
+				QUEUE.clear();
+				QUEUED.clear();
+			}
 		});
 	}
 
+	/** Chunks the generator cut back after they were made ({@link CityGen#tidy}): for the tests. */
+	public static int rechecks;
+
+	/** Looks this chunk over again soon (the generator has just cut back trees in it). */
+	public static void recheck(net.minecraft.world.level.ChunkPos cp) {
+		synchronized (QUEUE) {
+			long key = cp.pack();
+			DONE.remove(key);
+			rechecks++;
+			if (QUEUED.add(key)) {
+				QUEUE.add(key);
+			}
+		}
+	}
+
+	/** For the tests: chunks waiting to be looked over. */
+	public static int pending() {
+		synchronized (QUEUE) {
+			return QUEUE.size();
+		}
+	}
+
 	private static void step(net.minecraft.server.level.ServerLevel level) {
-		long key = QUEUE.poll();
-		QUEUED.remove(key);
+		long key;
+		synchronized (QUEUE) {
+			key = QUEUE.poll();
+			QUEUED.remove(key);
+		}
 		net.minecraft.world.level.ChunkPos cp = net.minecraft.world.level.ChunkPos.unpack(key);
 		if (!level.hasChunk(cp.x(), cp.z())) {
 			return;
@@ -312,14 +341,18 @@ public final class Orphans {
 			for (int dz = -1; dz <= 1; dz++) {
 				if (!level.hasChunk(cp.x() + dx, cp.z() + dz)) {
 					// Its neighbours are not all there yet: later (it comes round again when they load... or now, at the back).
-					if (QUEUED.add(key)) {
-						QUEUE.add(key);
+					synchronized (QUEUE) {
+						if (QUEUED.add(key)) {
+							QUEUE.add(key);
+						}
 					}
 					return;
 				}
 			}
 		}
-		DONE.add(key);
+		synchronized (QUEUE) {
+			DONE.add(key);
+		}
 		if (!CityGen.levelled(level, cp)) {
 			return;
 		}

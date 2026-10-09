@@ -41,7 +41,7 @@ public final class StreetBlocks {
 	public static final Block LAMP_COBRA = thing("lamp_cobra", 15, MapColor.METAL, SoundType.METAL, 6, 0, 6, 10, 11, 10);
 	public static final Block LAMP_LANTERN = thing("lamp_lantern", 15, MapColor.COLOR_BLACK, SoundType.LANTERN, 4.5, 0, 4.5, 11.5, 15, 11.5);
 	public static final Block LAMP_GLOBE = thing("lamp_globe", 15, MapColor.SNOW, SoundType.GLASS, 4.5, 0, 4.5, 11.5, 12, 11.5);
-	public static final Block TRAFFIC_LIGHT = thing("traffic_light", 4, MapColor.COLOR_BLACK, SoundType.METAL, 5, 0, 3, 13, 16, 11);
+	public static final Block TRAFFIC_LIGHT = thing("traffic_light", 4, MapColor.COLOR_BLACK, SoundType.METAL, 2.5, 0, 1, 14.5, 16, 14.5);
 
 	public static final Block SIGN_STOP = sign("sign_stop");
 	public static final Block SIGN_GIVE_WAY = sign("sign_give_way");

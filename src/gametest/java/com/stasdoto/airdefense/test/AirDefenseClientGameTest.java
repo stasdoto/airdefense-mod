@@ -275,7 +275,11 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					com.stasdoto.airdefense.nation.CityGen.chunks,
 					com.stasdoto.airdefense.nation.CityGen.chunks == 0 ? 0 : com.stasdoto.airdefense.nation.CityGen.nanos / 1000 / com.stasdoto.airdefense.nation.CityGen.chunks);
 			ctx.takeScreenshot("140_real_capital");
-			// 1.35: what is left floating round the capital (halves of trees, crowns, plants where the ground was levelled).
+			// 1.35: what is left floating round the capital (halves of trees, crowns, plants where the ground was levelled), once
+			// the chunks the generator cut back afterwards have been looked over again.
+			int swept = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Orphans.pending() == 0, 1200);
+			AirDefense.LOGGER.info("[airdefense-test] RESULT real_recheck: {} chunks cut back after they were made, looked over again within {} ticks",
+					com.stasdoto.airdefense.nation.Orphans.rechecks, swept);
 			int half = cap[2];
 			int[] orphans = server.computeOnServer(s -> {
 				ServerLevel l = s.overworld();
@@ -1628,7 +1632,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			postWith(l, "pole_concrete", 4, "lamp_cobra", x + 4, g, 0, S);
 			postWith(l, "pole_green", 3, "lamp_lantern", x + 8, g, 0, S);
 			postWith(l, "pole_black", 2, "lamp_globe", x + 12, g, 0, S);
-			postWith(l, "pole_black", 3, "traffic_light", x + 16, g, 0, E);
+			postWith(l, "pole_black", 2, "traffic_light", x + 16, g, 0, E);
 			String[] signs = {"sign_stop", "sign_give_way", "sign_crossing", "sign_no_parking", "sign_speed", "sign_main_road", "sign_bus"};
 			for (int i = 0; i < signs.length; i++) {
 				postWith(l, "pole_steel", 2, signs[i], x + 20 + i * 2, g, 0, S);
@@ -1649,6 +1653,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			putStreet(l, "billboard", x + 29, g + 2, 24, S);
 		});
 		ctx.waitTicks(40);
+		ctx.runOnClient(mc -> mc.gui.hud.getChat().clearMessages(false));
 		shot(ctx, server, new float[]{x + 8.5f, ground + 4.5f, 11.5f, 180, 8}, "st1_lamps", 20);
 		shot(ctx, server, new float[]{x + 26.5f, ground + 2.5f, 7.5f, 180, 5}, "st2_signs", 20);
 		shot(ctx, server, new float[]{x + 9.5f, ground + 2.5f, 17.5f, 180, 18}, "st3_small_a", 20);
@@ -1656,7 +1661,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		shot(ctx, server, new float[]{x + 8.5f, ground + 3.5f, 32.5f, 180, 10}, "st4_big_a", 20);
 		shot(ctx, server, new float[]{x + 24.5f, ground + 3.5f, 33.5f, 180, 10}, "st4_big_b", 20);
 		// The traffic light close by: the heads change in turn (green - yellow - red), six seconds apart.
-		shot(ctx, server, new float[]{x + 19.5f, ground + 4.5f, 3.5f, 135, 10}, "st5_traffic_a", 20);
+		shot(ctx, server, new float[]{x + 19.0f, ground + 4.2f, 3.0f, 135, 16}, "st5_traffic_a", 20);
 		ctx.waitTicks(105);
 		ctx.takeScreenshot("st5_traffic_b");
 		server.runCommand("time set 18000");
@@ -1687,7 +1692,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				{com.stasdoto.airdefense.nation.CityForm.SQUARE, com.stasdoto.airdefense.nation.CityStyle.AMERICAN},
 				{com.stasdoto.airdefense.nation.CityForm.CRESCENT, com.stasdoto.airdefense.nation.CityStyle.EUROPEAN},
 				{com.stasdoto.airdefense.nation.CityForm.TWIN, com.stasdoto.airdefense.nation.CityStyle.AMERICAN}};
-		ctx.runOnClient(mc -> mc.options.renderDistance().set(14));
+		ctx.runOnClient(mc -> mc.options.renderDistance().set(20));
 		StringBuilder report = new StringBuilder();
 		for (int k = 0; k < forms.length; k++) {
 			var form = (com.stasdoto.airdefense.nation.CityForm) forms[k][0];
@@ -1724,11 +1729,14 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			int m = half + 14;
 			generateCity(server, cx - m, cz - m, cx + m, cz + m);
 			String tag = "f" + k + "_" + form.name().toLowerCase(java.util.Locale.ROOT);
-			shot(ctx, server, new float[]{cx + 0.5f, base + half * 1.45f + 20, cz + 0.5f, 0, 90}, tag + "_above", 260);
+			// A wide lens and not too high (past the view distance the ground fades into the sky).
+			ctx.runOnClient(mc -> mc.options.fov().set(100));
+			shot(ctx, server, new float[]{cx + 0.5f, base + Math.min(half * 0.95f + 25, 175), cz + 0.5f, 0, 90}, tag + "_above", 300);
+			ctx.runOnClient(mc -> mc.options.fov().set(70));
 			if (k == 0 || k == 2 || k == 3) {
 				// A crossing by the town hall (a traffic light on its corner) and the square.
 				shot(ctx, server, new float[]{cap[4] - 9.5f, base + 4, cap[5] - 11.5f, -35, 12}, tag + "_crossing", 60);
-				shot(ctx, server, new float[]{(cap[4] + cap[6]) / 2f, base + 9, cap[5] + 3.5f, 0, 25}, tag + "_square", 40);
+				shot(ctx, server, new float[]{(cap[4] + cap[6]) / 2f, base + 7, cap[5] - 7.5f, 0, 22}, tag + "_square", 40);
 			}
 		}
 		ctx.runOnClient(mc -> mc.options.renderDistance().set(8));

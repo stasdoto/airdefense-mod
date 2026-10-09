@@ -832,7 +832,7 @@ final class CityDecor {
 	 * shows one phase, the one along z the other: they change in turn, all over the town at once).
 	 */
 	private void trafficLight(int x, int z, int sx, int sz) {
-		onPole(x, z, StreetBlocks.POLE_BLACK, 3, StreetBlocks.TRAFFIC_LIGHT, sx > 0 ? Direction.EAST : Direction.WEST);
+		onPole(x, z, StreetBlocks.POLE_BLACK, 2, StreetBlocks.TRAFFIC_LIGHT, sx > 0 ? Direction.EAST : Direction.WEST);
 	}
 
 	/** 1.28: a date palm for the desert town: a tall trunk, fronds drooping out in eight directions. */

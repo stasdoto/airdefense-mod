@@ -513,6 +513,7 @@ public final class CityGen {
 		}
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 		Cities.Road.Spot probe = new Cities.Road.Spot();
+		boolean cut = false;
 		for (int x = x0; x < x0 + 16; x++) {
 			for (int z = z0; z < z0 + 16; z++) {
 				int from = Integer.MIN_VALUE;
@@ -567,9 +568,15 @@ public final class CityGen {
 							|| st.is(Blocks.RED_MUSHROOM_BLOCK) || st.is(Blocks.BROWN_MUSHROOM_BLOCK) || st.is(Blocks.MUSHROOM_STEM)) {
 						// No side effects: a bee nest's block entity would be looked up through the level - the very chunk being made (a deadlock).
 						chunk.setBlockState(pos, AIR, Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+						cut = true;
 					}
 				}
 			}
+		}
+		if (cut) {
+			// 1.35: what was cut here may have been holding up the rest of a tree next to it (the trunk of a tree that grew in
+			// after the ground was levelled): the chunk is looked over again once its neighbours are all there.
+			Orphans.recheck(cp);
 		}
 	}
 
