@@ -49,7 +49,8 @@ final class ModernDesigns {
 
 	static boolean design(Plan p, int variant, DyeColor flag) {
 		if (variant >= RUSTIC && (p.b.type == BuildingType.HOUSE || p.b.type == BuildingType.SMALL_HOUSE)) {
-			return false;
+			// The village houses: the style's own (1.28), else the old timber and stone ones.
+			return p.b.style != 0 && StyleDesigns.design(p, variant, flag);
 		}
 		// 1.28: the town's own style first.
 		if (p.b.style != 0 && StyleDesigns.design(p, variant, flag)) {

@@ -302,6 +302,8 @@ public final class Hamlets {
 			return false;
 		}
 		b.variant = type == BuildingType.FARM ? r.nextInt(97) : ModernDesigns.RUSTIC + r.nextInt(97);
+		// 1.28: the village houses of the country's style (izbas and dachas, timbered houses, farmhouses, clay houses).
+		b.style = h.city.style.ordinal();
 		h.buildings.add(b);
 		h.pads.add(p);
 		taken.add(p);

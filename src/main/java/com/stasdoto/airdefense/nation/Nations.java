@@ -337,9 +337,11 @@ public final class Nations {
 				Map.of(), List.of(), List.of());
 		s.hamlet = h.key();
 		s.radius = 56;
+		s.style = h.city.style.ordinal();
 		for (Building b : h.buildings) {
 			Building nb = new Building(p.newId(), b.type, b.origin, b.facing, true);
 			nb.variant = b.variant;
+			nb.style = b.style;
 			nb.done = true;
 			s.eco.buildings.add(nb);
 		}
