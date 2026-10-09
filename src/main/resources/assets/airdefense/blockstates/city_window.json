@@ -1,13 +1,17 @@
 {
  "multipart": [
   {
+   "when": {
+    "lit": "false"
+   },
    "apply": {
     "model": "minecraft:block/glass_pane_post"
    }
   },
   {
    "when": {
-    "north": "true"
+    "north": "true",
+    "lit": "false"
    },
    "apply": {
     "model": "minecraft:block/glass_pane_side"
@@ -15,7 +19,8 @@
   },
   {
    "when": {
-    "east": "true"
+    "east": "true",
+    "lit": "false"
    },
    "apply": {
     "model": "minecraft:block/glass_pane_side",
@@ -24,7 +29,8 @@
   },
   {
    "when": {
-    "south": "true"
+    "south": "true",
+    "lit": "false"
    },
    "apply": {
     "model": "minecraft:block/glass_pane_side_alt"
@@ -32,7 +38,8 @@
   },
   {
    "when": {
-    "west": "true"
+    "west": "true",
+    "lit": "false"
    },
    "apply": {
     "model": "minecraft:block/glass_pane_side_alt",
@@ -41,7 +48,8 @@
   },
   {
    "when": {
-    "north": "false"
+    "north": "false",
+    "lit": "false"
    },
    "apply": {
     "model": "minecraft:block/glass_pane_noside"
@@ -49,7 +57,8 @@
   },
   {
    "when": {
-    "east": "false"
+    "east": "false",
+    "lit": "false"
    },
    "apply": {
     "model": "minecraft:block/glass_pane_noside_alt"
@@ -57,7 +66,8 @@
   },
   {
    "when": {
-    "south": "false"
+    "south": "false",
+    "lit": "false"
    },
    "apply": {
     "model": "minecraft:block/glass_pane_noside_alt",
@@ -66,10 +76,95 @@
   },
   {
    "when": {
-    "west": "false"
+    "west": "false",
+    "lit": "false"
    },
    "apply": {
     "model": "minecraft:block/glass_pane_noside",
+    "y": 270
+   }
+  },
+  {
+   "when": {
+    "lit": "true"
+   },
+   "apply": {
+    "model": "airdefense:block/street/window_lit_post"
+   }
+  },
+  {
+   "when": {
+    "north": "true",
+    "lit": "true"
+   },
+   "apply": {
+    "model": "airdefense:block/street/window_lit_side"
+   }
+  },
+  {
+   "when": {
+    "east": "true",
+    "lit": "true"
+   },
+   "apply": {
+    "model": "airdefense:block/street/window_lit_side",
+    "y": 90
+   }
+  },
+  {
+   "when": {
+    "south": "true",
+    "lit": "true"
+   },
+   "apply": {
+    "model": "airdefense:block/street/window_lit_side_alt"
+   }
+  },
+  {
+   "when": {
+    "west": "true",
+    "lit": "true"
+   },
+   "apply": {
+    "model": "airdefense:block/street/window_lit_side_alt",
+    "y": 90
+   }
+  },
+  {
+   "when": {
+    "north": "false",
+    "lit": "true"
+   },
+   "apply": {
+    "model": "airdefense:block/street/window_lit_noside"
+   }
+  },
+  {
+   "when": {
+    "east": "false",
+    "lit": "true"
+   },
+   "apply": {
+    "model": "airdefense:block/street/window_lit_noside_alt"
+   }
+  },
+  {
+   "when": {
+    "south": "false",
+    "lit": "true"
+   },
+   "apply": {
+    "model": "airdefense:block/street/window_lit_noside_alt",
+    "y": 90
+   }
+  },
+  {
+   "when": {
+    "west": "false",
+    "lit": "true"
+   },
+   "apply": {
+    "model": "airdefense:block/street/window_lit_noside",
     "y": 270
    }
   }

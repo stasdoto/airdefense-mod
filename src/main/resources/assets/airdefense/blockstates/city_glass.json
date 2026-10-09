@@ -1,7 +1,10 @@
 {
  "variants": {
-  "": {
+  "lit=false": {
    "model": "minecraft:block/glass"
+  },
+  "lit=true": {
+   "model": "airdefense:block/street/glass_lit"
   }
  }
 }

@@ -88,7 +88,8 @@ public final class CityAmbience {
 		} catch (RuntimeException e) {
 			town = null;
 		}
-		inTown = town != null;
+		// Towns the atlas does not cover (far out): told by what stands round the player - lit windows, street lamps, asphalt.
+		inTown = town != null || ticks % 40 == 0 ? town != null || looksLikeTown(mc, me) : inTown;
 		long time = Math.floorMod(mc.level.getOverworldClockTime(), 24000L);
 		boolean night = time >= 13000 && time < 23000;
 		boolean morning = time >= 23000 || time < 3000;
@@ -121,13 +122,39 @@ public final class CityAmbience {
 		// The bell on the hour, from the town's middle (the town hall).
 		long hour = (time / 1000 + 6) % 24;
 		if (hour != lastHour) {
-			if (lastHour >= 0 && hour >= 7 && hour <= 22 && time % 1000 < 200) {
+			if (lastHour >= 0 && hour >= 7 && hour <= 22 && time % 1000 < 200 && town != null) {
 				strikesLeft = (int) (hour % 12 == 0 ? 12 : hour % 12);
 				strikeWait = 1;
 				bellAt = new Vec3(town.x(), me.y + 20, town.z());
 			}
 			lastHour = hour;
 		}
+	}
+
+	private static final net.minecraft.world.level.block.Block ASPHALT = net.minecraft.world.level.block.Blocks.CONCRETE
+			.pick(net.minecraft.world.item.DyeColor.GRAY);
+
+	/** A look at two dozen spots round the player: street furniture, town windows, asphalt and pavement. */
+	private static boolean looksLikeTown(Minecraft mc, Vec3 me) {
+		int score = 0;
+		net.minecraft.core.BlockPos.MutableBlockPos q = new net.minecraft.core.BlockPos.MutableBlockPos();
+		for (int i = 0; i < 24; i++) {
+			double a = i * (Math.PI * 2 / 24) + RANDOM.nextDouble() * 0.2;
+			double r = 6 + (i % 4) * 7;
+			int x = (int) Math.floor(me.x + Math.cos(a) * r);
+			int z = (int) Math.floor(me.z + Math.sin(a) * r);
+			int top = mc.level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z);
+			for (int y = top - 1; y >= top - 4; y--) {
+				net.minecraft.world.level.block.Block b = mc.level.getBlockState(q.set(x, y, z)).getBlock();
+				if (b instanceof com.stasdoto.airdefense.street.StreetBlock || b instanceof com.stasdoto.airdefense.street.StreetPoleBlock
+						|| b instanceof com.stasdoto.airdefense.street.CityWindowBlock || b instanceof com.stasdoto.airdefense.street.CityGlassBlock) {
+					score += 2;
+				} else if (b == ASPHALT || b == net.minecraft.world.level.block.Blocks.POLISHED_ANDESITE) {
+					score++;
+				}
+			}
+		}
+		return score >= 8;
 	}
 
 	private static Vec3 around(Vec3 me, double r0, double r1) {

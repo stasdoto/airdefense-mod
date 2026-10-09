@@ -1776,8 +1776,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 			var c = list.getFirst();
 			c.shape();
-			// The parks: the first a playground, the second a sports ground, the third a stadium.
-			int[] kinds = {2, 4, 5};
+			// The parks: the first a stadium, the second a playground, the third a sports ground.
+			int[] kinds = {5, 2, 4};
 			int k = 0;
 			int[] out = new int[11];
 			out[0] = c.x;
@@ -1807,11 +1807,11 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		camera(server, cx + 0.5, base + 60, cz + 0.5, 0, 90);
 		ctx.waitTicks(40);
 		generateCity(server, cx - half - 14, cz - half - 14, cx + half + 14, cz + half + 14);
-		String[] names = {"n1_playground", "n2_sports", "n3_stadium"};
+		String[] names = {"n1_stadium", "n2_playground", "n3_sports"};
 		for (int k = 0; k < cap[10]; k++) {
 			int px = cap[4 + k * 2];
 			int pz = cap[5 + k * 2];
-			look(server, px - 9.5, base + 11, pz - 9.5, px + 0.5, base + 1, pz + 0.5);
+			look(server, px - 8.5, base + 8, pz - 8.5, px + 0.5, base + 1, pz + 0.5);
 			ctx.waitTicks(k == 0 ? 120 : 40);
 			ctx.takeScreenshot(names[k]);
 		}
@@ -1848,7 +1848,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			return new int[]{lit, all};
 		});
 		int[] lit = count.get();
-		look(server, cx + 0.5, base + 30, cz + half + 30.5, cx + 0.5, base + 5, cz + 0.5);
+		look(server, cx + 0.5, base + 22, cz + half * 0.5 + 20.5, cx + 0.5, base + 8, cz + 0.5);
 		ctx.waitTicks(80);
 		ctx.takeScreenshot("n4_night_town");
 		look(server, cx + 0.5, base + 2.5, cz + 20.5, cx + 0.5, base + 6, cz + 0.5);
@@ -1856,8 +1856,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(400);
 		int playedNight = com.stasdoto.airdefense.client.fx.CityAmbience.played - played0;
 		ctx.takeScreenshot("n5_night_street");
-		if (cap[10] > 2) {
-			look(server, cap[8] - 9.5, base + 11, cap[9] - 9.5, cap[8] + 0.5, base + 1, cap[9] + 0.5);
+		if (cap[10] > 0) {
+			look(server, cap[4] - 8.5, base + 8, cap[5] - 8.5, cap[4] + 0.5, base + 1, cap[5] + 0.5);
 			ctx.waitTicks(40);
 			ctx.takeScreenshot("n6_stadium_night");
 		}
@@ -1865,7 +1865,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runOnServer(s -> com.stasdoto.airdefense.siren.Sirens.get(s).everywhere = true);
 		ctx.waitTicks(200);
 		int[] dark = count.get();
-		look(server, cx + 0.5, base + 30, cz + half + 30.5, cx + 0.5, base + 5, cz + 0.5);
+		look(server, cx + 0.5, base + 22, cz + half * 0.5 + 20.5, cx + 0.5, base + 8, cz + 0.5);
 		ctx.waitTicks(40);
 		ctx.takeScreenshot("n7_blackout");
 		server.runOnServer(s -> com.stasdoto.airdefense.siren.Sirens.get(s).everywhere = false);
