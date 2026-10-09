@@ -1333,6 +1333,12 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			var enemy = com.stasdoto.airdefense.nation.Nations.newWorldCountry(p, eid);
 			et.country = enemy.id;
 			com.stasdoto.airdefense.nation.War.declare(l, p, enemy, mine, net.minecraft.network.chat.Component.literal("test"));
+			// Neither village keeps a garrison here: the first helicopter meets no air defence, and no missiles fly.
+			for (int t : new int[]{id, eid}) {
+				var ar = com.stasdoto.airdefense.nation.Arsenals.get(s).of(p, p.settlements.get(t));
+				ar.units.clear();
+				ar.stock.clear();
+			}
 			// The town's soldiers on the square.
 			for (int i = 0; i < 4; i++) {
 				var so = com.stasdoto.airdefense.nation.SoldierEntity.create(l, com.stasdoto.airdefense.nation.SoldierEntity.SOLDIER, mine.id, 5, id,
@@ -1361,7 +1367,13 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.takeScreenshot("w1_heli_attacks");
 		int salvos0 = VehicleEntity.aiRocketSalvos;
 		waitUntil(ctx, () -> VehicleEntity.aiRocketSalvos > salvos0 || VehicleEntity.aiGunBursts > 0, 600);
-		ctx.waitTicks(10);
+		Vec3 hAt2 = server.computeOnServer(s -> {
+			VehicleEntity v = sortie(s.overworld());
+			return v == null ? new Vec3(x + 80, ground + 28, 0) : v.position();
+		});
+		// From beside the soldiers, looking up at it.
+		look(server, x - 12, ground + 4, -14, hAt2.x, hAt2.y, hAt2.z);
+		ctx.waitTicks(8);
 		ctx.takeScreenshot("w2_heli_fires");
 		ctx.waitTicks(300);
 		int soldiersLeft = server.computeOnServer(s -> s.overworld().getEntitiesOfClass(com.stasdoto.airdefense.nation.SoldierEntity.class,
@@ -1415,8 +1427,10 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		});
 		look(server, x - 60, ground + 15, -60, x, ground + 20, 0);
 		int bombed = waitUntil(ctx, () -> VehicleEntity.aiBombs > bombs0, 900);
-		ctx.waitTicks(25);
+		ctx.waitTicks(8);
 		ctx.takeScreenshot("w5_jet_bombs");
+		ctx.waitTicks(45);
+		ctx.takeScreenshot("w6_bombs_land");
 		ctx.waitTicks(400);
 		String jet = server.computeOnServer(s -> {
 			VehicleEntity v = sortie(s.overworld());

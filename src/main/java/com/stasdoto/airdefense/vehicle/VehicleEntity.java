@@ -1455,6 +1455,9 @@ public class VehicleEntity extends LivingEntity {
 		if (vtype.repairs() && (tickCount + getId()) % 20 == 0) {
 			mendAround(level);
 		}
+		if (onSortie()) {
+			keepFlying(level);
+		}
 		if (vtype.isAir() && (tickCount + getId()) % 10 == 0 && (airTrack == null || airTrack.isRemoved()) && airborne()) {
 			// 1.32: in the air it shows on radars and draws air defence fire.
 			airTrack = MissileEntity.track(level, this);
@@ -2244,6 +2247,34 @@ public class VehicleEntity extends LivingEntity {
 	private void keepLoaded(ServerLevel level) {
 		if (tickCount % 10 == 0) {
 			level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, ChunkPos.containing(blockPosition()), 3);
+		}
+	}
+
+	private boolean flyNear;
+
+	/**
+	 * 1.32: an enemy aircraft comes from 500 blocks out, far from any player: like a missile it keeps the ground under it
+	 * ticking (radius 2 makes only its own chunk tick), and the chunk it is about to fly into, and a second ahead.
+	 */
+	public void keepFlying(ServerLevel level) {
+		if (tickCount % 2 == 0) {
+			flyNear = level.getNearestPlayer(getX(), getY(), getZ(), 120, pl -> !pl.isSpectator()) != null;
+		}
+		if (flyNear) {
+			return;
+		}
+		ChunkPos here = ChunkPos.containing(blockPosition());
+		level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, here, 2);
+		Vec3 v = getDeltaMovement();
+		ChunkPos next = ChunkPos.containing(BlockPos.containing(position().add(v.scale(1.5))));
+		if (!next.equals(here)) {
+			level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, next, 2);
+		}
+		if (tickCount % 4 == 0) {
+			ChunkPos ahead = ChunkPos.containing(BlockPos.containing(position().add(v.scale(20))));
+			if (!ahead.equals(here) && !ahead.equals(next)) {
+				level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, ahead, 2);
+			}
 		}
 	}
 
@@ -3248,6 +3279,7 @@ public class VehicleEntity extends LivingEntity {
 		Vec3 tgt = Vec3.atCenterOf(sortieTarget);
 		double toTarget = flat(pos, tgt);
 		sortieTimer++;
+		int phase0 = sortiePhase;
 		Vec3 goal;
 		double cruise = jet ? 80 : 32;
 		double want = vtype.maxSpeed * (jet ? 0.85 : 0.75);
@@ -3262,15 +3294,22 @@ public class VehicleEntity extends LivingEntity {
 			}
 			case 1 -> {
 				if (jet) {
-					goal = tgt;
 					cruise = 55;
-					// A run is over once it has passed the town well: it turns round for the next.
-					boolean past = toTarget > 220 && forward().dot(tgt.subtract(pos)) < 0;
-					if (past && !sortiePassed) {
-						sortieRuns++;
+					if (!sortiePassed) {
+						// A run: straight at the town; once over it (or just past it) it flies on straight out.
+						goal = tgt;
+						if (toTarget < 40 || toTarget < 160 && forward().dot(tgt.subtract(pos)) < 0) {
+							sortiePassed = true;
+							sortieRuns++;
+						}
+					} else {
+						// Out far enough to turn round and line up for the next run (it turns wide: ~70 blocks).
+						goal = pos.add(forward().multiply(1, 0, 1).scale(200));
+						if (toTarget > 260) {
+							sortiePassed = false;
+						}
 					}
-					sortiePassed = past;
-					if (sortieRuns >= 3 || sortieTimer > 2400) {
+					if (sortieRuns >= 3 && sortiePassed || sortieTimer > 2400) {
 						sortiePhase = 2;
 					}
 				} else {
@@ -3292,6 +3331,10 @@ public class VehicleEntity extends LivingEntity {
 					return;
 				}
 			}
+		}
+		if (sortiePhase != phase0) {
+			com.stasdoto.airdefense.AirDefense.LOGGER.info("[airdefense] {} sortie: phase {} at {} ({} blocks from the town, runs {})", vtype.id,
+					sortiePhase, blockPosition().toShortString(), (int) toTarget, sortieRuns);
 		}
 		double dist = flat(pos, goal);
 		BlockPos column = BlockPos.containing(pos.x, 0, pos.z);
@@ -3427,6 +3470,9 @@ public class VehicleEntity extends LivingEntity {
 
 	/** The fall of a downed aircraft: it goes on along its way, nose down, trailing fire and smoke, until it hits. */
 	private void tickCrash(ServerLevel level) {
+		if (onSortie()) {
+			keepFlying(level);
+		}
 		Vec3 v = getDeltaMovement();
 		v = new Vec3(v.x * 0.985, Math.max(v.y - 0.06, -2.2), v.z * 0.985);
 		setDeltaMovement(v);

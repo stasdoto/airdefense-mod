@@ -284,6 +284,8 @@ public final class War {
 			v.home = homeId;
 			v.setDeltaMovement(v.forward().scale(type.maxSpeed * 0.6));
 			v.startSortie(target.center, back);
+			// Its ground ticks from the start (the loading ticket only loads it).
+			v.keepFlying(l);
 		});
 		airStrikes++;
 		Country owner = p.country(target.country);
