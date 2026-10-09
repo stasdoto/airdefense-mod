@@ -215,8 +215,9 @@ class Painter:
                 r = min(size, h) / 2.0 - 0.4
                 d = np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2)
                 if r < 3:
-                    region[d <= r, :3] = (176, 178, 168)
-                    region[(d <= 0.8), :3] = (30, 30, 30)
+                    # Too small to draw a dial: a dark glass face with a light needle (a light face read as a chequerboard).
+                    region[d <= r, :3] = (64, 68, 66)
+                    region[(d <= 0.8), :3] = (226, 226, 214)
                     continue
                 region[d <= r, :3] = mul(base, 1.0)
                 region[(d <= r) & (d > r - 1.1), :3] = (190, 192, 184)
