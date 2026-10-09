@@ -1,0 +1,19 @@
+{
+ "variants": {
+  "facing=north": {
+   "model": "airdefense:block/street/bus_stop_modern"
+  },
+  "facing=east": {
+   "model": "airdefense:block/street/bus_stop_modern",
+   "y": 90
+  },
+  "facing=south": {
+   "model": "airdefense:block/street/bus_stop_modern",
+   "y": 180
+  },
+  "facing=west": {
+   "model": "airdefense:block/street/bus_stop_modern",
+   "y": 270
+  }
+ }
+}

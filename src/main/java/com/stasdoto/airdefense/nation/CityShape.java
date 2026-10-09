@@ -98,6 +98,10 @@ public final class CityShape {
 	public final int maxX;
 	public final int minZ;
 	public final int maxZ;
+	/** 1.35: the outline (round, square, a star...); BLOB in worlds from before. */
+	public final CityForm form;
+	/** 1.35: a ring town's central park reaches this far from the town hall (in blocks of the grid). */
+	private double parkRing;
 
 	CityShape(Cities.City c) {
 		Random r = new Random(c.seed ^ 0x5A4FE11L);
@@ -105,15 +109,36 @@ public final class CityShape {
 		int mid = n / 2;
 		ci = mid;
 		cj = mid;
-		gx = lines(r, c.x, mid);
-		gz = lines(r, c.z, mid);
+		form = c.form();
+		gx = form.regular ? evenLines(c.x, mid) : lines(r, c.x, mid);
+		gz = form.regular ? evenLines(c.z, mid) : lines(r, c.z, mid);
 		on = new boolean[n * n];
 		lotOf = new int[n * n];
 		Arrays.fill(lotOf, -1);
-		// The outline: a stretched, turned blob with ragged edges.
+		int[] range = switch (c.size) {
+			case SMALL -> new int[]{5, 10};
+			case MEDIUM -> new int[]{12, 22};
+			case LARGE -> new int[]{24, 42};
+		};
+		if (form != CityForm.BLOB) {
+			parkRing = form.fill(on, n, range[0], range[1], new Random(c.seed ^ 0xF0E5_C17EL));
+			keepConnected();
+		} else {
+			blob(r, mid, range);
+		}
+		int[] bounds = finish(c, r);
+		minX = bounds[0];
+		maxX = bounds[1];
+		minZ = bounds[2];
+		maxZ = bounds[3];
+	}
+
+	/** The outline of the towns before 1.35: a stretched, turned blob with ragged edges and an arm or two. */
+	private void blob(Random r, int mid, int[] range) {
+		Cities.Size size = n == 5 ? Cities.Size.SMALL : n == 7 ? Cities.Size.MEDIUM : Cities.Size.LARGE;
 		double aspect = 0.7 + r.nextDouble() * 0.6;
 		double ang = r.nextDouble() * Math.PI;
-		double radius = c.size.n / 2.0 + 0.55;
+		double radius = size.n / 2.0 + 0.55;
 		for (int i = 0; i < n; i++) {
 			for (int j = 0; j < n; j++) {
 				double u = i - mid;
@@ -136,17 +161,16 @@ public final class CityShape {
 		}
 		set(mid, mid, true);
 		keepConnected();
-		int[] range = switch (c.size) {
-			case SMALL -> new int[]{5, 10};
-			case MEDIUM -> new int[]{12, 22};
-			case LARGE -> new int[]{24, 42};
-		};
 		for (int guard = 0; guard < 200 && count() < range[0]; guard++) {
 			grow(r);
 		}
 		for (int guard = 0; guard < 200 && count() > range[1]; guard++) {
 			shrink(r);
 		}
+	}
+
+	/** The joined blocks, the lots and their districts; returns the bounds {minX, maxX, minZ, maxZ}. */
+	private int[] finish(Cities.City c, Random r) {
 		// Joined blocks.
 		int merges = switch (c.size) {
 			case SMALL -> r.nextInt(2);
@@ -203,10 +227,17 @@ public final class CityShape {
 				}
 			}
 		}
-		minX = ax;
-		maxX = bx;
-		minZ = az;
-		maxZ = bz;
+		return new int[]{ax, bx, az, bz};
+	}
+
+	/** 1.35: the even grid of a town laid out on paper: every block 36 across, the town hall's 38. */
+	private int[] evenLines(int centre, int mid) {
+		int[] g = new int[n + 1];
+		g[0] = centre - 19 - mid * 36;
+		for (int i = 0; i < n; i++) {
+			g[i + 1] = g[i] + (i == mid ? 38 : 36);
+		}
+		return g;
 	}
 
 	/** Street lines across the canvas: the middle block 34 wide (the city hall square), the others 26-38. */
@@ -366,6 +397,16 @@ public final class CityShape {
 			}
 			best.district = INDUSTRY;
 			industry.add(best);
+		}
+		// 1.35: a ring town: the blocks round the town hall are one park.
+		if (parkRing > 0) {
+			for (Lot l : lots) {
+				double du = (l.i0 + l.i1) / 2.0 - ci;
+				double dv = (l.j0 + l.j1) / 2.0 - cj;
+				if (l.district != HALL && du * du + dv * dv <= parkRing * parkRing + 0.01) {
+					l.district = PARK;
+				}
+			}
 		}
 		// Parks in the middle belt, a patch of wasteland or two at the edge.
 		int parks = c.size == Cities.Size.LARGE ? 1 + r.nextInt(2) : c.size == Cities.Size.MEDIUM ? r.nextInt(2) : 0;

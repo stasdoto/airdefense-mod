@@ -1,0 +1,19 @@
+{
+ "variants": {
+  "facing=north": {
+   "model": "airdefense:block/street/sign_no_parking"
+  },
+  "facing=east": {
+   "model": "airdefense:block/street/sign_no_parking",
+   "y": 90
+  },
+  "facing=south": {
+   "model": "airdefense:block/street/sign_no_parking",
+   "y": 180
+  },
+  "facing=west": {
+   "model": "airdefense:block/street/sign_no_parking",
+   "y": 270
+  }
+ }
+}

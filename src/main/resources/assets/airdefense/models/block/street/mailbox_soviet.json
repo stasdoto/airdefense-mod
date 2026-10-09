@@ -1,0 +1,320 @@
+{
+ "parent": "minecraft:block/block",
+ "ambientocclusion": false,
+ "textures": {
+  "steel": "airdefense:block/street/steel",
+  "mail_soviet": "airdefense:block/street/mail_soviet",
+  "blue": "airdefense:block/street/blue",
+  "particle": "airdefense:block/street/steel"
+ },
+ "elements": [
+  {
+   "from": [
+    7,
+    0,
+    9
+   ],
+   "to": [
+    9,
+    8,
+    11
+   ],
+   "faces": {
+    "north": {
+     "texture": "#steel",
+     "uv": [
+      0,
+      0,
+      2,
+      8
+     ]
+    },
+    "south": {
+     "texture": "#steel",
+     "uv": [
+      0,
+      0,
+      2,
+      8
+     ]
+    },
+    "east": {
+     "texture": "#steel",
+     "uv": [
+      0,
+      0,
+      2,
+      8
+     ]
+    },
+    "west": {
+     "texture": "#steel",
+     "uv": [
+      0,
+      0,
+      2,
+      8
+     ]
+    },
+    "up": {
+     "texture": "#steel",
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ]
+    },
+    "down": {
+     "texture": "#steel",
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    4,
+    7,
+    5
+   ],
+   "to": [
+    12,
+    16,
+    9
+   ],
+   "faces": {
+    "north": {
+     "texture": "#mail_soviet",
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ]
+    },
+    "south": {
+     "texture": "#blue",
+     "uv": [
+      0,
+      0,
+      8,
+      9
+     ]
+    },
+    "east": {
+     "texture": "#blue",
+     "uv": [
+      0,
+      0,
+      4,
+      9
+     ]
+    },
+    "west": {
+     "texture": "#blue",
+     "uv": [
+      0,
+      0,
+      4,
+      9
+     ]
+    },
+    "up": {
+     "texture": "#blue",
+     "uv": [
+      0,
+      0,
+      8,
+      4
+     ]
+    },
+    "down": {
+     "texture": "#blue",
+     "uv": [
+      0,
+      0,
+      8,
+      4
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    3.6,
+    16,
+    4.6
+   ],
+   "to": [
+    12.4,
+    17,
+    9.4
+   ],
+   "faces": {
+    "north": {
+     "texture": "#blue",
+     "uv": [
+      0,
+      0,
+      8.8,
+      1
+     ]
+    },
+    "south": {
+     "texture": "#blue",
+     "uv": [
+      0,
+      0,
+      8.8,
+      1
+     ]
+    },
+    "east": {
+     "texture": "#blue",
+     "uv": [
+      0,
+      0,
+      4.8,
+      1
+     ]
+    },
+    "west": {
+     "texture": "#blue",
+     "uv": [
+      0,
+      0,
+      4.8,
+      1
+     ]
+    },
+    "up": {
+     "texture": "#blue",
+     "uv": [
+      0,
+      0,
+      8.8,
+      4.8
+     ]
+    },
+    "down": {
+     "texture": "#blue",
+     "uv": [
+      0,
+      0,
+      8.8,
+      4.8
+     ]
+    }
+   }
+  }
+ ],
+ "display": {
+  "gui": {
+   "rotation": [
+    30,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0.0,
+    0
+   ],
+   "scale": [
+    0.9,
+    0.9,
+    0.9
+   ]
+  },
+  "ground": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    3,
+    0
+   ],
+   "scale": [
+    0.25,
+    0.25,
+    0.25
+   ]
+  },
+  "fixed": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.7200000000000001,
+    0.7200000000000001,
+    0.7200000000000001
+   ]
+  },
+  "thirdperson_righthand": {
+   "rotation": [
+    75,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    2.5,
+    0
+   ],
+   "scale": [
+    0.54,
+    0.54,
+    0.54
+   ]
+  },
+  "firstperson_righthand": {
+   "rotation": [
+    0,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.5760000000000001,
+    0.5760000000000001,
+    0.5760000000000001
+   ]
+  },
+  "firstperson_lefthand": {
+   "rotation": [
+    0,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.5760000000000001,
+    0.5760000000000001,
+    0.5760000000000001
+   ]
+  }
+ }
+}

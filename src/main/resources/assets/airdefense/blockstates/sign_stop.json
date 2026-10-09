@@ -1,0 +1,19 @@
+{
+ "variants": {
+  "facing=north": {
+   "model": "airdefense:block/street/sign_stop"
+  },
+  "facing=east": {
+   "model": "airdefense:block/street/sign_stop",
+   "y": 90
+  },
+  "facing=south": {
+   "model": "airdefense:block/street/sign_stop",
+   "y": 180
+  },
+  "facing=west": {
+   "model": "airdefense:block/street/sign_stop",
+   "y": 270
+  }
+ }
+}

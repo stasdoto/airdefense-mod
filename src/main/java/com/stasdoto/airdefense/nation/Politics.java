@@ -25,7 +25,8 @@ public final class Politics extends SavedData {
 			Settlement.CODEC.listOf().optionalFieldOf("settlements", List.of()).forGetter(p -> new ArrayList<>(p.settlements.values())),
 			Codec.INT.optionalFieldOf("next_id", 1).forGetter(p -> p.nextId),
 			Codec.INT.listOf().optionalFieldOf("flags_pending", List.of()).forGetter(p -> new ArrayList<>(p.flagsPending)),
-			Codec.INT.optionalFieldOf("styles", 0).forGetter(p -> p.styles)
+			Codec.INT.optionalFieldOf("styles", 0).forGetter(p -> p.styles),
+			Codec.INT.optionalFieldOf("shapes", 0).forGetter(p -> p.shapes)
 	).apply(i, Politics::new));
 	public static final SavedDataType<Politics> TYPE = new SavedDataType<>(AirDefense.id("politics"), Politics::new, CODEC, null);
 
@@ -40,13 +41,16 @@ public final class Politics extends SavedData {
 	 * towns are half built already).
 	 */
 	public final int styles;
+	/** 1.35: 1 in worlds started with the town outlines (round, square...); older worlds read 0 and keep the blobs. */
+	public final int shapes;
 
 	public Politics() {
-		this(List.of(), List.of(), 1, List.of(), 1);
+		this(List.of(), List.of(), 1, List.of(), 1, 1);
 	}
 
-	private Politics(List<Country> countries, List<Settlement> settlements, int nextId, List<Integer> pending, int styles) {
+	private Politics(List<Country> countries, List<Settlement> settlements, int nextId, List<Integer> pending, int styles, int shapes) {
 		this.styles = styles;
+		this.shapes = shapes;
 		this.flagsPending.addAll(pending);
 		for (Country c : countries) {
 			this.countries.put(c.id, c);

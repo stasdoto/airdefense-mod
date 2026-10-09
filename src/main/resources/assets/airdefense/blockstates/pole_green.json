@@ -1,0 +1,10 @@
+{
+ "variants": {
+  "bottom=true": {
+   "model": "airdefense:block/street/pole_green_bottom"
+  },
+  "bottom=false": {
+   "model": "airdefense:block/street/pole_green"
+  }
+ }
+}

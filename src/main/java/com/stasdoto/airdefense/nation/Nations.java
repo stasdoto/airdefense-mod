@@ -64,8 +64,10 @@ public final class Nations {
 			if (level.dimension() == Level.OVERWORLD) {
 				try {
 					Cities.styles = Politics.get(server).styles >= 1;
+					Cities.shapes = Politics.get(server).shapes >= 1;
 				} catch (RuntimeException e) {
 					Cities.styles = true;
+					Cities.shapes = true;
 				}
 				com.stasdoto.airdefense.AirDefense.LOGGER.info("[airdefense] town styles {}", Cities.styles ? "on" : "off (an older world)");
 			}

@@ -117,6 +117,13 @@ public final class Cities {
 	public static volatile boolean styles = true;
 	@Nullable
 	public static volatile CityStyle FORCE_STYLE;
+	/**
+	 * 1.35: false in worlds started before the town outlines came in (their roads and villages were planned round the
+	 * old blobs); {@link #FORCE_FORM}: for the automated test, the outline of every town planned from now on.
+	 */
+	public static volatile boolean shapes = true;
+	@Nullable
+	public static volatile CityForm FORCE_FORM;
 
 	/** One city of the plan. */
 	public static final class City {
@@ -163,6 +170,19 @@ public final class Cities {
 
 		public long key() {
 			return cellKey(cx, cz) * 4 + index;
+		}
+
+		private volatile CityForm form;
+
+		/** 1.35: the town's outline (round, square, a star...): from its own seed, the style and the size. */
+		public CityForm form() {
+			CityForm f = form;
+			if (f == null) {
+				f = !shapes ? CityForm.BLOB : FORCE_FORM != null ? FORCE_FORM
+						: CityForm.pick((int) Math.floorMod(mix(seed ^ 0xF0F1_5EEDL), 10000L), size, capital(), style);
+				form = f;
+			}
+			return f;
 		}
 
 		private volatile CityShape shape;
@@ -502,7 +522,7 @@ public final class Cities {
 
 	private static void checkSeed(long seed) {
 		// The plan also depends on whether the world has the 1.28 styles.
-		long key = styles ? seed : ~seed;
+		long key = (styles ? seed : ~seed) ^ (shapes ? 0L : 0x5EED_F04DL);
 		if (cacheSeed != key) {
 			synchronized (Cities.class) {
 				if (cacheSeed != key) {

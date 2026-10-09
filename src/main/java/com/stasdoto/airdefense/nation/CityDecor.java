@@ -20,6 +20,10 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.SlabType;
 
+import com.stasdoto.airdefense.street.StreetBlock;
+import com.stasdoto.airdefense.street.StreetBlocks;
+import com.stasdoto.airdefense.street.StreetPoleBlock;
+
 /**
  * Everything in a city's streets and yards that is not a building, worked out once per city from its plan: street
  * lamps every few metres, traffic lights at the crossings, trees and benches, bins, bus stops, manholes; in the yards
@@ -54,10 +58,85 @@ final class CityDecor {
 	private final Result out = new Result();
 	private final Set<Long> used = new HashSet<>();
 
+	/** 1.35: for the new street furniture's own choices (the old {@link #r} keeps its sequence: old towns stay the same). */
+	private final Random r2;
+
 	private CityDecor(Cities.City c) {
 		this.c = c;
 		this.r = new Random(c.seed ^ 0xDEC0L);
+		this.r2 = new Random(c.seed ^ 0x57EE7_F00DL);
 		this.base = c.base;
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// 1.35: the street furniture of the town's style
+
+	private static BlockState st(Block b, Direction f) {
+		return b.defaultBlockState().setValue(StreetBlock.FACING, f);
+	}
+
+	private static BlockState pole(Block b, boolean bottom) {
+		return b.defaultBlockState().setValue(StreetPoleBlock.BOTTOM, bottom);
+	}
+
+	/** A pole of {@code h} blocks from the ground up, with {@code top} (facing {@code f}) on it. */
+	private void onPole(int x, int z, Block pole, int h, Block top, Direction f) {
+		for (int y = 1; y <= h; y++) {
+			put(x, base + y, z, pole(pole, y == 1));
+		}
+		put(x, base + h + 1, z, st(top, f));
+	}
+
+	private CityStyle look() {
+		return c.style == CityStyle.CLASSIC ? CityStyle.AMERICAN : c.style;
+	}
+
+	private Block lampPole() {
+		return switch (look()) {
+			case SOVIET -> StreetBlocks.POLE_CONCRETE;
+			case EUROPEAN -> StreetBlocks.POLE_GREEN;
+			case DESERT -> StreetBlocks.POLE_BLACK;
+			default -> StreetBlocks.POLE_STEEL;
+		};
+	}
+
+	private Block lampHead() {
+		return switch (look()) {
+			case SOVIET -> StreetBlocks.LAMP_COBRA;
+			case EUROPEAN, DESERT -> StreetBlocks.LAMP_LANTERN;
+			default -> StreetBlocks.LAMP_MODERN;
+		};
+	}
+
+	private int lampHeight() {
+		return switch (look()) {
+			case EUROPEAN, DESERT -> 3;
+			default -> 4;
+		};
+	}
+
+	private Block bench() {
+		return switch (look()) {
+			case SOVIET -> StreetBlocks.BENCH_SOVIET;
+			case AMERICAN -> StreetBlocks.BENCH_MODERN;
+			default -> StreetBlocks.BENCH_PARK;
+		};
+	}
+
+	private Block bin() {
+		return switch (look()) {
+			case SOVIET -> StreetBlocks.BIN_SOVIET;
+			case EUROPEAN -> StreetBlocks.BIN_EURO;
+			default -> StreetBlocks.BIN_MODERN;
+		};
+	}
+
+	private Block mailbox() {
+		return switch (look()) {
+			case SOVIET -> StreetBlocks.MAILBOX_SOVIET;
+			case AMERICAN -> StreetBlocks.MAILBOX_US;
+			default -> StreetBlocks.MAILBOX_EURO;
+		};
 	}
 
 	static Result build(Cities.City c) {
@@ -299,13 +378,26 @@ final class CityDecor {
 				} else if (Math.floorMod(s, 8) == 0 && !villas && (inner == FREE || inner == FRONT) && !used.contains(BlockPos.asLong(gx, 0, gz))) {
 					streetTree(gx, gz, inner == FRONT);
 					if (r.nextInt(3) == 0 && v.at(gx + along.getStepX() * 3, gz + along.getStepZ() * 3) != DOOR) {
-						put(gx + along.getStepX(), base + 1, gz + along.getStepZ(), stairs(Blocks.SPRUCE_STAIRS, side.getOpposite()));
-						put(gx + along.getStepX() * 2, base + 1, gz + along.getStepZ() * 2, stairs(Blocks.SPRUCE_STAIRS, side.getOpposite()));
-						put(gx + along.getStepX() * 3, base + 1, gz + along.getStepZ() * 3, b(Blocks.COMPOSTER));
+						// 1.35: a bench facing the street, a bin beside it.
+						put(gx + along.getStepX() * 2, base + 1, gz + along.getStepZ() * 2, st(bench(), side));
+						put(gx + along.getStepX() * 3, base + 1, gz + along.getStepZ() * 3, st(bin(), side));
 						for (int k = 1; k <= 3; k++) {
 							used.add(BlockPos.asLong(gx + along.getStepX() * k, 0, gz + along.getStepZ() * k));
 						}
 					}
+				} else if (Math.floorMod(s, 16) == 10 && inner != DOOR && !used.contains(BlockPos.asLong(kx, 1, kz))) {
+					// 1.35: now and then by the kerb a hydrant, a letter box, an advertising column (the European downtown), a bollard.
+					int roll = r2.nextInt(12);
+					if (roll < 2 && look() != CityStyle.SOVIET) {
+						put(kx, base + 1, kz, st(StreetBlocks.HYDRANT, side));
+					} else if (roll == 2 && (l.district == CityShape.DOWNTOWN || l.district == CityShape.MID)) {
+						put(kx, base + 1, kz, st(mailbox(), side));
+					} else if (roll == 3 && look() == CityStyle.EUROPEAN && l.district == CityShape.DOWNTOWN) {
+						put(kx, base + 1, kz, st(StreetBlocks.ADVERT_COLUMN, side));
+					} else if (roll == 4 && look() != CityStyle.SOVIET) {
+						put(kx, base + 1, kz, st(StreetBlocks.BOLLARD, side));
+					}
+					used.add(BlockPos.asLong(kx, 1, kz));
 				}
 			}
 		}
@@ -316,6 +408,10 @@ final class CityDecor {
 				int z = sz < 0 ? l.z0 - 1 : l.z1 + 1;
 				if (lights && sx == sz) {
 					trafficLight(x, z, sx, sz);
+				} else if (r2.nextInt(3) == 0) {
+					// 1.35: a road sign at the corner: the pedestrian crossing (big towns) or who gives way (small ones).
+					Block sign = lights ? StreetBlocks.SIGN_CROSSING : ((x / 7 + z / 5) & 1) == 0 ? StreetBlocks.SIGN_GIVE_WAY : StreetBlocks.SIGN_MAIN_ROAD;
+					onPole(x, z, StreetBlocks.POLE_STEEL, 2, sign, sx < 0 ? Direction.WEST : Direction.EAST);
 				} else {
 					lamp(x, z, sz < 0 ? Direction.NORTH : Direction.SOUTH);
 				}
@@ -325,7 +421,7 @@ final class CityDecor {
 
 	/** Manhole covers in the middle of the lanes every so often. */
 	private void manholes(CityShape sh) {
-		BlockState cover = Blocks.IRON_TRAPDOOR.defaultBlockState().setValue(BlockStateProperties.HALF, Half.TOP);
+		BlockState cover = StreetBlocks.MANHOLE.defaultBlockState();
 		for (int k = 0; k <= sh.n; k++) {
 			for (int j = 0; j < sh.n; j++) {
 				if (sh.segV(k, j)) {
@@ -486,10 +582,13 @@ final class CityDecor {
 				put(x, base + y, z0, b(Blocks.IRON_BARS));
 			}
 			put(x, base + 6, z0, Blocks.BANNER.pick(DyeColor.byId(c.color)).defaultBlockState());
-			put(x, base + 1, z0 + 4, stairs(Blocks.DARK_OAK_STAIRS, Direction.SOUTH));
-			put(x, base + 1, z0 + 2, b(Blocks.OAK_FENCE));
-			put(x, base + 2, z0 + 2, b(Blocks.LANTERN));
+			// 1.35: benches facing the fountain, globe lamps, planters at the corners.
+			put(x, base + 1, z0 + 4, st(bench(), x == x0 ? Direction.EAST : Direction.WEST));
+			onPole(x, z0 + 2, StreetBlocks.POLE_BLACK, 2, StreetBlocks.LAMP_GLOBE, Direction.SOUTH);
+			put(x == x0 ? x - 1 : x + 1, base + 1, z0 - 1, st(StreetBlocks.PLANTER, Direction.SOUTH));
+			put(x == x0 ? x - 1 : x + 1, base + 1, z0 + 5, st(StreetBlocks.PLANTER, Direction.SOUTH));
 		}
+		put(x0 + 4, base + 1, z0 + 5, st(look() == CityStyle.EUROPEAN ? StreetBlocks.BOOTH_RED : StreetBlocks.BOOTH_SOVIET, Direction.NORTH));
 	}
 
 	/** Round a park: more trees, benches. */
@@ -723,41 +822,17 @@ final class CityDecor {
 			DyeColor.YELLOW, DyeColor.GREEN, DyeColor.ORANGE, DyeColor.LIGHT_BLUE};
 
 
+	/** 1.35: a street lamp of the town's style - its arm (or lantern) towards the street, {@code out}. */
 	private void lamp(int x, int z, Direction out) {
-		for (int y = 1; y <= 4; y++) {
-			put(x, base + y, z, b(Blocks.IRON_BARS));
-		}
-		put(x, base + 5, z, b(Blocks.SMOOTH_STONE_SLAB));
-		int ax = x + out.getStepX();
-		int az = z + out.getStepZ();
-		put(ax, base + 5, az, b(Blocks.SMOOTH_STONE_SLAB));
-		if (c.size == Cities.Size.LARGE) {
-			put(ax, base + 4, az, Blocks.END_ROD.defaultBlockState().setValue(BlockStateProperties.FACING, Direction.DOWN));
-		} else {
-			put(ax, base + 4, az, Blocks.LANTERN.defaultBlockState().setValue(BlockStateProperties.HANGING, true));
-		}
+		onPole(x, z, lampPole(), lampHeight(), lampHead(), out);
 	}
 
+	/**
+	 * 1.35: a traffic light at a crossing's corner: a black pole with two heads, one for each street (the one along x
+	 * shows one phase, the one along z the other: they change in turn, all over the town at once).
+	 */
 	private void trafficLight(int x, int z, int sx, int sz) {
-		for (int y = 1; y <= 3; y++) {
-			put(x, base + y, z, b(Blocks.IRON_BARS));
-		}
-		for (int y = 4; y <= 6; y++) {
-			put(x, base + y, z, c(DyeColor.BLACK));
-		}
-		put(x, base + 7, z, b(Blocks.SMOOTH_STONE_SLAB));
-		Direction dx = sx > 0 ? Direction.EAST : Direction.WEST;
-		Direction dz = sz > 0 ? Direction.SOUTH : Direction.NORTH;
-		for (Direction d : new Direction[]{dx, dz}) {
-			int fx = x + d.getStepX();
-			int fz = z + d.getStepZ();
-			put(fx, base + 6, fz, wallThing(Blocks.REDSTONE_WALL_TORCH, d));
-			put(fx, base + 5, fz, wallThing(Blocks.WALL_TORCH, d));
-			put(fx, base + 4, fz, wallThing(Blocks.SOUL_WALL_TORCH, d));
-		}
-		// The button for pedestrians.
-		put(x - sx, base + 2, z, Blocks.STONE_BUTTON.defaultBlockState().setValue(BlockStateProperties.ATTACH_FACE, AttachFace.WALL)
-				.setValue(BlockStateProperties.HORIZONTAL_FACING, sx > 0 ? Direction.WEST : Direction.EAST));
+		onPole(x, z, StreetBlocks.POLE_BLACK, 2, StreetBlocks.TRAFFIC_LIGHT, sx > 0 ? Direction.EAST : Direction.WEST);
 	}
 
 	/** 1.28: a date palm for the desert town: a tall trunk, fronds drooping out in eight directions. */
@@ -838,29 +913,15 @@ final class CityDecor {
 	private void busStop(int kx, int kz, Direction side, Direction along) {
 		Direction in = side.getOpposite();
 		for (int s = 0; s <= 3; s++) {
-			int x = kx + along.getStepX() * s;
-			int z = kz + along.getStepZ() * s;
-			int bx = x + in.getStepX();
-			int bz = z + in.getStepZ();
-			put(bx, base + 1, bz, Blocks.STAINED_GLASS_PANE.pick(DyeColor.LIGHT_BLUE).defaultBlockState());
-			put(bx, base + 2, bz, Blocks.STAINED_GLASS_PANE.pick(DyeColor.LIGHT_BLUE).defaultBlockState());
-			put(bx, base + 3, bz, s == 1 || s == 2 ? b(Blocks.SEA_LANTERN) : slabTop(Blocks.SMOOTH_STONE_SLAB));
-			put(x, base + 3, z, slabTop(Blocks.SMOOTH_STONE_SLAB));
-			if (s == 1 || s == 2) {
-				put(x, base + 1, z, stairs(Blocks.DARK_OAK_STAIRS, in));
-			}
-			used.add(BlockPos.asLong(bx, 0, bz));
+			used.add(BlockPos.asLong(kx + along.getStepX() * s + in.getStepX(), 0, kz + along.getStepZ() * s + in.getStepZ()));
 		}
-		// The advert at one end (glowing), the sign pole at the other.
-		int ex = kx - along.getStepX();
-		int ez = kz - along.getStepZ();
-		put(ex, base + 1, ez, b(Blocks.SEA_LANTERN));
-		put(ex, base + 2, ez, Blocks.GLAZED_TERRACOTTA.pick(DyeColor.values()[r.nextInt(16)]).defaultBlockState());
-		int px = kx + along.getStepX() * 4;
-		int pz = kz + along.getStepZ() * 4;
-		put(px, base + 1, pz, b(Blocks.IRON_BARS));
-		put(px, base + 2, pz, b(Blocks.IRON_BARS));
-		put(px, base + 3, pz, c(DyeColor.YELLOW));
+		r.nextInt(16);
+		// 1.35: the shelter (glass, or the Soviet concrete one with its mosaic) three blocks long, open to the street; the
+		// stop's sign beyond it, a bin.
+		put(kx + along.getStepX() * 2, base + 1, kz + along.getStepZ() * 2,
+				st(look() == CityStyle.SOVIET ? StreetBlocks.BUS_STOP_SOVIET : StreetBlocks.BUS_STOP_MODERN, side));
+		onPole(kx + along.getStepX() * 4, kz + along.getStepZ() * 4, StreetBlocks.POLE_STEEL, 2, StreetBlocks.SIGN_BUS, along);
+		put(kx - along.getStepX(), base + 1, kz - along.getStepZ(), st(bin(), side));
 	}
 
 	/** Four places with white lines, most of them taken. */
@@ -991,20 +1052,12 @@ final class CityDecor {
 
 	/** A kiosk (shawarma, newspapers, coffee): a small box with a counter window and a glowing sign. */
 	private void kiosk(int x0, int z0) {
-		DyeColor col = new DyeColor[]{DyeColor.RED, DyeColor.YELLOW, DyeColor.BLUE, DyeColor.GREEN}[r.nextInt(4)];
-		for (int x = x0; x < x0 + 3; x++) {
-			for (int z = z0; z < z0 + 3; z++) {
-				boolean wall = x == x0 || z == z0 || x == x0 + 2 || z == z0 + 2;
-				if (wall) {
-					put(x, base + 1, z, c(col));
-					put(x, base + 2, z, z == z0 + 2 && x == x0 + 1 ? Blocks.GLASS_PANE.defaultBlockState() : c(DyeColor.WHITE));
-				}
-				put(x, base + 3, z, Blocks.CONCRETE_SLAB.pick(col).defaultBlockState());
-			}
+		r.nextInt(4);
+		// 1.35: the newspaper kiosk (its counter to the south); a telephone booth beside it in the Soviet and European towns.
+		put(x0 + 1, base + 1, z0 + 1, st(StreetBlocks.KIOSK, Direction.SOUTH));
+		if (look() == CityStyle.SOVIET || look() == CityStyle.EUROPEAN) {
+			put(x0 + 3, base + 1, z0 + 1, st(look() == CityStyle.SOVIET ? StreetBlocks.BOOTH_SOVIET : StreetBlocks.BOOTH_RED, Direction.SOUTH));
 		}
-		put(x0 + 1, base + 3, z0 + 2, Blocks.STAINED_GLASS.pick(DyeColor.ORANGE).defaultBlockState());
-		put(x0 + 1, base + 2, z0 + 1, b(Blocks.OCHRE_FROGLIGHT));
-		put(x0 + 1, base + 1, z0 + 3, slabTop(Blocks.SMOOTH_STONE_SLAB));
 	}
 
 	/** An ice cream cart under a striped umbrella. */
@@ -1022,35 +1075,21 @@ final class CityDecor {
 
 	/** A billboard on two legs, lit from above. */
 	private void billboard(int x0, int z0) {
-		for (int y = 1; y <= 3; y++) {
-			put(x0, base + y, z0, b(Blocks.IRON_BARS));
-			put(x0 + 4, base + y, z0, b(Blocks.IRON_BARS));
-		}
-		DyeColor a = DyeColor.values()[r.nextInt(16)];
-		DyeColor bcol = DyeColor.values()[r.nextInt(16)];
-		for (int x = x0; x <= x0 + 4; x++) {
-			for (int y = 4; y <= 6; y++) {
-				put(x, base + y, z0, Blocks.GLAZED_TERRACOTTA.pick((x + y) % 3 == 0 ? a : bcol).defaultBlockState());
-			}
-			put(x, base + 7, z0, b(Blocks.SMOOTH_STONE_SLAB));
-		}
-		put(x0 + 1, base + 6, z0 + 1, Blocks.LANTERN.defaultBlockState().setValue(BlockStateProperties.HANGING, false));
-		put(x0 + 3, base + 6, z0 + 1, Blocks.LANTERN.defaultBlockState().setValue(BlockStateProperties.HANGING, false));
+		r.nextInt(16);
+		r.nextInt(16);
+		// 1.35: a lit billboard three blocks wide on two legs (the block is up in the air, the legs reach down).
+		put(x0 + 2, base + 2, z0, st(StreetBlocks.BILLBOARD, Direction.SOUTH));
 	}
 
 	/** A drinks machine and a cash machine side by side. */
 	private void vending(int x0, int z0) {
-		put(x0, base + 1, z0, c(DyeColor.RED));
-		put(x0, base + 2, z0, Blocks.STAINED_GLASS.pick(DyeColor.RED).defaultBlockState());
-		put(x0 + 1, base + 1, z0, b(Blocks.POLISHED_ANDESITE));
-		put(x0 + 1, base + 2, z0, Blocks.STAINED_GLASS.pick(DyeColor.LIGHT_BLUE).defaultBlockState());
-		put(x0 + 1, base + 1, z0 + 1, Blocks.STONE_BUTTON.defaultBlockState().setValue(BlockStateProperties.ATTACH_FACE, AttachFace.WALL)
-				.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH));
+		// 1.35: a drinks machine and a bin.
+		put(x0, base + 1, z0, st(StreetBlocks.VENDING, Direction.SOUTH));
+		put(x0 + 1, base + 1, z0, st(bin(), Direction.SOUTH));
 	}
 
 	private void bikeRack(int x0, int z0) {
-		for (int x = x0; x < x0 + 4; x++) {
-			put(x, base + 1, z0, b(Blocks.IRON_BARS));
-		}
+		put(x0 + 1, base + 1, z0, st(StreetBlocks.BIKE_RACK, Direction.SOUTH));
+		put(x0 + 2, base + 1, z0, st(StreetBlocks.BIKE_RACK, Direction.SOUTH));
 	}
 }
