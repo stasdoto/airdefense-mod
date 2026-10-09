@@ -35,6 +35,42 @@ public final class Orphans {
 	private static final byte LEAF = 2;
 	private static final byte SOLID = 3;
 	private static final byte CAP = 4;
+	private static final byte AIR = 5;
+	/** Vines (hang on what is above or beside them). */
+	private static final byte VINE = 6;
+	/** Cocoa pods and bee nests (hang on a trunk). */
+	private static final byte HANGER = 7;
+	/** Grass, flowers, saplings, snow: stand on what is below them. */
+	private static final byte PLANT = 8;
+
+	/** What a block is to the sweep. */
+	private static byte classify(BlockState s) {
+		if (s.isAir()) {
+			return AIR;
+		}
+		if (s.is(BlockTags.LOGS) || s.is(Blocks.MUSHROOM_STEM)) {
+			return LOG;
+		}
+		if (s.is(BlockTags.LEAVES)) {
+			return s.hasProperty(BlockStateProperties.PERSISTENT) && s.getValue(BlockStateProperties.PERSISTENT) ? SOLID : LEAF;
+		}
+		if (s.is(Blocks.RED_MUSHROOM_BLOCK) || s.is(Blocks.BROWN_MUSHROOM_BLOCK)) {
+			return CAP;
+		}
+		if (s.getBlock() instanceof VineBlock) {
+			return VINE;
+		}
+		if (s.is(Blocks.COCOA) || s.is(Blocks.BEE_NEST)) {
+			return HANGER;
+		}
+		if (!s.getFluidState().isEmpty()) {
+			return OTHER;
+		}
+		if (s.is(Blocks.SNOW) || s.is(BlockTags.REPLACEABLE_BY_TREES) || s.is(BlockTags.FLOWERS) || s.is(BlockTags.SAPLINGS)) {
+			return PLANT;
+		}
+		return s.canBeReplaced() ? OTHER : SOLID;
+	}
 
 	/** For the tests: blocks removed (by the world generator, by the sweep of older towns), and orphans counted. */
 	public static int removedAtGeneration;
@@ -62,29 +98,32 @@ public final class Orphans {
 		int h = yMax - yMin + 1;
 		byte[] kind = new byte[w * w * h];
 		BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
+		// Each kind of block is sorted out once (a region holds a few dozen kinds, read some hundred thousand times).
+		java.util.IdentityHashMap<BlockState, Byte> memo = new java.util.IdentityHashMap<>();
+		BlockState last = null;
+		byte lastKind = OTHER;
 		boolean any = false;
+		boolean loose = false;
 		for (int y = 0; y < h; y++) {
 			for (int z = 0; z < w; z++) {
 				for (int x = 0; x < w; x++) {
 					BlockState s = a.get(p.set(ax + x, yMin + y, az + z));
 					byte k;
-					if (s.isAir()) {
-						k = OTHER;
-					} else if (s.is(BlockTags.LOGS) || s.is(Blocks.MUSHROOM_STEM)) {
-						k = LOG;
-						any = true;
-					} else if (s.is(BlockTags.LEAVES)) {
-						k = s.hasProperty(BlockStateProperties.PERSISTENT) && s.getValue(BlockStateProperties.PERSISTENT) ? SOLID : LEAF;
-						any |= k == LEAF;
-					} else if (s.is(Blocks.RED_MUSHROOM_BLOCK) || s.is(Blocks.BROWN_MUSHROOM_BLOCK)) {
-						k = CAP;
-						any = true;
-					} else if (s.canBeReplaced() || !s.getFluidState().isEmpty() || s.is(Blocks.SNOW) || s.is(Blocks.BEE_NEST) || s.is(Blocks.COCOA)) {
-						k = OTHER;
+					if (s == last) {
+						k = lastKind;
 					} else {
-						k = SOLID;
+						Byte m = memo.get(s);
+						if (m == null) {
+							m = classify(s);
+							memo.put(s, m);
+						}
+						k = m;
+						last = s;
+						lastKind = k;
 					}
 					kind[(y * w + z) * w + x] = k;
+					any |= k == LOG || k == LEAF || k == CAP;
+					loose |= k == VINE || k == HANGER || k == PLANT;
 				}
 			}
 		}
@@ -144,13 +183,14 @@ public final class Orphans {
 					int x = i % w;
 					int z = (i / w) % w;
 					if (x >= in0 && x <= in1 && z >= in0 && z <= in1) {
-						kind[i] = OTHER;
-						removed++;
-						if (!dryRun) {
-							a.set(p.set(ax + x, yMin + i / (w * w), az + z), Blocks.AIR.defaultBlockState());
-						} else {
+						if (dryRun) {
 							note(0, a, p.set(ax + x, yMin + i / (w * w), az + z), yMin, h);
+						} else {
+							a.set(p.set(ax + x, yMin + i / (w * w), az + z), Blocks.AIR.defaultBlockState());
 						}
+						kind[i] = AIR;
+						removed++;
+						loose = true;
 					} else {
 						// Out of reach to remove: counts as held, so its leaves stay.
 						held[i] = true;
@@ -203,16 +243,19 @@ public final class Orphans {
 					int x = i % w;
 					int z = (i / w) % w;
 					if (x >= in0 && x <= in1 && z >= in0 && z <= in1) {
-						kind[i] = OTHER;
-						removed++;
-						if (!dryRun) {
-							a.set(p.set(ax + x, yMin + i / (w * w), az + z), Blocks.AIR.defaultBlockState());
-						} else {
+						if (dryRun) {
 							note(1, a, p.set(ax + x, yMin + i / (w * w), az + z), yMin, h);
+						} else {
+							a.set(p.set(ax + x, yMin + i / (w * w), az + z), Blocks.AIR.defaultBlockState());
 						}
+						kind[i] = AIR;
+						removed++;
 					}
 				}
 			}
+		}
+		if (!loose) {
+			return removed;
 		}
 		// Vines, cocoa and bee nests that hang on nothing (from the top down, so a hanging chain goes too); then plants and
 		// snow on air (from the bottom up, so a tall plant's top half goes with its bottom half).
@@ -222,38 +265,32 @@ public final class Orphans {
 				for (int z = in0; z <= in1; z++) {
 					for (int x = in0; x <= in1; x++) {
 						int i = (y * w + z) * w + x;
-						if (kind[i] != OTHER) {
-							continue;
-						}
-						BlockState s = a.get(p.set(ax + x, yMin + y, az + z));
-						if (s.isAir() || !s.getFluidState().isEmpty()) {
-							continue;
-						}
+						byte kd = kind[i];
 						boolean drop = false;
-						if (pass == 0 && s.getBlock() instanceof VineBlock) {
-							boolean hold = kind[i + w * w] == SOLID || kind[i + w * w] == LEAF || kind[i + w * w] == LOG
-									|| a.get(p.set(ax + x, yMin + y + 1, az + z)).getBlock() instanceof VineBlock;
+						if (pass == 0 && kd == VINE) {
+							byte up = kind[i + w * w];
+							boolean hold = up == SOLID || up == LEAF || up == LOG || up == VINE;
 							for (int j : new int[]{i - 1, i + 1, i - w, i + w}) {
 								hold |= kind[j] == SOLID || kind[j] == LEAF || kind[j] == LOG;
 							}
 							drop = !hold;
-						} else if (pass == 0 && (s.is(Blocks.COCOA) || s.is(Blocks.BEE_NEST))) {
+						} else if (pass == 0 && kd == HANGER) {
 							boolean log = false;
 							for (int j : new int[]{i - 1, i + 1, i - w, i + w, i + w * w, i - w * w}) {
 								log |= kind[j] == LOG;
 							}
 							drop = !log;
-						} else if (pass == 1 && !(s.getBlock() instanceof VineBlock)
-								&& (s.is(Blocks.SNOW) || s.is(BlockTags.REPLACEABLE_BY_TREES) || s.is(BlockTags.FLOWERS) || s.is(BlockTags.SAPLINGS))) {
-							drop = a.get(p.set(ax + x, yMin + y - 1, az + z)).isAir();
+						} else if (pass == 1 && kd == PLANT) {
+							drop = kind[i - w * w] == AIR;
 						}
 						if (drop) {
-							removed++;
-							if (!dryRun) {
-								a.set(p.set(ax + x, yMin + y, az + z), Blocks.AIR.defaultBlockState());
-							} else {
+							if (dryRun) {
 								note(2, a, p.set(ax + x, yMin + y, az + z), yMin, h);
+							} else {
+								a.set(p.set(ax + x, yMin + y, az + z), Blocks.AIR.defaultBlockState());
 							}
+							kind[i] = AIR;
+							removed++;
 						}
 					}
 				}
