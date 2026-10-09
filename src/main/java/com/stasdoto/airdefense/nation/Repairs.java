@@ -304,6 +304,20 @@ public final class Repairs extends SavedData {
 		return false;
 	}
 
+	/** For the tests: the patches within {@code r} of a point - where, how big, how long quiet, whose, loaded, work left. */
+	public String describe(ServerLevel level, BlockPos at, int r) {
+		StringBuilder b = new StringBuilder();
+		long now = level.getGameTime();
+		for (Zone z : zones) {
+			if (Math.abs(z.x - at.getX()) <= r && Math.abs(z.z - at.getZ()) <= r) {
+				List<long[]> todo = work.get(z.key());
+				b.append(String.format(java.util.Locale.ROOT, "[%d %d %d r%d quiet %d town %d loaded %s todo %s] ", z.x - at.getX(), z.y, z.z - at.getZ(), z.r,
+						now - z.since, z.town, loaded(level, z.box()), todo == null ? "-" : String.valueOf(todo.size())));
+			}
+		}
+		return b.toString();
+	}
+
 	/** For the tests: patches still waiting or being rebuilt. */
 	public int pending() {
 		return zones.size();

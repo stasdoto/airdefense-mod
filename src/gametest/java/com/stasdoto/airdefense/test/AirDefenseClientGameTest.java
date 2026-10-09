@@ -4355,9 +4355,10 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					&& holes(server, at, 6, base) <= before, creative ? 300 : 1500);
 			int end = holes(server, at, 6, base);
 			ctx.takeScreenshot("192_repair_" + phase + "_after");
-			AirDefense.LOGGER.info("[airdefense-test] RESULT repair_{}: holes {} -> {} -> {} after {} ticks, blocks put back {}, zones noted {} finished {}{}",
+			String zones = server.computeOnServer(s -> com.stasdoto.airdefense.nation.Repairs.get(s).describe(s.overworld(), at, 60));
+			AirDefense.LOGGER.info("[airdefense-test] RESULT repair_{}: holes {} -> {} -> {} after {} ticks, blocks put back {}, zones noted {} finished {}{}; {}",
 					creative ? "creative" : "survival", before, after, end, waited, com.stasdoto.airdefense.nation.Repairs.rebuilt - rebuilt0,
-					com.stasdoto.airdefense.nation.Repairs.noted, com.stasdoto.airdefense.nation.Repairs.finished, foreign);
+					com.stasdoto.airdefense.nation.Repairs.noted, com.stasdoto.airdefense.nation.Repairs.finished, foreign, zones);
 			server.runCommand("gamemode spectator @a");
 		}
 	}
