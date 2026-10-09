@@ -314,7 +314,10 @@ public final class MapCache {
 			writer.execute(() -> {
 				try {
 					Files.createDirectories(dir);
-					copy.writeToFile(file);
+					// Written aside and moved into place: a region being read at the same time never sees half a file.
+					Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
+					copy.writeToFile(tmp);
+					Files.move(tmp, file, java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
 				} catch (IOException e) {
 					AirDefense.LOGGER.warn("Could not save map region {}", file, e);
 				} finally {
