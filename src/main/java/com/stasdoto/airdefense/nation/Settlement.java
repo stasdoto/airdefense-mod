@@ -37,7 +37,7 @@ public final class Settlement {
 			Codec.LONG.optionalFieldOf("calm_until", 0L).forGetter(s -> s.calmUntil),
 			Codec.BOOL.optionalFieldOf("riot", false).forGetter(s -> s.riot),
 			Codec.LONG.listOf().optionalFieldOf("city", List.of()).forGetter(s -> s.city < 0 ? List.of() : List.of(s.city, (long) s.radius,
-					(long) s.citizens, s.capitalCity ? 1L : 0L)),
+					(long) s.citizens, s.capitalCity ? 1L : 0L, (long) s.style)),
 			Codec.LONG.optionalFieldOf("hamlet", -1L).forGetter(s -> s.hamlet)
 	).apply(i, (id, name, center, flag, country, elder, population, bonus, guards, soldiers, eco, capturedAt, calmUntil, riot, city, hamlet) -> {
 		Settlement s = new Settlement(id, name, center, flag, country, elder, population, bonus, guards, soldiers, eco);
@@ -50,6 +50,8 @@ public final class Settlement {
 			s.radius = (int) (long) city.get(1);
 			s.citizens = (int) (long) city.get(2);
 			s.capitalCity = city.get(3) != 0;
+			// 1.28: the town's style (absent in older worlds: the classic look).
+			s.style = city.size() >= 5 ? (int) (long) city.get(4) : 0;
 		}
 		return s;
 	}));
@@ -87,6 +89,8 @@ public final class Settlement {
 	public int citizens;
 	/** The capital its country was planned around. */
 	public boolean capitalCity;
+	/** 1.28: the town's {@link CityStyle} (0 = classic), for the buildings ordered from its screen. */
+	public int style;
 
 	// Not saved: a capture in progress, how long rebels have held the flag.
 	public int riotTicks;

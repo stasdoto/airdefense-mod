@@ -24,7 +24,8 @@ public final class Politics extends SavedData {
 			Country.CODEC.listOf().optionalFieldOf("countries", List.of()).forGetter(p -> new ArrayList<>(p.countries.values())),
 			Settlement.CODEC.listOf().optionalFieldOf("settlements", List.of()).forGetter(p -> new ArrayList<>(p.settlements.values())),
 			Codec.INT.optionalFieldOf("next_id", 1).forGetter(p -> p.nextId),
-			Codec.INT.listOf().optionalFieldOf("flags_pending", List.of()).forGetter(p -> new ArrayList<>(p.flagsPending))
+			Codec.INT.listOf().optionalFieldOf("flags_pending", List.of()).forGetter(p -> new ArrayList<>(p.flagsPending)),
+			Codec.INT.optionalFieldOf("styles", 0).forGetter(p -> p.styles)
 	).apply(i, Politics::new));
 	public static final SavedDataType<Politics> TYPE = new SavedDataType<>(AirDefense.id("politics"), Politics::new, CODEC, null);
 
@@ -34,11 +35,18 @@ public final class Politics extends SavedData {
 	public final java.util.Set<Integer> flagsPending = new java.util.HashSet<>();
 	private int nextId;
 
+	/**
+	 * 1.28: 1 in worlds started with the town styles; worlds saved before them read 0 and keep the classic look (their
+	 * towns are half built already).
+	 */
+	public final int styles;
+
 	public Politics() {
-		this(List.of(), List.of(), 1, List.of());
+		this(List.of(), List.of(), 1, List.of(), 1);
 	}
 
-	private Politics(List<Country> countries, List<Settlement> settlements, int nextId, List<Integer> pending) {
+	private Politics(List<Country> countries, List<Settlement> settlements, int nextId, List<Integer> pending, int styles) {
+		this.styles = styles;
 		this.flagsPending.addAll(pending);
 		for (Country c : countries) {
 			this.countries.put(c.id, c);

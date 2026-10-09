@@ -60,6 +60,10 @@ public final class Sites {
 				tried++;
 				Building b = check(level, p, type, id, new BlockPos(x, c.getY(), z), facing, free, columns, reasons);
 				if (b != null) {
+					// 1.28: in the town's own style.
+					b.style = s.style;
+				}
+				if (b != null) {
 					lastReport = String.format("%s: found after %d tries, %d ms", type.id, tried, (System.nanoTime() - t0) / 1_000_000);
 					AirDefense.LOGGER.info("[airdefense] site {}", lastReport);
 					return b;

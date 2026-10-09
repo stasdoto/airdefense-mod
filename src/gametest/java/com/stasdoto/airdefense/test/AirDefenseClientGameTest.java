@@ -204,6 +204,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("gear")) {
 				gear(ctx, server);
 			}
+			if (scene("styles")) {
+				styles(ctx, server);
+			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
@@ -1537,6 +1540,107 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			shot(ctx, server, cc[5], "242_hamlet_field", 40);
 		}
 		server.runCommand("time set 1000");
+	}
+
+	/** 1.28: a capital in each regional style (planned in a far cell with the style forced), built and photographed. */
+	private void styles(ClientGameTestContext ctx, TestServerContext server) {
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 5000");
+		server.runCommand("difficulty peaceful");
+		com.stasdoto.airdefense.nation.CityStyle[] all = {com.stasdoto.airdefense.nation.CityStyle.SOVIET,
+				com.stasdoto.airdefense.nation.CityStyle.EUROPEAN, com.stasdoto.airdefense.nation.CityStyle.AMERICAN,
+				com.stasdoto.airdefense.nation.CityStyle.DESERT};
+		com.stasdoto.airdefense.nation.BuildingType[] types = {com.stasdoto.airdefense.nation.BuildingType.CITY_HALL,
+				com.stasdoto.airdefense.nation.BuildingType.PANEL5, com.stasdoto.airdefense.nation.BuildingType.PANEL9,
+				com.stasdoto.airdefense.nation.BuildingType.APARTMENTS, com.stasdoto.airdefense.nation.BuildingType.TOWER,
+				com.stasdoto.airdefense.nation.BuildingType.OFFICE, com.stasdoto.airdefense.nation.BuildingType.SHOP,
+				com.stasdoto.airdefense.nation.BuildingType.HOUSE, com.stasdoto.airdefense.nation.BuildingType.COTTAGE,
+				com.stasdoto.airdefense.nation.BuildingType.SMALL_HOUSE};
+		StringBuilder report = new StringBuilder();
+		for (int k = 0; k < all.length; k++) {
+			var style = all[k];
+			int cellX = 40 + k * 2;
+			int cellZ = 40;
+			int[] cap = server.computeOnServer(s -> {
+				ServerLevel l = s.overworld();
+				com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = style;
+				var list = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), com.stasdoto.airdefense.nation.Cities.terrain(l), cellX, cellZ);
+				com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = null;
+				if (list.isEmpty()) {
+					return null;
+				}
+				var c = list.getFirst();
+				java.util.Map<com.stasdoto.airdefense.nation.BuildingType, Integer> n = new java.util.EnumMap<>(com.stasdoto.airdefense.nation.BuildingType.class);
+				for (var b : c.buildings()) {
+					n.merge(b.type, 1, Integer::sum);
+				}
+				report.append(style).append(' ').append(c.style).append(' ').append(n).append("; ");
+				return new int[]{c.x, c.z, c.half(), c.base};
+			});
+			if (cap == null) {
+				continue;
+			}
+			int cx = cap[0];
+			int cz = cap[1];
+			int half = cap[2];
+			int base = cap[3];
+			camera(server, cx + 0.5, base + 80, cz + half + 80, 180, 35);
+			ctx.waitTicks(40);
+			int m = half + 12;
+			generateCity(server, cx - m, cz - m, cx + m, cz + m);
+			ctx.waitTicks(100);
+			String tag = style.name().toLowerCase(java.util.Locale.ROOT);
+			shot(ctx, server, new float[]{cx + 0.5f, base + 70, cz + half + 60, 180, 35}, "s" + k + "_" + tag + "_aerial", 60);
+			shot(ctx, server, new float[]{cx + half * 0.5f, base + 30, cz + half * 0.4f, 150, 25}, "s" + k + "_" + tag + "_aerial_low", 30);
+			for (var t : types) {
+				float[] cam = facingIn(server, cellX, cellZ, t, 0, t == com.stasdoto.airdefense.nation.BuildingType.TOWER ? 22 : 12,
+						t.height > 20 ? 10 : 4, 3);
+				if (cam != null) {
+					shot(ctx, server, cam, "s" + k + "_" + tag + "_" + t.id, 25);
+				}
+			}
+			if (k == 1 || k == 3) {
+				server.runCommand("time set 18000");
+				ctx.waitTicks(20);
+				shot(ctx, server, new float[]{cx + 0.5f, base + 70, cz + half + 60, 180, 35}, "s" + k + "_" + tag + "_night", 40);
+				server.runCommand("time set 5000");
+			}
+		}
+		AirDefense.LOGGER.info("[airdefense-test] RESULT styles: {}", report);
+	}
+
+	/** Like {@link #facing}, for the capital of another cell. */
+	private static float[] facingIn(TestServerContext server, int cellX, int cellZ, com.stasdoto.airdefense.nation.BuildingType type, int skip,
+			double dist, double up, double side) {
+		return server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var t = com.stasdoto.airdefense.nation.Cities.terrain(l);
+			var list = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), t, cellX, cellZ);
+			if (list.isEmpty()) {
+				return null;
+			}
+			var c = list.getFirst();
+			int k = 0;
+			for (var b : c.buildings()) {
+				if (b.type != type || k++ < skip) {
+					continue;
+				}
+				var f = b.facing;
+				var right = f.getClockWise();
+				double mx = b.origin.getX() + 0.5 + f.getStepX() * b.type.depth / 2.0;
+				double mz = b.origin.getZ() + 0.5 + f.getStepZ() * b.type.depth / 2.0;
+				double cx = b.origin.getX() + 0.5 - f.getStepX() * dist + right.getStepX() * side;
+				double cz = b.origin.getZ() + 0.5 - f.getStepZ() * dist + right.getStepZ() * side;
+				double cy = c.base + up;
+				double dx = mx - cx;
+				double dz = mz - cz;
+				double dy = c.base + Math.min(b.type.height, 24) * 0.45 - cy;
+				float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+				float pitch = (float) -Math.toDegrees(Math.atan2(dy, Math.hypot(dx, dz)));
+				return new float[]{(float) cx, (float) cy, (float) cz, yaw, pitch};
+			}
+			return null;
+		});
 	}
 
 	/** Builds the chunks of a square (as the world generator would). */

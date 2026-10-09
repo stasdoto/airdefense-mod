@@ -760,8 +760,42 @@ final class CityDecor {
 				.setValue(BlockStateProperties.HORIZONTAL_FACING, sx > 0 ? Direction.WEST : Direction.EAST));
 	}
 
+	/** 1.28: a date palm for the desert town: a tall trunk, fronds drooping out in eight directions. */
+	private void palm(int x, int z, boolean small) {
+		int h = small ? 4 : 5 + r.nextInt(2);
+		for (int y = 1; y <= h; y++) {
+			tree(x, base + y, z, b(Blocks.JUNGLE_LOG));
+		}
+		BlockState l = Blocks.JUNGLE_LEAVES.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, true);
+		tree(x, base + h + 1, z, l);
+		for (Direction d : Direction.Plane.HORIZONTAL) {
+			int dx = d.getStepX();
+			int dz = d.getStepZ();
+			tree(x + dx, base + h + 1, z + dz, l);
+			tree(x + 2 * dx, base + h, z + 2 * dz, l);
+			if (!small) {
+				tree(x + 3 * dx, base + h - 1, z + 3 * dz, l);
+			}
+			// The diagonal fronds, one step lower.
+			int ex = dx - dz;
+			int ez = dz + dx;
+			tree(x + ex, base + h, z + ez, l);
+		}
+		used.add(BlockPos.asLong(x, 0, z));
+	}
+
 	private void streetTree(int x, int z, boolean small) {
+		if (c.style == CityStyle.DESERT) {
+			palm(x, z, small);
+			return;
+		}
 		int kind = r.nextInt(4);
+		// 1.28: birches in the Soviet town, limes and oaks in the European one (no cherries in either).
+		if (kind == 1 && c.style == CityStyle.SOVIET) {
+			kind = 0;
+		} else if (kind == 1 && c.style == CityStyle.EUROPEAN) {
+			kind = 3;
+		}
 		Block log = switch (kind) {
 			case 0 -> Blocks.BIRCH_LOG;
 			case 1 -> Blocks.CHERRY_LOG;

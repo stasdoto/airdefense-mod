@@ -25,10 +25,12 @@ public final class Building {
 			Codec.BOOL.optionalFieldOf("free", false).forGetter(b -> b.free),
 			BlockPos.CODEC.listOf().optionalFieldOf("points", List.of()).forGetter(b -> new ArrayList<>(b.points)),
 			Codec.INT.optionalFieldOf("total", 0).forGetter(b -> b.total),
-			Codec.INT.optionalFieldOf("variant", 0).forGetter(b -> b.variant)
-	).apply(i, (id, type, origin, facing, index, done, free, points, total, variant) -> {
+			Codec.INT.optionalFieldOf("variant", 0).forGetter(b -> b.variant),
+			Codec.INT.optionalFieldOf("style", 0).forGetter(b -> b.style)
+	).apply(i, (id, type, origin, facing, index, done, free, points, total, variant, style) -> {
 		Building b = new Building(id, BuildingType.byId(type), origin, Direction.from2DDataValue(facing), free);
 		b.variant = variant;
+		b.style = style;
 		b.index = index;
 		b.done = done;
 		b.points.addAll(points);
@@ -49,6 +51,8 @@ public final class Building {
 	public boolean done;
 	/** Which look of the design (colours, details). */
 	public int variant;
+	/** 1.28: the town's style ({@link CityStyle}, 0 = the classic look). */
+	public int style;
 	public final List<BlockPos> points = new ArrayList<>();
 
 	public Building(int id, BuildingType type, BlockPos origin, Direction facing, boolean free) {

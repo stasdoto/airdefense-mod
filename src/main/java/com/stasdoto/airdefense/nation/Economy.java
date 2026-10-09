@@ -467,6 +467,7 @@ public final class Economy {
 		}
 		Building nb = new Building(p.newId(), type, old.origin, old.facing, free);
 		nb.variant = old.variant;
+		nb.style = old.style;
 		if (!fits(level, s, nb, old)) {
 			player.sendOverlayMessage(Component.translatable("nation.airdefense.eco.no_room", Component.translatable(type.key())));
 			return false;

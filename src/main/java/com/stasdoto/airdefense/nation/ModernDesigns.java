@@ -51,6 +51,10 @@ final class ModernDesigns {
 		if (variant >= RUSTIC && (p.b.type == BuildingType.HOUSE || p.b.type == BuildingType.SMALL_HOUSE)) {
 			return false;
 		}
+		// 1.28: the town's own style first.
+		if (p.b.style != 0 && StyleDesigns.design(p, variant, flag)) {
+			return true;
+		}
 		switch (p.b.type) {
 			case PANEL5 -> Architecture.panel(p, 5, variant);
 			case PANEL9 -> Architecture.panel(p, 9, variant);

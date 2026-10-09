@@ -64,6 +64,11 @@ public final class Cities {
 		int top(int x, int z);
 
 		int sea();
+
+		/** 1.28: the climate at a spot ({@link CityStyle#TEMPERATE}, COLD or DRY), from the biome there. */
+		default int climate(int x, int z) {
+			return CityStyle.TEMPERATE;
+		}
 	}
 
 	public static Terrain terrain(ServerLevel level) {
@@ -81,8 +86,27 @@ public final class Cities {
 			public int sea() {
 				return sea;
 			}
+
+			@Override
+			public int climate(int x, int z) {
+				var b = gen.getBiomeSource().createUncachedResolver(rs).getNoiseBiome(net.minecraft.core.QuartPos.fromBlock(x),
+						net.minecraft.core.QuartPos.fromBlock(Math.max(top(x, z), sea)), net.minecraft.core.QuartPos.fromBlock(z)).value();
+				float temp = b.getBaseTemperature();
+				if (temp >= 1.5f && !b.hasPrecipitation()) {
+					return CityStyle.DRY;
+				}
+				return temp < 0.3f ? CityStyle.COLD : CityStyle.TEMPERATE;
+			}
 		};
 	}
+
+	/**
+	 * 1.28: false in worlds started before the styles came in (see Politics): their towns keep the classic look.
+	 * {@link #FORCE_STYLE}: for the automated test, the style of every country planned from now on.
+	 */
+	public static volatile boolean styles = true;
+	@Nullable
+	public static volatile CityStyle FORCE_STYLE;
 
 	/** One city of the plan. */
 	public static final class City {
@@ -99,9 +123,11 @@ public final class Cities {
 		/** The country's colour (a dye id). */
 		public final int color;
 		public final long seed;
+		/** 1.28: how the town looks. */
+		public final CityStyle style;
 		private volatile List<Building> buildings;
 
-		City(int cx, int cz, int index, int x, int z, int base, Size size, int citizens, int color, long seed) {
+		City(int cx, int cz, int index, int x, int z, int base, Size size, int citizens, int color, long seed, CityStyle style) {
 			this.cx = cx;
 			this.cz = cz;
 			this.index = index;
@@ -112,6 +138,7 @@ public final class Cities {
 			this.citizens = citizens;
 			this.color = color;
 			this.seed = seed;
+			this.style = style;
 		}
 
 		public boolean capital() {
@@ -448,13 +475,15 @@ public final class Cities {
 	}
 
 	private static void checkSeed(long seed) {
-		if (cacheSeed != seed) {
+		// The plan also depends on whether the world has the 1.28 styles.
+		long key = styles ? seed : ~seed;
+		if (cacheSeed != key) {
 			synchronized (Cities.class) {
-				if (cacheSeed != seed) {
+				if (cacheSeed != key) {
 					CITIES.clear();
 					ROADS.clear();
 					CityGen.clearCache();
-					cacheSeed = seed;
+					cacheSeed = key;
 				}
 			}
 		}
@@ -558,6 +587,13 @@ public final class Cities {
 		return z ^ (z >>> 33);
 	}
 
+	private static CityStyle styleOf(Terrain t, int x, int z, int roll, @Nullable CityStyle forced) {
+		if (forced != null) {
+			return forced;
+		}
+		return styles ? CityStyle.pick(roll, t.climate(x, z)) : CityStyle.CLASSIC;
+	}
+
 	private static List<City> planCell(long seed, Terrain t, int cx, int cz) {
 		long cellSeed = mix(seed ^ 0x43495459L ^ cx * 0x9E3779B97F4A7C15L ^ cz * 0xC2B2AE3D27D4EB4FL);
 		Random r = new Random(cellSeed);
@@ -570,8 +606,11 @@ public final class Cities {
 		if (cap == null) {
 			return out;
 		}
+		// 1.28: one look for the whole country, picked apart from the plan's own random numbers (old plans stay the same).
+		int styleRoll = (int) Math.floorMod(mix(seed ^ cellKey(cx, cz) ^ 0x5759_4C45L), 100L);
+		CityStyle forced = FORCE_STYLE;
 		out.add(new City(cx, cz, 0, cap[0], cap[1], cap[2], Size.LARGE, Size.LARGE.popMin + 100 + r.nextInt(Size.LARGE.popMax - Size.LARGE.popMin - 99),
-				color, r.nextLong()));
+				color, r.nextLong(), styleOf(t, cap[0], cap[1], styleRoll, forced)));
 		double a0 = r.nextDouble() * Math.PI * 2;
 		for (int k = 1; k <= 2; k++) {
 			Size size = r.nextInt(100) < 55 ? Size.MEDIUM : Size.SMALL;
@@ -598,7 +637,7 @@ public final class Cities {
 				}
 				if (!clash) {
 					out.add(new City(cx, cz, k, best[0], best[1], best[2], size, size.popMin + r.nextInt(size.popMax - size.popMin + 1), color,
-							r.nextLong()));
+							r.nextLong(), styleOf(t, best[0], best[1], styleRoll, forced)));
 				}
 			}
 		}
@@ -739,6 +778,33 @@ public final class Cities {
 	private static final Object[] OUTER = {BuildingType.COTTAGE, 5, BuildingType.HOUSE, 3, BuildingType.SMALL_HOUSE, 2, BuildingType.GARAGES, 1,
 			BuildingType.SHOP, 1};
 	private static final Object[] INDUSTRY = {BuildingType.WAREHOUSE, 3, BuildingType.GARAGES, 2, BuildingType.HANGAR, 1, BuildingType.LOGISTICS_HUB, 1};
+	// 1.28: what the districts of each style are built of.
+	private static final Object[] SOVIET_DOWNTOWN = {BuildingType.PANEL9, 4, BuildingType.OFFICE, 2, BuildingType.SHOP, 3, BuildingType.TOWER, 1,
+			BuildingType.APARTMENTS, 2};
+	private static final Object[] SOVIET_MID = {BuildingType.PANEL5, 5, BuildingType.PANEL9, 2, BuildingType.APARTMENTS, 1, BuildingType.SHOP, 1};
+	private static final Object[] SOVIET_OUTER = {BuildingType.SMALL_HOUSE, 4, BuildingType.HOUSE, 3, BuildingType.GARAGES, 3, BuildingType.SHOP, 1,
+			BuildingType.PANEL5, 1};
+	private static final Object[] EURO_DOWNTOWN = {BuildingType.APARTMENTS, 4, BuildingType.PANEL5, 3, BuildingType.SHOP, 4, BuildingType.OFFICE, 1,
+			BuildingType.TOWER, 1};
+	private static final Object[] EURO_MID = {BuildingType.PANEL5, 4, BuildingType.APARTMENTS, 3, BuildingType.PANEL9, 1, BuildingType.SHOP, 2};
+	private static final Object[] EURO_OUTER = {BuildingType.HOUSE, 4, BuildingType.COTTAGE, 3, BuildingType.SMALL_HOUSE, 3, BuildingType.SHOP, 1};
+	private static final Object[] US_DOWNTOWN = {BuildingType.TOWER, 5, BuildingType.OFFICE, 4, BuildingType.SHOP, 2, BuildingType.PANEL9, 1};
+	private static final Object[] US_MID = {BuildingType.APARTMENTS, 3, BuildingType.PANEL5, 3, BuildingType.SHOP, 3, BuildingType.PANEL9, 1};
+	private static final Object[] US_OUTER = {BuildingType.COTTAGE, 5, BuildingType.HOUSE, 5, BuildingType.SMALL_HOUSE, 1, BuildingType.SHOP, 1};
+	private static final Object[] DESERT_DOWNTOWN = {BuildingType.OFFICE, 3, BuildingType.TOWER, 2, BuildingType.PANEL9, 2, BuildingType.SHOP, 4};
+	private static final Object[] DESERT_MID = {BuildingType.APARTMENTS, 4, BuildingType.PANEL5, 3, BuildingType.SHOP, 3};
+	private static final Object[] DESERT_OUTER = {BuildingType.HOUSE, 4, BuildingType.SMALL_HOUSE, 4, BuildingType.COTTAGE, 2, BuildingType.SHOP, 1};
+
+	private static Object[] mix(CityStyle style, int district) {
+		return switch (style) {
+			case SOVIET -> district == CityShape.DOWNTOWN ? SOVIET_DOWNTOWN : district == CityShape.MID ? SOVIET_MID : SOVIET_OUTER;
+			case EUROPEAN -> district == CityShape.DOWNTOWN ? EURO_DOWNTOWN : district == CityShape.MID ? EURO_MID : EURO_OUTER;
+			case AMERICAN -> district == CityShape.DOWNTOWN ? US_DOWNTOWN : district == CityShape.MID ? US_MID : US_OUTER;
+			case DESERT -> district == CityShape.DOWNTOWN ? DESERT_DOWNTOWN : district == CityShape.MID ? DESERT_MID : DESERT_OUTER;
+			default -> district == CityShape.DOWNTOWN ? DOWNTOWN : district == CityShape.MID ? MID : OUTER;
+		};
+	}
+
 	/** Industries a city may lack: crude oil, the refinery, weapons, food. */
 	static final BuildingType[] LACKS = {BuildingType.OIL_WELL, BuildingType.REFINERY, BuildingType.ARMS_FACTORY, BuildingType.FOOD_PLANT};
 
@@ -943,16 +1009,17 @@ public final class Cities {
 						out.add(park);
 					}
 				}
-				case CityShape.DOWNTOWN -> rows(f, r, DOWNTOWN, y, out);
-				case CityShape.MID -> rows(f, r, MID, y, out);
+				case CityShape.DOWNTOWN -> rows(f, r, mix(c.style, CityShape.DOWNTOWN), y, out);
+				case CityShape.MID -> rows(f, r, mix(c.style, CityShape.MID), y, out);
 				case CityShape.INDUSTRY -> rows(f, r, INDUSTRY, y, out);
-				default -> rows(f, r, OUTER, y, out);
+				default -> rows(f, r, mix(c.style, CityShape.OUTER), y, out);
 			}
 		}
 		List<Building> numbered = new ArrayList<>();
 		for (Building b : out) {
 			Building nb = new Building(numbered.size(), b.type, b.origin, b.facing, true);
 			nb.variant = b.variant;
+			nb.style = c.style.ordinal();
 			numbered.add(nb);
 		}
 		return numbered;

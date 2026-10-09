@@ -59,6 +59,17 @@ public final class Nations {
 	}
 
 	public static void init() {
+		// 1.28: whether this world's towns get the regional styles (before any of its land is made).
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents.LOAD.register((server, level) -> {
+			if (level.dimension() == Level.OVERWORLD) {
+				try {
+					Cities.styles = Politics.get(server).styles >= 1;
+				} catch (RuntimeException e) {
+					Cities.styles = true;
+				}
+				com.stasdoto.airdefense.AirDefense.LOGGER.info("[airdefense] town styles {}", Cities.styles ? "on" : "off (an older world)");
+			}
+		});
 		ServerTickEvents.END_LEVEL_TICK.register(level -> {
 			if (level.dimension() == Level.OVERWORLD) {
 				tick(level);
@@ -239,9 +250,11 @@ public final class Nations {
 		s.radius = c.radius();
 		s.citizens = c.citizens;
 		s.capitalCity = c.capital();
+		s.style = c.style.ordinal();
 		for (Building b : c.buildings()) {
 			Building nb = new Building(p.newId(), b.type, b.origin, b.facing, true);
 			nb.variant = b.variant;
+			nb.style = b.style;
 			nb.done = true;
 			s.eco.buildings.add(nb);
 		}
