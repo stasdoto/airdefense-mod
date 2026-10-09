@@ -1,0 +1,19 @@
+{
+ "variants": {
+  "facing=north": {
+   "model": "airdefense:block/street/kiosk"
+  },
+  "facing=east": {
+   "model": "airdefense:block/street/kiosk",
+   "y": 90
+  },
+  "facing=south": {
+   "model": "airdefense:block/street/kiosk",
+   "y": 180
+  },
+  "facing=west": {
+   "model": "airdefense:block/street/kiosk",
+   "y": 270
+  }
+ }
+}

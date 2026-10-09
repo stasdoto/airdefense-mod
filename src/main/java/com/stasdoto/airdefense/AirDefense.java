@@ -44,6 +44,7 @@ public class AirDefense implements ModInitializer {
 		VehicleActionPayload.register();
 		ModEntities.init();
 		ModBlocks.init();
+		com.stasdoto.airdefense.street.StreetBlocks.init();
 		ModBlockEntities.init();
 		ModItems.init();
 		ModCommands.init();

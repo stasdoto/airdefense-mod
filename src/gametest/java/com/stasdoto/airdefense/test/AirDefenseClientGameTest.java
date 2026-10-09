@@ -234,6 +234,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("uav")) {
 				uav(ctx, server);
 			}
+			if (scene("streets")) {
+				streets(ctx, server);
+			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
@@ -1552,6 +1555,156 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				}
 			}
 		});
+		language(ctx, "en_us");
+	}
+
+	/** 1.35: a street block facing {@code f} (or a pole, bottom or not) put down at (x, y, z). */
+	private static void putStreet(ServerLevel l, String id, int x, int y, int z, net.minecraft.core.Direction f) {
+		net.minecraft.world.level.block.Block b = com.stasdoto.airdefense.street.StreetBlocks.ALL.get(id);
+		var st = b.defaultBlockState();
+		if (st.hasProperty(com.stasdoto.airdefense.street.StreetBlock.FACING)) {
+			st = st.setValue(com.stasdoto.airdefense.street.StreetBlock.FACING, f);
+		}
+		if (st.hasProperty(com.stasdoto.airdefense.street.StreetPoleBlock.BOTTOM)) {
+			st = st.setValue(com.stasdoto.airdefense.street.StreetPoleBlock.BOTTOM,
+					!(l.getBlockState(new BlockPos(x, y - 1, z)).getBlock() instanceof com.stasdoto.airdefense.street.StreetPoleBlock));
+		}
+		l.setBlock(new BlockPos(x, y, z), st, 2);
+	}
+
+	private static void postWith(ServerLevel l, String pole, int h, String top, int x, int g, int z, net.minecraft.core.Direction f) {
+		for (int y = 1; y <= h; y++) {
+			putStreet(l, pole, x, g + y, z, f);
+		}
+		putStreet(l, top, x, g + h + 1, z, f);
+	}
+
+	/**
+	 * 1.35: the town furniture lined up (lamps, traffic lights, signs, benches, bins, bus stops...) by day and by night,
+	 * the traffic lights changing; then towns of the new outlines (round, star, ring, square, horseshoe, two halves) from
+	 * above, and their streets.
+	 */
+	private void streets(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 160000;
+		language(ctx, "ru_ru");
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 6000");
+		camera(server, x + 15.5, ground + 6, 14.5, 180, 15);
+		ctx.waitTicks(60);
+		var S = net.minecraft.core.Direction.SOUTH;
+		var E = net.minecraft.core.Direction.EAST;
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			int g = ground - 1;
+			postWith(l, "pole_steel", 4, "lamp_modern", x, g, 0, S);
+			postWith(l, "pole_concrete", 4, "lamp_cobra", x + 4, g, 0, S);
+			postWith(l, "pole_green", 3, "lamp_lantern", x + 8, g, 0, S);
+			postWith(l, "pole_black", 2, "lamp_globe", x + 12, g, 0, S);
+			postWith(l, "pole_black", 3, "traffic_light", x + 16, g, 0, E);
+			String[] signs = {"sign_stop", "sign_give_way", "sign_crossing", "sign_no_parking", "sign_speed", "sign_main_road", "sign_bus"};
+			for (int i = 0; i < signs.length; i++) {
+				postWith(l, "pole_steel", 2, signs[i], x + 20 + i * 2, g, 0, S);
+			}
+			String[] small = {"bench_park", "bench_soviet", "bench_modern", "bin_soviet", "bin_modern", "bin_euro", "hydrant", "mailbox_us",
+					"mailbox_euro", "mailbox_soviet", "bollard", "planter", "bike_rack", "vending"};
+			int[] at = {0, 3, 6, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 30};
+			for (int i = 0; i < small.length; i++) {
+				putStreet(l, small[i], x + at[i], g + 1, 12, S);
+			}
+			l.setBlock(new BlockPos(x + 32, g, 12), com.stasdoto.airdefense.street.StreetBlocks.MANHOLE.defaultBlockState(), 2);
+			putStreet(l, "bus_stop_modern", x + 2, g + 1, 24, S);
+			putStreet(l, "bus_stop_soviet", x + 8, g + 1, 24, S);
+			putStreet(l, "booth_red", x + 13, g + 1, 24, S);
+			putStreet(l, "booth_soviet", x + 15, g + 1, 24, S);
+			putStreet(l, "advert_column", x + 18, g + 1, 24, S);
+			putStreet(l, "kiosk", x + 22, g + 1, 24, S);
+			putStreet(l, "billboard", x + 29, g + 2, 24, S);
+		});
+		ctx.waitTicks(40);
+		shot(ctx, server, new float[]{x + 8.5f, ground + 4.5f, 11.5f, 180, 8}, "st1_lamps", 20);
+		shot(ctx, server, new float[]{x + 26.5f, ground + 2.5f, 7.5f, 180, 5}, "st2_signs", 20);
+		shot(ctx, server, new float[]{x + 9.5f, ground + 2.5f, 17.5f, 180, 18}, "st3_small_a", 20);
+		shot(ctx, server, new float[]{x + 25.5f, ground + 2.5f, 17.5f, 180, 18}, "st3_small_b", 20);
+		shot(ctx, server, new float[]{x + 8.5f, ground + 3.5f, 32.5f, 180, 10}, "st4_big_a", 20);
+		shot(ctx, server, new float[]{x + 24.5f, ground + 3.5f, 33.5f, 180, 10}, "st4_big_b", 20);
+		// The traffic light close by: the heads change in turn (green - yellow - red), six seconds apart.
+		shot(ctx, server, new float[]{x + 19.5f, ground + 4.5f, 3.5f, 135, 10}, "st5_traffic_a", 20);
+		ctx.waitTicks(105);
+		ctx.takeScreenshot("st5_traffic_b");
+		server.runCommand("time set 18000");
+		ctx.waitTicks(30);
+		shot(ctx, server, new float[]{x + 8.5f, ground + 4.5f, 12.5f, 180, 8}, "st6_night_lamps", 30);
+		shot(ctx, server, new float[]{x + 15.5f, ground + 4.5f, 34.5f, 180, 10}, "st6_night_big", 20);
+		server.runCommand("time set 6000");
+		int placed = server.computeOnServer(s -> {
+			int n = 0;
+			for (int dx = -2; dx < 36; dx++) {
+				for (int dz = -2; dz < 28; dz++) {
+					for (int dy = 0; dy < 8; dy++) {
+						if (s.overworld().getBlockState(new BlockPos(x + dx, ground - 1 + dy, dz)).getBlock().getDescriptionId().startsWith("block.airdefense.")) {
+							n++;
+						}
+					}
+				}
+			}
+			return n;
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT street_furniture: {} blocks of it standing (registered {})", placed,
+				com.stasdoto.airdefense.street.StreetBlocks.ALL.size());
+
+		// Towns of the new outlines, from above, and their streets.
+		Object[][] forms = {{com.stasdoto.airdefense.nation.CityForm.ROUND, com.stasdoto.airdefense.nation.CityStyle.SOVIET},
+				{com.stasdoto.airdefense.nation.CityForm.STAR, com.stasdoto.airdefense.nation.CityStyle.SOVIET},
+				{com.stasdoto.airdefense.nation.CityForm.RING, com.stasdoto.airdefense.nation.CityStyle.EUROPEAN},
+				{com.stasdoto.airdefense.nation.CityForm.SQUARE, com.stasdoto.airdefense.nation.CityStyle.AMERICAN},
+				{com.stasdoto.airdefense.nation.CityForm.CRESCENT, com.stasdoto.airdefense.nation.CityStyle.EUROPEAN},
+				{com.stasdoto.airdefense.nation.CityForm.TWIN, com.stasdoto.airdefense.nation.CityStyle.AMERICAN}};
+		ctx.runOnClient(mc -> mc.options.renderDistance().set(14));
+		StringBuilder report = new StringBuilder();
+		for (int k = 0; k < forms.length; k++) {
+			var form = (com.stasdoto.airdefense.nation.CityForm) forms[k][0];
+			var style = (com.stasdoto.airdefense.nation.CityStyle) forms[k][1];
+			int cellX = 70 + k * 2;
+			int cellZ = 70;
+			int[] cap = server.computeOnServer(s -> {
+				ServerLevel l = s.overworld();
+				com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = style;
+				com.stasdoto.airdefense.nation.Cities.FORCE_FORM = form;
+				var list = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), com.stasdoto.airdefense.nation.Cities.terrain(l), cellX, cellZ);
+				com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = null;
+				if (list.isEmpty()) {
+					com.stasdoto.airdefense.nation.Cities.FORCE_FORM = null;
+					return null;
+				}
+				var c = list.getFirst();
+				var sh = c.shape();
+				com.stasdoto.airdefense.nation.Cities.FORCE_FORM = null;
+				var hall = sh.hallLot();
+				report.append(form).append('/').append(c.style).append(": form ").append(sh.form).append(", ").append(sh.lots.size()).append(" lots, ")
+						.append(c.buildings().size()).append(" buildings; ");
+				return new int[]{c.x, c.z, c.half(), c.base, hall.x0, hall.z0, hall.x1, hall.z1};
+			});
+			if (cap == null) {
+				continue;
+			}
+			int cx = cap[0];
+			int cz = cap[1];
+			int half = cap[2];
+			int base = cap[3];
+			camera(server, cx + 0.5, base + 60, cz + 0.5, 0, 90);
+			ctx.waitTicks(40);
+			int m = half + 14;
+			generateCity(server, cx - m, cz - m, cx + m, cz + m);
+			String tag = "f" + k + "_" + form.name().toLowerCase(java.util.Locale.ROOT);
+			shot(ctx, server, new float[]{cx + 0.5f, base + half * 1.45f + 20, cz + 0.5f, 0, 90}, tag + "_above", 260);
+			if (k == 0 || k == 2 || k == 3) {
+				// A crossing by the town hall (a traffic light on its corner) and the square.
+				shot(ctx, server, new float[]{cap[4] - 9.5f, base + 4, cap[5] - 11.5f, -35, 12}, tag + "_crossing", 60);
+				shot(ctx, server, new float[]{(cap[4] + cap[6]) / 2f, base + 9, cap[5] + 3.5f, 0, 25}, tag + "_square", 40);
+			}
+		}
+		ctx.runOnClient(mc -> mc.options.renderDistance().set(8));
+		AirDefense.LOGGER.info("[airdefense-test] RESULT city_forms: {}", report);
 		language(ctx, "en_us");
 	}
 
