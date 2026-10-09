@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "airdefense:helmet",
+    "minecraft:spyglass",
+    "minecraft:redstone",
+    "minecraft:glowstone_dust"
+  ],
+  "result": {
+    "id": "airdefense:nvg_helmet",
+    "count": 1
+  }
+}

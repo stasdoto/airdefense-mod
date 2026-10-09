@@ -56,6 +56,9 @@ import com.stasdoto.airdefense.weapon.ShotPayload;
 public final class GunClient {
 	private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(AirDefense.id("gear"));
 	public static final KeyMapping NVG = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.airdefense.nvg", InputConstants.KEY_N, CATEGORY));
+	/** 1.27: a grenade from the pouch on the vest, and dressing a wound from the first-aid kit on it. */
+	public static final KeyMapping GRENADE = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.airdefense.grenade", InputConstants.KEY_B, CATEGORY));
+	public static final KeyMapping MEDKIT = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.airdefense.medkit", InputConstants.KEY_H, CATEGORY));
 
 	private static float cooldown;
 	/** Rounds still to go in the current burst (M16A4: three a pull). */
@@ -97,7 +100,7 @@ public final class GunClient {
 		HudElementRegistry.addLast(AirDefense.id("gun_hud"), GunClient::hud);
 		// No crosshair over the scope picture: the scope has its own.
 		HudElementRegistry.replaceElement(VanillaHudElements.CROSSHAIR, original -> (g, delta) -> {
-			if (!scoped() && !dotSight()) {
+			if (!scoped() && !dotSight() && !com.stasdoto.airdefense.client.gear.MonocularView.active()) {
 				original.extractRenderState(g, delta);
 			}
 		});
@@ -203,6 +206,14 @@ public final class GunClient {
 			if (com.stasdoto.airdefense.client.vehicle.GunnerSight.active() == com.stasdoto.airdefense.client.vehicle.GunnerSight.Kind.NONE) {
 				send(GunActionPayload.NVG, Vec3.ZERO, -1);
 			}
+		}
+		while (GRENADE.consumeClick()) {
+			if (!p.isPassenger()) {
+				send(GunActionPayload.GRENADE, Vec3.ZERO, -1);
+			}
+		}
+		while (MEDKIT.consumeClick()) {
+			send(GunActionPayload.MEDKIT, Vec3.ZERO, -1);
 		}
 		seeker(mc, p, gun);
 		if (gun == null || p.getVehicle() instanceof VehicleEntity) {

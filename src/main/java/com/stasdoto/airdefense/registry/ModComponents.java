@@ -20,6 +20,13 @@ public final class ModComponents {
 			DataComponentType.<Boolean>builder().persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL)
 					.ignoreSwapAnimation().build());
 
+	/** 1.27: the pouches on a vest, four bits a slot (see gear.Pouches). */
+	public static final DataComponentType<Integer> POUCHES = Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE, AirDefense.id("pouches"),
+			DataComponentType.<Integer>builder().persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT).build());
+	/** 1.27: the thermal monocular's magnification step (0 = 2.5x, 1 = 6x). */
+	public static final DataComponentType<Integer> ZOOM_STEP = Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE, AirDefense.id("zoom_step"),
+			DataComponentType.<Integer>builder().persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT).ignoreSwapAnimation().build());
+
 	private ModComponents() {
 	}
 

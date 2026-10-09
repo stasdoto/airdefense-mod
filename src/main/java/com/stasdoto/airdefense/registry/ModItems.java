@@ -26,6 +26,9 @@ import net.minecraft.world.effect.MobEffects;
 
 import com.stasdoto.airdefense.AirDefense;
 import com.stasdoto.airdefense.factory.FactoryKitItem;
+import com.stasdoto.airdefense.gear.PouchItem;
+import com.stasdoto.airdefense.gear.ThermalMonocularItem;
+import com.stasdoto.airdefense.gear.VestItem;
 import com.stasdoto.airdefense.item.DesignatorItem;
 import com.stasdoto.airdefense.item.ManpadsItem;
 import com.stasdoto.airdefense.missile.MissileType;
@@ -175,7 +178,19 @@ public final class ModItems {
 	public static final Item HELMET = register("helmet", Item::new, new Item.Properties().humanoidArmor(ModArmor.HELMET, ArmorType.HELMET));
 	public static final Item NVG_HELMET = register("nvg_helmet", NvgItem::new,
 			new Item.Properties().humanoidArmor(ModArmor.NVG, ArmorType.HELMET).rarity(Rarity.UNCOMMON));
-	public static final Item VEST = register("vest", Item::new, new Item.Properties().humanoidArmor(ModArmor.VEST, ArmorType.CHESTPLATE));
+	/** 1.27: the plate carrier (the old "vest"), with webbing for six pouches. */
+	public static final Item VEST = register("vest", p -> new VestItem(p, 0.45f), new Item.Properties().humanoidArmor(ModArmor.VEST, ArmorType.CHESTPLATE));
+	/** 1.27: the FAST helmet without goggles, and the heavy 6B45 vest. */
+	public static final Item HELMET_FAST = register("helmet_fast", Item::new, new Item.Properties().humanoidArmor(ModArmor.FAST, ArmorType.HELMET));
+	public static final Item VEST_HEAVY = register("vest_heavy", p -> new VestItem(p, 0.32f),
+			new Item.Properties().humanoidArmor(ModArmor.VEST_HEAVY, ArmorType.CHESTPLATE).rarity(Rarity.UNCOMMON));
+	/** 1.27: pouches for the vests (see gear.Pouch) and the hand-held thermal imager. */
+	public static final Item POUCH_MAG = register("pouch_mag", PouchItem::new, new Item.Properties().stacksTo(16));
+	public static final Item POUCH_GRENADE = register("pouch_grenade", PouchItem::new, new Item.Properties().stacksTo(16));
+	public static final Item POUCH_MEDKIT = register("pouch_medkit", PouchItem::new, new Item.Properties().stacksTo(16));
+	public static final Item POUCH_RADIO = register("pouch_radio", PouchItem::new, new Item.Properties().stacksTo(16));
+	public static final Item THERMAL_MONOCULAR = register("thermal_monocular", ThermalMonocularItem::new,
+			new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
 	/** Field dressing: two seconds to apply, heals four hearts at once and more over the next ten seconds. */
 	public static final Item MEDKIT = register("medkit", Item::new, new Item.Properties().stacksTo(8)
 			.component(DataComponents.CONSUMABLE, Consumable.builder()
@@ -296,9 +311,16 @@ public final class ModItems {
 				output.accept(JAVELIN_MISSILE);
 				output.accept(F1_GRENADE);
 				output.accept(HELMET);
+				output.accept(HELMET_FAST);
 				output.accept(NVG_HELMET);
 				output.accept(VEST);
+				output.accept(VEST_HEAVY);
+				output.accept(POUCH_MAG);
+				output.accept(POUCH_GRENADE);
+				output.accept(POUCH_MEDKIT);
+				output.accept(POUCH_RADIO);
 				output.accept(MEDKIT);
+				output.accept(THERMAL_MONOCULAR);
 			})
 			.build();
 

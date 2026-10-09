@@ -23,7 +23,7 @@ public final class ThermalView {
 	}
 
 	public static boolean wanted() {
-		return GunnerSight.thermalOn();
+		return GunnerSight.thermalOn() || com.stasdoto.airdefense.client.gear.MonocularView.active();
 	}
 
 	private static void tick(Minecraft mc) {

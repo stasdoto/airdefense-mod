@@ -174,10 +174,37 @@ public class SoldierEntity extends PathfinderMob {
 			} else {
 				gun = east ? pick(roll, GunType.AKS74U, GunType.ASVAL, GunType.SAIGA12) : pick(roll, GunType.MP5, GunType.M870, GunType.HK416);
 			}
-			setItemSlot(EquipmentSlot.HEAD, new ItemStack(ModItems.HELMET));
-			setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.VEST));
+			gear(east, roll, gun);
 		}
 		setItemSlot(EquipmentSlot.MAINHAND, GunItem.loaded(gun));
+	}
+
+	/**
+	 * 1.27: the eastern armies in the 6B47 helmet and the heavy 6B45 vest (digital), the western ones in the FAST (now and
+	 * then with night goggles) and a plate carrier; pouches by the weapon: magazines, a first-aid kit, grenades, a radio.
+	 */
+	private void gear(boolean east, int roll, Item gun) {
+		int r = random.nextInt(100);
+		ItemStack helmet = new ItemStack(east ? ModItems.HELMET : r < 25 ? ModItems.NVG_HELMET : ModItems.HELMET_FAST);
+		ItemStack vest = new ItemStack(east ? ModItems.VEST_HEAVY : ModItems.VEST);
+		GunType g = gun instanceof GunItem gi ? gi.gun : null;
+		boolean mg = g != null && g.magazine >= 60;
+		boolean marksman = g != null && g.scoped();
+		int mags = mg ? 1 : marksman ? 1 : 2 + random.nextInt(2);
+		for (int i = 0; i < mags; i++) {
+			com.stasdoto.airdefense.gear.Pouches.attach(vest, com.stasdoto.airdefense.gear.Pouch.MAG);
+		}
+		com.stasdoto.airdefense.gear.Pouches.attach(vest, com.stasdoto.airdefense.gear.Pouch.MEDKIT);
+		if (!marksman && random.nextInt(100) < 60) {
+			com.stasdoto.airdefense.gear.Pouches.attach(vest, com.stasdoto.airdefense.gear.Pouch.GRENADE);
+		}
+		if (marksman || random.nextInt(100) < 25) {
+			com.stasdoto.airdefense.gear.Pouches.attach(vest, com.stasdoto.airdefense.gear.Pouch.RADIO);
+		}
+		setItemSlot(EquipmentSlot.HEAD, helmet);
+		setItemSlot(EquipmentSlot.CHEST, vest);
+		grenades = 1 + 2 * com.stasdoto.airdefense.gear.Pouches.count(vest, com.stasdoto.airdefense.gear.Pouch.GRENADE);
+		medkits = com.stasdoto.airdefense.gear.Pouches.count(vest, com.stasdoto.airdefense.gear.Pouch.MEDKIT);
 	}
 
 	/** Weapons from the town's arsenal (1.23): a machine gun or a marksman's rifle instead of what he got. */
@@ -459,9 +486,24 @@ public class SoldierEntity extends PathfinderMob {
 			return;
 		}
 		Item ammoItem = gun.ammo();
+		ItemStack vest = getItemBySlot(EquipmentSlot.CHEST);
 		if (ammoItem != null && !gun.rocket()) {
-			int n = 4 + random.nextInt(gun.magazine >= 60 ? 30 : 14);
-			spawnAtLocation(level, new ItemStack(ammoItem, n));
+			// 1.27: what was in his magazine pouches too.
+			int mags = com.stasdoto.airdefense.gear.Pouches.count(vest, com.stasdoto.airdefense.gear.Pouch.MAG);
+			int n = 4 + random.nextInt(gun.magazine >= 60 ? 30 : 14) + mags * (gun.magazine / 2 + random.nextInt(gun.magazine / 2 + 1));
+			spawnAtLocation(level, new ItemStack(ammoItem, Math.min(n, ammoItem.getDefaultMaxStackSize())));
+		}
+		if (medkits > 0 && random.nextInt(3) == 0) {
+			spawnAtLocation(level, new ItemStack(ModItems.MEDKIT));
+		}
+		if (grenades > 0 && com.stasdoto.airdefense.gear.Pouches.count(vest, com.stasdoto.airdefense.gear.Pouch.GRENADE) > 0 && random.nextInt(3) == 0) {
+			spawnAtLocation(level, new ItemStack(ModItems.F1_GRENADE, Math.min(grenades, 2)));
+		}
+		if (random.nextInt(6) == 0) {
+			com.stasdoto.airdefense.gear.Pouch p = com.stasdoto.airdefense.gear.Pouches.at(vest, random.nextInt(com.stasdoto.airdefense.gear.Pouches.SLOTS));
+			if (p != com.stasdoto.airdefense.gear.Pouch.NONE) {
+				spawnAtLocation(level, new ItemStack(p.item()));
+			}
 		}
 		if (random.nextInt(8) == 0) {
 			ItemStack g = getMainHandItem().copy();
@@ -532,6 +574,9 @@ public class SoldierEntity extends PathfinderMob {
 	public static int fellBack;
 	public static int grenadesThrown;
 	private int grenades = 2;
+	/** 1.27: first-aid kits on the vest, used on himself once out of the line of fire. */
+	private int medkits;
+	public static int selfAid;
 	private int grenadeCooldown;
 
 	/**
@@ -594,6 +639,14 @@ public class SoldierEntity extends PathfinderMob {
 			// Badly hurt: back out of the line of fire for a while.
 			if (fallBack > 0) {
 				fallBack--;
+				if (fallBack == 30 && s.medkits > 0 && s.getHealth() < s.getMaxHealth() * 0.6f) {
+					s.medkits--;
+					s.heal(8.0f);
+					s.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.REGENERATION, 200, 0));
+					level.playSound(null, s.getX(), s.getY(), s.getZ(), com.stasdoto.airdefense.registry.ModSounds.MEDKIT,
+							net.minecraft.sounds.SoundSource.HOSTILE, 0.8f, 1.0f);
+					selfAid++;
+				}
 				if (see && fallBack % 10 == 0) {
 					s.tryShoot(t);
 				}

@@ -113,6 +113,28 @@ class Painter:
         z = np.pad(z, ((0, max(0, h - z.shape[0])), (0, max(0, w - z.shape[1]))), mode='edge')
         return z[:h, :w]
 
+    def gear_cloth(self, st, w, h, k):
+        """Cloth of the soldiers' gear: plain, digital (square cells) or soft-blob camouflage, by st['camo']."""
+        base = np.array(rgb(st['base']), dtype=np.float64) * k
+        out = np.zeros((h, w, 3)) + base
+        camo = st.get('camo')
+        cols = [np.array(rgb(c), dtype=np.float64) * k for c in st.get('colors', ())]
+        if camo == 'pixel' and cols:
+            cell = st.get('cell', 2)
+            gw, gh = (w + cell - 1) // cell, (h + cell - 1) // cell
+            for i, c in enumerate(cols):
+                f = self.noise_field(gw, gh, st.get('blob', 3))
+                m = f > (0.58 + 0.05 * i)
+                m = np.kron(m, np.ones((cell, cell), dtype=bool))[:h, :w]
+                out[m] = c
+        elif camo == 'blobs' and cols:
+            for i, c in enumerate(cols):
+                f = self.noise_field(w, h, st.get('blob', 6) + (2 if i == 0 else -1 if i > 1 else 0))
+                m = f > (0.6 + 0.06 * i)
+                out[m] = c
+        out += self.rng.normal(0, st.get('grain', 2.5), (h, w, 1))
+        return out
+
     def face(self, img, x0, y0, w, h, style, shade, face):
         """Paints one face rectangle (integer pixels) of the atlas."""
         if w <= 0 or h <= 0:
@@ -255,11 +277,40 @@ class Painter:
                 region[h // 3, xx, :3] = (30, 30, 30)
                 if h > 4:
                     region[2 * h // 3, xx, :3] = (220, 200, 120)
+        elif kind in ('pixel', 'multicam', 'molle', 'cross', 'velcro', 'lens'):
+            # 1.27, soldiers' gear (tools/models/gear.py).
+            region[..., :3] = self.gear_cloth(st, w, h, k)
+            if kind == 'molle':
+                # Webbing: rows of tape with gaps where the pouches' straps go through.
+                step = st.get('step', 5)
+                tape = st.get('tape', 2)
+                for yy in range(1, h - 1, step):
+                    region[yy:yy + tape, :, :3] *= 0.8
+                    region[yy, :, :3] *= 1.12
+                    for xx in range(st.get('gap', 6) // 2, w, st.get('gap', 6)):
+                        region[yy:yy + tape, xx, :3] *= 0.6
+            elif kind == 'velcro':
+                region[..., :3] += self.rng.normal(0, 7.0, (h, w, 1))
+                region[0, :, :3] *= 0.7
+                region[-1, :, :3] *= 0.7
+            elif kind == 'cross':
+                cw = max(1, min(w, h) // 4)
+                cy, cx = h // 2, w // 2
+                arm = max(cw + 1, int(min(w, h) * 0.42))
+                red = rgb(st.get('mark', 0xB0201A))
+                region[cy - cw:cy + cw, cx - arm:cx + arm, :3] = red
+                region[cy - arm:cy + arm, cx - cw:cx + cw, :3] = red
+            elif kind == 'lens':
+                yy, xx = np.mgrid[0:h, 0:w]
+                d = np.sqrt((xx - (w - 1) / 2) ** 2 + (yy - (h - 1) / 2) ** 2)
+                r = min(w, h) / 2.0
+                region[d <= r * 0.8, :3] = rgb(st.get('glass', 0x1C3A2C))
+                region[(d <= r * 0.8) & (xx < w / 2) & (yy < h / 2) & (d > r * 0.45), :3] = rgb(st.get('glint', 0x6FA08A))
         else:
             raise ValueError(kind)
         if kind == 'glass':
             region[..., 3] = st.get('alpha', 255)
-        if kind in ('plain', 'camo', 'glass') and not flat and w >= 4 and h >= 4:
+        if kind in ('plain', 'camo', 'glass', 'pixel', 'multicam', 'molle', 'cross') and not flat and w >= 4 and h >= 4:
             region[0, :, :3] *= 0.78
             region[-1, :, :3] *= 0.72
             region[:, 0, :3] *= 0.8

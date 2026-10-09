@@ -106,6 +106,8 @@ public final class GunServer {
 			case GunActionPayload.FIRE -> fire(player, new Vec3(p.dx(), p.dy(), p.dz()), p.target());
 			case GunActionPayload.RELOAD -> startReload(player);
 			case GunActionPayload.NVG -> NvgItem.toggle(player);
+			case GunActionPayload.GRENADE -> com.stasdoto.airdefense.gear.GearServer.quickGrenade(player);
+			case GunActionPayload.MEDKIT -> com.stasdoto.airdefense.gear.GearServer.startDressing(player);
 			default -> {
 			}
 		}
@@ -134,7 +136,8 @@ public final class GunServer {
 		State st = state(player);
 		long now = level.getGameTime();
 		// One tick of slack: packets do not arrive exactly on the tick they were sent.
-		if (st.reloadLeft > 0 || player.getCooldowns().isOnCooldown(stack) || now + 1 < st.nextShot) {
+		if (st.reloadLeft > 0 || player.getCooldowns().isOnCooldown(stack) || now + 1 < st.nextShot
+				|| com.stasdoto.airdefense.gear.GearServer.dressing(player)) {
 			return;
 		}
 		int ammo = GunItem.ammo(stack);
@@ -347,14 +350,14 @@ public final class GunServer {
 			boolean chest = !head && at.y >= living.getY() + living.getBbHeight() * 0.42;
 			if (head) {
 				ItemStack helmet = living.getItemBySlot(EquipmentSlot.HEAD);
-				boolean protectedHead = helmet.is(ModItems.HELMET) || helmet.is(ModItems.NVG_HELMET);
+				boolean protectedHead = helmet.is(ModItems.HELMET) || helmet.is(ModItems.NVG_HELMET) || helmet.is(ModItems.HELMET_FAST);
 				dmg *= protectedHead ? 1.15f : 1.8f;
 				if (protectedHead) {
 					helmet.hurtAndBreak(2, living, EquipmentSlot.HEAD);
 				}
 				HEADSHOTS.incrementAndGet();
-			} else if (chest && living.getItemBySlot(EquipmentSlot.CHEST).is(ModItems.VEST)) {
-				dmg *= 0.45f;
+			} else if (chest && living.getItemBySlot(EquipmentSlot.CHEST).getItem() instanceof com.stasdoto.airdefense.gear.VestItem vest) {
+				dmg *= vest.bulletFactor;
 				living.getItemBySlot(EquipmentSlot.CHEST).hurtAndBreak(2, living, EquipmentSlot.CHEST);
 			}
 			hit = head ? ShotPayload.HIT_HEAD : ShotPayload.HIT_FLESH;
@@ -394,10 +397,11 @@ public final class GunServer {
 			player.sendOverlayMessage(Component.translatable("message.airdefense.gun.no_ammo", Component.translatable(gun.ammoKey())));
 			return;
 		}
-		st.reloadLeft = st.reloadTotal = gun.reload;
+		// 1.27: magazines in pouches on the vest come out quicker.
+		st.reloadLeft = st.reloadTotal = Math.max(8, Math.round(gun.reload * com.stasdoto.airdefense.gear.GearServer.reloadFactor(player)));
 		st.reloadSlot = player.getInventory().getSelectedSlot();
 		st.reloadItem = item;
-		player.getCooldowns().addCooldown(stack, gun.reload);
+		player.getCooldowns().addCooldown(stack, st.reloadTotal);
 		player.stopUsingItem();
 		sound(player.level(), player, ModSounds.GUN_MAG_OUT, 0.8f);
 		RELOADS.incrementAndGet();

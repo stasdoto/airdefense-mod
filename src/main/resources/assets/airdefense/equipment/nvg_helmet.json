@@ -1,9 +1,3 @@
 {
-  "layers": {
-    "humanoid": [
-      {
-        "texture": "airdefense:nvg_helmet"
-      }
-    ]
-  }
+  "layers": {}
 }

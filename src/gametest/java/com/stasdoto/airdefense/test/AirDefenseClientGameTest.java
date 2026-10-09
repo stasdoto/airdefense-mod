@@ -201,6 +201,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("crew")) {
 				crew(ctx, server);
 			}
+			if (scene("gear")) {
+				gear(ctx, server);
+			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
@@ -1053,6 +1056,215 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
 		server.runCommand("gamemode spectator @a");
 		server.runOnServer(s -> forVehicles(s.overworld(), List.of(plane), Entity::discard));
+	}
+
+	/** A vest with these pouches in its slots (0-2 the front's lower row, 3 the chest, 4-5 the back). */
+	private static ItemStack vestWith(net.minecraft.world.item.Item vest, com.stasdoto.airdefense.gear.Pouch... pouches) {
+		ItemStack v = new ItemStack(vest);
+		for (int i = 0; i < pouches.length; i++) {
+			com.stasdoto.airdefense.gear.Pouches.set(v, i, pouches[i]);
+		}
+		return v;
+	}
+
+	/** 1.27: helmets, vests and pouches in 3D on soldiers, a zombie, an armour stand and the player; the pouches at work. */
+	private void gear(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 70000;
+		camera(server, x + 0.5, ground, -5.5, 0, 6);
+		ctx.waitTicks(40);
+		server.runCommand("time set 1000");
+		server.runCommand("gamemode creative @a");
+		List<Integer> ids = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			List<Integer> out = new ArrayList<>();
+			com.stasdoto.airdefense.gear.Pouch M = com.stasdoto.airdefense.gear.Pouch.MAG;
+			com.stasdoto.airdefense.gear.Pouch G = com.stasdoto.airdefense.gear.Pouch.GRENADE;
+			com.stasdoto.airdefense.gear.Pouch K = com.stasdoto.airdefense.gear.Pouch.MEDKIT;
+			com.stasdoto.airdefense.gear.Pouch R = com.stasdoto.airdefense.gear.Pouch.RADIO;
+			com.stasdoto.airdefense.gear.Pouch N = com.stasdoto.airdefense.gear.Pouch.NONE;
+			ItemStack[][] kits = {
+					{new ItemStack(com.stasdoto.airdefense.registry.ModItems.HELMET), vestWith(com.stasdoto.airdefense.registry.ModItems.VEST_HEAVY, M, M, G, K, R, M)},
+					{nvg(true), vestWith(com.stasdoto.airdefense.registry.ModItems.VEST, M, M, M, K, R, G)},
+					{nvg(false), vestWith(com.stasdoto.airdefense.registry.ModItems.VEST, G, M, N, R, K, N)},
+					{new ItemStack(com.stasdoto.airdefense.registry.ModItems.HELMET_FAST), vestWith(com.stasdoto.airdefense.registry.ModItems.VEST)},
+			};
+			for (int i = 0; i < kits.length; i++) {
+				var m = com.stasdoto.airdefense.nation.SoldierEntity.create(l, com.stasdoto.airdefense.nation.SoldierEntity.SOLDIER, i % 2, 5, -1,
+						new Vec3(x - 3.0 + i * 2.0 + 0.5, ground, 0.5), i * 7 + 3);
+				m.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, kits[i][0]);
+				m.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, kits[i][1]);
+				m.setNoAi(true);
+				m.snapTo(m.getX(), m.getY(), m.getZ(), 180f, 0f);
+				m.setYHeadRot(180f);
+				m.setYBodyRot(180f);
+				l.addFreshEntity(m);
+				out.add(m.getId());
+			}
+			var z = net.minecraft.world.entity.EntityTypes.ZOMBIE.create(l, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+			z.snapTo(x + 5.5, ground, 0.5, 180f, 0f);
+			z.setYHeadRot(180f);
+			z.setYBodyRot(180f);
+			z.setNoAi(true);
+			z.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, new ItemStack(com.stasdoto.airdefense.registry.ModItems.HELMET));
+			z.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, vestWith(com.stasdoto.airdefense.registry.ModItems.VEST_HEAVY, M, K));
+			l.addFreshEntity(z);
+			var st = net.minecraft.world.entity.EntityTypes.ARMOR_STAND.create(l, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+			st.snapTo(x - 5.5, ground, 0.5, 180f, 0f);
+			st.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, nvg(false));
+			st.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, vestWith(com.stasdoto.airdefense.registry.ModItems.VEST, M, M, M, R, K, G));
+			l.addFreshEntity(st);
+			out.add(z.getId());
+			out.add(st.getId());
+			return out;
+		});
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("g1_gear_front");
+		camera(server, x + 0.5, ground + 0.8, -2.6, 0, 12);
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("g1b_gear_close");
+		camera(server, x - 2.2, ground + 1.5, -1.6, 20, 24);
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("g1c_gear_6b47_close");
+		camera(server, x + 0.5, ground, 6.5, 180, 6);
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("g2_gear_back");
+		camera(server, x + 6.5, ground + 0.6, -1.5, 60, 10);
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("g2b_gear_side");
+		int drawn = ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.gear.GearLayer.drawn);
+
+		// Pouches put on and taken off with the mouse, as in the inventory.
+		String clicks = server.computeOnServer(s -> {
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			pl.getInventory().clearContent();
+			pl.getInventory().setItem(9, new ItemStack(com.stasdoto.airdefense.registry.ModItems.VEST));
+			pl.containerMenu.setCarried(new ItemStack(com.stasdoto.airdefense.registry.ModItems.POUCH_MAG, 3));
+			pl.containerMenu.clicked(9, 1, net.minecraft.world.inventory.ContainerInput.PICKUP, pl);
+			pl.containerMenu.clicked(9, 1, net.minecraft.world.inventory.ContainerInput.PICKUP, pl);
+			int on = com.stasdoto.airdefense.gear.Pouches.total(pl.getInventory().getItem(9));
+			int left = pl.containerMenu.getCarried().getCount();
+			pl.containerMenu.setCarried(ItemStack.EMPTY);
+			pl.containerMenu.clicked(9, 1, net.minecraft.world.inventory.ContainerInput.PICKUP, pl);
+			String back = pl.containerMenu.getCarried().getHoverName().getString();
+			int after = com.stasdoto.airdefense.gear.Pouches.total(pl.getInventory().getItem(9));
+			pl.containerMenu.setCarried(ItemStack.EMPTY);
+			return "put on " + on + " (left in hand " + left + "), took off -> " + back + ", on the vest " + after;
+		});
+
+		// The player kitted out, seen from the front.
+		server.runOnServer(s -> {
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			pl.getInventory().clearContent();
+			pl.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, nvg(true));
+			pl.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, vestWith(com.stasdoto.airdefense.registry.ModItems.VEST_HEAVY,
+					com.stasdoto.airdefense.gear.Pouch.MAG, com.stasdoto.airdefense.gear.Pouch.MAG, com.stasdoto.airdefense.gear.Pouch.MAG,
+					com.stasdoto.airdefense.gear.Pouch.MEDKIT, com.stasdoto.airdefense.gear.Pouch.RADIO, com.stasdoto.airdefense.gear.Pouch.GRENADE));
+			pl.getInventory().setItem(0, com.stasdoto.airdefense.weapon.GunItem.loaded(com.stasdoto.airdefense.registry.ModItems.GUNS.get(
+					com.stasdoto.airdefense.weapon.GunType.AK74)));
+			pl.getInventory().setItem(1, new ItemStack(com.stasdoto.airdefense.registry.ModItems.THERMAL_MONOCULAR));
+			pl.getInventory().setItem(5, new ItemStack(com.stasdoto.airdefense.registry.ModItems.F1_GRENADE, 2));
+			pl.getInventory().setItem(6, new ItemStack(com.stasdoto.airdefense.registry.ModItems.MEDKIT, 2));
+			pl.getInventory().setSelectedSlot(0);
+		});
+		camera(server, x + 0.5, ground, -8.5, 0, 0);
+		ctx.waitTicks(10);
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+		ctx.waitTicks(15);
+		ctx.takeScreenshot("g3_player_gear");
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_BACK));
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("g3b_player_gear_back");
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
+		float reload = server.computeOnServer(s -> com.stasdoto.airdefense.gear.GearServer.reloadFactor(s.getPlayerList().getPlayers().getFirst()));
+
+		// B: a grenade from the pouch, the rifle still in hand. H: a wound dressed from the kit (in survival, hurt).
+		ctx.getInput().lookAt(0, -20);
+		ctx.waitTicks(5);
+		server.runCommand("gamemode survival @a");
+		ctx.waitTicks(5);
+		ctx.getInput().pressKey(o -> com.stasdoto.airdefense.client.weapon.GunClient.GRENADE);
+		ctx.waitTicks(10);
+		String grenade = server.computeOnServer(s -> {
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			return "thrown " + com.stasdoto.airdefense.gear.GearServer.grenadesThrown + ", left " + pl.getInventory().getItem(5).getCount()
+					+ ", in hand " + pl.getMainHandItem().getItem();
+		});
+		ctx.waitTicks(80);
+		server.runOnServer(s -> s.getPlayerList().getPlayers().getFirst().setHealth(7f));
+		ctx.waitTicks(3);
+		ctx.getInput().pressKey(o -> com.stasdoto.airdefense.client.weapon.GunClient.MEDKIT);
+		ctx.waitTicks(50);
+		String medkit = server.computeOnServer(s -> {
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			return String.format(java.util.Locale.ROOT, "health 7 -> %.1f, dressed %d, kits left %d", pl.getHealth(),
+					com.stasdoto.airdefense.gear.GearServer.woundsDressed, pl.getInventory().getItem(6).getCount());
+		});
+		server.runCommand("gamemode creative @a");
+
+		// The radio: a drone sent at a spot 40 blocks off.
+		server.runOnServer(s -> MissileEntity.launchStrike(s.overworld(), MissileType.SHAHED, new Vec3(x + 120, ground + 60, 140),
+				new Vec3(x + 40, ground, 40), new Vec3(-1, 0, -1).normalize()));
+		ctx.waitTicks(60);
+		int radio = server.computeOnServer(s -> com.stasdoto.airdefense.gear.GearServer.radioWarnings);
+		ctx.takeScreenshot("g4_radio_chat");
+
+		// The thermal monocular at night, then at 6x.
+		server.runCommand("time set 15000");
+		camera(server, x + 0.5, ground, -14.5, 0, 4);
+		ctx.waitTicks(10);
+		server.runOnServer(s -> s.getPlayerList().getPlayers().getFirst().getInventory().setSelectedSlot(1));
+		ctx.waitTicks(5);
+		ctx.getInput().holdKey(o -> o.keyUse);
+		ctx.waitTicks(25);
+		ctx.takeScreenshot("g5_monocular_night");
+		ctx.getInput().pressKey(o -> com.stasdoto.airdefense.client.vehicle.GunnerSight.ZOOM);
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("g5b_monocular_6x");
+		String mono = ctx.computeOnClient(mc -> "ticks " + com.stasdoto.airdefense.client.gear.MonocularView.ticksOn + " thermal "
+				+ com.stasdoto.airdefense.client.vehicle.ThermalView.wanted() + " failed " + com.stasdoto.airdefense.client.vehicle.ThermalView.failed(mc));
+		ctx.getInput().releaseKey(o -> o.keyUse);
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+		ctx.waitTicks(5);
+		ctx.getInput().holdKey(o -> o.keyUse);
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("g5c_monocular_third_person");
+		ctx.getInput().releaseKey(o -> o.keyUse);
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
+		server.runCommand("time set 1000");
+
+		// Soldiers of both blocs as the game dresses them.
+		String dressed = server.computeOnServer(s -> {
+			StringBuilder b = new StringBuilder();
+			for (int c = 0; c < 2; c++) {
+				var m = com.stasdoto.airdefense.nation.SoldierEntity.create(s.overworld(), com.stasdoto.airdefense.nation.SoldierEntity.SOLDIER, c, 5, -1,
+						new Vec3(x + 0.5, ground, 30.5), 1);
+				ItemStack v = m.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
+				b.append(c == 0 ? "east " : " | west ").append(m.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD).getItem())
+						.append(" + ").append(v.getItem()).append(" pouches ").append(com.stasdoto.airdefense.gear.Pouches.total(v));
+				m.discard();
+			}
+			return b.toString();
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT gear_drawn: {} pieces drawn; clicks: {}", drawn, clicks);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT gear_pouches: reload x{}; grenade: {}; medkit: {}; radio warnings {}", reload, grenade, medkit, radio);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT gear_monocular: {}; soldiers: {}", mono, dressed);
+		server.runOnServer(s -> {
+			for (int id : ids) {
+				Entity e = s.overworld().getEntity(id);
+				if (e != null) {
+					e.discard();
+				}
+			}
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			pl.getInventory().clearContent();
+		});
+		server.runCommand("gamemode spectator @a");
+	}
+
+	private static ItemStack nvg(boolean on) {
+		ItemStack h = new ItemStack(com.stasdoto.airdefense.registry.ModItems.NVG_HELMET);
+		h.set(com.stasdoto.airdefense.registry.ModComponents.NVG_ON, on);
+		return h;
 	}
 
 	private static void leave(ClientGameTestContext ctx) {

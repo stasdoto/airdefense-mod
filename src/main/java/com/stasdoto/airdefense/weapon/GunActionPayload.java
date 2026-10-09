@@ -17,6 +17,9 @@ public record GunActionPayload(int action, float dx, float dy, float dz, int tar
 	public static final int FIRE = 0;
 	public static final int RELOAD = 1;
 	public static final int NVG = 2;
+	/** 1.27: B - a grenade from the pouch; H - dress a wound from the first-aid kit. */
+	public static final int GRENADE = 3;
+	public static final int MEDKIT = 4;
 
 	public static final Type<GunActionPayload> TYPE = new Type<>(AirDefense.id("gun_action"));
 	public static final StreamCodec<ByteBuf, GunActionPayload> CODEC = StreamCodec.composite(

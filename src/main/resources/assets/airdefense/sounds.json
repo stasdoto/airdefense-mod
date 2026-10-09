@@ -833,5 +833,14 @@
       }
     ],
     "subtitle": "subtitles.airdefense.jet"
+  },
+  "radio": {
+    "sounds": [
+      {
+        "name": "airdefense:radio",
+        "attenuation_distance": 8
+      }
+    ],
+    "subtitle": "subtitles.airdefense.radio"
   }
 }

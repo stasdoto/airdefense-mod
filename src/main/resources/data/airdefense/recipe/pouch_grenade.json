@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:leather",
+    "minecraft:leather",
+    "minecraft:string",
+    "minecraft:iron_nugget"
+  ],
+  "result": {
+    "id": "airdefense:pouch_grenade",
+    "count": 2
+  }
+}

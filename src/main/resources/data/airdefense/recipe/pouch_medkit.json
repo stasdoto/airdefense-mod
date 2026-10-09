@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:leather",
+    "minecraft:string",
+    "minecraft:red_dye",
+    "minecraft:paper"
+  ],
+  "result": {
+    "id": "airdefense:pouch_medkit",
+    "count": 1
+  }
+}

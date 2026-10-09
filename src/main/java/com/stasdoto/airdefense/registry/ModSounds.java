@@ -74,6 +74,8 @@ public final class ModSounds {
 	public static final SoundEvent THROW = register("throw", 12);
 	public static final SoundEvent NVG_SWITCH = register("nvg_switch", 8);
 	public static final SoundEvent MEDKIT = register("medkit", 12);
+	/** 1.27: the radio on a vest - a squelch and two beeps before a warning. */
+	public static final SoundEvent RADIO = register("radio", 8);
 	// 1.24: more kinds of report, the pump, the 40 mm launcher, the Javelin's seeker tones.
 	public static final SoundEvent CARBINE_NEAR = register("carbine_near", 96);
 	public static final SoundEvent CARBINE_FAR = register("carbine_far", 600);

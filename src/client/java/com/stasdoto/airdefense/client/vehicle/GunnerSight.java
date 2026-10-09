@@ -100,6 +100,8 @@ public final class GunnerSight {
 		while (ZOOM.consumeClick()) {
 			if (k == Kind.SIGHT && through) {
 				zoom = (zoom + 1) % ZOOMS.length;
+			} else if (com.stasdoto.airdefense.client.gear.MonocularView.active()) {
+				com.stasdoto.airdefense.client.gear.MonocularView.cycleZoom();
 			}
 		}
 		while (THERMAL.consumeClick()) {

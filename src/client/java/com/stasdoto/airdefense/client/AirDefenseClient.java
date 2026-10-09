@@ -23,6 +23,7 @@ public class AirDefenseClient implements ClientModInitializer {
 		com.stasdoto.airdefense.client.drone.DroneClient.init();
 		FactoryClient.init();
 		GunClient.init();
+		com.stasdoto.airdefense.client.gear.GearClient.init();
 		NationClient.init();
 		com.stasdoto.airdefense.client.siren.SirenClient.init();
 	}

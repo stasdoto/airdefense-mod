@@ -2,7 +2,7 @@
   "type": "minecraft:crafting_shapeless",
   "category": "equipment",
   "ingredients": [
-    "airdefense:helmet",
+    "airdefense:helmet_fast",
     "minecraft:spyglass",
     "minecraft:redstone",
     "minecraft:glowstone_dust"

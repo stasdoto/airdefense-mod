@@ -21,7 +21,7 @@ public abstract class HandsRendererMixin {
 	private void airdefense$noHands(float partialTick, PoseStack poseStack, SubmitNodeCollector collector, PlayerRenderState player,
 			FirstPersonHandsAndItemsRenderState state, CallbackInfo ci) {
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.player != null && mc.player.getVehicle() instanceof VehicleEntity) {
+		if (mc.player != null && (mc.player.getVehicle() instanceof VehicleEntity || com.stasdoto.airdefense.client.gear.MonocularView.active())) {
 			ci.cancel();
 		}
 	}
