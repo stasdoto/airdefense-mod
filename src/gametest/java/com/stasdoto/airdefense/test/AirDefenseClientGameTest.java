@@ -225,6 +225,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("strikewave")) {
 				strikeWave(ctx, server);
 			}
+			if (scene("navy")) {
+				navy(ctx, server);
+			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
