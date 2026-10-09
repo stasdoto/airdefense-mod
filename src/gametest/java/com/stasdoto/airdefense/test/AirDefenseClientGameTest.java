@@ -295,8 +295,10 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				}
 				return new int[]{looked, left};
 			});
-			AirDefense.LOGGER.info("[airdefense-test] RESULT real_orphans: removed by the generator {}, by the sweep {}; left round the capital {} (in {} chunks)",
-					com.stasdoto.airdefense.nation.Orphans.removedAtGeneration, com.stasdoto.airdefense.nation.Orphans.removedLater, orphans[1], orphans[0]);
+			AirDefense.LOGGER.info("[airdefense-test] RESULT real_orphans: removed by the generator {}, by the sweep {}; left round the capital {} (in {} chunks): "
+					+ "logs {}, leaves {}, plants {}; e.g. {}", com.stasdoto.airdefense.nation.Orphans.removedAtGeneration,
+					com.stasdoto.airdefense.nation.Orphans.removedLater, orphans[1], orphans[0], com.stasdoto.airdefense.nation.Orphans.FOUND[0],
+					com.stasdoto.airdefense.nation.Orphans.FOUND[1], com.stasdoto.airdefense.nation.Orphans.FOUND[2], com.stasdoto.airdefense.nation.Orphans.SAMPLES);
 			camera(server, cx + 0.5, base + 140, cz + 0.5, 0, 90);
 			ctx.waitTicks(100);
 			ctx.takeScreenshot("141_real_capital_top");

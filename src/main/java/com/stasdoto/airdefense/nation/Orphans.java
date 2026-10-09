@@ -39,6 +39,9 @@ public final class Orphans {
 	/** For the tests: blocks removed (by the world generator, by the sweep of older towns), and orphans counted. */
 	public static int removedAtGeneration;
 	public static int removedLater;
+	/** For the tests: what the last counts found (logs, leaves and caps, vines/plants/snow) and a few of them. */
+	public static final int[] FOUND = new int[3];
+	public static final java.util.List<String> SAMPLES = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
 
 	private Orphans() {
 	}
@@ -144,6 +147,8 @@ public final class Orphans {
 						removed++;
 						if (!dryRun) {
 							a.set(p.set(ax + x, yMin + i / (w * w), az + z), Blocks.AIR.defaultBlockState());
+						} else {
+							note(0, a, p.set(ax + x, yMin + i / (w * w), az + z), yMin, h);
 						}
 					} else {
 						// Out of reach to remove: counts as held, so its leaves stay.
@@ -192,6 +197,8 @@ public final class Orphans {
 						removed++;
 						if (!dryRun) {
 							a.set(p.set(ax + x, yMin + i / (w * w), az + z), Blocks.AIR.defaultBlockState());
+						} else {
+							note(1, a, p.set(ax + x, yMin + i / (w * w), az + z), yMin, h);
 						}
 					}
 				}
@@ -234,6 +241,8 @@ public final class Orphans {
 							removed++;
 							if (!dryRun) {
 								a.set(p.set(ax + x, yMin + y, az + z), Blocks.AIR.defaultBlockState());
+							} else {
+								note(2, a, p.set(ax + x, yMin + y, az + z), yMin, h);
 							}
 						}
 					}
@@ -241,6 +250,13 @@ public final class Orphans {
 			}
 		}
 		return removed;
+	}
+
+	private static void note(int what, Access a, BlockPos p, int yMin, int h) {
+		FOUND[what]++;
+		if (SAMPLES.size() < 24 && (FOUND[what] % 97 == 1)) {
+			SAMPLES.add(a.get(p).getBlock().getDescriptionId().replace("block.minecraft.", "") + " at " + p.toShortString() + " (" + (p.getY() - yMin) + " of " + h + ")");
+		}
 	}
 
 	/** Flags for setting blocks in the live world: tell the players, no neighbour reactions (leaves would start to decay). */
