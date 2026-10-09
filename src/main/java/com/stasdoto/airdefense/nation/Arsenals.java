@@ -338,6 +338,10 @@ public final class Arsenals extends SavedData {
 		int side = side(s);
 		double r = s.radius + 60;
 		for (MissileEntity m : MissileEntity.find(level, new AABB(c, c).inflate(900), m -> m.isAlive() && m.getMissileType().threat)) {
+			// 1.32: an aircraft only when it is an enemy's (not the player's own over his town, not a neighbour's).
+			if (m.getMissileType().track() && (m.carrier() == null || !War.hostile(level, s.country, m.carrier()))) {
+				continue;
+			}
 			if (m.country() != side && m.getTarget().distanceToSqr(c) < r * r) {
 				return true;
 			}

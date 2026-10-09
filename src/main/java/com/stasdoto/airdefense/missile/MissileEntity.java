@@ -844,6 +844,11 @@ public class MissileEntity extends Entity {
 		}
 	}
 
+	/** 1.32: the track of an aircraft of the player's side (his own, nobody's): the old air defence blocks let it be. */
+	public boolean friendlyAircraft() {
+		return getMissileType().track() && (carrier == null || carrier.country < 0);
+	}
+
 	/** 1.30: the point it was fired from. */
 	public Vec3 origin() {
 		return origin;
