@@ -85,6 +85,11 @@ final class EuropeanStyle {
 				int y0 = f * h;
 				if (f > 0) {
 					p.fill(x0, y0, 0, x1, y0, d, stone);
+					// The floor's edge on the facades in the house's own colour (no grey stripe between the floors).
+					for (int xx = x0; xx <= x1; xx++) {
+						p.set(xx, y0, 0, f == 1 ? trim : wall);
+						p.set(xx, y0, d, wall);
+					}
 				}
 				for (int y = y0 + 1; y <= y0 + 2; y++) {
 					for (int xx = x0; xx <= x1; xx++) {
