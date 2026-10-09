@@ -113,6 +113,9 @@ jobs:
                   jcmd "$P" Thread.print >> /tmp/out/hang-dump.txt 2>&1 || true
                   jcmd "$P" GC.heap_info >> /tmp/out/hang-dump.txt 2>&1 || true
                   kill "$P" || true
+                  # A stuck server can hold up the game's own shutdown: then it is killed outright.
+                  sleep 30
+                  kill -9 "$P" 2>/dev/null || true
                 done
                 break
               fi
