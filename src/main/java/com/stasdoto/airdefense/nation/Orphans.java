@@ -284,6 +284,9 @@ public final class Orphans {
 	/** Off for the tests that count what the generator left. */
 	public static volatile boolean liveSweep = true;
 	public static int chunksLooked;
+	/** For the tests: time spent looking chunks over (all, the longest). */
+	public static long stepNanos;
+	public static long stepMax;
 
 	public static void init() {
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents.CHUNK_LOAD.register((level, chunk, fresh) -> {
@@ -374,6 +377,7 @@ public final class Orphans {
 			return false;
 		}
 		chunksLooked++;
+		long t0 = System.nanoTime();
 		int x0 = cp.getMinBlockX();
 		int z0 = cp.getMinBlockZ();
 		int yMin = Integer.MAX_VALUE;
@@ -401,6 +405,9 @@ public final class Orphans {
 				level.setBlock(p, s, LIVE_FLAGS);
 			}
 		}, x0, z0, yMin, yMax, CityGen.ownTrees(level, cp), false);
+		long dt = System.nanoTime() - t0;
+		stepNanos += dt;
+		stepMax = Math.max(stepMax, dt);
 		return true;
 	}
 

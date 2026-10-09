@@ -279,8 +279,10 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			// the chunks the generator cut back afterwards have been looked over again.
 			int swept = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Orphans.idleTicks >= 80, 1500);
 			AirDefense.LOGGER.info("[airdefense-test] RESULT real_recheck: {} chunks looked over again once complete ({} looked at, {} still waiting for "
-					+ "their neighbours), done within {} ticks", com.stasdoto.airdefense.nation.Orphans.rechecks,
-					com.stasdoto.airdefense.nation.Orphans.chunksLooked, com.stasdoto.airdefense.nation.Orphans.pending(), swept);
+					+ "their neighbours), done within {} ticks; {} us a chunk on average, longest {} us", com.stasdoto.airdefense.nation.Orphans.rechecks,
+					com.stasdoto.airdefense.nation.Orphans.chunksLooked, com.stasdoto.airdefense.nation.Orphans.pending(), swept,
+					com.stasdoto.airdefense.nation.Orphans.stepNanos / 1000 / Math.max(1, com.stasdoto.airdefense.nation.Orphans.chunksLooked),
+					com.stasdoto.airdefense.nation.Orphans.stepMax / 1000);
 			int half = cap[2];
 			int[] orphans = server.computeOnServer(s -> {
 				ServerLevel l = s.overworld();
