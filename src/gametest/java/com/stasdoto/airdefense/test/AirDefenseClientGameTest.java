@@ -4071,16 +4071,28 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			ctx.waitTicks(10);
 			int after = holes(server, at, 6, base);
 			ctx.takeScreenshot("191_repair_" + phase + "_blast");
+			String foreign = "";
 			if (creative) {
 				server.runCommand("gamemode creative @a");
+				// 1.33: somebody else's town does not stand up again at once for a creative player...
+				ctx.waitTicks(200);
+				foreign = " (not his town: " + (com.stasdoto.airdefense.nation.Repairs.rebuilt - rebuilt0) + " blocks in 200 ticks)";
+				// ...his own does.
+				server.runOnServer(s -> {
+					var p = com.stasdoto.airdefense.nation.Politics.get(s);
+					var st = p.settlementAt(at);
+					if (st != null) {
+						com.stasdoto.airdefense.nation.Nations.takeOver(s.overworld(), s.getPlayerList().getPlayers().getFirst(), st);
+					}
+				});
 			}
 			int waited = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Repairs.rebuilt - rebuilt0 > 0
 					&& holes(server, at, 6, base) <= before, creative ? 300 : 1500);
 			int end = holes(server, at, 6, base);
 			ctx.takeScreenshot("192_repair_" + phase + "_after");
-			AirDefense.LOGGER.info("[airdefense-test] RESULT repair_{}: holes {} -> {} -> {} after {} ticks, blocks put back {}, zones noted {} finished {}",
+			AirDefense.LOGGER.info("[airdefense-test] RESULT repair_{}: holes {} -> {} -> {} after {} ticks, blocks put back {}, zones noted {} finished {}{}",
 					creative ? "creative" : "survival", before, after, end, waited, com.stasdoto.airdefense.nation.Repairs.rebuilt - rebuilt0,
-					com.stasdoto.airdefense.nation.Repairs.noted, com.stasdoto.airdefense.nation.Repairs.finished);
+					com.stasdoto.airdefense.nation.Repairs.noted, com.stasdoto.airdefense.nation.Repairs.finished, foreign);
 			server.runCommand("gamemode spectator @a");
 		}
 	}

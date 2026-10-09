@@ -1144,5 +1144,6 @@
   "radar.airdefense.contact.heli_track": "HELICOPTER",
   "radar.airdefense.contact.jet_track": "AIRCRAFT",
   "nation.airdefense.war.air": "%s sends %s against %s - air raid!",
-  "guide.airdefense.page.35": "ENEMY AIRCRAFT\n\nIn a war the enemy sends attack helicopters (Mi-24, Ka-52, AH-64) and jets (Su-25, A-10) at your towns: they fire rockets and the gun, drop bombs, then fly home.\nYour air defence sees them on the radar and shoots them down - a hit aircraft falls burning. Keep a Pantsir or a Gepard by your towns!"
+  "guide.airdefense.page.35": "ENEMY AIRCRAFT\n\nIn a war the enemy sends attack helicopters (Mi-24, Ka-52, AH-64) and jets (Su-25, A-10) at your towns: they fire rockets and the gun, drop bombs, then fly home.\nYour air defence sees them on the radar and shoots them down - a hit aircraft falls burning. Keep a Pantsir or a Gepard by your towns!",
+  "nation.airdefense.strike.wave": "%s strikes %s with missiles from %s places!"
 }
