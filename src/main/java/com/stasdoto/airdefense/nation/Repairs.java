@@ -284,8 +284,10 @@ public final class Repairs extends SavedData {
 	}
 
 	private static boolean loaded(ServerLevel level, BoundingBox box) {
-		return level.isLoaded(new BlockPos(box.minX(), box.minY(), box.minZ())) && level.isLoaded(new BlockPos(box.maxX(), box.minY(), box.maxZ()))
-				&& level.isLoaded(new BlockPos(box.minX(), box.minY(), box.maxZ())) && level.isLoaded(new BlockPos(box.maxX(), box.minY(), box.minZ()));
+		// (At a height inside the world: a patch near the bottom of it reaches below, where nothing counts as loaded.)
+		int y = Math.max(level.getMinY(), Math.min(level.getMaxY(), box.minY()));
+		return level.isLoaded(new BlockPos(box.minX(), y, box.minZ())) && level.isLoaded(new BlockPos(box.maxX(), y, box.maxZ()))
+				&& level.isLoaded(new BlockPos(box.minX(), y, box.maxZ())) && level.isLoaded(new BlockPos(box.maxX(), y, box.minZ()));
 	}
 
 	/**
