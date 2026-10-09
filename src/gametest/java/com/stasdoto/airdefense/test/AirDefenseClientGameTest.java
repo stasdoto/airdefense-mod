@@ -222,6 +222,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("airwar")) {
 				airWar(ctx, server);
 			}
+			if (scene("navy")) {
+				navy(ctx, server);
+			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
@@ -1300,6 +1303,211 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 		}
 		return null;
+	}
+
+	/** 1.33: the first warship sailing a naval raid (null if none). */
+	private static VehicleEntity raider(ServerLevel level) {
+		for (Entity e : level.getAllEntities()) {
+			if (e instanceof VehicleEntity v && v.isAlive() && v.onRaid()) {
+				return v;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * 1.33: the navy on a bit of sea dug out of the flat world (3 deep, 260 x 200): the two warships close up; the
+	 * Buyan-M's Kalibrs out of the cells and its gun at a BTR on the shore (the player aims); its close-in gun against
+	 * Shaheds flying at it; a Bastion-P on the shore sinking an enemy Visby with its Oniks; an enemy warship's raid on a
+	 * town on the shore.
+	 */
+	private void navy(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 130000;
+		language(ctx, "ru_ru");
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 3000");
+		camera(server, x + 0.5, ground + 20, 80, 0, 20);
+		ctx.waitTicks(60);
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			for (int wx = x - 130; wx <= x + 130; wx++) {
+				for (int wz = -20; wz <= 180; wz++) {
+					for (int wy = ground - 3; wy <= ground - 1; wy++) {
+						l.setBlock(new BlockPos(wx, wy, wz), Blocks.WATER.defaultBlockState(), 2);
+					}
+				}
+			}
+		});
+		ctx.waitTicks(40);
+		int buyan = server.computeOnServer(s -> VehicleEntity.spawn(s.overworld(), VehicleType.BUYAN_M, new Vec3(x - 40.5, ground - 0.1, 50.5), 90).getId());
+		int visby = server.computeOnServer(s -> VehicleEntity.spawn(s.overworld(), VehicleType.VISBY, new Vec3(x + 50.5, ground - 0.1, 95.5), 250).getId());
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(buyan, visby), v -> v.country = -1));
+		ctx.waitTicks(40);
+		look(server, x - 20, ground + 9, 18, x - 40, ground + 3, 50);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("n1_buyan");
+		look(server, x + 30, ground + 8, 62, x + 50, ground + 3, 95);
+		ctx.waitTicks(25);
+		ctx.takeScreenshot("n2_visby");
+		String floats = server.computeOnServer(s -> {
+			StringBuilder b = new StringBuilder();
+			forVehicles(s.overworld(), List.of(buyan, visby), v -> b.append(v.getVehicleType().id).append(String.format(java.util.Locale.ROOT, " y %.2f; ", v.getY())));
+			return b.toString();
+		});
+
+		// The Buyan-M's Kalibrs out of the cells at a point 250 blocks inland.
+		int strikes0 = (int) com.stasdoto.airdefense.missile.MissileStats.STRIKES_LAUNCHED.get();
+		boolean ordered = server.computeOnServer(s -> s.overworld().getEntity(buyan) instanceof VehicleEntity v
+				&& v.commandStrike(new BlockPos(x - 40, ground, -230), null));
+		look(server, x - 75, ground + 10, 30, x - 40, ground + 12, 50);
+		waitUntil(ctx, () -> com.stasdoto.airdefense.missile.MissileStats.STRIKES_LAUNCHED.get() > strikes0, 120);
+		ctx.waitTicks(12);
+		ctx.takeScreenshot("n3_kalibr_launch");
+		ctx.waitTicks(60);
+		int launched = (int) com.stasdoto.airdefense.missile.MissileStats.STRIKES_LAUNCHED.get() - strikes0;
+		int left = server.computeOnServer(s -> s.overworld().getEntity(buyan) instanceof VehicleEntity v ? v.getAmmo() : -1);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT navy_cells: ordered {}, launched {}, cells full {} of 8; {}", ordered, launched, left, floats);
+
+		// The gun: the player on the bridge aims at a BTR on the shore and fires.
+		int btr = spawnVehicle(server, VehicleType.BTR82, x - 40, -45, 0);
+		server.runCommand("gamemode survival @a");
+		server.runOnServer(s -> {
+			if (s.overworld().getEntity(buyan) instanceof VehicleEntity v) {
+				s.getPlayerList().getPlayers().getFirst().startRiding(v);
+			}
+		});
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_BACK));
+		ctx.waitTicks(30);
+		float bhp0 = server.computeOnServer(s -> s.overworld().getEntity(btr) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		float[] yp = ctx.computeOnClient(mc -> {
+			Vec3 d = new Vec3(x - 39.5, ground + 1.2, -44.5).subtract(mc.player.getEyePosition());
+			return new float[]{(float) Math.toDegrees(Math.atan2(-d.x, d.z)), (float) -Math.toDegrees(Math.atan2(d.y, Math.sqrt(d.x * d.x + d.z * d.z)))};
+		});
+		ctx.getInput().lookAt(yp[0], yp[1]);
+		ctx.waitTicks(80);
+		for (int i = 0; i < 4; i++) {
+			ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);
+			ctx.waitTicks(3);
+			if (i == 0) {
+				ctx.takeScreenshot("n4_gun_fires");
+			}
+			ctx.waitTicks(60);
+		}
+		float bhp1 = server.computeOnServer(s -> s.overworld().getEntity(btr) instanceof VehicleEntity v && v.isAlive() ? v.getHealth() : 0f);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT navy_gun: BTR health {} -> {}", (int) bhp0, (int) bhp1);
+		ctx.getInput().holdKey(o -> o.keyShift);
+		ctx.waitTicks(5);
+		ctx.getInput().releaseKey(o -> o.keyShift);
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
+		server.runCommand("gamemode spectator @a");
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(btr), Entity::discard));
+
+		// The close-in gun: three Shaheds of somebody else's at the Buyan-M.
+		int bursts0 = VehicleEntity.ciwsBursts;
+		int kills0 = VehicleEntity.ciwsKills;
+		float shp0 = server.computeOnServer(s -> s.overworld().getEntity(buyan) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		server.runOnServer(s -> {
+			for (int i = 0; i < 3; i++) {
+				var m = com.stasdoto.airdefense.missile.MissileEntity.launchStrike(s.overworld(), com.stasdoto.airdefense.missile.MissileType.SHAHED,
+						new Vec3(x - 40 - 30 + i * 30, ground + 40, 330), new Vec3(x - 40.5, ground + 2, 50.5), new Vec3(0, 0, -1));
+				m.setCountry(777);
+			}
+		});
+		look(server, x - 70, ground + 8, 20, x - 40, ground + 25, 120);
+		waitUntil(ctx, () -> VehicleEntity.ciwsBursts > bursts0, 900);
+		ctx.waitTicks(6);
+		ctx.takeScreenshot("n5_ciws");
+		ctx.waitTicks(300);
+		float shp1 = server.computeOnServer(s -> s.overworld().getEntity(buyan) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT navy_ciws: bursts {}, brought down {}, ship health {} -> {}", VehicleEntity.ciwsBursts - bursts0,
+				VehicleEntity.ciwsKills - kills0, (int) shp0, (int) shp1);
+
+		// A Bastion-P on the shore against an enemy Visby: aimed at a point 25 blocks off the ship, the Oniks finds it.
+		int bastion = spawnVehicle(server, VehicleType.BASTION, x + 60, -45, 0);
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(bastion), v -> v.country = -1));
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(visby), v -> {
+			v.country = 777;
+			v.snapTo(x + 20.5, ground - 0.1, 150.5, 270, 0);
+		}));
+		ctx.waitTicks(20);
+		int locks0 = com.stasdoto.airdefense.missile.MissileEntity.SHIP_LOCKS.get();
+		int hits0 = com.stasdoto.airdefense.missile.MissileEntity.SHIP_HITS.get();
+		float vhp0 = server.computeOnServer(s -> s.overworld().getEntity(visby) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		boolean fired = server.computeOnServer(s -> s.overworld().getEntity(bastion) instanceof VehicleEntity v
+				&& v.commandStrike(new BlockPos(x + 45, ground - 1, 150), null));
+		look(server, x + 85, ground + 6, -70, x + 60, ground + 6, -40);
+		int up = waitUntil(ctx, () -> server.computeOnServer(s -> s.overworld().getEntity(bastion) instanceof VehicleEntity v && v.loadedRounds() < 2), 400);
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("n6_bastion_launch");
+		look(server, x - 10, ground + 10, 110, x + 20, ground + 3, 150);
+		int hit = waitUntil(ctx, () -> com.stasdoto.airdefense.missile.MissileEntity.SHIP_HITS.get() > hits0, 600);
+		ctx.waitTicks(4);
+		ctx.takeScreenshot("n7_oniks_hits");
+		ctx.waitTicks(200);
+		float vhp1 = server.computeOnServer(s -> s.overworld().getEntity(visby) instanceof VehicleEntity v && v.isAlive() ? v.getHealth() : 0f);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT navy_coastal: ordered {}, launched after {} ticks, seeker locks {}, hits {} (first after {} ticks), "
+				+ "Visby health {} -> {}", fired, up, com.stasdoto.airdefense.missile.MissileEntity.SHIP_LOCKS.get() - locks0,
+				com.stasdoto.airdefense.missile.MissileEntity.SHIP_HITS.get() - hits0, hit, (int) vhp0, (int) vhp1);
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(buyan, visby, bastion), Entity::discard));
+
+		// A naval raid: an enemy Buyan-M comes in from the open sea to a town on the shore.
+		int[] ids = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var mine = com.stasdoto.airdefense.nation.Nations.countryOf(l, p, pl, true);
+			int id = p.newId();
+			BlockPos at = new BlockPos(x, ground, -70);
+			var town = new com.stasdoto.airdefense.nation.Settlement(id, "Приморск", at, at.above(2), -1, java.util.Optional.empty(), 0,
+					java.util.Map.of(), List.of(), List.of());
+			p.settlements.put(id, town);
+			town.country = mine.id;
+			int eid = p.newId();
+			BlockPos eat = new BlockPos(x + 2000, ground, 0);
+			var et = new com.stasdoto.airdefense.nation.Settlement(eid, "Заморье", eat, eat.above(2), -1, java.util.Optional.empty(), 0,
+					java.util.Map.of(), List.of(), List.of());
+			p.settlements.put(eid, et);
+			var enemy = com.stasdoto.airdefense.nation.Nations.newWorldCountry(p, eid);
+			et.country = enemy.id;
+			com.stasdoto.airdefense.nation.War.declare(l, p, enemy, mine, net.minecraft.network.chat.Component.literal("test"));
+			for (int t : new int[]{id, eid}) {
+				var ar = com.stasdoto.airdefense.nation.Arsenals.get(s).of(p, p.settlements.get(t));
+				ar.units.clear();
+				ar.stock.clear();
+			}
+			com.stasdoto.airdefense.nation.War.navalRaidAt(l, p, enemy, town, VehicleType.BUYAN_M, new Vec3(x + 100.5, ground - 0.1, 172.5),
+					new Vec3(x - 20.5, ground - 0.1, 45.5));
+			return new int[]{id, enemy.id};
+		});
+		int shells0 = VehicleEntity.raidShells;
+		int onStation = waitUntil(ctx, () -> server.computeOnServer(s -> {
+			VehicleEntity v = raider(s.overworld());
+			return v != null && v.raidPhase() >= 1;
+		}), 900);
+		look(server, x + 20, ground + 12, -40, x - 20, ground + 4, 45);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("n8_raider_on_station");
+		waitUntil(ctx, () -> VehicleEntity.raidShells > shells0, 400);
+		ctx.waitTicks(8);
+		ctx.takeScreenshot("n9_raider_fires");
+		ctx.waitTicks(400);
+		look(server, x + 30, ground + 25, -110, x, ground, -70);
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("n10_town_shelled");
+		String raid = server.computeOnServer(s -> {
+			VehicleEntity v = raider(s.overworld());
+			return v == null ? "gone" : "phase " + v.raidPhase() + String.format(java.util.Locale.ROOT, " at %.0f %.0f", v.getX() - x, v.getZ());
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT navy_raid: sent {}, on station after {} ticks, missiles {}, shells {}; now {}",
+				com.stasdoto.airdefense.nation.War.navalRaids, onStation, VehicleEntity.raidMissiles, VehicleEntity.raidShells - shells0, raid);
+		server.runOnServer(s -> {
+			for (Entity e : s.overworld().getAllEntities()) {
+				if (e instanceof VehicleEntity v && v.onRaid()) {
+					v.discard();
+				}
+			}
+		});
+		language(ctx, "en_us");
 	}
 
 	/**

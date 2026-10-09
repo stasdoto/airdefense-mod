@@ -58,7 +58,11 @@ public enum Product {
 	GRAD_ROCKET("grad_rocket", 300, 1, 5, cost(Items.IRON_INGOT, 3, Items.GUNPOWDER, 4, Items.REDSTONE, 1)),
 	// 1.31: the TOS-1A's thermobaric rockets, and repair kits.
 	TOS_ROCKET("tos_rocket", 400, 1, 4, cost(Items.IRON_INGOT, 4, Items.GUNPOWDER, 6, Items.BLAZE_POWDER, 1)),
-	REPAIR_KIT("repair_kit", 200, 1, 2, cost(Items.IRON_INGOT, 4, Items.REDSTONE, 1));
+	REPAIR_KIT("repair_kit", 200, 1, 2, cost(Items.IRON_INGOT, 4, Items.REDSTONE, 1)),
+	// 1.33: anti-ship missiles (the Buyan-M fires Kalibrs).
+	ONIKS("oniks_missile", 1000, 1, cost(Items.IRON_INGOT, 14, Items.GUNPOWDER, 8, Items.REDSTONE, 4, Items.GOLD_INGOT, 2)),
+	NSM("nsm_missile", 700, 1, cost(Items.IRON_INGOT, 8, Items.GUNPOWDER, 5, Items.REDSTONE, 4, Items.COPPER_INGOT, 2)),
+	RBS15("rbs15_missile", 800, 1, cost(Items.IRON_INGOT, 10, Items.GUNPOWDER, 6, Items.REDSTONE, 4, Items.COPPER_INGOT, 3));
 
 	public record Cost(Item item, int count) {
 	}
@@ -102,6 +106,10 @@ public enum Product {
 			case M109 -> SHELL_155;
 			case BM21 -> GRAD_ROCKET;
 			case TOS1 -> TOS_ROCKET;
+			case BUYAN_M -> KALIBR;
+			case VISBY -> RBS15;
+			case BASTION -> ONIKS;
+			case NMESIS -> NSM;
 			case T80BVM, CHALLENGER2 -> SHELL_TANK;
 			case BMP3, CV90 -> AMMO_30;
 			case STRYKER, TIGR, HMMWV, BREM1, M88 -> AMMO_127;

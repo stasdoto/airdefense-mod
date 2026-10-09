@@ -20,7 +20,12 @@ public enum LauncherType {
 	M109(MissileType.SHELL_155, 6, 44, 140, 4.5, ModSounds.ARTY_NEAR, 280, 30, 110),
 	BM21(MissileType.GRAD, 40, 3, 600, 12.0, ModSounds.LAUNCH_MLRS, 200, 40, 90),
 	// 1.31: TOS-1A - 24 thermobaric rockets in 7 seconds at short range.
-	TOS1(MissileType.TOS, 24, 6, 900, 10.0, ModSounds.LAUNCH_MLRS, 120, 24, 80);
+	TOS1(MissileType.TOS, 24, 6, 900, 10.0, ModSounds.LAUNCH_MLRS, 120, 24, 80),
+	// 1.33: the warships' vertical launch cells and the coastal anti-ship launchers.
+	KALIBR_SHIP(MissileType.KALIBR, 2, 40, 300, 1.8, 1.6, 0.3, ModSounds.LAUNCH_LIGHT, 2500),
+	RBS15_SHIP(MissileType.RBS15, 2, 36, 300, 1.5, 1.6, 0.3, ModSounds.LAUNCH_LIGHT, 1200),
+	BASTION(MissileType.ONIKS, 2, 60, 400, 1.2, 2.0, 0.3, ModSounds.LAUNCH_HEAVY, 1200),
+	NMESIS(MissileType.NSM, 2, 40, 300, 1.2, 1.6, 0.3, ModSounds.LAUNCH_LIGHT, 900);
 
 	public final MissileType missile;
 	public final int salvo;

@@ -12,7 +12,11 @@ public enum Weapon {
 	AUTO_30(24, 3, 14.0, 0.8f, 16f, 10f, false, 45, 60, "30"),
 	AUTO_25(20, 3, 15.0, 0.7f, 13f, 9f, false, 50, 55, "25"),
 	HMG_145(4, 1, 18.0, 0f, 4f, 9f, false, 120, 70, "14.5"),
-	HMG_127(3, 1, 18.0, 0f, 2.5f, 7f, false, 150, 70, "12.7");
+	HMG_127(3, 1, 18.0, 0f, 2.5f, 7f, false, 150, 70, "12.7"),
+	// 1.33: naval guns - the A-190 100 mm of the Buyan-M, the Bofors 57 mm Mk3 of the Visby (they carry hundreds of rounds:
+	// a warship's gun never runs dry).
+	NAVAL_100(50, 1, 22.0, 3.4f, 170f, 40f, true, 99, 80, "100"),
+	NAVAL_57(16, 1, 24.0, 2.0f, 80f, 24f, true, 99, 77, "57");
 
 	public final int reload;
 	public final int burst;
@@ -40,7 +44,12 @@ public enum Weapon {
 	}
 
 	public boolean cannon() {
-		return this == CANNON_125 || this == CANNON_120;
+		return this == CANNON_125 || this == CANNON_120 || naval();
+	}
+
+	/** 1.33: a warship's gun. */
+	public boolean naval() {
+		return this == NAVAL_100 || this == NAVAL_57;
 	}
 
 	/** Holding the trigger keeps firing (machine guns). */

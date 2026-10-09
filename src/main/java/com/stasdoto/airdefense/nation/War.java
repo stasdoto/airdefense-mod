@@ -225,6 +225,10 @@ public final class War {
 				if (target != null && r.nextInt(100) < 22) {
 					airStrike(level, p, ai, target, r);
 				}
+				// 1.33: a town by the sea now and then gets a warship off its port.
+				if (target != null && r.nextInt(100) < 15 && Ports.of(level, target) != null) {
+					navalRaid(level, p, ai, target, r, null);
+				}
 				// At night, now and then: a massed drone raid on one of his villages.
 				if (target != null && level.isDarkOutside() && r.nextInt(100) < 12
 						&& !com.stasdoto.airdefense.drone.Raids.activeNear(level, net.minecraft.world.phys.Vec3.atCenterOf(target.center), 200)) {
@@ -296,6 +300,67 @@ public final class War {
 					target.name));
 		}
 		AirDefense.LOGGER.info("[airdefense] {} sends a {} against {}", ai.name, type.id, target.name);
+		return type;
+	}
+
+	/** For the tests: naval raids sent. */
+	public static int navalRaids;
+
+	/**
+	 * 1.33: a naval raid on a town with a port - the attacker's warship (Buyan-M or Visby) comes in from the open sea
+	 * (turning up 400-odd blocks out), stands off the port, fires its cruise missiles and shells the town, then goes back
+	 * out to sea. Null if the town has no port or no open water in front of it.
+	 */
+	@Nullable
+	public static com.stasdoto.airdefense.vehicle.VehicleType navalRaid(ServerLevel level, Politics p, Country ai, Settlement target, Random r,
+			@Nullable com.stasdoto.airdefense.vehicle.VehicleType forced) {
+		Ports.Port port = Ports.of(level, target);
+		if (port == null) {
+			return null;
+		}
+		Cities.Terrain t = Cities.terrain(level);
+		int dv = r.nextInt(41) - 20;
+		BlockPos station = port.offshore(t, 90, dv);
+		BlockPos start = port.offshore(t, 440, dv + (r.nextBoolean() ? 50 : -50));
+		if (start.distSqr(station) < 150 * 150) {
+			return null;
+		}
+		boolean east = SoldierEntity.bloc(ai.id) == com.stasdoto.airdefense.weapon.GunType.Bloc.EAST;
+		com.stasdoto.airdefense.vehicle.VehicleType type = forced != null ? forced
+				: east ? com.stasdoto.airdefense.vehicle.VehicleType.BUYAN_M : com.stasdoto.airdefense.vehicle.VehicleType.VISBY;
+		return navalRaidAt(level, p, ai, target, type, new Vec3(start.getX() + 0.5, start.getY() - 0.1, start.getZ() + 0.5),
+				new Vec3(station.getX() + 0.5, station.getY() - 0.1, station.getZ() + 0.5));
+	}
+
+	/** The same from a given start out at sea to a given station off the town (the tests' own bit of sea). */
+	public static com.stasdoto.airdefense.vehicle.VehicleType navalRaidAt(ServerLevel level, Politics p, Country ai, Settlement target,
+			com.stasdoto.airdefense.vehicle.VehicleType type, Vec3 start, Vec3 station) {
+		Settlement home = null;
+		double bestD = Double.MAX_VALUE;
+		for (Settlement o : p.settlementsOf(ai.id)) {
+			double d = o.center.distSqr(target.center);
+			if (d < bestD) {
+				bestD = d;
+				home = o;
+			}
+		}
+		int homeId = home == null ? -1 : home.id;
+		BlockPos at = BlockPos.containing(start);
+		float yaw = (float) Math.toDegrees(Math.atan2(-(station.x - start.x), station.z - start.z));
+		com.stasdoto.airdefense.util.Later.whenLoaded(level, at, 200, l -> {
+			com.stasdoto.airdefense.vehicle.VehicleEntity v = com.stasdoto.airdefense.vehicle.VehicleEntity.spawn(l, type, start, yaw);
+			v.country = ai.id;
+			v.home = homeId;
+			v.startRaid(target.center, station, start);
+		});
+		navalRaids++;
+		com.stasdoto.airdefense.siren.Sirens.autoAlert(level, Vec3.atCenterOf(target.center), 60);
+		Country owner = p.country(target.country);
+		if (owner != null) {
+			tell(level, owner, Component.translatable("nation.airdefense.war.navy", ai.name, Component.translatable("entity.airdefense." + type.id),
+					target.name));
+		}
+		AirDefense.LOGGER.info("[airdefense] {} sends a {} against {} by sea", ai.name, type.id, target.name);
 		return type;
 	}
 

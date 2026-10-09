@@ -959,6 +959,10 @@ public final class Economy {
 			case TOS1 -> new int[]{30, 60, 200, 120};
 			case AH64 -> new int[]{30, 30, 190, 115};
 			case A10 -> new int[]{40, 40, 240, 140};
+			case BUYAN_M -> new int[]{60, 100, 400, 240};
+			case VISBY -> new int[]{60, 90, 380, 230};
+			case BASTION -> new int[]{30, 60, 200, 120};
+			case NMESIS -> new int[]{20, 40, 140, 85};
 		};
 	}
 
@@ -1021,8 +1025,16 @@ public final class Economy {
 			}
 			return;
 		}
-		VehicleEntity v = VehicleEntity.spawn(level, type, Vec3.atBottomCenterOf(spot), hangar.facing.getOpposite().toYRot());
-		v.setUnlimited(free);
+		if (type.isShip()) {
+			// 1.33: a warship does not roll out of a hangar: it comes as its item, to be put on the water.
+			net.minecraft.world.entity.item.ItemEntity item = new net.minecraft.world.entity.item.ItemEntity(level, spot.getX() + 0.5, spot.getY() + 0.5,
+					spot.getZ() + 0.5, new net.minecraft.world.item.ItemStack(com.stasdoto.airdefense.registry.ModItems.VEHICLES.get(type)));
+			item.setUnlimitedLifetime();
+			level.addFreshEntity(item);
+		} else {
+			VehicleEntity v = VehicleEntity.spawn(level, type, Vec3.atBottomCenterOf(spot), hangar.facing.getOpposite().toYRot());
+			v.setUnlimited(free);
+		}
 		e.hangar.removeFirst();
 		e.hangarProgress = 0;
 		vehiclesMade++;

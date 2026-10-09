@@ -40,6 +40,8 @@ import com.stasdoto.airdefense.weapon.GunType;
 import com.stasdoto.airdefense.weapon.NvgItem;
 
 public final class ModItems {
+	/** 1.33: each vehicle's item (filled as they are registered below). */
+	public static final java.util.Map<VehicleType, Item> VEHICLES = new java.util.EnumMap<>(VehicleType.class);
 	public static final Item DESIGNATOR = register("designator", DesignatorItem::new, new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
 	public static final Item MANPADS = register("manpads", ManpadsItem::new, new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
 	public static final Item FACTORY_KIT = register("factory_kit", FactoryKitItem::new, new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
@@ -98,6 +100,11 @@ public final class ModItems {
 	public static final Item TOS1 = vehicle("tos1", VehicleType.TOS1);
 	public static final Item AH64 = vehicle("ah64", VehicleType.AH64);
 	public static final Item A10 = vehicle("a10", VehicleType.A10);
+	// 1.33: the navy.
+	public static final Item BUYAN_M = vehicle("buyan_m", VehicleType.BUYAN_M);
+	public static final Item VISBY = vehicle("visby", VehicleType.VISBY);
+	public static final Item BASTION = vehicle("bastion", VehicleType.BASTION);
+	public static final Item NMESIS = vehicle("nmesis", VehicleType.NMESIS);
 	public static final Item AVENGER = vehicle("avenger", VehicleType.AVENGER);
 	public static final Item MFG = vehicle("mfg", VehicleType.MFG);
 	public static final Item ZU23 = vehicle("zu23", VehicleType.ZU23);
@@ -149,6 +156,10 @@ public final class ModItems {
 	public static final Item SHELL_155 = missile(MissileType.SHELL_155);
 	public static final Item GRAD_ROCKET = missile(MissileType.GRAD);
 	public static final Item TOS_ROCKET = missile(MissileType.TOS);
+	// 1.33: anti-ship missiles.
+	public static final Item ONIKS_MISSILE = missile(MissileType.ONIKS);
+	public static final Item NSM_MISSILE = missile(MissileType.NSM);
+	public static final Item RBS15_MISSILE = missile(MissileType.RBS15);
 	/** 1.31: right-click a vehicle with it - a quarter of its strength back. */
 	public static final Item REPAIR_KIT = register("repair_kit", Item::new, new Item.Properties().stacksTo(16));
 
@@ -280,6 +291,10 @@ public final class ModItems {
 				output.accept(TOS1);
 				output.accept(AH64);
 				output.accept(A10);
+				output.accept(BUYAN_M);
+				output.accept(VISBY);
+				output.accept(BASTION);
+				output.accept(NMESIS);
 				output.accept(AVENGER);
 				output.accept(MFG);
 				output.accept(ZU23);
@@ -318,6 +333,9 @@ public final class ModItems {
 				output.accept(SHELL_155);
 				output.accept(GRAD_ROCKET);
 				output.accept(TOS_ROCKET);
+				output.accept(ONIKS_MISSILE);
+				output.accept(NSM_MISSILE);
+				output.accept(RBS15_MISSILE);
 				output.accept(REPAIR_KIT);
 				output.accept(MANPADS);
 				output.accept(FACTORY_KIT);
@@ -378,7 +396,9 @@ public final class ModItems {
 	}
 
 	private static Item vehicle(String name, VehicleType type) {
-		return register(name, p -> new VehicleItem(type, p), new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
+		Item item = register(name, p -> new VehicleItem(type, p), new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
+		VEHICLES.put(type, item);
+		return item;
 	}
 
 	private static Item gun(GunType type) {

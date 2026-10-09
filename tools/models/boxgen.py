@@ -40,6 +40,11 @@ STYLES = {
     'tan': dict(kind='camo', base=0xB59A6A, c2=0x8C7650, c3=0xC9B486),
     'sand': dict(kind='plain', base=0xB8A27A),
     'grey': dict(kind='plain', base=0x7C8186),
+    # 1.33: warships - Russian naval grey, the Visby's dark stealth grey, decks, the red antifouling below the waterline.
+    'navy': dict(kind='plain', base=0x6F777D),
+    'visby': dict(kind='plain', base=0x596166),
+    'deck': dict(kind='plain', base=0x4B5154),
+    'hull_red': dict(kind='plain', base=0x7A2E26),
     # The F-16's two greys.
     'fgrey': dict(kind='plain', base=0x8C949A),
     'fgrey_d': dict(kind='plain', base=0x6A737A),

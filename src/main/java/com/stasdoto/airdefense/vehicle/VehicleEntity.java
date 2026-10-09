@@ -339,7 +339,7 @@ public class VehicleEntity extends LivingEntity {
 		if (vtype.isRadar()) {
 			return 0;
 		}
-		if (vtype.isArmed()) {
+		if (vtype.isArmed() && !vtype.isShip()) {
 			return vtype.weapon.magazine;
 		}
 		if (vtype.isLauncher()) {
@@ -403,10 +403,11 @@ public class VehicleEntity extends LivingEntity {
 
 	/** Launchers: missiles from the reserve onto the empty rails (artillery: rounds into the gun's racks). */
 	private void reloadRails() {
-		if (vtype.isArtillery()) {
+		if (vtype.isArtillery() || vtype.isShip()) {
 			int have = Math.max(0, getAmmo());
 			setAmmo(have + takeReserve(vtype.strikeLoad() - have));
-			setLoadedMask(getAmmo() > 0 ? fullMask() : 0);
+			// (A warship's one rail is its gun barrel: always there.)
+			setLoadedMask(getAmmo() > 0 || vtype.isShip() ? fullMask() : 0);
 			return;
 		}
 		int mask = getLoadedMask();
@@ -926,10 +927,11 @@ public class VehicleEntity extends LivingEntity {
 		if (country < 0 || (tickCount + getId()) % 5 != 0) {
 			return;
 		}
-		if (aiTarget == null || !aiTarget.isAlive() || aiTarget.distanceToSqr(this) > 140 * 140 || (tickCount + getId()) % 40 == 0) {
+		double reach = vtype.isShip() ? 320 : 140;
+		if (aiTarget == null || !aiTarget.isAlive() || aiTarget.distanceToSqr(this) > reach * reach || (tickCount + getId()) % 40 == 0) {
 			aiTarget = null;
-			double best = 140 * 140;
-			for (Entity e : level.getEntities(this, getBoundingBox().inflate(140, 40, 140),
+			double best = reach * reach;
+			for (Entity e : level.getEntities(this, getBoundingBox().inflate(reach, 60, reach),
 					e -> e.isAlive() && !e.isSpectator() && com.stasdoto.airdefense.nation.War.hostile(level, country, e))) {
 				double d = e.distanceToSqr(this);
 				if (d < best && sees(level, e)) {
@@ -948,8 +950,8 @@ public class VehicleEntity extends LivingEntity {
 		double base = vtype.geometry.turretPivot()[1] + getY();
 		setElevationTarget(Mth.clamp((float) Math.toDegrees(Math.atan2(point.y - Math.max(base, muzzle.y - 0.5), Math.max(1, h))), -8, w.maxElevation));
 		float yawErr = Math.abs(Mth.wrapDegrees(turretYaw - getTurretTarget()));
-		if (yawErr < 4 && gunCooldown == 0 && roundsLeft == 0 && getAmmo() > 0) {
-			roundsLeft = Math.min(w.burst, getAmmo());
+		if (yawErr < 4 && gunCooldown == 0 && roundsLeft == 0 && (getAmmo() > 0 || vtype.isShip())) {
+			roundsLeft = vtype.isShip() ? w.burst : Math.min(w.burst, getAmmo());
 			roundTimer = 0;
 			gunCooldown = w.reload + 10 + level.getRandom().nextInt(20);
 		}
@@ -1011,6 +1013,10 @@ public class VehicleEntity extends LivingEntity {
 		}
 		if (vtype.isAir() && onSortie() && isAlive() && getControllingPassenger() == null && level() instanceof ServerLevel server) {
 			aiFly(server);
+			return;
+		}
+		if (vtype.isShip() && onRaid() && isAlive() && getControllingPassenger() == null && level() instanceof ServerLevel server) {
+			aiSail(server);
 			return;
 		}
 		Input in = level().isClientSide() ? clientInput : route != null && getControllingPassenger() == null ? autopilot() : Input.EMPTY;
@@ -1466,7 +1472,9 @@ public class VehicleEntity extends LivingEntity {
 			// 1.32: in the air it shows on radars and draws air defence fire.
 			airTrack = MissileEntity.track(level, this);
 		}
-		if (vtype.isLauncher()) {
+		if (vtype.isShip()) {
+			tickShip(level);
+		} else if (vtype.isLauncher()) {
 			tickLauncher(level);
 		} else if (vtype.isRadar()) {
 			tickRadar(level);
@@ -1577,17 +1585,7 @@ public class VehicleEntity extends LivingEntity {
 			aiGunner(level, w);
 		}
 		if (p != null) {
-			Vec3 eye = p.getEyePosition();
-			Vec3 end = eye.add(p.getLookAngle().scale(400));
-			net.minecraft.world.phys.BlockHitResult hit = level.clip(new net.minecraft.world.level.ClipContext(eye, end,
-					net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, this));
-			Vec3 point = hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS ? end : hit.getLocation();
-			setTurretTarget(relativeBearing(point));
-			Vec3 muzzle = railWorld(0);
-			double h = Math.sqrt(Mth.square(point.x - getX()) + Mth.square(point.z - getZ()));
-			double base = vtype.geometry.turretPivot()[1] + getY();
-			float elev = (float) Math.toDegrees(Math.atan2(point.y - Math.max(base, muzzle.y - 0.5), Math.max(1, h)));
-			setElevationTarget(Mth.clamp(elev, -8, w.maxElevation));
+			aimGunWhereLooking(level, p, w);
 		}
 		if (roundsLeft > 0 && --roundTimer <= 0) {
 			fireRound(level, w);
@@ -1603,18 +1601,40 @@ public class VehicleEntity extends LivingEntity {
 		}
 	}
 
+	/** The turret and gun towards what the shooter looks at (the water's surface counts for a warship's gun). */
+	private void aimGunWhereLooking(ServerLevel level, Player p, Weapon w) {
+		Vec3 eye = p.getEyePosition();
+		Vec3 end = eye.add(p.getLookAngle().scale(w.naval() ? 600 : 400));
+		net.minecraft.world.phys.BlockHitResult hit = level.clip(new net.minecraft.world.level.ClipContext(eye, end,
+				net.minecraft.world.level.ClipContext.Block.COLLIDER, w.naval() ? net.minecraft.world.level.ClipContext.Fluid.ANY
+				: net.minecraft.world.level.ClipContext.Fluid.NONE, this));
+		Vec3 point = hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS ? end : hit.getLocation();
+		aimGun(point, w);
+	}
+
+	/** The turret and gun towards a point. */
+	private void aimGun(Vec3 point, Weapon w) {
+		setTurretTarget(relativeBearing(point));
+		Vec3 muzzle = railWorld(0);
+		double h = Math.sqrt(Mth.square(point.x - getX()) + Mth.square(point.z - getZ()));
+		double base = vtype.geometry.turretPivot()[1] + getY();
+		float elev = (float) Math.toDegrees(Math.atan2(point.y - Math.max(base, muzzle.y - 0.5), Math.max(1, h)));
+		setElevationTarget(Mth.clamp(elev, -8, w.maxElevation));
+	}
+
 	/** Trigger from the shooter's seat. */
 	public void armedFire(Player player) {
 		if (player != (vtype.isAir() ? getDriver() : shooter()) || !(level() instanceof ServerLevel level) || gunCooldown > 0 || roundsLeft > 0) {
 			return;
 		}
 		Weapon w = vtype.weapon;
-		if (getAmmo() <= 0) {
+		if (getAmmo() <= 0 && !vtype.isShip()) {
 			player.sendOverlayMessage(Component.translatable("message.airdefense.vehicle.empty"));
 			gunCooldown = 20;
 			return;
 		}
-		roundsLeft = Math.min(w.burst, getAmmo());
+		// A warship's gun has rounds for days (its ammunition count is the cruise missiles').
+		roundsLeft = vtype.isShip() ? w.burst : Math.min(w.burst, getAmmo());
 		roundTimer = 0;
 		gunCooldown = w.reload;
 		if (roundsLeft > 0) {
@@ -1910,17 +1930,19 @@ public class VehicleEntity extends LivingEntity {
 	}
 
 	private void fireRound(ServerLevel level, Weapon w) {
-		if (getAmmo() <= 0) {
-			roundsLeft = 0;
-			return;
+		if (!vtype.isShip()) {
+			if (getAmmo() <= 0) {
+				roundsLeft = 0;
+				return;
+			}
+			setAmmo(getAmmo() - 1);
 		}
-		setAmmo(getAmmo() - 1);
 		Vec3 muzzle = vtype.isAir() ? nose() : railWorld(0);
 		Vec3 dir = vtype.isAir() ? aimDirection() : railDirection(0);
 		RandomSource r = level.getRandom();
 		double spread = w.cannon() ? 0.002 : 0.008;
 		dir = dir.add(r.nextGaussian() * spread, r.nextGaussian() * spread, r.nextGaussian() * spread).normalize();
-		double reach = w.cannon() ? 450 : 300;
+		double reach = w.naval() ? 600 : w.cannon() ? 450 : 300;
 		Vec3 end = muzzle.add(dir.scale(reach));
 		net.minecraft.world.phys.BlockHitResult block = level.clip(new net.minecraft.world.level.ClipContext(muzzle, end,
 				net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, this));
@@ -1942,8 +1964,10 @@ public class VehicleEntity extends LivingEntity {
 		if (w.cannon() && !vtype.isAir()) {
 			com.stasdoto.airdefense.fx.Fx.send(level, com.stasdoto.airdefense.fx.FxPayload.LAUNCH, muzzle.add(dir.scale(0.5)), 1.4f,
 					new Vec3(com.stasdoto.airdefense.fx.FxPayload.LAUNCH_SOUND_HEAVY, 0, 0));
-			// The recoil rocks the vehicle back a little.
-			tiltPitch -= 2.5f;
+			// The recoil rocks the vehicle back a little (not a warship).
+			if (!vtype.isShip()) {
+				tiltPitch -= 2.5f;
+			}
 		} else {
 			Effects.gunBurst(level, muzzle);
 		}
@@ -2020,7 +2044,7 @@ public class VehicleEntity extends LivingEntity {
 
 	/** Shells, rockets or missiles ready to fire right now. */
 	public int loadedRounds() {
-		return vtype.isArtillery() ? Math.max(0, getAmmo()) : Integer.bitCount(getLoadedMask());
+		return vtype.isArtillery() || vtype.isShip() ? Math.max(0, getAmmo()) : Integer.bitCount(getLoadedMask());
 	}
 
 	/** Is it busy with a strike or fire mission right now. */
@@ -2065,7 +2089,10 @@ public class VehicleEntity extends LivingEntity {
 		plan = flightPlan;
 		planViewer = flightPlan != null && flightPlan.camera() && player != null ? player.getUUID() : null;
 		salvoIndex = 0;
-		speed = 0;
+		if (!vtype.isShip()) {
+			// A launcher stops to fire; a warship fires from its cells under way.
+			speed = 0;
+		}
 		setState(DEPLOYED);
 		if (player != null) {
 			player.sendOverlayMessage(Component.translatable("message.airdefense.vehicle.deploying", target.getX(), target.getY(), target.getZ(), (int) dist));
@@ -2077,6 +2104,9 @@ public class VehicleEntity extends LivingEntity {
 		LauncherType type = vtype.launcher;
 		if (cooldown > 0) {
 			cooldown--;
+		}
+		if (vtype.isCoastal() && country >= 0 && shooter() == null) {
+			aiAntiShip(level);
 		}
 		if (strikePending || salvoLeft > 0) {
 			keepLoaded(level);
@@ -2172,6 +2202,10 @@ public class VehicleEntity extends LivingEntity {
 		LauncherType type = vtype.launcher;
 		if (type.artillery()) {
 			fireArtillery(level, type);
+			return;
+		}
+		if (vtype.isShip()) {
+			fireShipMissile(level, type);
 			return;
 		}
 		int rail = nextLoadedRail();
@@ -2995,6 +3029,11 @@ public class VehicleEntity extends LivingEntity {
 					Component.translatable("message.airdefense.truck." + truckModeKey()))
 					.append(" (").append(Component.translatable("nation.airdefense.goods." + getCargoKind())).append(")");
 		}
+		if (vtype.isShip()) {
+			return Component.translatable("message.airdefense.vehicle.status_ship", name, hp, vtype.weapon.caliber,
+					Component.translatable("item.airdefense." + vtype.launcher.missile.itemId), Math.max(0, getAmmo()), vtype.strikeLoad(),
+					(int) getFuel(), vtype.fuelCapacity()).append(reserveText());
+		}
 		if (vtype.isArmed()) {
 			return Component.translatable("message.airdefense.vehicle.status_armed", name, hp, Math.max(0, getAmmo()), vtype.weapon.caliber,
 					(int) getFuel(), vtype.fuelCapacity()).append(reserveText());
@@ -3219,6 +3258,356 @@ public class VehicleEntity extends LivingEntity {
 	}
 
 	// ------------------------------------------------------------------------------------------------
+	// 1.33: warships - the gun (the gunner, or the crew by themselves on a country's ship), cruise missiles out of the
+	// vertical cells (strikes ordered on the map, like a launcher; they fire under way), and the close-in gun against
+	// whatever flies at the ship.
+
+	/** For the tests: close-in gun bursts, what they brought down; raids sailed, shells and missiles fired on raids. */
+	public static int ciwsBursts;
+	public static int ciwsKills;
+	public static int raidsSailed;
+	public static int raidShells;
+	public static int raidMissiles;
+
+	private void tickShip(ServerLevel level) {
+		Weapon w = vtype.weapon;
+		setState(DEPLOYED);
+		if (gunCooldown > 0) {
+			gunCooldown--;
+		}
+		Player p = shooter();
+		if (p != null) {
+			aimGunWhereLooking(level, p, w);
+		} else if (country >= 0) {
+			if (onRaid()) {
+				raidGun(level, w);
+			} else {
+				aiGunner(level, w);
+			}
+		}
+		if (roundsLeft > 0 && --roundTimer <= 0) {
+			fireRound(level, w);
+			roundsLeft--;
+			roundTimer = 3;
+		}
+		for (Iterator<Round> it = rounds.iterator(); it.hasNext(); ) {
+			Round r = it.next();
+			if (--r.ticks[0] <= 0) {
+				it.remove();
+				impact(level, r);
+			}
+		}
+		if (country >= 0 && p == null && !onRaid()) {
+			aiAntiShip(level);
+		}
+		tickCells(level);
+		shipCiws(level, vtype.ship);
+		if (onRaid() && raidPhase == 1 && !raidFired && raidTown != null) {
+			// On station: a salvo of its cruise missiles at the town first.
+			raidFired = true;
+			int top = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, raidTown.getX(), raidTown.getZ());
+			if (commandStrike(new BlockPos(raidTown.getX(), top, raidTown.getZ()), null)) {
+				raidMissiles += Math.min(vtype.launcher.salvo, loadedRounds());
+			}
+		}
+	}
+
+	/** The vertical cells: a strike ordered on the map goes at once (nothing to raise or turn), reloads from the reserve. */
+	private void tickCells(ServerLevel level) {
+		LauncherType type = vtype.launcher;
+		if (cooldown > 0) {
+			cooldown--;
+		}
+		if (strikePending) {
+			keepLoaded(level);
+			strikePending = false;
+			int want = plan != null && plan.count() > 0 ? plan.count() : missionRounds > 0 ? missionRounds : type.salvo;
+			salvoLeft = Math.min(want, loadedRounds());
+			missionRounds = 0;
+			salvoTimer = 0;
+		}
+		if (salvoLeft > 0 && --salvoTimer <= 0) {
+			keepLoaded(level);
+			fireStrike(level);
+			salvoLeft--;
+			salvoTimer = type.interval;
+			if (salvoLeft == 0) {
+				cooldown = type.cooldown;
+				reloadPending = true;
+				strikeTarget = null;
+			}
+		}
+		if (reloadPending && cooldown == 0) {
+			reloadPending = false;
+			reloadRails();
+		} else if (!reloadPending && cooldown == 0 && salvoLeft == 0 && !isUnlimited() && getReserve() > 0 && getAmmo() < vtype.strikeLoad()
+				&& tickCount % 20 == 0) {
+			reloadRails();
+		}
+	}
+
+	/** One cruise missile out of the next full cell: straight up, leaning towards the target. */
+	private void fireShipMissile(ServerLevel level, LauncherType type) {
+		VehicleType.ShipFit fit = vtype.ship;
+		if (strikeTarget == null || getAmmo() <= 0) {
+			salvoLeft = 0;
+			return;
+		}
+		int cell = Math.floorMod(fit.cells() - getAmmo(), fit.cells());
+		double[] c = fit.cell(cell);
+		Vec3 from = toWorld(c[0], c[1], c[2]);
+		RandomSource r = level.getRandom();
+		Vec3 aim = new Vec3(strikeTarget.getX() + 0.5 + r.nextGaussian() * type.spread, strikeTarget.getY() + 1.0,
+				strikeTarget.getZ() + 0.5 + r.nextGaussian() * type.spread);
+		Vec3 flat = new Vec3(aim.x - from.x, 0, aim.z - from.z);
+		Vec3 lean = flat.lengthSqr() > 1e-4 ? flat.normalize().scale(0.3) : Vec3.ZERO;
+		MissileEntity m = MissileEntity.launchStrike(level, type.missile, from, aim, forward(), lean.add(0, 1, 0));
+		m.setCountry(country);
+		if (plan != null) {
+			m.applyPlan(plan, salvoIndex % 2 == 0);
+		}
+		salvoIndex++;
+		setAmmo(Math.max(0, getAmmo() - 1));
+		Effects.launchBlast(level, from.add(0, 0.5, 0), type.missile);
+	}
+
+	/** For the tests: anti-ship strikes the countries' coastal batteries and warships fired by themselves. */
+	public static int aiAntiShipStrikes;
+
+	/** A country's coastal battery or warship fires its missiles at an enemy ship in reach (one strike at a time). */
+	private void aiAntiShip(ServerLevel level) {
+		if ((tickCount + getId()) % 40 != 0 || striking() || cooldown > 0 || loadedRounds() == 0) {
+			return;
+		}
+		double reach = Math.min(1500, vtype.launcher.maxRange);
+		VehicleEntity best = null;
+		double bestD = reach * reach;
+		for (VehicleEntity v : level.getEntitiesOfClass(VehicleEntity.class, getBoundingBox().inflate(reach, 80, reach),
+				v -> v != this && v.isAlive() && v.getVehicleType().boat && com.stasdoto.airdefense.nation.War.hostile(level, country, v))) {
+			double d = v.distanceToSqr(this);
+			if (d < bestD && d > 48 * 48) {
+				bestD = d;
+				best = v;
+			}
+		}
+		if (best != null && commandStrike(best.blockPosition(), null)) {
+			aiAntiShipStrikes++;
+			com.stasdoto.airdefense.AirDefense.LOGGER.info("[airdefense] {} fires at the {} at {}", vtype.id, best.getVehicleType().id,
+					best.blockPosition().toShortString());
+		}
+	}
+
+	private int ciwsTimer;
+
+	/**
+	 * The close-in gun: a burst every few ticks at the nearest drone, missile or enemy aircraft coming at the ship (its
+	 * aim point near the ship, or close and closing). Fast missiles are hard to hit; each hit tears off a piece.
+	 */
+	private void shipCiws(ServerLevel level, VehicleType.ShipFit fit) {
+		if (ciwsTimer > 0) {
+			ciwsTimer--;
+			return;
+		}
+		if ((tickCount + getId()) % 2 != 0) {
+			return;
+		}
+		Vec3 mount = toWorld(fit.ciwsX(), fit.ciwsY(), fit.ciwsZ());
+		double reach = fit.ciwsRange();
+		com.stasdoto.airdefense.nation.Politics pol = com.stasdoto.airdefense.nation.Politics.get(level.getServer());
+		MissileEntity best = null;
+		double bestD = reach * reach;
+		for (MissileEntity m : MissileEntity.find(level, new AABB(mount, mount).inflate(reach), m -> m.isAlive() && m.getMissileType().threat
+				&& !m.getMissileType().artillery())) {
+			double d = m.distanceToSqr(mount);
+			if (d >= bestD || com.stasdoto.airdefense.radar.CounterBattery.sameSide(pol, m.country(), country)) {
+				continue;
+			}
+			if (m.getMissileType().track()) {
+				VehicleEntity a = m.carrier();
+				if (a == null || com.stasdoto.airdefense.radar.CounterBattery.sameSide(pol, a.country, country)
+						|| country >= 0 && !com.stasdoto.airdefense.nation.War.hostile(level, country, a)) {
+					continue;
+				}
+			} else {
+				// Only what comes at this ship: aimed at it, or close and closing.
+				Vec3 rel = position().subtract(m.position());
+				boolean closing = m.getFlightVelocity().dot(rel) > 0;
+				if (m.getTarget().distanceToSqr(position()) > 45 * 45 && !(closing && d < 40 * 40)) {
+					continue;
+				}
+			}
+			bestD = d;
+			best = m;
+		}
+		if (best == null) {
+			return;
+		}
+		ciwsTimer = fit.ciwsRate();
+		ciwsBursts++;
+		RandomSource r = level.getRandom();
+		double dist = Math.sqrt(bestD);
+		double chance = DefenseType.gunHitChance(best.getMissileType().kind) * (1.0 - 0.55 * dist / reach)
+				* (best.getMissileType().maxSpeed > 3 ? 0.45 : 1.0);
+		Vec3 aim = best.position().add(best.getFlightVelocity().scale(dist / 4.0));
+		level.playSound(null, mount.x, mount.y, mount.z, ModSounds.GEPARD_BURST, SoundSource.NEUTRAL, 3.0f, 1.3f + r.nextFloat() * 0.1f);
+		for (int round = 0; round < 6; round++) {
+			boolean hit = r.nextDouble() < chance;
+			Vec3 end = hit ? aim : aim.add(r.nextGaussian() * 2.5, r.nextGaussian() * 2.5, r.nextGaussian() * 2.5);
+			Effects.tracer(level, mount.add(r.nextGaussian() * 0.15, 0, r.nextGaussian() * 0.15), end);
+			if (hit && best.isAlive()) {
+				best.hurtServer(level, level.damageSources().generic(), 1.5f);
+				if (!best.isAlive()) {
+					ciwsKills++;
+				}
+			}
+		}
+	}
+
+	// --- A country's warship on a raid: in from the open sea, on station off the town, guns and missiles, back out ---
+
+	@Nullable
+	private BlockPos raidTown;
+	private Vec3 raidStation = Vec3.ZERO;
+	private Vec3 raidExit = Vec3.ZERO;
+	private int raidPhase;
+	private int raidTimer;
+	private boolean raidFired;
+	@Nullable
+	private Vec3 raidAim;
+
+	/** Sends this warship (just put on the water out at sea, nobody aboard) against the town at {@code town}. */
+	public void startRaid(BlockPos town, Vec3 station, Vec3 exit) {
+		raidTown = town;
+		raidStation = station;
+		raidExit = exit;
+		raidPhase = 0;
+		raidTimer = 0;
+		raidFired = false;
+		setUnlimited(true);
+		raidsSailed++;
+	}
+
+	public boolean onRaid() {
+		return raidTown != null;
+	}
+
+	/** 0 coming in, 1 on station firing, 2 going away (for the tests). */
+	public int raidPhase() {
+		return raidPhase;
+	}
+
+	/** Is there open water {@code d} blocks ahead along this heading (degrees). */
+	private boolean waterAhead(ServerLevel level, float yawDeg, double d) {
+		double a = Math.toRadians(yawDeg);
+		for (double k = 6; k <= d; k += 6) {
+			double x = getX() - Math.sin(a) * k;
+			double z = getZ() + Math.cos(a) * k;
+			BlockPos at = BlockPos.containing(x, getY() - 0.4, z);
+			if (!level.hasChunkAt(at) || !level.getFluidState(at).is(net.minecraft.tags.FluidTags.WATER)
+					|| !level.getBlockState(at.above()).getCollisionShape(level, at.above()).isEmpty()) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/** The crew sails by themselves: to the station, holds it while firing, then out to sea; steers round the land. */
+	private void aiSail(ServerLevel level) {
+		raidTimer++;
+		Vec3 pos = position();
+		Vec3 goal;
+		double want = vtype.maxSpeed * 0.8;
+		int phase0 = raidPhase;
+		switch (raidPhase) {
+			case 0 -> {
+				goal = raidStation;
+				if (flat(pos, raidStation) < 14 || raidTimer > 3600) {
+					raidPhase = 1;
+					raidTimer = 0;
+				}
+			}
+			case 1 -> {
+				goal = raidStation;
+				double off = flat(pos, raidStation);
+				want = off < 8 ? 0 : vtype.maxSpeed * 0.3;
+				if (raidTimer > 1400) {
+					raidPhase = 2;
+					raidTimer = 0;
+				}
+			}
+			default -> {
+				goal = raidExit;
+				boolean watched = level.getNearestPlayer(getX(), getY(), getZ(), 300, pl -> true) != null;
+				if (flat(pos, raidExit) < 24 || !watched && raidTown != null && flat(pos, Vec3.atCenterOf(raidTown)) > 400 || raidTimer > 4000) {
+					discard();
+					return;
+				}
+			}
+		}
+		if (raidPhase != phase0) {
+			com.stasdoto.airdefense.AirDefense.LOGGER.info("[airdefense] {} raid: phase {} at {}", vtype.id, raidPhase, blockPosition().toShortString());
+		}
+		float desired = (float) Math.toDegrees(Math.atan2(-(goal.x - pos.x), goal.z - pos.z));
+		if (want > 0 && !waterAhead(level, desired, 30)) {
+			// Land ahead: the first clear heading to one side or the other.
+			for (float off : new float[]{35, -35, 70, -70, 110, -110}) {
+				if (waterAhead(level, desired + off, 30)) {
+					desired += off;
+					break;
+				}
+			}
+		}
+		float step = Mth.clamp(Mth.wrapDegrees(desired - getYRot()), -vtype.pivotTurn, vtype.pivotTurn);
+		if (Math.abs(speed) > 0.05) {
+			setYRot(getYRot() + step);
+		}
+		yBodyRot = yHeadRot = getYRot();
+		speed = (float) Mth.approach(speed, (float) want, vtype.accel * 2);
+		if (want > 0 && !waterAhead(level, getYRot(), 12)) {
+			speed = Math.min(speed, 0.1f);
+		}
+		double vy = getDeltaMovement().y;
+		if (submerged()) {
+			vy = Math.min(vy * 0.6 + 0.05, 0.12);
+		} else if (onWater()) {
+			vy = 0;
+		} else {
+			vy = Math.max(vy - 0.08, -1.0);
+		}
+		Vec3 f = forward();
+		Vec3 motion = new Vec3(f.x * speed, vy, f.z * speed);
+		setDeltaMovement(motion);
+		move(MoverType.SELF, motion);
+		if (raidPhase < 2) {
+			keepLoaded(level);
+		}
+	}
+
+	/** On station: the gun at whatever enemy it sees, else at the town itself. */
+	private void raidGun(ServerLevel level, Weapon w) {
+		aiGunner(level, w);
+		if (aiTarget != null || raidPhase != 1 || raidTown == null) {
+			return;
+		}
+		if (raidAim == null || gunCooldown == 0 && roundsLeft == 0 && level.getRandom().nextInt(4) == 0) {
+			RandomSource r = level.getRandom();
+			int x = raidTown.getX() + (int) Math.round(r.nextGaussian() * 18);
+			int z = raidTown.getZ() + (int) Math.round(r.nextGaussian() * 18);
+			int top = level.hasChunkAt(new BlockPos(x, 0, z)) ? level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z)
+					: raidTown.getY();
+			raidAim = new Vec3(x + 0.5, top + 1.5, z + 0.5);
+		}
+		aimGun(raidAim, w);
+		float yawErr = Math.abs(Mth.wrapDegrees(turretYaw - getTurretTarget()));
+		if (yawErr < 3 && gunCooldown == 0 && roundsLeft == 0) {
+			roundsLeft = w.burst;
+			roundTimer = 0;
+			gunCooldown = w.reload + 20 + level.getRandom().nextInt(30);
+			raidShells++;
+		}
+	}
+
+	// ------------------------------------------------------------------------------------------------
 	// 1.32: the enemy's pilots - an attack helicopter or a jet flown by a country at war against a town
 
 	/** The town to attack (its centre), where the aircraft came from, how far the sortie has got. */
@@ -3264,8 +3653,8 @@ public class VehicleEntity extends LivingEntity {
 
 	@Override
 	public boolean shouldBeSaved() {
-		// An enemy sortie does not outlive the game it was flown in.
-		return !onSortie() && super.shouldBeSaved();
+		// An enemy sortie (or naval raid) does not outlive the game it was flown in.
+		return !onSortie() && !onRaid() && super.shouldBeSaved();
 	}
 
 	private static double flat(Vec3 a, Vec3 b) {

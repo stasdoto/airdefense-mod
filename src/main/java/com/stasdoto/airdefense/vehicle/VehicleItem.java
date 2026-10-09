@@ -27,6 +27,10 @@ public class VehicleItem extends Item {
 
 	@Override
 	public InteractionResult useOn(UseOnContext context) {
+		if (type.isShip()) {
+			// A warship only goes on the water (see use).
+			return InteractionResult.PASS;
+		}
 		if (!(context.getLevel() instanceof ServerLevel level)) {
 			return InteractionResult.SUCCESS;
 		}
@@ -56,6 +60,9 @@ public class VehicleItem extends Item {
 		}
 		net.minecraft.world.phys.BlockHitResult hit = getPlayerPOVHitResult(level, player, net.minecraft.world.level.ClipContext.Fluid.SOURCE_ONLY);
 		if (hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK || !level.getFluidState(hit.getBlockPos()).is(net.minecraft.tags.FluidTags.WATER)) {
+			if (type.isShip() && !level.isClientSide()) {
+				player.sendOverlayMessage(Component.translatable("message.airdefense.ship.water"));
+			}
 			return InteractionResult.PASS;
 		}
 		if (!(level instanceof ServerLevel server)) {
@@ -73,7 +80,8 @@ public class VehicleItem extends Item {
 	@Override
 	public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
 		tooltip.accept(Component.translatable("item.airdefense.vehicle.hint").withStyle(ChatFormatting.GRAY));
-		tooltip.accept(Component.translatable(type.repairs() ? "item.airdefense.vehicle.hint_recovery" : type.isArtillery() ? "item.airdefense.vehicle.hint_artillery"
+		tooltip.accept(Component.translatable(type.isShip() ? "item.airdefense.vehicle.hint_ship" : type.isCoastal() ? "item.airdefense.vehicle.hint_coastal"
+				: type.repairs() ? "item.airdefense.vehicle.hint_recovery" : type.isArtillery() ? "item.airdefense.vehicle.hint_artillery"
 				: type.isCounterBattery() ? "item.airdefense.vehicle.hint_cb" : type.isLauncher() ? "item.airdefense.vehicle.hint_launcher"
 				: type.isTruck() ? "item.airdefense.vehicle.hint_truck" : type.isAir() ? "item.airdefense.vehicle.hint_air"
 				: type.isRadar() ? "item.airdefense.vehicle.hint_radar" : type.boat ? "item.airdefense.vehicle.hint_boat"

@@ -416,4 +416,32 @@ public final class GenGeometry {
 			null, new float[]{0F, 0F, 0F}, null, new float[]{0F, 0F, 0F},
 			0F, 0F, new Rail[]{}, null, new String[]{}, 19F,
 			1024, 240);
+
+	public static final Geometry BUYAN_M = new Geometry("buyan_m", 74.05F, 11F, 24.7F, 0F, false,
+			new Seat[]{new Seat("driver", -1.2F, 9.214F, 9.8F), new Seat("gunner", 1.2F, 9.214F, 9.8F)},
+			new Wheel[]{},
+			"turret", new float[]{0F, 4.1F, 17F}, "gun", new float[]{0F, 0.8F, 1.4F},
+			0F, 0F, new Rail[]{new Rail("barrel", 0F, 0F, 5.95F)}, null, new String[]{}, 46F,
+			2048, 2768);
+
+	public static final Geometry VISBY = new Geometry("visby", 72.05F, 10.4F, 14.8F, 0F, false,
+			new Seat[]{new Seat("driver", -1F, 8.3F, 11.6F), new Seat("gunner", 1F, 8.3F, 11.6F)},
+			new Wheel[]{},
+			"turret", new float[]{0F, 3.4F, 24F}, "gun", new float[]{0F, 1.1F, 1.4F},
+			0F, 0F, new Rail[]{new Rail("barrel", 0F, 0F, 3.75F)}, null, new String[]{}, 44F,
+			2048, 2432);
+
+	public static final Geometry BASTION = new Geometry("bastion", 13.64F, 3.1F, 3.85F, 7.2F, false,
+			new Seat[]{new Seat("driver", -0.7F, 1.75F, 5.6F), new Seat("gunner", 0.7F, 1.75F, 5.6F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.72F, true), new Wheel("wheel_1_r", 0.72F, true), new Wheel("wheel_2_l", 0.72F, true), new Wheel("wheel_2_r", 0.72F, true), new Wheel("wheel_3_l", 0.72F, false), new Wheel("wheel_3_r", 0.72F, false), new Wheel("wheel_4_l", 0.72F, false), new Wheel("wheel_4_r", 0.72F, false)},
+			null, new float[]{0F, 0F, 0F}, "container", new float[]{0F, 2.1F, -6.2F},
+			90F, 0F, new Rail[]{new Rail("lid_0", -0.65F, 0.85F, 10.6F), new Rail("lid_1", 0.65F, 0.85F, 10.6F)}, null, new String[]{}, 15F,
+			1024, 400);
+
+	public static final Geometry NMESIS = new Geometry("nmesis", 6.54F, 2.5F, 2.35F, 3.6F, false,
+			new Seat[]{new Seat("driver", -0.5F, 1.04F, 0.8F), new Seat("gunner", 0.5F, 1.04F, 0.8F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.55F, true), new Wheel("wheel_1_r", 0.55F, true), new Wheel("wheel_2_l", 0.55F, false), new Wheel("wheel_2_r", 0.55F, false)},
+			null, new float[]{0F, 0F, 0F}, "pod", new float[]{0F, 1.25F, -2.9F},
+			35F, 0F, new Rail[]{new Rail("cap_0", -0.48F, 0.43F, 4.05F), new Rail("cap_1", 0.48F, 0.43F, 4.05F)}, null, new String[]{}, 10F,
+			1024, 96);
 }

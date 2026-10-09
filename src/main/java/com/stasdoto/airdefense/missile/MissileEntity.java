@@ -849,6 +849,51 @@ public class MissileEntity extends Entity {
 		return getMissileType().track() && (carrier == null || carrier.country < 0);
 	}
 
+	/** 1.33: the ship an anti-ship missile's seeker has locked on to, and where it was first aimed. */
+	@org.jetbrains.annotations.Nullable
+	private com.stasdoto.airdefense.vehicle.VehicleEntity shipTarget;
+	@org.jetbrains.annotations.Nullable
+	private Vec3 shipAim;
+	/** For the tests: seekers locked on a ship; anti-ship missiles that hit one. */
+	public static final java.util.concurrent.atomic.AtomicInteger SHIP_LOCKS = new java.util.concurrent.atomic.AtomicInteger();
+	public static final java.util.concurrent.atomic.AtomicInteger SHIP_HITS = new java.util.concurrent.atomic.AtomicInteger();
+
+	/**
+	 * 1.33: in the last stretch the seeker switches on and looks round the aim point for a ship of the other side (the
+	 * nearest within 90 blocks); locked, the missile flies at where the ship will be.
+	 */
+	private void homeOnShip(ServerLevel level, Vec3 pos) {
+		if (shipTarget != null && (!shipTarget.isAlive() || shipTarget.isRemoved())) {
+			shipTarget = null;
+		}
+		Vec3 aim = shipAim != null ? shipAim : target;
+		double dx = aim.x - pos.x;
+		double dz = aim.z - pos.z;
+		if (shipTarget == null && life % 5 == 0 && dx * dx + dz * dz < 280 * 280) {
+			com.stasdoto.airdefense.nation.Politics p = com.stasdoto.airdefense.nation.Politics.get(level.getServer());
+			double best = 90 * 90;
+			for (com.stasdoto.airdefense.vehicle.VehicleEntity v : level.getEntitiesOfClass(com.stasdoto.airdefense.vehicle.VehicleEntity.class,
+					new AABB(aim, aim).inflate(90, 40, 90), v -> v.isAlive() && v.getVehicleType().boat
+							&& !com.stasdoto.airdefense.radar.CounterBattery.sameSide(p, v.country, country()))) {
+				double d = v.distanceToSqr(aim);
+				if (d < best) {
+					best = d;
+					shipTarget = v;
+				}
+			}
+			if (shipTarget != null) {
+				shipAim = aim;
+				SHIP_LOCKS.incrementAndGet();
+				MissileStats.log("{} seeker locked on {} at {}", getMissileType(), shipTarget.getVehicleType().id, fmt(shipTarget.position()));
+			}
+		}
+		if (shipTarget != null) {
+			double dist = shipTarget.position().distanceTo(pos);
+			double lead = Math.min(20, dist / Math.max(0.5, speed));
+			target = shipTarget.position().add(shipTarget.getDeltaMovement().scale(lead)).add(0, 1.5, 0);
+		}
+	}
+
 	/** 1.30: the point it was fired from. */
 	public Vec3 origin() {
 		return origin;
@@ -904,6 +949,9 @@ public class MissileEntity extends Entity {
 			return dir.scale(Math.max(speed, 0.6));
 		}
 		setMotor(type.kind == MissileType.Kind.CRUISE);
+		if (type.antiShip()) {
+			homeOnShip(level, pos);
+		}
 
 		double dx = target.x - pos.x;
 		double dz = target.z - pos.z;
@@ -1303,6 +1351,16 @@ public class MissileEntity extends Entity {
 		if (inAir) {
 			Effects.airBurst(level, this, at, type);
 		} else {
+			if (type.antiShip()) {
+				// 1.33: a hit on a ship: the warhead goes off inside the hull.
+				for (com.stasdoto.airdefense.vehicle.VehicleEntity v : level.getEntitiesOfClass(com.stasdoto.airdefense.vehicle.VehicleEntity.class,
+						new AABB(at, at).inflate(8), v -> v.isAlive() && v.getVehicleType().boat)) {
+					SHIP_HITS.incrementAndGet();
+					MissileStats.log("{} HIT the {} ({} health left)", type, v.getVehicleType().id, v.getHealth());
+					v.hurtServer(level, level.damageSources().explosion(this, owner), type.shipDamage());
+					break;
+				}
+			}
 			Effects.groundImpact(level, this, at, type);
 		}
 	}

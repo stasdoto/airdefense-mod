@@ -61,7 +61,12 @@ public enum MissileType {
 	// 1.32: what radars and air defence see of an aircraft in flight - an invisible track that flies with it (a hit on
 	// the track is a hit on the aircraft). Helicopters are slow and low like drones, jets fast like cruise missiles.
 	HELI_TRACK("air_track", Kind.DRONE, true, 2.0, 0, 0f, false, 1000f, 1.0f, 0, 40000, 0.0, Trail.NONE, null),
-	JET_TRACK("air_track", Kind.CRUISE, true, 4.0, 0, 0f, false, 1000f, 1.0f, 0, 40000, 0.0, Trail.NONE, null);
+	JET_TRACK("air_track", Kind.CRUISE, true, 4.0, 0, 0f, false, 1000f, 1.0f, 0, 40000, 0.0, Trail.NONE, null),
+	// 1.33: anti-ship missiles - they skim the sea and home on a ship near their aim point. P-800 Oniks (Bastion-P,
+	// supersonic), the Naval Strike Missile (NMESIS), RBS15 (the Visby). Their item models reuse the Kalibr's, scaled.
+	ONIKS("oniks_missile", Kind.CRUISE, true, 3.4, 0.08, 7.5f, false, 4f, 3.0f, 0, 3000, 0.09, Trail.JET, null),
+	NSM("nsm_missile", Kind.CRUISE, true, 1.8, 0.05, 4.5f, false, 3f, 1.35f, 0, 3000, 0.1, Trail.JET, null),
+	RBS15("rbs15_missile", Kind.CRUISE, true, 1.9, 0.05, 5.5f, false, 3f, 1.5f, 0, 3000, 0.08, Trail.JET, null);
 
 	public enum Kind { BALLISTIC, ROCKET, CRUISE, DRONE, INTERCEPTOR, DIRECT }
 
@@ -130,6 +135,22 @@ public enum MissileType {
 			case FPV -> 260f;
 			case MAGURA -> 600f;
 			default -> 70f;
+		};
+	}
+
+	/** 1.33: homes on a ship near its aim point in the last stretch (the Kalibr has an anti-ship version too). */
+	public boolean antiShip() {
+		return this == ONIKS || this == NSM || this == RBS15 || this == KALIBR;
+	}
+
+	/** 1.33: what a direct hit of an anti-ship missile does to a ship (on top of its blast). */
+	public float shipDamage() {
+		return switch (this) {
+			case ONIKS -> 760f;
+			case KALIBR -> 620f;
+			case RBS15 -> 560f;
+			case NSM -> 480f;
+			default -> 0f;
 		};
 	}
 

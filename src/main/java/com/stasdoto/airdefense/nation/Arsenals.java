@@ -240,6 +240,61 @@ public final class Arsenals extends SavedData {
 		return a;
 	}
 
+	/** Towns already looked at for a port this session (1.33). */
+	private static final java.util.Set<Integer> NAVY_CHECKED = new java.util.HashSet<>();
+
+	/**
+	 * 1.33: a town with a port keeps a warship at anchor off it (Buyan-M in the east, Visby in the west); a capital by the
+	 * sea a coastal anti-ship battery too. Once per town (a lost ship is not sent again).
+	 */
+	private void navy(ServerLevel level, Politics p, Settlement s, Arsenal ar) {
+		for (Unit u : ar.units) {
+			if (u.type.isShip() || u.type.isCoastal()) {
+				return;
+			}
+		}
+		if (Ports.of(level, s) == null) {
+			return;
+		}
+		boolean east = east(s.country);
+		Country c = p.country(s.country);
+		List<VehicleType> kit = new ArrayList<>();
+		kit.add(east ? VehicleType.BUYAN_M : VehicleType.VISBY);
+		if (c != null && c.capital == s.id) {
+			kit.add(east ? VehicleType.BASTION : VehicleType.NMESIS);
+		}
+		for (VehicleType t : kit) {
+			ar.units.add(new Unit(t, null, false, t.strikeLoad()));
+			MissileType m = missileOf(t);
+			if (m != null) {
+				ar.add(m, t.strikeLoad());
+			}
+		}
+		setDirty();
+		AirDefense.LOGGER.info("[airdefense] {} by the sea keeps {}", s.name, kit);
+	}
+
+	/** 1.33: where a town's warship lies at anchor (off its port) or its coastal battery stands (on the quay). */
+	@Nullable
+	private static BlockPos navalSpot(ServerLevel level, Settlement s, int index, boolean ship) {
+		long key = s.id * 64L + index;
+		BlockPos cached = SPOTS.get(key);
+		if (cached == null) {
+			Ports.Port port = Ports.of(level, s);
+			if (port == null) {
+				return null;
+			}
+			if (ship) {
+				cached = port.offshore(Cities.terrain(level), 30, 0);
+			} else {
+				int[] w = port.world(port.shore - 12, port.mid + 20);
+				cached = new BlockPos(w[0], port.y + 1, w[1]);
+			}
+			SPOTS.put(key, cached);
+		}
+		return cached;
+	}
+
 	/** The missile (or drone) a vehicle fires; null for guns-only air defence. */
 	@Nullable
 	public static MissileType missileOf(VehicleType t) {
@@ -280,6 +335,9 @@ public final class Arsenals extends SavedData {
 		Arsenals a = get(level.getServer());
 		for (Settlement s : p.settlements.values()) {
 			Arsenal ar = a.of(p, s);
+			if (s.city >= 0 && NAVY_CHECKED.add(s.id)) {
+				a.navy(level, p, s, ar);
+			}
 			boolean near = level.isLoaded(s.center) && level.getNearestPlayer(s.center.getX(), s.center.getY(), s.center.getZ(), 240,
 					pl -> true) != null;
 			if ((sec + s.id) % 2 == 0 && incoming(level, s)) {
@@ -444,7 +502,10 @@ public final class Arsenals extends SavedData {
 			if (!near && !u.type.isDefense()) {
 				continue;
 			}
-			BlockPos at = spot(level, s, i, u.type.isLauncher());
+			BlockPos at = u.type.isShip() || u.type.isCoastal() ? navalSpot(level, s, i, u.type.isShip()) : spot(level, s, i, u.type.isLauncher());
+			if (at == null) {
+				continue;
+			}
 			if (alert && !near) {
 				// Keeps the battery's ground running while the missiles are on their way.
 				level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, ChunkPos.containing(at), 2);

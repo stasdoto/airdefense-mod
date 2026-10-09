@@ -124,6 +124,30 @@ public final class Ports {
 			return -1;
 		}
 
+		/**
+		 * 1.33: a spot on open water straight out from the port, up to {@code out} blocks past the pier heads (as far as
+		 * water deep enough for a warship goes), {@code dv} across; y = the water's surface.
+		 */
+		public BlockPos offshore(Cities.Terrain t, int out, int dv) {
+			int u0 = face + PIER_LEN + 12;
+			int best = u0;
+			for (int u = u0; u <= u0 + out; u += 8) {
+				int wet = 0;
+				for (int k = -12; k <= 12; k += 12) {
+					int[] w = world(u, mid + dv + k);
+					if (t.top(w[0], w[1]) < sea_ - 3) {
+						wet++;
+					}
+				}
+				if (wet < 3) {
+					break;
+				}
+				best = u;
+			}
+			int[] w = world(best, mid + dv);
+			return new BlockPos(w[0], sea_, w[1]);
+		}
+
 		/** How far outside the quay's land part (for blending the ground), 0 inside. */
 		public int outLand(int u, int v) {
 			int du = Math.max(0, Math.max(back - u, u - face));
@@ -152,6 +176,16 @@ public final class Ports {
 	}
 
 	private Ports() {
+	}
+
+	/** 1.33: the port of a town (planned cities only; null inland, or when its city is not planned yet). */
+	@Nullable
+	public static Port of(net.minecraft.server.level.ServerLevel level, Settlement s) {
+		if (s.city < 0) {
+			return null;
+		}
+		Cities.City c = Cities.plannedCityAt(level.getSeed(), s.center.getX(), s.center.getZ(), 400);
+		return c == null ? null : c.port(level.getSeed(), Cities.terrain(level));
 	}
 
 	/** The town's port, or null if no water is near (or the world has the classic towns). */

@@ -88,7 +88,15 @@ public enum VehicleType {
 	TOS1("tos1", GenGeometry.TOS1, LauncherType.TOS1, 0.33f, 640, 0.85f, 0.012f, 0, 2.2f, 1.0f, 2.0f, 3.4f, 2.4f),
 	// 1.32: the western side's attack aircraft - the AH-64 Apache and the A-10 Thunderbolt II.
 	AH64("ah64", GenGeometry.AH64, 1, Weapon.AUTO_30, Ordnance.S8, 0.6f, 380, 2.2f, 0.035f, 3.2f, 2.2f, 3.4f),
-	A10("a10", GenGeometry.A10, 2, Weapon.AUTO_30, Ordnance.FAB250, 0.5f, 480, 3.2f, 0.028f, 2.2f, 3.0f, 3.0f);
+	A10("a10", GenGeometry.A10, 2, Weapon.AUTO_30, Ordnance.FAB250, 0.5f, 480, 3.2f, 0.028f, 2.2f, 3.0f, 3.0f),
+	// 1.33: the navy - the Buyan-M small missile ship and the Visby corvette (a gun, eight cruise missiles in vertical
+	// cells, a close-in gun of their own against drones and missiles); the coastal anti-ship launchers Bastion-P and NMESIS.
+	BUYAN_M("buyan_m", GenGeometry.BUYAN_M, Weapon.NAVAL_100, LauncherType.KALIBR_SHIP,
+			new ShipFit(0, 4.1, -8.0, 4, 2, 0.75, 0, 7.05, -16.0, 90, 2), 0.35f, 1600, 1.25f, 0.006f, 0.9f, 1.2f, 3.0f, 11f, 8f),
+	VISBY("visby", GenGeometry.VISBY, Weapon.NAVAL_57, LauncherType.RBS15_SHIP,
+			new ShipFit(0, 3.5, -6.0, 4, 2, 1.1, 0, 5.6, 28.5, 80, 3), 0.4f, 1300, 1.45f, 0.007f, 1.0f, 1.6f, 4.0f, 10.4f, 7f),
+	BASTION("bastion", GenGeometry.BASTION, LauncherType.BASTION, null, 300, 0.8f, 0.011f, 28, 0, 0.6f, 0, 3.1f, 3.9f),
+	NMESIS("nmesis", GenGeometry.NMESIS, LauncherType.NMESIS, null, 180, 1.1f, 0.02f, 34, 0, 1.0f, 0, 2.5f, 2.4f);
 
 	public static final int HELI = 1;
 	public static final int PLANE = 2;
@@ -126,6 +134,28 @@ public enum VehicleType {
 	public final float turretRate;
 	public final float boxWidth;
 	public final float boxHeight;
+	/** 1.33: a warship's fit (vertical launch cells, close-in gun); null for everything else. */
+	@Nullable
+	public final ShipFit ship;
+
+	/**
+	 * 1.33: a warship's fit, in vehicle space (metres, y up from the waterline, z forward): the block of vertical launch
+	 * cells (centre of its top, columns x rows, the pitch of the cells), the close-in gun's mount, its reach (blocks) and
+	 * the ticks between its bursts.
+	 */
+	public record ShipFit(double vlsX, double vlsY, double vlsZ, int cols, int rows, double pitch, double ciwsX, double ciwsY,
+			double ciwsZ, double ciwsRange, int ciwsRate) {
+		public int cells() {
+			return cols * rows;
+		}
+
+		/** Where a missile leaves cell {@code i}: {x, y, z}. */
+		public double[] cell(int i) {
+			int c = i % cols;
+			int r = (i / cols) % rows;
+			return new double[]{vlsX - cols * pitch / 2 + pitch * (c + 0.5), vlsY + 0.6, vlsZ - rows * pitch / 2 + pitch * (r + 0.5)};
+		}
+	}
 
 	VehicleType(String id, VehicleGeometry.Geometry geometry, @Nullable LauncherType launcher, @Nullable DefenseType defense,
 			float maxHealth, float maxSpeed, float accel, float maxSteer, float pivotTurn, float elevationRate, float turretRate,
@@ -151,6 +181,7 @@ public enum VehicleType {
 		this.turretRate = turretRate;
 		this.boxWidth = boxWidth;
 		this.boxHeight = boxHeight;
+		this.ship = null;
 	}
 
 	/** 1.30: an armoured self-propelled gun (fires like a launcher, armoured like a fighting vehicle). */
@@ -177,6 +208,7 @@ public enum VehicleType {
 		this.turretRate = turretRate;
 		this.boxWidth = boxWidth;
 		this.boxHeight = boxHeight;
+		this.ship = null;
 	}
 
 	/** A radar station: drives like a truck, sees what flies. */
@@ -203,6 +235,7 @@ public enum VehicleType {
 		this.turretRate = 0;
 		this.boxWidth = boxWidth;
 		this.boxHeight = boxHeight;
+		this.ship = null;
 	}
 
 	/** Armour or a boat with a gun. */
@@ -229,6 +262,7 @@ public enum VehicleType {
 		this.turretRate = turretRate;
 		this.boxWidth = boxWidth;
 		this.boxHeight = boxHeight;
+		this.ship = null;
 	}
 
 	/** A helicopter or a plane. */
@@ -255,6 +289,7 @@ public enum VehicleType {
 		this.turretRate = 0;
 		this.boxWidth = boxWidth;
 		this.boxHeight = boxHeight;
+		this.ship = null;
 	}
 
 	/** A logistics truck. */
@@ -281,6 +316,44 @@ public enum VehicleType {
 		this.turretRate = 0;
 		this.boxWidth = boxWidth;
 		this.boxHeight = boxHeight;
+		this.ship = null;
+	}
+
+	/** 1.33: a warship - its gun (gunner), cruise missiles in vertical cells (strikes from the map), a close-in gun. */
+	VehicleType(String id, VehicleGeometry.Geometry geometry, Weapon weapon, LauncherType launcher, ShipFit ship, float armor, float maxHealth,
+			float maxSpeed, float accel, float pivotTurn, float elevationRate, float turretRate, float boxWidth, float boxHeight) {
+		this.id = id;
+		this.geometry = geometry;
+		this.launcher = launcher;
+		this.defense = null;
+		this.radar = null;
+		this.weapon = weapon;
+		this.armor = armor;
+		this.boat = true;
+		this.air = 0;
+		this.ordnance = null;
+		this.cargo = 0;
+		this.cargoCapacity = 0;
+		this.maxHealth = maxHealth;
+		this.maxSpeed = maxSpeed;
+		this.accel = accel;
+		this.maxSteer = 0;
+		this.pivotTurn = pivotTurn;
+		this.elevationRate = elevationRate;
+		this.turretRate = turretRate;
+		this.boxWidth = boxWidth;
+		this.boxHeight = boxHeight;
+		this.ship = ship;
+	}
+
+	/** 1.33: a warship. */
+	public boolean isShip() {
+		return ship != null;
+	}
+
+	/** 1.33: a coastal anti-ship missile launcher. */
+	public boolean isCoastal() {
+		return this == BASTION || this == NMESIS;
 	}
 
 	public boolean isTruck() {
@@ -299,6 +372,9 @@ public enum VehicleType {
 	public int fuelCapacity() {
 		if (air != 0) {
 			return 1500;
+		}
+		if (ship != null) {
+			return 6000;
 		}
 		if (boat) {
 			return 800;
@@ -338,7 +414,7 @@ public enum VehicleType {
 
 	/** What a launcher holds when full: rounds for artillery, else one missile per rail. */
 	public int strikeLoad() {
-		return isArtillery() ? launcher.rounds : rails();
+		return isArtillery() ? launcher.rounds : ship != null ? ship.cells() : rails();
 	}
 
 	public boolean isLauncher() {
@@ -407,7 +483,7 @@ public enum VehicleType {
 
 	/** Missiles carried: launchers one per rail; air defence per its magazine (Patriot canisters hold several). */
 	public int magazine() {
-		return defense != null ? defense.magazine : radar != null ? 0 : weapon != null ? weapon.magazine : strikeLoad();
+		return defense != null ? defense.magazine : radar != null ? 0 : ship != null ? strikeLoad() : weapon != null ? weapon.magazine : strikeLoad();
 	}
 
 	/** By its id ("patriot"); Patriot if there is no such vehicle. */

@@ -139,6 +139,10 @@ public final class VehicleClient {
 		} else if (type.isTruck()) {
 			l2 = Component.translatable("hud.airdefense.vehicle.cargo_goods", Component.translatable("nation.airdefense.goods." + v.getCargoKind()),
 					v.getCargo(), type.cargoCapacity, Component.translatable("hud.airdefense.truck." + v.truckModeKey()));
+		} else if (type.isShip()) {
+			// 1.33: the gun (never runs dry), the cruise missiles in the cells.
+			l2 = Component.translatable("hud.airdefense.vehicle.ship", type.weapon.caliber,
+					Component.translatable("item.airdefense." + type.launcher.missile.itemId), Math.max(0, v.getAmmo()), type.strikeLoad());
 		} else if (type.isArmed()) {
 			l2 = Component.translatable("hud.airdefense.vehicle.weapon", type.weapon.caliber, Math.max(0, v.getAmmo()));
 		} else if (type.isRadar()) {
