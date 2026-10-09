@@ -288,6 +288,8 @@ public final class War {
 			v.keepFlying(l);
 		});
 		airStrikes++;
+		// The town's sirens sound the air raid alert.
+		com.stasdoto.airdefense.siren.Sirens.autoAlert(level, tc, 60);
 		Country owner = p.country(target.country);
 		if (owner != null) {
 			tell(level, owner, Component.translatable("nation.airdefense.war.air", ai.name, Component.translatable("entity.airdefense." + type.id),
