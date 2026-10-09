@@ -117,7 +117,7 @@ public enum Product {
 			case T72, T90, LEOPARD2, ABRAMS -> SHELL_TANK;
 			case BMP2, BRADLEY, BTR82, BTR4, GYURZA -> AMMO_30;
 			case M113, MAXXPRO, KOZAK, RAPTOR, RHIB, MI24 -> AMMO_127;
-			case KA52, SU25, F16 -> AMMO_30;
+			case KA52, SU25, F16, AH64, A10 -> AMMO_30;
 			default -> null;
 		};
 	}

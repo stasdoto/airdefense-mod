@@ -221,6 +221,10 @@ public final class War {
 						sendSquad(level, p, ai, target, men);
 					}
 				}
+				// 1.32: now and then an air strike - attack helicopters or a jet over the town.
+				if (target != null && r.nextInt(100) < 22) {
+					airStrike(level, p, ai, target, r);
+				}
 				// At night, now and then: a massed drone raid on one of his villages.
 				if (target != null && level.isDarkOutside() && r.nextInt(100) < 12
 						&& !com.stasdoto.airdefense.drone.Raids.activeNear(level, net.minecraft.world.phys.Vec3.atCenterOf(target.center), 200)) {
@@ -228,6 +232,67 @@ public final class War {
 				}
 			}
 		}
+	}
+
+	/** For the tests: air strikes sent. */
+	public static int airStrikes;
+
+	/**
+	 * 1.32: an air strike on a town - an attack helicopter or a jet of the attacker's side comes in from its nearest
+	 * town (turning up 520 blocks out, never out of thin air near the town), attacks, and flies home. The town's air
+	 * defence and the player's get their chance at it.
+	 */
+	public static boolean airStrike(ServerLevel level, Politics p, Country ai, Settlement target, Random r) {
+		return airStrike(level, p, ai, target, r, null) != null;
+	}
+
+	/** The same with this aircraft (for the tests); the type sent, or null. */
+	@Nullable
+	public static com.stasdoto.airdefense.vehicle.VehicleType airStrike(ServerLevel level, Politics p, Country ai, Settlement target, Random r,
+			@Nullable com.stasdoto.airdefense.vehicle.VehicleType forced) {
+		boolean east = SoldierEntity.bloc(ai.id) == com.stasdoto.airdefense.weapon.GunType.Bloc.EAST;
+		com.stasdoto.airdefense.vehicle.VehicleType[] kit = east
+				? new com.stasdoto.airdefense.vehicle.VehicleType[]{com.stasdoto.airdefense.vehicle.VehicleType.MI24,
+				com.stasdoto.airdefense.vehicle.VehicleType.KA52, com.stasdoto.airdefense.vehicle.VehicleType.SU25}
+				: new com.stasdoto.airdefense.vehicle.VehicleType[]{com.stasdoto.airdefense.vehicle.VehicleType.AH64,
+				com.stasdoto.airdefense.vehicle.VehicleType.A10, com.stasdoto.airdefense.vehicle.VehicleType.F16};
+		com.stasdoto.airdefense.vehicle.VehicleType type = forced != null ? forced : kit[r.nextInt(kit.length)];
+		Settlement home = null;
+		double bestD = Double.MAX_VALUE;
+		for (Settlement o : p.settlementsOf(ai.id)) {
+			double d = o.center.distSqr(target.center);
+			if (d < bestD) {
+				bestD = d;
+				home = o;
+			}
+		}
+		Vec3 tc = Vec3.atCenterOf(target.center);
+		Vec3 homeAt = home != null ? Vec3.atCenterOf(home.center) : tc.add(900, 0, 0);
+		Vec3 dir = new Vec3(homeAt.x - tc.x, 0, homeAt.z - tc.z);
+		dir = dir.lengthSqr() < 1 ? new Vec3(1, 0, 0) : dir.normalize();
+		Vec3 start = tc.add(dir.scale(520));
+		boolean jet = type.air == com.stasdoto.airdefense.vehicle.VehicleType.PLANE;
+		int homeId = home == null ? -1 : home.id;
+		BlockPos at = BlockPos.containing(start);
+		Vec3 back = homeAt;
+		com.stasdoto.airdefense.util.Later.whenLoaded(level, at, 200, l -> {
+			int y = l.getHeight(Heightmap.Types.MOTION_BLOCKING, at.getX(), at.getZ()) + (jet ? 90 : 40);
+			float yaw = (float) Math.toDegrees(Math.atan2(-(tc.x - start.x), tc.z - start.z));
+			com.stasdoto.airdefense.vehicle.VehicleEntity v = com.stasdoto.airdefense.vehicle.VehicleEntity.spawn(l, type,
+					new Vec3(start.x, y, start.z), yaw);
+			v.country = ai.id;
+			v.home = homeId;
+			v.setDeltaMovement(v.forward().scale(type.maxSpeed * 0.6));
+			v.startSortie(target.center, back);
+		});
+		airStrikes++;
+		Country owner = p.country(target.country);
+		if (owner != null) {
+			tell(level, owner, Component.translatable("nation.airdefense.war.air", ai.name, Component.translatable("entity.airdefense." + type.id),
+					target.name));
+		}
+		AirDefense.LOGGER.info("[airdefense] {} sends a {} against {}", ai.name, type.id, target.name);
+		return type;
 	}
 
 	/** A massed raid from the enemy's side: more drones the bigger the enemy country is. */

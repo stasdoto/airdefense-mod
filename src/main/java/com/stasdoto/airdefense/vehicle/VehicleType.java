@@ -85,7 +85,10 @@ public enum VehicleType {
 	HMMWV("hmmwv", GenGeometry.HMMWV, Weapon.HMG_127, 0.8f, false, 170, 1.35f, 0.026f, 35, 0, 6.0f, 8.0f, 2.2f, 2.0f),
 	BREM1("brem1", GenGeometry.BREM1, Weapon.HMG_127, 0.33f, false, 620, 0.85f, 0.012f, 0, 2.2f, 6.0f, 8.0f, 3.4f, 2.4f),
 	M88("m88", GenGeometry.M88, Weapon.HMG_127, 0.33f, false, 640, 0.8f, 0.012f, 0, 2.0f, 6.0f, 8.0f, 3.4f, 2.8f),
-	TOS1("tos1", GenGeometry.TOS1, LauncherType.TOS1, 0.33f, 640, 0.85f, 0.012f, 0, 2.2f, 1.0f, 2.0f, 3.4f, 2.4f);
+	TOS1("tos1", GenGeometry.TOS1, LauncherType.TOS1, 0.33f, 640, 0.85f, 0.012f, 0, 2.2f, 1.0f, 2.0f, 3.4f, 2.4f),
+	// 1.32: the western side's attack aircraft - the AH-64 Apache and the A-10 Thunderbolt II.
+	AH64("ah64", GenGeometry.AH64, 1, Weapon.AUTO_30, Ordnance.S8, 0.6f, 380, 2.2f, 0.035f, 3.2f, 2.2f, 3.4f),
+	A10("a10", GenGeometry.A10, 2, Weapon.AUTO_30, Ordnance.FAB250, 0.5f, 480, 3.2f, 0.028f, 2.2f, 3.0f, 3.0f);
 
 	public static final int HELI = 1;
 	public static final int PLANE = 2;

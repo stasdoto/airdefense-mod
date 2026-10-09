@@ -957,6 +957,8 @@ public final class Economy {
 			case HMMWV -> new int[]{20, 10, 50, 35};
 			case BREM1, M88 -> new int[]{30, 50, 170, 100};
 			case TOS1 -> new int[]{30, 60, 200, 120};
+			case AH64 -> new int[]{30, 30, 190, 115};
+			case A10 -> new int[]{40, 40, 240, 140};
 		};
 	}
 

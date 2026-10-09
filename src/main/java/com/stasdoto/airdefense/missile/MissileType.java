@@ -57,7 +57,11 @@ public enum MissileType {
 	SHELL_155("shell_155", Kind.ROCKET, false, 4.2, 0.0, 3.5f, false, 1f, 1.0f, 0, 700, 0.0, Trail.NONE, null),
 	GRAD("grad_rocket", Kind.ROCKET, true, 3.4, 0.22, 2.5f, false, 1f, 1.0f, 0, 700, 0.0, Trail.SMALL, null),
 	// 1.31: the TOS-1A's 220 mm thermobaric rocket: a cloud of fuel set off - a huge fireball and a blast that crushes.
-	TOS("tos_rocket", Kind.ROCKET, true, 2.8, 0.2, 5.5f, true, 1f, 2.0f, 0, 700, 0.0, Trail.MEDIUM, null);
+	TOS("tos_rocket", Kind.ROCKET, true, 2.8, 0.2, 5.5f, true, 1f, 2.0f, 0, 700, 0.0, Trail.MEDIUM, null),
+	// 1.32: what radars and air defence see of an aircraft in flight - an invisible track that flies with it (a hit on
+	// the track is a hit on the aircraft). Helicopters are slow and low like drones, jets fast like cruise missiles.
+	HELI_TRACK("air_track", Kind.DRONE, true, 2.0, 0, 0f, false, 1000f, 1.0f, 0, 40000, 0.0, Trail.NONE, null),
+	JET_TRACK("air_track", Kind.CRUISE, true, 4.0, 0, 0f, false, 1000f, 1.0f, 0, 40000, 0.0, Trail.NONE, null);
 
 	public enum Kind { BALLISTIC, ROCKET, CRUISE, DRONE, INTERCEPTOR, DIRECT }
 
@@ -127,6 +131,11 @@ public enum MissileType {
 			case MAGURA -> 600f;
 			default -> 70f;
 		};
+	}
+
+	/** 1.32: the track of an aircraft (not a missile at all). */
+	public boolean track() {
+		return this == HELI_TRACK || this == JET_TRACK;
 	}
 
 	/** 1.30: a howitzer shell (no motor, no trail). */

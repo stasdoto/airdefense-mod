@@ -19,7 +19,7 @@ public final class GenModels {
 	/** Is there a layer of this id (a vehicle, its window glass "<id>_glass", its inside "<id>_int")? */
 	public static boolean has(String id) {
 		return switch (id) {
-			case "p18", "p18_glass", "st68", "st68_glass", "trml4d", "trml4d_glass", "sentinel", "sentinel_glass", "mpq65", "mpq65_glass", "kupol", "kupol_glass", "elm2084", "elm2084_glass", "pantsir", "pantsir_glass", "tor", "buk", "buk_glass", "s300", "s300_glass", "osa", "osa_glass", "strela10", "strela10_glass", "shilka", "tunguska", "sampt", "sampt_glass", "avenger", "avenger_glass", "mfg", "mfg_glass", "zu23", "zu23_glass", "iron_dome", "iron_dome_glass", "t72", "t90", "leopard2", "abrams", "bmp2", "bradley", "btr82", "btr82_glass", "btr4", "btr4_glass", "m113", "maxxpro", "maxxpro_glass", "kozak", "kozak_glass", "gyurza", "gyurza_glass", "raptor", "raptor_glass", "rhib", "rhib_glass", "mi8", "mi8_glass", "mi24", "mi24_glass", "ka52", "ka52_glass", "su25", "su25_glass", "f16", "f16_glass", "fuel_truck", "fuel_truck_glass", "supply_truck", "supply_truck_glass", "msta_s", "m109", "bm21", "bm21_glass", "zoopark", "zoopark_glass", "tpq36", "tpq36_glass", "t80bvm", "challenger2", "bmp3", "cv90", "stryker", "tigr", "tigr_glass", "hmmwv", "hmmwv_glass", "brem1", "m88", "m88_glass", "tos1", "p18_int", "st68_int", "trml4d_int", "sentinel_int", "mpq65_int", "elm2084_int", "pantsir_int", "s300_int", "sampt_int", "avenger_int", "mfg_int", "zu23_int", "iron_dome_int", "btr82_int", "btr4_int", "maxxpro_int", "kozak_int", "gyurza_int", "raptor_int", "mi8_int", "mi24_int", "ka52_int", "su25_int", "f16_int", "fuel_truck_int", "supply_truck_int", "iskander_int", "kalibr_int", "shahed_int", "himars_int", "patriot_int", "iris_t_int", "nasams_int", "bm21_int", "tpq36_int", "stryker_int", "tigr_int", "hmmwv_int" -> true;
+			case "p18", "p18_glass", "st68", "st68_glass", "trml4d", "trml4d_glass", "sentinel", "sentinel_glass", "mpq65", "mpq65_glass", "kupol", "kupol_glass", "elm2084", "elm2084_glass", "pantsir", "pantsir_glass", "tor", "buk", "buk_glass", "s300", "s300_glass", "osa", "osa_glass", "strela10", "strela10_glass", "shilka", "tunguska", "sampt", "sampt_glass", "avenger", "avenger_glass", "mfg", "mfg_glass", "zu23", "zu23_glass", "iron_dome", "iron_dome_glass", "t72", "t90", "leopard2", "abrams", "bmp2", "bradley", "btr82", "btr82_glass", "btr4", "btr4_glass", "m113", "maxxpro", "maxxpro_glass", "kozak", "kozak_glass", "gyurza", "gyurza_glass", "raptor", "raptor_glass", "rhib", "rhib_glass", "mi8", "mi8_glass", "mi24", "mi24_glass", "ka52", "ka52_glass", "su25", "su25_glass", "f16", "f16_glass", "fuel_truck", "fuel_truck_glass", "supply_truck", "supply_truck_glass", "msta_s", "m109", "bm21", "bm21_glass", "zoopark", "zoopark_glass", "tpq36", "tpq36_glass", "t80bvm", "challenger2", "bmp3", "cv90", "stryker", "tigr", "tigr_glass", "hmmwv", "hmmwv_glass", "brem1", "m88", "m88_glass", "tos1", "ah64", "ah64_glass", "a10", "a10_glass", "p18_int", "st68_int", "trml4d_int", "sentinel_int", "mpq65_int", "elm2084_int", "pantsir_int", "s300_int", "sampt_int", "avenger_int", "mfg_int", "zu23_int", "iron_dome_int", "btr82_int", "btr4_int", "maxxpro_int", "kozak_int", "gyurza_int", "raptor_int", "mi8_int", "mi24_int", "ka52_int", "su25_int", "f16_int", "fuel_truck_int", "supply_truck_int", "iskander_int", "kalibr_int", "shahed_int", "himars_int", "patriot_int", "iris_t_int", "nasams_int", "bm21_int", "tpq36_int", "stryker_int", "tigr_int", "hmmwv_int", "ah64_int", "a10_int" -> true;
 			default -> false;
 		};
 	}
@@ -119,6 +119,10 @@ public final class GenModels {
 			case "m88" -> m88();
 			case "m88_glass" -> m88_glass();
 			case "tos1" -> tos1();
+			case "ah64" -> ah64();
+			case "ah64_glass" -> ah64_glass();
+			case "a10" -> a10();
+			case "a10_glass" -> a10_glass();
 			case "p18_int" -> p18_int();
 			case "st68_int" -> st68_int();
 			case "trml4d_int" -> trml4d_int();
@@ -157,6 +161,8 @@ public final class GenModels {
 			case "stryker_int" -> stryker_int();
 			case "tigr_int" -> tigr_int();
 			case "hmmwv_int" -> hmmwv_int();
+			case "ah64_int" -> ah64_int();
+			case "a10_int" -> a10_int();
 			default -> throw new IllegalArgumentException(id);
 		};
 	}
@@ -256,6 +262,10 @@ public final class GenModels {
 			case "m88" -> m88Paths();
 			case "m88_glass" -> m88Paths();
 			case "tos1" -> tos1Paths();
+			case "ah64" -> ah64Paths();
+			case "ah64_glass" -> ah64Paths();
+			case "a10" -> a10Paths();
+			case "a10_glass" -> a10Paths();
 			case "p18_int" -> p18_intPaths();
 			case "st68_int" -> st68_intPaths();
 			case "trml4d_int" -> trml4d_intPaths();
@@ -294,6 +304,8 @@ public final class GenModels {
 			case "stryker_int" -> stryker_intPaths();
 			case "tigr_int" -> tigr_intPaths();
 			case "hmmwv_int" -> hmmwv_intPaths();
+			case "ah64_int" -> ah64_intPaths();
+			case "a10_int" -> a10_intPaths();
 			default -> throw new IllegalArgumentException(id);
 		};
 	}
@@ -15162,6 +15174,701 @@ public final class GenModels {
 		);
 	}
 
+	public static LayerDefinition ah64() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(136, 230).addBox(-4.2F, -27.5952F, 100.8F, 8F, 4F, 3F)
+				.texOffs(688, 214).addBox(-1.764F, -30.24F, 100.824F, 4F, 9F, 3F)
+				.texOffs(962, 214).addBox(-3.36F, -29.328F, 100.848F, 7F, 7F, 3F)
+				.texOffs(990, 214).addBox(-6.2F, -28.6288F, 97.6F, 12F, 6F, 3F)
+				.texOffs(52, 214).addBox(-2.604F, -32.48F, 97.624F, 5F, 13F, 3F)
+				.texOffs(364, 214).addBox(-4.96F, -31.152F, 97.648F, 10F, 11F, 3F)
+				.texOffs(530, 214).addBox(-7.8F, -29.7344F, 92F, 16F, 7F, 6F)
+				.texOffs(650, 169).addBox(-3.276F, -34.56F, 92.024F, 7F, 17F, 6F)
+				.texOffs(552, 194).addBox(-6.24F, -32.896F, 92.048F, 12F, 13F, 6F)
+				.texOffs(860, 214).addBox(-9F, -30.912F, 86.4F, 18F, 8F, 2F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(886, 194).addBox(-3.78F, -32.8F, 86.424F, 8F, 16F, 2F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(0, 214).addBox(-7.2F, -32.8F, 86.448F, 14F, 14F, 2F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(734, 214).addBox(-9F, -30.912F, 88.8F, 18F, 8F, 3F)
+				.texOffs(752, 169).addBox(-3.78F, -36.48F, 88.824F, 8F, 19F, 3F)
+				.texOffs(822, 194).addBox(-7.2F, -34.56F, 88.848F, 14F, 15F, 3F)
+				.texOffs(444, 194).addBox(-10F, -32.2496F, 76.8F, 20F, 9F, 10F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(608, 139).addBox(-4.2F, -32.8F, 76.824F, 8F, 16F, 10F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(270, 169).addBox(-8F, -32.8F, 76.848F, 16F, 14F, 10F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(810, 214).addBox(-10F, -32.8F, 76.8F, 3F, 1F, 10F, EnumSet.of(Direction.DOWN))
+				.texOffs(810, 214).addBox(7.36F, -32.8F, 76.8F, 3F, 1F, 10F, EnumSet.of(Direction.DOWN))
+				.texOffs(380, 194).addBox(-10.8F, -32.8F, 67.2F, 22F, 9F, 10F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(570, 139).addBox(-4.536F, -32.8F, 67.224F, 9F, 16F, 10F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(216, 169).addBox(-8.64F, -32.8F, 67.248F, 17F, 14F, 10F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(810, 214).addBox(-10.8F, -32.8F, 67.2F, 3F, 1F, 10F, EnumSet.of(Direction.DOWN))
+				.texOffs(810, 214).addBox(7.36F, -32.8F, 67.2F, 3F, 1F, 10F, EnumSet.of(Direction.DOWN))
+				.texOffs(0, 194).addBox(-11.52F, -35.0176F, 54.4F, 23F, 11F, 9F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(424, 94).addBox(-4.8384F, -41.92F, 54.424F, 10F, 26F, 9F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(58, 139).addBox(-9.216F, -40.064F, 54.448F, 18F, 21F, 9F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(476, 214).addBox(-11.52F, -32.8F, 63.2F, 23F, 9F, 4F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(860, 169).addBox(-4.8384F, -32.8F, 63.224F, 10F, 17F, 4F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(696, 194).addBox(-9.216F, -32.8F, 63.248F, 18F, 14F, 4F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(228, 230).addBox(-11.52F, -32.8F, 63.2F, 4F, 1F, 4F, EnumSet.of(Direction.DOWN))
+				.texOffs(228, 230).addBox(7.36F, -32.8F, 63.2F, 4F, 1F, 4F, EnumSet.of(Direction.DOWN))
+				.texOffs(644, 139).addBox(-12.16F, -36.0608F, 41.6F, 24F, 12F, 13F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(204, 94).addBox(-5.1072F, -41.92F, 41.624F, 10F, 26F, 13F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(360, 94).addBox(-9.728F, -41.472F, 41.648F, 19F, 23F, 13F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(250, 214).addBox(-9.728F, -41.92F, 41.6F, 2F, 1F, 13F, EnumSet.of(Direction.DOWN))
+				.texOffs(250, 214).addBox(8F, -41.92F, 41.6F, 2F, 1F, 13F, EnumSet.of(Direction.DOWN))
+				.texOffs(888, 94).addBox(-12.56F, -36.8328F, 20.8F, 25F, 12F, 18F)
+				.texOffs(792, 0).addBox(-5.2752F, -45.44F, 20.824F, 11F, 30F, 18F)
+				.texOffs(82, 94).addBox(-10.048F, -42.472F, 20.848F, 20F, 24F, 18F)
+				.texOffs(164, 214).addBox(-12.56F, -36.8328F, 38.4F, 25F, 12F, 3F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(168, 139).addBox(-5.2752F, -41.92F, 38.424F, 11F, 26F, 3F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(404, 139).addBox(-10.048F, -41.92F, 38.448F, 20F, 23F, 3F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(254, 230).addBox(-10.048F, -41.92F, 38.4F, 2F, 1F, 3F, EnumSet.of(Direction.DOWN))
+				.texOffs(254, 230).addBox(8F, -41.92F, 38.4F, 2F, 1F, 3F, EnumSet.of(Direction.DOWN))
+				.texOffs(462, 94).addBox(-12.72F, -37.3336F, 0F, 25F, 13F, 21F)
+				.texOffs(506, 0).addBox(-5.3424F, -46.08F, 0.024F, 11F, 30F, 21F)
+				.texOffs(0, 94).addBox(-10.176F, -43.064F, 0.048F, 20F, 24F, 21F)
+				.texOffs(718, 139).addBox(-12.2F, -37.648F, -12.8F, 24F, 12F, 13F)
+				.texOffs(158, 94).addBox(-5.124F, -46F, -12.776F, 10F, 29F, 13F)
+				.texOffs(294, 94).addBox(-9.76F, -43.12F, -12.752F, 20F, 23F, 13F)
+				.texOffs(86, 169).addBox(-11F, -37.776F, -25.6F, 22F, 11F, 13F)
+				.texOffs(250, 94).addBox(-4.62F, -45.2F, -25.576F, 9F, 26F, 13F)
+				.texOffs(604, 94).addBox(-8.8F, -42.64F, -25.552F, 18F, 20F, 13F)
+				.texOffs(298, 139).addBox(-8F, -33.12F, 63.2F, 1F, 1F, 26F)
+				.texOffs(298, 139).addBox(6.72F, -33.12F, 63.2F, 1F, 1F, 26F)
+				.texOffs(348, 230).addBox(-5.888F, -45.12F, 72.96F, 12F, 1F, 1F)
+				.texOffs(132, 230).addBox(-7.84F, -39.4F, 72.96F, 1F, 7F, 1F)
+				.texOffs(200, 230).addBox(-6.368F, -44.8F, 72.96F, 1F, 5F, 1F)
+				.texOffs(132, 230).addBox(6.88F, -39.4F, 72.96F, 1F, 7F, 1F)
+				.texOffs(200, 230).addBox(5.408F, -44.8F, 72.96F, 1F, 5F, 1F)
+				.texOffs(352, 139).addBox(-8.64F, -42.24F, 38.4F, 1F, 1F, 25F)
+				.texOffs(352, 139).addBox(7.36F, -42.24F, 38.4F, 1F, 1F, 25F)
+				.texOffs(320, 230).addBox(-6.4F, -53.92F, 50.56F, 13F, 1F, 1F)
+				.texOffs(196, 230).addBox(-8.48F, -48.344F, 50.56F, 1F, 6F, 1F)
+				.texOffs(200, 230).addBox(-6.88F, -53.6F, 50.56F, 1F, 5F, 1F)
+				.texOffs(196, 230).addBox(7.52F, -48.344F, 50.56F, 1F, 6F, 1F)
+				.texOffs(200, 230).addBox(5.92F, -53.6F, 50.56F, 1F, 5F, 1F)
+				.texOffs(784, 194).addBox(-4.8F, -29.6F, 100.8F, 10F, 9F, 9F)
+				.texOffs(836, 214).addBox(-2.88F, -20F, 68.8F, 6F, 5F, 6F)
+				.texOffs(196, 139).addBox(-0.56F, -17.36F, 75.2F, 1F, 1F, 27F)
+				.texOffs(264, 230).addBox(-0.896F, -17.696F, 100.48F, 2F, 2F, 2F)
+				.texOffs(970, 194).addBox(-8.4F, -50.456F, 28.8F, 17F, 6F, 10F)
+				.texOffs(450, 169).addBox(-3.528F, -54.4F, 28.824F, 7F, 14F, 10F)
+				.texOffs(774, 169).addBox(-6.72F, -53.04F, 28.848F, 13F, 11F, 10F)
+				.texOffs(670, 0).addBox(-9.6F, -51.424F, -12.8F, 19F, 6F, 42F)
+				.texOffs(202, 0).addBox(-4.032F, -55.6F, -12.776F, 8F, 14F, 42F)
+				.texOffs(302, 0).addBox(-7.68F, -54.16F, -12.752F, 15F, 12F, 42F)
+				.texOffs(588, 194).addBox(-8.4F, -49.088F, -25.6F, 17F, 5F, 13F)
+				.texOffs(530, 139).addBox(-3.528F, -52.8F, -25.576F, 7F, 13F, 13F)
+				.texOffs(518, 169).addBox(-6.72F, -51.52F, -25.552F, 13F, 10F, 13F)
+				.texOffs(900, 214).addBox(-21.28F, -44.112F, 20.8F, 11F, 5F, 5F)
+				.texOffs(32, 214).addBox(-18.032F, -47.36F, 20.824F, 5F, 11F, 5F)
+				.texOffs(280, 214).addBox(-20.16F, -46.24F, 20.848F, 9F, 9F, 5F)
+				.texOffs(850, 0).addBox(-21.76F, -44.3136F, -19.2F, 12F, 5F, 40F)
+				.texOffs(416, 0).addBox(-18.2336F, -47.84F, -19.176F, 5F, 12F, 40F)
+				.texOffs(570, 0).addBox(-20.544F, -46.624F, -19.152F, 10F, 10F, 40F)
+				.texOffs(776, 214).addBox(-21.12F, -43.7248F, -25.6F, 11F, 5F, 6F)
+				.texOffs(948, 194).addBox(-17.9648F, -46.88F, -25.576F, 5F, 11F, 6F)
+				.texOffs(220, 214).addBox(-20.032F, -45.792F, -25.552F, 9F, 9F, 6F)
+				.texOffs(0, 230).addBox(-19.84F, -45.6F, 25.6F, 8F, 8F, 1F)
+				.texOffs(640, 214).addBox(-22.88F, -44.8F, -28F, 6F, 6F, 6F)
+				.texOffs(900, 214).addBox(10.08F, -44.112F, 20.8F, 11F, 5F, 5F)
+				.texOffs(32, 214).addBox(13.328F, -47.36F, 20.824F, 5F, 11F, 5F)
+				.texOffs(280, 214).addBox(11.2F, -46.24F, 20.848F, 9F, 9F, 5F)
+				.texOffs(850, 0).addBox(9.6F, -44.3136F, -19.2F, 12F, 5F, 40F)
+				.texOffs(416, 0).addBox(13.1264F, -47.84F, -19.176F, 5F, 12F, 40F)
+				.texOffs(570, 0).addBox(10.816F, -46.624F, -19.152F, 10F, 10F, 40F)
+				.texOffs(776, 214).addBox(10.24F, -43.7248F, -25.6F, 11F, 5F, 6F)
+				.texOffs(948, 194).addBox(13.3952F, -46.88F, -25.576F, 5F, 11F, 6F)
+				.texOffs(220, 214).addBox(11.328F, -45.792F, -25.552F, 9F, 9F, 6F)
+				.texOffs(0, 230).addBox(11.52F, -45.6F, 25.6F, 8F, 8F, 1F)
+				.texOffs(640, 214).addBox(17.12F, -44.8F, -28F, 6F, 6F, 6F)
+				.texOffs(440, 214).addBox(-1.92F, -64F, 8.8F, 4F, 10F, 4F)
+				.texOffs(190, 194).addBox(-7.2F, -73.6F, 4F, 14F, 6F, 14F)
+				.texOffs(792, 139).addBox(-7.52F, -37.3365F, -42.6667F, 15F, 6F, 19F)
+				.texOffs(554, 94).addBox(-3.1584F, -41.76F, -42.6427F, 6F, 15F, 19F)
+				.texOffs(716, 94).addBox(-6.016F, -40.2347F, -42.6187F, 12F, 12F, 19F)
+				.texOffs(860, 139).addBox(-6.56F, -38.0896F, -61.3333F, 13F, 6F, 19F)
+				.texOffs(666, 94).addBox(-2.7552F, -42.08F, -61.3093F, 6F, 14F, 19F)
+				.texOffs(0, 139).addBox(-5.248F, -40.704F, -61.2853F, 10F, 11F, 19F)
+				.texOffs(156, 169).addBox(-5.6F, -38.8427F, -80F, 11F, 5F, 19F)
+				.texOffs(840, 94).addBox(-2.352F, -42.4F, -79.976F, 5F, 12F, 19F)
+				.texOffs(112, 139).addBox(-4.48F, -41.1733F, -79.952F, 9F, 10F, 19F)
+				.texOffs(504, 194).addBox(-4.8F, -39.4848F, -93.8667F, 10F, 5F, 14F)
+				.texOffs(40, 169).addBox(-2.016F, -42.64F, -93.8427F, 4F, 11F, 14F)
+				.texOffs(570, 169).addBox(-3.84F, -41.552F, -93.8187F, 8F, 9F, 14F)
+				.texOffs(740, 194).addBox(-4.16F, -40.016F, -107.7333F, 8F, 4F, 14F)
+				.texOffs(484, 169).addBox(-1.7472F, -42.8F, -107.7093F, 3F, 10F, 14F)
+				.texOffs(676, 169).addBox(-3.328F, -41.84F, -107.6853F, 7F, 8F, 14F)
+				.texOffs(906, 194).addBox(-3.52F, -40.5472F, -121.6F, 7F, 3F, 14F)
+				.texOffs(718, 169).addBox(-1.4784F, -42.96F, -121.576F, 3F, 8F, 14F)
+				.texOffs(820, 169).addBox(-2.816F, -42.128F, -121.552F, 6F, 7F, 14F)
+				.texOffs(252, 139).addBox(-1.28F, -46.4F, -133.6F, 3F, 8F, 20F)
+				.texOffs(0, 169).addBox(-1.28F, -54.4F, -135.2F, 3F, 8F, 17F)
+				.texOffs(614, 169).addBox(-1.28F, -62.4F, -136.8F, 3F, 8F, 15F)
+				.texOffs(328, 194).addBox(-1.28F, -70.4F, -138.4F, 3F, 8F, 12F)
+				.texOffs(68, 214).addBox(-17.6F, -71.2F, -131.2F, 35F, 2F, 13F)
+				.texOffs(888, 169).addBox(-39.2F, -34.24F, -1.6F, 27F, 2F, 18F)
+				.texOffs(856, 194).addBox(-21.44F, -32F, -1.6F, 1F, 4F, 14F)
+				.texOffs(778, 94).addBox(-24.16F, -26.56F, -9.6F, 7F, 7F, 24F)
+				.texOffs(158, 230).addBox(-23.656F, -26.056F, 14.4F, 6F, 6F, 1F)
+				.texOffs(416, 214).addBox(-34.24F, -32F, 0F, 1F, 3F, 11F)
+				.texOffs(322, 169).addBox(-36.88F, -25.04F, -9.6F, 3F, 3F, 21F)
+				.texOffs(244, 230).addBox(-36.472F, -24.632F, 11.392F, 2F, 2F, 3F)
+				.texOffs(284, 230).addBox(-35.996F, -24.156F, 14.208F, 1F, 1F, 2F)
+				.texOffs(204, 230).addBox(-39.328F, -23.92F, -9.6F, 8F, 1F, 4F)
+				.texOffs(716, 214).addBox(-35.76F, -27.488F, -9.6F, 1F, 8F, 4F)
+				.texOffs(322, 169).addBox(-36.88F, -28.88F, -9.6F, 3F, 3F, 21F)
+				.texOffs(244, 230).addBox(-36.472F, -28.472F, 11.392F, 2F, 2F, 3F)
+				.texOffs(284, 230).addBox(-35.996F, -27.996F, 14.208F, 1F, 1F, 2F)
+				.texOffs(204, 230).addBox(-39.328F, -27.76F, -9.6F, 8F, 1F, 4F)
+				.texOffs(716, 214).addBox(-35.76F, -31.328F, -9.6F, 1F, 8F, 4F)
+				.texOffs(322, 169).addBox(-33.04F, -25.04F, -9.6F, 3F, 3F, 21F)
+				.texOffs(244, 230).addBox(-32.632F, -24.632F, 11.392F, 2F, 2F, 3F)
+				.texOffs(284, 230).addBox(-32.156F, -24.156F, 14.208F, 1F, 1F, 2F)
+				.texOffs(204, 230).addBox(-35.488F, -23.92F, -9.6F, 8F, 1F, 4F)
+				.texOffs(716, 214).addBox(-31.92F, -27.488F, -9.6F, 1F, 8F, 4F)
+				.texOffs(322, 169).addBox(-33.04F, -28.88F, -9.6F, 3F, 3F, 21F)
+				.texOffs(244, 230).addBox(-32.632F, -28.472F, 11.392F, 2F, 2F, 3F)
+				.texOffs(284, 230).addBox(-32.156F, -27.996F, 14.208F, 1F, 1F, 2F)
+				.texOffs(204, 230).addBox(-35.488F, -27.76F, -9.6F, 8F, 1F, 4F)
+				.texOffs(716, 214).addBox(-31.92F, -31.328F, -9.6F, 1F, 8F, 4F)
+				.texOffs(888, 169).addBox(12F, -34.24F, -1.6F, 27F, 2F, 18F)
+				.texOffs(856, 194).addBox(20.16F, -32F, -1.6F, 1F, 4F, 14F)
+				.texOffs(778, 94).addBox(17.44F, -26.56F, -9.6F, 7F, 7F, 24F)
+				.texOffs(158, 230).addBox(17.944F, -26.056F, 14.4F, 6F, 6F, 1F)
+				.texOffs(416, 214).addBox(32.96F, -32F, 0F, 1F, 3F, 11F)
+				.texOffs(322, 169).addBox(30.32F, -25.04F, -9.6F, 3F, 3F, 21F)
+				.texOffs(244, 230).addBox(30.728F, -24.632F, 11.392F, 2F, 2F, 3F)
+				.texOffs(284, 230).addBox(31.204F, -24.156F, 14.208F, 1F, 1F, 2F)
+				.texOffs(204, 230).addBox(27.872F, -23.92F, -9.6F, 8F, 1F, 4F)
+				.texOffs(716, 214).addBox(31.44F, -27.488F, -9.6F, 1F, 8F, 4F)
+				.texOffs(322, 169).addBox(30.32F, -28.88F, -9.6F, 3F, 3F, 21F)
+				.texOffs(244, 230).addBox(30.728F, -28.472F, 11.392F, 2F, 2F, 3F)
+				.texOffs(284, 230).addBox(31.204F, -27.996F, 14.208F, 1F, 1F, 2F)
+				.texOffs(204, 230).addBox(27.872F, -27.76F, -9.6F, 8F, 1F, 4F)
+				.texOffs(716, 214).addBox(31.44F, -31.328F, -9.6F, 1F, 8F, 4F)
+				.texOffs(322, 169).addBox(34.16F, -25.04F, -9.6F, 3F, 3F, 21F)
+				.texOffs(244, 230).addBox(34.568F, -24.632F, 11.392F, 2F, 2F, 3F)
+				.texOffs(284, 230).addBox(35.044F, -24.156F, 14.208F, 1F, 1F, 2F)
+				.texOffs(204, 230).addBox(31.712F, -23.92F, -9.6F, 8F, 1F, 4F)
+				.texOffs(716, 214).addBox(35.28F, -27.488F, -9.6F, 1F, 8F, 4F)
+				.texOffs(322, 169).addBox(34.16F, -28.88F, -9.6F, 3F, 3F, 21F)
+				.texOffs(244, 230).addBox(34.568F, -28.472F, 11.392F, 2F, 2F, 3F)
+				.texOffs(284, 230).addBox(35.044F, -27.996F, 14.208F, 1F, 1F, 2F)
+				.texOffs(204, 230).addBox(31.712F, -27.76F, -9.6F, 8F, 1F, 4F)
+				.texOffs(716, 214).addBox(35.28F, -31.328F, -9.6F, 1F, 8F, 4F)
+				.texOffs(726, 214).addBox(-16.8F, -14.72F, 56.8F, 2F, 10F, 2F)
+				.texOffs(172, 230).addBox(-17.28F, -14.72F, 56.32F, 3F, 4F, 3F)
+				.texOffs(726, 214).addBox(15.2F, -14.72F, 56.8F, 2F, 10F, 2F)
+				.texOffs(172, 230).addBox(14.72F, -14.72F, 56.32F, 3F, 4F, 3F)
+				.texOffs(982, 214).addBox(-0.8F, -10.88F, -116F, 2F, 8F, 2F)
+				.texOffs(172, 230).addBox(-1.28F, -10.88F, -116.48F, 3F, 4F, 3F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p1 = p0.addOrReplaceChild("windscreen_515", CubeListBuilder.create()
+				.texOffs(472, 214).addBox(-6.359F, -13.3185F, -0.8F, 1F, 13F, 1F)
+				.texOffs(472, 214).addBox(6.0058F, -13.3185F, -0.8F, 1F, 13F, 1F)
+				.texOffs(320, 230).addBox(-6.359F, -13.3185F, -0.8F, 13F, 1F, 1F)
+				, PartPose.offsetAndRotation(0F, -32.8F, 88.8F, 0.5013F, 0F, 0F));
+		PartDefinition p2 = p0.addOrReplaceChild("windscreen_360", CubeListBuilder.create()
+				.texOffs(472, 214).addBox(-6.912F, -12.6653F, -0.8F, 1F, 13F, 1F)
+				.texOffs(472, 214).addBox(6.528F, -12.6653F, -0.8F, 1F, 13F, 1F)
+				.texOffs(290, 230).addBox(-6.912F, -12.6653F, -0.8F, 14F, 1F, 1F)
+				, PartPose.offsetAndRotation(0F, -41.92F, 63.2F, 0.458F, 0F, 0F));
+		PartDefinition p3 = p0.addOrReplaceChild("tail_rotor", CubeListBuilder.create()
+				.texOffs(92, 230).addBox(-1.92F, -1.92F, -1.92F, 4F, 4F, 4F)
+				, PartPose.offsetAndRotation(-3.52F, -59.2F, -123.2F, 0F, 0F, 0F));
+		PartDefinition p4 = p3.addOrReplaceChild("tail_blade_0", CubeListBuilder.create()
+				.texOffs(76, 169).addBox(-0.64F, -22.4F, -1.76F, 1F, 21F, 4F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p5 = p3.addOrReplaceChild("tail_blade_1", CubeListBuilder.create()
+				.texOffs(76, 169).addBox(-0.64F, -22.4F, -1.76F, 1F, 21F, 4F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 1.5708F, 0F, 0F));
+		PartDefinition p6 = p3.addOrReplaceChild("tail_blade_2", CubeListBuilder.create()
+				.texOffs(76, 169).addBox(-0.64F, -22.4F, -1.76F, 1F, 21F, 4F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 3.1416F, 0F, 0F));
+		PartDefinition p7 = p3.addOrReplaceChild("tail_blade_3", CubeListBuilder.create()
+				.texOffs(76, 169).addBox(-0.64F, -22.4F, -1.76F, 1F, 21F, 4F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 4.7124F, 0F, 0F));
+		PartDefinition p8 = p0.addOrReplaceChild("rotor", CubeListBuilder.create()
+				.texOffs(648, 194).addBox(-6.08F, -1.28F, -6.08F, 12F, 6F, 12F)
+				.texOffs(48, 230).addBox(-3.2F, -3.52F, -3.2F, 6F, 2F, 6F)
+				, PartPose.offsetAndRotation(0F, -63.2F, 11.2F, 0F, 0F, 0F));
+		PartDefinition p9 = p8.addOrReplaceChild("rotor_blade_0", CubeListBuilder.create()
+				.texOffs(664, 214).addBox(-1.12F, -0.32F, 4.8F, 2F, 2F, 10F)
+				.texOffs(0, 0).addBox(-4.24F, -0.32F, 14.4F, 8F, 1F, 93F)
+				.texOffs(932, 214).addBox(-3.2224F, 0F, 107.456F, 6F, 1F, 9F)
+				.texOffs(18, 230).addBox(-4.4F, -0.4F, 99.28F, 1F, 1F, 8F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p10 = p8.addOrReplaceChild("rotor_blade_1", CubeListBuilder.create()
+				.texOffs(664, 214).addBox(-1.12F, -0.32F, 4.8F, 2F, 2F, 10F)
+				.texOffs(0, 0).addBox(-4.24F, -0.32F, 14.4F, 8F, 1F, 93F)
+				.texOffs(932, 214).addBox(-3.2224F, 0F, 107.456F, 6F, 1F, 9F)
+				.texOffs(18, 230).addBox(-4.4F, -0.4F, 99.28F, 1F, 1F, 8F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 1.5708F, 0F));
+		PartDefinition p11 = p8.addOrReplaceChild("rotor_blade_2", CubeListBuilder.create()
+				.texOffs(664, 214).addBox(-1.12F, -0.32F, 4.8F, 2F, 2F, 10F)
+				.texOffs(0, 0).addBox(-4.24F, -0.32F, 14.4F, 8F, 1F, 93F)
+				.texOffs(932, 214).addBox(-3.2224F, 0F, 107.456F, 6F, 1F, 9F)
+				.texOffs(18, 230).addBox(-4.4F, -0.4F, 99.28F, 1F, 1F, 8F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 3.1416F, 0F));
+		PartDefinition p12 = p8.addOrReplaceChild("rotor_blade_3", CubeListBuilder.create()
+				.texOffs(664, 214).addBox(-1.12F, -0.32F, 4.8F, 2F, 2F, 10F)
+				.texOffs(0, 0).addBox(-4.24F, -0.32F, 14.4F, 8F, 1F, 93F)
+				.texOffs(932, 214).addBox(-3.2224F, 0F, 107.456F, 6F, 1F, 9F)
+				.texOffs(18, 230).addBox(-4.4F, -0.4F, 99.28F, 1F, 1F, 8F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 4.7124F, 0F));
+		PartDefinition p13 = root.addOrReplaceChild("gear_l", CubeListBuilder.create()
+				.texOffs(336, 214).addBox(-1.76F, -2.1504F, -5.12F, 4F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(456, 214).addBox(-1.76F, -5.12F, -2.1504F, 4F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(358, 194).addBox(1.76F, -5.12F, -5.12F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(358, 194).addBox(-2.4F, -5.12F, -5.12F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-16F, -5.12F, 57.6F, 0F, 0F, 0F));
+		PartDefinition p14 = p13.addOrReplaceChild("gear_l_d1", CubeListBuilder.create()
+				.texOffs(336, 214).addBox(-1.76F, -2.1504F, -5.12F, 4F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p15 = p13.addOrReplaceChild("gear_l_d2", CubeListBuilder.create()
+				.texOffs(336, 214).addBox(-1.76F, -2.1504F, -5.12F, 4F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p16 = root.addOrReplaceChild("gear_r", CubeListBuilder.create()
+				.texOffs(336, 214).addBox(-1.76F, -2.1504F, -5.12F, 4F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(456, 214).addBox(-1.76F, -5.12F, -2.1504F, 4F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(358, 194).addBox(1.76F, -5.12F, -5.12F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(358, 194).addBox(-2.4F, -5.12F, -5.12F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(16F, -5.12F, 57.6F, 0F, 0F, 0F));
+		PartDefinition p17 = p16.addOrReplaceChild("gear_r_d1", CubeListBuilder.create()
+				.texOffs(336, 214).addBox(-1.76F, -2.1504F, -5.12F, 4F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p18 = p16.addOrReplaceChild("gear_r_d2", CubeListBuilder.create()
+				.texOffs(336, 214).addBox(-1.76F, -2.1504F, -5.12F, 4F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p19 = root.addOrReplaceChild("gear_tail", CubeListBuilder.create()
+				.texOffs(72, 230).addBox(-1.76F, -1.2096F, -2.88F, 4F, 2F, 6F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(108, 230).addBox(-1.76F, -2.88F, -1.2096F, 4F, 6F, 2F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(702, 214).addBox(1.76F, -2.88F, -2.88F, 1F, 6F, 6F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(702, 214).addBox(-2.4F, -2.88F, -2.88F, 1F, 6F, 6F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(0F, -2.88F, -115.2F, 0F, 0F, 0F));
+		PartDefinition p20 = p19.addOrReplaceChild("gear_tail_d1", CubeListBuilder.create()
+				.texOffs(72, 230).addBox(-1.76F, -1.2096F, -2.88F, 4F, 2F, 6F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p21 = p19.addOrReplaceChild("gear_tail_d2", CubeListBuilder.create()
+				.texOffs(72, 230).addBox(-1.76F, -1.2096F, -2.88F, 4F, 2F, 6F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 240);
+	}
+
+	public static Map<String, String> ah64Paths() {
+		return Map.ofEntries(
+				Map.entry("body", "body"),
+				Map.entry("windscreen_515", "body/windscreen_515"),
+				Map.entry("windscreen_360", "body/windscreen_360"),
+				Map.entry("tail_rotor", "body/tail_rotor"),
+				Map.entry("tail_blade_0", "body/tail_rotor/tail_blade_0"),
+				Map.entry("tail_blade_1", "body/tail_rotor/tail_blade_1"),
+				Map.entry("tail_blade_2", "body/tail_rotor/tail_blade_2"),
+				Map.entry("tail_blade_3", "body/tail_rotor/tail_blade_3"),
+				Map.entry("gear_l", "gear_l"),
+				Map.entry("gear_l_d1", "gear_l/gear_l_d1"),
+				Map.entry("gear_l_d2", "gear_l/gear_l_d2"),
+				Map.entry("gear_r", "gear_r"),
+				Map.entry("gear_r_d1", "gear_r/gear_r_d1"),
+				Map.entry("gear_r_d2", "gear_r/gear_r_d2"),
+				Map.entry("gear_tail", "gear_tail"),
+				Map.entry("gear_tail_d1", "gear_tail/gear_tail_d1"),
+				Map.entry("gear_tail_d2", "gear_tail/gear_tail_d2"),
+				Map.entry("rotor", "body/rotor"),
+				Map.entry("rotor_blade_0", "body/rotor/rotor_blade_0"),
+				Map.entry("rotor_blade_1", "body/rotor/rotor_blade_1"),
+				Map.entry("rotor_blade_2", "body/rotor/rotor_blade_2"),
+				Map.entry("rotor_blade_3", "body/rotor/rotor_blade_3")
+		);
+	}
+
+	public static LayerDefinition ah64_glass() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(450, 139).addBox(-7.52F, -39.4F, 63.2F, 1F, 7F, 19F, EnumSet.of(Direction.WEST))
+				.texOffs(370, 169).addBox(-6.048F, -44.48F, 63.2F, 1F, 5F, 19F, EnumSet.of(Direction.WEST))
+				.texOffs(288, 194).addBox(-7.36F, -39.56F, 63.2F, 1F, 1F, 19F, EnumSet.of(Direction.DOWN))
+				.texOffs(36, 230).addBox(-7.52F, -39.4F, 82.4F, 1F, 7F, 2F, EnumSet.of(Direction.WEST))
+				.texOffs(184, 230).addBox(-7.52F, -37.6F, 84.5333F, 1F, 5F, 2F, EnumSet.of(Direction.WEST))
+				.texOffs(272, 230).addBox(-7.52F, -33.6F, 86.6667F, 1F, 1F, 2F, EnumSet.of(Direction.WEST))
+				.texOffs(490, 139).addBox(7.2F, -39.4F, 63.2F, 1F, 7F, 19F, EnumSet.of(Direction.EAST))
+				.texOffs(410, 169).addBox(5.728F, -44.48F, 63.2F, 1F, 5F, 19F, EnumSet.of(Direction.EAST))
+				.texOffs(288, 194).addBox(5.888F, -39.56F, 63.2F, 1F, 1F, 19F, EnumSet.of(Direction.DOWN))
+				.texOffs(42, 230).addBox(7.2F, -39.4F, 82.4F, 1F, 7F, 2F, EnumSet.of(Direction.EAST))
+				.texOffs(190, 230).addBox(7.2F, -37.6F, 84.5333F, 1F, 5F, 2F, EnumSet.of(Direction.EAST))
+				.texOffs(278, 230).addBox(7.2F, -33.6F, 86.6667F, 1F, 1F, 2F, EnumSet.of(Direction.EAST))
+				.texOffs(128, 194).addBox(-5.888F, -44.8F, 63.2F, 12F, 1F, 19F, EnumSet.of(Direction.DOWN))
+				.texOffs(608, 214).addBox(-7.36F, -44.8F, 62.88F, 15F, 12F, 1F, EnumSet.of(Direction.NORTH))
+				.texOffs(924, 139).addBox(-8.16F, -48.344F, 38.4F, 1F, 6F, 19F, EnumSet.of(Direction.WEST))
+				.texOffs(370, 169).addBox(-6.56F, -53.28F, 38.4F, 1F, 5F, 19F, EnumSet.of(Direction.WEST))
+				.texOffs(246, 194).addBox(-8F, -48.504F, 38.4F, 2F, 1F, 19F, EnumSet.of(Direction.DOWN))
+				.texOffs(120, 230).addBox(-8.16F, -48.344F, 57.6F, 1F, 6F, 2F, EnumSet.of(Direction.WEST))
+				.texOffs(184, 230).addBox(-8.16F, -46.592F, 59.4667F, 1F, 5F, 2F, EnumSet.of(Direction.WEST))
+				.texOffs(272, 230).addBox(-8.16F, -42.72F, 61.3333F, 1F, 1F, 2F, EnumSet.of(Direction.WEST))
+				.texOffs(964, 139).addBox(7.84F, -48.344F, 38.4F, 1F, 6F, 19F, EnumSet.of(Direction.EAST))
+				.texOffs(410, 169).addBox(6.24F, -53.28F, 38.4F, 1F, 5F, 19F, EnumSet.of(Direction.EAST))
+				.texOffs(246, 194).addBox(6.4F, -48.504F, 38.4F, 2F, 1F, 19F, EnumSet.of(Direction.DOWN))
+				.texOffs(126, 230).addBox(7.84F, -48.344F, 57.6F, 1F, 6F, 2F, EnumSet.of(Direction.EAST))
+				.texOffs(190, 230).addBox(7.84F, -46.592F, 59.4667F, 1F, 5F, 2F, EnumSet.of(Direction.EAST))
+				.texOffs(278, 230).addBox(7.84F, -42.72F, 61.3333F, 1F, 1F, 2F, EnumSet.of(Direction.EAST))
+				.texOffs(64, 194).addBox(-6.4F, -53.6F, 38.4F, 13F, 1F, 19F, EnumSet.of(Direction.DOWN))
+				.texOffs(574, 214).addBox(-8F, -53.6F, 38.08F, 16F, 12F, 1F, EnumSet.of(Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p1 = p0.addOrReplaceChild("windscreen_515", CubeListBuilder.create()
+				.texOffs(390, 214).addBox(-6.1824F, -13.3185F, -0.32F, 12F, 13F, 1F, EnumSet.of(Direction.SOUTH))
+				, PartPose.offsetAndRotation(0F, -32.8F, 88.8F, 0.5013F, 0F, 0F));
+		PartDefinition p2 = p0.addOrReplaceChild("windscreen_360", CubeListBuilder.create()
+				.texOffs(308, 214).addBox(-6.72F, -12.6653F, -0.32F, 13F, 13F, 1F, EnumSet.of(Direction.SOUTH))
+				, PartPose.offsetAndRotation(0F, -41.92F, 63.2F, 0.458F, 0F, 0F));
+		PartDefinition p3 = p0.addOrReplaceChild("tail_rotor", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(-3.52F, -59.2F, -123.2F, 0F, 0F, 0F));
+		PartDefinition p4 = p3.addOrReplaceChild("tail_blade_0", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p5 = p3.addOrReplaceChild("tail_blade_1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 1.5708F, 0F, 0F));
+		PartDefinition p6 = p3.addOrReplaceChild("tail_blade_2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 3.1416F, 0F, 0F));
+		PartDefinition p7 = p3.addOrReplaceChild("tail_blade_3", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 4.7124F, 0F, 0F));
+		PartDefinition p8 = p0.addOrReplaceChild("rotor", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, -63.2F, 11.2F, 0F, 0F, 0F));
+		PartDefinition p9 = p8.addOrReplaceChild("rotor_blade_0", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p10 = p8.addOrReplaceChild("rotor_blade_1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 1.5708F, 0F));
+		PartDefinition p11 = p8.addOrReplaceChild("rotor_blade_2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 3.1416F, 0F));
+		PartDefinition p12 = p8.addOrReplaceChild("rotor_blade_3", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 4.7124F, 0F));
+		PartDefinition p13 = root.addOrReplaceChild("gear_l", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(-16F, -5.12F, 57.6F, 0F, 0F, 0F));
+		PartDefinition p14 = p13.addOrReplaceChild("gear_l_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p15 = p13.addOrReplaceChild("gear_l_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p16 = root.addOrReplaceChild("gear_r", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(16F, -5.12F, 57.6F, 0F, 0F, 0F));
+		PartDefinition p17 = p16.addOrReplaceChild("gear_r_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p18 = p16.addOrReplaceChild("gear_r_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p19 = root.addOrReplaceChild("gear_tail", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, -2.88F, -115.2F, 0F, 0F, 0F));
+		PartDefinition p20 = p19.addOrReplaceChild("gear_tail_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p21 = p19.addOrReplaceChild("gear_tail_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 240);
+	}
+
+	public static LayerDefinition a10() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(354, 221).addBox(-2.72F, -29.3296F, 124.8F, 5F, 2F, 3F)
+				.texOffs(146, 221).addBox(-1.1424F, -31F, 124.824F, 2F, 6F, 3F)
+				.texOffs(260, 221).addBox(-2.176F, -30.424F, 124.848F, 4F, 5F, 3F)
+				.texOffs(216, 221).addBox(-4.96F, -30.6448F, 121.6F, 10F, 5F, 3F)
+				.texOffs(946, 200).addBox(-2.0832F, -33.8F, 121.624F, 4F, 11F, 3F)
+				.texOffs(52, 221).addBox(-3.968F, -32.712F, 121.648F, 8F, 9F, 3F)
+				.texOffs(872, 200).addBox(-6.88F, -31.9856F, 113.6F, 14F, 6F, 8F)
+				.texOffs(794, 172).addBox(-2.8896F, -36.44F, 113.624F, 6F, 15F, 8F)
+				.texOffs(96, 200).addBox(-5.504F, -34.904F, 113.648F, 11F, 12F, 8F)
+				.texOffs(704, 200).addBox(-8.48F, -33.352F, 105.6F, 17F, 8F, 8F)
+				.texOffs(300, 172).addBox(-3.5616F, -38.92F, 105.624F, 7F, 19F, 8F)
+				.texOffs(750, 172).addBox(-6.784F, -37F, 105.648F, 14F, 15F, 8F)
+				.texOffs(74, 221).addBox(-9.76F, -34.4704F, 94.4F, 20F, 9F, 2F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(848, 172).addBox(-4.0992F, -39.2F, 94.424F, 8F, 21F, 2F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(172, 200).addBox(-7.808F, -38.696F, 94.448F, 16F, 18F, 2F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(484, 221).addBox(-7.808F, -39.2F, 94.4F, 1F, 1F, 2F, EnumSet.of(Direction.DOWN))
+				.texOffs(484, 221).addBox(7.36F, -39.2F, 94.4F, 1F, 1F, 2F, EnumSet.of(Direction.DOWN))
+				.texOffs(224, 200).addBox(-9.76F, -34.4704F, 96F, 20F, 9F, 10F)
+				.texOffs(288, 139).addBox(-4.0992F, -40.92F, 96.024F, 8F, 22F, 10F)
+				.texOffs(154, 172).addBox(-7.808F, -38.696F, 96.048F, 16F, 18F, 10F)
+				.texOffs(0, 200).addBox(-10.72F, -35.3408F, 83.2F, 21F, 10F, 11F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(248, 139).addBox(-4.5024F, -39.2F, 83.224F, 9F, 21F, 11F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(692, 139).addBox(-8.576F, -39.2F, 83.248F, 17F, 19F, 11F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(28, 221).addBox(-8.576F, -39.2F, 83.2F, 1F, 1F, 11F, EnumSet.of(Direction.DOWN))
+				.texOffs(28, 221).addBox(7.36F, -39.2F, 83.2F, 1F, 1F, 11F, EnumSet.of(Direction.DOWN))
+				.texOffs(442, 172).addBox(-11.4F, -35.94F, 69.6F, 23F, 11F, 14F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(628, 101).addBox(-4.788F, -39.2F, 69.624F, 10F, 22F, 14F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(0, 139).addBox(-9.12F, -39.2F, 69.648F, 18F, 19F, 14F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(762, 200).addBox(-9.12F, -39.2F, 69.6F, 2F, 1F, 14F, EnumSet.of(Direction.DOWN))
+				.texOffs(762, 200).addBox(7.36F, -39.2F, 69.6F, 2F, 1F, 14F, EnumSet.of(Direction.DOWN))
+				.texOffs(516, 200).addBox(-11.8F, -36.268F, 56F, 24F, 11F, 6F)
+				.texOffs(116, 139).addBox(-4.956F, -44.04F, 56.024F, 10F, 27F, 6F)
+				.texOffs(206, 172).addBox(-9.44F, -41.36F, 56.048F, 19F, 21F, 6F)
+				.texOffs(376, 200).addBox(-11.8F, -36.268F, 62.4F, 24F, 11F, 7F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(976, 139).addBox(-4.956F, -39.2F, 62.424F, 10F, 22F, 7F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(330, 172).addBox(-9.44F, -39.2F, 62.448F, 19F, 19F, 7F, EnumSet.of(Direction.WEST, Direction.EAST, Direction.UP))
+				.texOffs(242, 221).addBox(-9.44F, -39.2F, 62.4F, 2F, 1F, 7F, EnumSet.of(Direction.DOWN))
+				.texOffs(242, 221).addBox(7.36F, -39.2F, 62.4F, 2F, 1F, 7F, EnumSet.of(Direction.DOWN))
+				.texOffs(648, 55).addBox(-11.88F, -36.5016F, 28F, 24F, 11F, 28F)
+				.texOffs(0, 0).addBox(-4.9896F, -44.32F, 28.024F, 10F, 27F, 28F)
+				.texOffs(534, 0).addBox(-9.504F, -41.624F, 28.048F, 19F, 22F, 28F)
+				.texOffs(752, 55).addBox(-11.64F, -36.6408F, 0F, 23F, 11F, 28F)
+				.texOffs(160, 0).addBox(-4.8888F, -44.32F, 0.024F, 10F, 26F, 28F)
+				.texOffs(700, 0).addBox(-9.312F, -41.672F, 0.048F, 19F, 21F, 28F)
+				.texOffs(0, 101).addBox(-11.04F, -36.8416F, -28F, 22F, 10F, 28F)
+				.texOffs(236, 0).addBox(-4.6368F, -44.08F, -27.976F, 9F, 25F, 28F)
+				.texOffs(914, 0).addBox(-8.832F, -41.584F, -27.952F, 18F, 20F, 28F)
+				.texOffs(200, 101).addBox(-10.08F, -37.104F, -56F, 20F, 9F, 28F)
+				.texOffs(628, 0).addBox(-4.2336F, -43.6F, -55.976F, 8F, 22F, 28F)
+				.texOffs(0, 55).addBox(-8.064F, -41.36F, -55.952F, 16F, 18F, 28F)
+				.texOffs(614, 139).addBox(-8.72F, -37.3984F, -77.6F, 17F, 8F, 22F)
+				.texOffs(590, 55).addBox(-3.6624F, -42.92F, -77.576F, 7F, 19F, 22F)
+				.texOffs(296, 101).addBox(-6.976F, -41.016F, -77.552F, 14F, 15F, 22F)
+				.texOffs(82, 172).addBox(-6.96F, -37.7248F, -99.2F, 14F, 6F, 22F)
+				.texOffs(428, 101).addBox(-2.9232F, -42.04F, -99.176F, 6F, 15F, 22F)
+				.texOffs(898, 101).addBox(-5.568F, -40.552F, -99.152F, 11F, 12F, 22F)
+				.texOffs(438, 200).addBox(-5.36F, -37.9856F, -112F, 11F, 5F, 13F)
+				.texOffs(714, 172).addBox(-2.2512F, -41.28F, -111.976F, 5F, 11F, 13F)
+				.texOffs(868, 172).addBox(-4.288F, -40.144F, -111.952F, 9F, 9F, 13F)
+				.texOffs(576, 200).addBox(-3.92F, -38.1808F, -124.8F, 8F, 4F, 13F)
+				.texOffs(64, 200).addBox(-1.6464F, -40.64F, -124.776F, 3F, 8F, 13F)
+				.texOffs(134, 200).addBox(-3.136F, -39.792F, -124.752F, 6F, 7F, 13F)
+				.texOffs(772, 101).addBox(-8F, -39.52F, 62.4F, 1F, 1F, 34F)
+				.texOffs(772, 101).addBox(6.72F, -39.52F, 62.4F, 1F, 1F, 34F)
+				.texOffs(556, 221).addBox(-5.888F, -53.92F, 79.36F, 12F, 1F, 1F)
+				.texOffs(172, 221).addBox(-7.84F, -47.12F, 79.36F, 1F, 8F, 1F)
+				.texOffs(314, 221).addBox(-6.368F, -53.6F, 79.36F, 1F, 6F, 1F)
+				.texOffs(172, 221).addBox(6.88F, -47.12F, 79.36F, 1F, 8F, 1F)
+				.texOffs(314, 221).addBox(5.408F, -53.6F, 79.36F, 1F, 6F, 1F)
+				.texOffs(412, 139).addBox(-6.72F, -48F, 41.6F, 13F, 10F, 21F)
+				.texOffs(854, 55).addBox(-6.08F, -45.6F, 9.6F, 12F, 7F, 32F)
+				.texOffs(618, 200).addBox(-4.8F, -22.72F, 121.6F, 6F, 6F, 11F)
+				.texOffs(370, 221).addBox(-3.6F, -20.24F, 132.8F, 1F, 1F, 4F)
+				.texOffs(490, 221).addBox(-3.84F, -20.48F, 134.88F, 1F, 1F, 2F)
+				.texOffs(370, 221).addBox(-2F, -20.24F, 132.8F, 1F, 1F, 4F)
+				.texOffs(490, 221).addBox(-2.24F, -20.48F, 134.88F, 1F, 1F, 2F)
+				.texOffs(370, 221).addBox(-0.4F, -20.24F, 132.8F, 1F, 1F, 4F)
+				.texOffs(490, 221).addBox(-0.64F, -20.48F, 134.88F, 1F, 1F, 2F)
+				.texOffs(310, 0).addBox(11.2F, -28.74F, -21.6F, 16F, 5F, 46F)
+				.texOffs(318, 221).addBox(11.2F, -27.804F, 24.9F, 16F, 3F, 2F)
+				.texOffs(794, 0).addBox(27F, -28.62F, -20F, 16F, 4F, 44F)
+				.texOffs(318, 221).addBox(27F, -27.732F, 23.5F, 16F, 3F, 2F)
+				.texOffs(180, 55).addBox(42.8F, -28.5F, -18.4F, 16F, 4F, 40F)
+				.texOffs(390, 221).addBox(42.8F, -27.66F, 22.1F, 16F, 3F, 1F)
+				.texOffs(292, 55).addBox(58.6F, -28.38F, -16.8F, 16F, 4F, 38F)
+				.texOffs(440, 221).addBox(58.6F, -27.588F, 20.7F, 16F, 2F, 1F)
+				.texOffs(100, 101).addBox(74.4F, -28.26F, -15.2F, 16F, 4F, 34F)
+				.texOffs(440, 221).addBox(74.4F, -27.516F, 19.3F, 16F, 2F, 1F)
+				.texOffs(676, 101).addBox(90.2F, -28.14F, -13.6F, 16F, 3F, 32F)
+				.texOffs(440, 221).addBox(90.2F, -27.444F, 17.9F, 16F, 2F, 1F)
+				.texOffs(324, 139).addBox(106F, -28.02F, -12F, 16F, 3F, 28F)
+				.texOffs(440, 221).addBox(106F, -27.372F, 16.5F, 16F, 2F, 1F)
+				.texOffs(848, 139).addBox(121.8F, -27.9F, -10.4F, 16F, 3F, 26F)
+				.texOffs(440, 221).addBox(121.8F, -27.3F, 15.1F, 16F, 2F, 1F)
+				.texOffs(310, 0).addBox(-27F, -28.74F, -21.6F, 16F, 5F, 46F)
+				.texOffs(318, 221).addBox(-27F, -27.804F, 24.9F, 16F, 3F, 2F)
+				.texOffs(794, 0).addBox(-42.8F, -28.62F, -20F, 16F, 4F, 44F)
+				.texOffs(318, 221).addBox(-42.8F, -27.732F, 23.5F, 16F, 3F, 2F)
+				.texOffs(180, 55).addBox(-58.6F, -28.5F, -18.4F, 16F, 4F, 40F)
+				.texOffs(390, 221).addBox(-58.6F, -27.66F, 22.1F, 16F, 3F, 1F)
+				.texOffs(292, 55).addBox(-74.4F, -28.38F, -16.8F, 16F, 4F, 38F)
+				.texOffs(440, 221).addBox(-74.4F, -27.588F, 20.7F, 16F, 2F, 1F)
+				.texOffs(100, 101).addBox(-90.2F, -28.26F, -15.2F, 16F, 4F, 34F)
+				.texOffs(440, 221).addBox(-90.2F, -27.516F, 19.3F, 16F, 2F, 1F)
+				.texOffs(676, 101).addBox(-106F, -28.14F, -13.6F, 16F, 3F, 32F)
+				.texOffs(440, 221).addBox(-106F, -27.444F, 17.9F, 16F, 2F, 1F)
+				.texOffs(324, 139).addBox(-121.8F, -28.02F, -12F, 16F, 3F, 28F)
+				.texOffs(440, 221).addBox(-121.8F, -27.372F, 16.5F, 16F, 2F, 1F)
+				.texOffs(848, 139).addBox(-137.6F, -27.9F, -10.4F, 16F, 3F, 26F)
+				.texOffs(440, 221).addBox(-137.6F, -27.3F, 15.1F, 16F, 2F, 1F)
+				.texOffs(88, 55).addBox(-44F, -25.6F, 0F, 11F, 10F, 35F)
+				.texOffs(88, 55).addBox(32.8F, -25.6F, 0F, 11F, 10F, 35F)
+				.texOffs(256, 172).addBox(-13.28F, -46.4F, -51.2F, 3F, 8F, 19F)
+				.texOffs(960, 200).addBox(-26.56F, -55.7632F, -28.8F, 18F, 8F, 5F)
+				.texOffs(822, 172).addBox(-21.3632F, -60.96F, -28.776F, 8F, 18F, 5F)
+				.texOffs(284, 200).addBox(-24.768F, -59.168F, -28.752F, 14F, 14F, 5F)
+				.texOffs(400, 55).addBox(-27.52F, -56.1664F, -62.4F, 20F, 8F, 34F)
+				.texOffs(76, 0).addBox(-21.7664F, -61.92F, -62.376F, 8F, 20F, 34F)
+				.texOffs(434, 0).addBox(-25.536F, -59.936F, -62.352F, 16F, 16F, 34F)
+				.texOffs(652, 200).addBox(-26.56F, -55.7632F, -70.4F, 18F, 8F, 8F)
+				.texOffs(382, 172).addBox(-21.3632F, -60.96F, -70.376F, 8F, 18F, 8F)
+				.texOffs(912, 172).addBox(-24.768F, -59.168F, -70.352F, 14F, 14F, 8F)
+				.texOffs(916, 200).addBox(-24.8F, -58.4F, -24F, 14F, 13F, 1F)
+				.texOffs(0, 221).addBox(-24F, -57.6F, -71.2F, 13F, 11F, 1F)
+				.texOffs(256, 172).addBox(10.72F, -46.4F, -51.2F, 3F, 8F, 19F)
+				.texOffs(960, 200).addBox(8.64F, -55.7632F, -28.8F, 18F, 8F, 5F)
+				.texOffs(822, 172).addBox(13.8368F, -60.96F, -28.776F, 8F, 18F, 5F)
+				.texOffs(284, 200).addBox(10.432F, -59.168F, -28.752F, 14F, 14F, 5F)
+				.texOffs(400, 55).addBox(7.68F, -56.1664F, -62.4F, 20F, 8F, 34F)
+				.texOffs(76, 0).addBox(13.4336F, -61.92F, -62.376F, 8F, 20F, 34F)
+				.texOffs(434, 0).addBox(9.664F, -59.936F, -62.352F, 16F, 16F, 34F)
+				.texOffs(652, 200).addBox(8.64F, -55.7632F, -70.4F, 18F, 8F, 8F)
+				.texOffs(382, 172).addBox(13.8368F, -60.96F, -70.376F, 8F, 18F, 8F)
+				.texOffs(912, 172).addBox(10.432F, -59.168F, -70.352F, 14F, 14F, 8F)
+				.texOffs(916, 200).addBox(10.4F, -58.4F, -24F, 14F, 13F, 1F)
+				.texOffs(0, 221).addBox(11.2F, -57.6F, -71.2F, 13F, 11F, 1F)
+				.texOffs(528, 139).addBox(4.8F, -38.6453F, -124.8F, 15F, 2F, 28F)
+				.texOffs(496, 221).addBox(4.8F, -38.2272F, -97.0667F, 15F, 1F, 1F)
+				.texOffs(0, 172).addBox(20.2667F, -38.496F, -124.8F, 15F, 2F, 26F)
+				.texOffs(496, 221).addBox(20.2667F, -38.1376F, -99.2F, 15F, 1F, 1F)
+				.texOffs(638, 172).addBox(35.7333F, -38.3467F, -124.8F, 15F, 1F, 23F)
+				.texOffs(496, 221).addBox(35.7333F, -38.048F, -101.3333F, 15F, 1F, 1F)
+				.texOffs(528, 139).addBox(-20.2667F, -38.6453F, -124.8F, 15F, 2F, 28F)
+				.texOffs(496, 221).addBox(-20.2667F, -38.2272F, -97.0667F, 15F, 1F, 1F)
+				.texOffs(0, 172).addBox(-35.7333F, -38.496F, -124.8F, 15F, 2F, 26F)
+				.texOffs(496, 221).addBox(-35.7333F, -38.1376F, -99.2F, 15F, 1F, 1F)
+				.texOffs(638, 172).addBox(-51.2F, -38.3467F, -124.8F, 15F, 1F, 23F)
+				.texOffs(496, 221).addBox(-51.2F, -38.048F, -101.3333F, 15F, 1F, 1F)
+				.texOffs(368, 101).addBox(-52.32F, -34.24F, -124.8F, 2F, 9F, 28F)
+				.texOffs(842, 101).addBox(-52.32F, -42.88F, -124.8F, 2F, 9F, 26F)
+				.texOffs(64, 139).addBox(-52.32F, -51.52F, -124.8F, 2F, 9F, 24F)
+				.texOffs(480, 139).addBox(-52.32F, -60.16F, -124.8F, 2F, 9F, 22F)
+				.texOffs(932, 139).addBox(-52.32F, -68.8F, -124.8F, 2F, 9F, 20F)
+				.texOffs(368, 101).addBox(50.08F, -34.24F, -124.8F, 2F, 9F, 28F)
+				.texOffs(842, 101).addBox(50.08F, -42.88F, -124.8F, 2F, 9F, 26F)
+				.texOffs(64, 139).addBox(50.08F, -51.52F, -124.8F, 2F, 9F, 24F)
+				.texOffs(480, 139).addBox(50.08F, -60.16F, -124.8F, 2F, 9F, 22F)
+				.texOffs(932, 139).addBox(50.08F, -68.8F, -124.8F, 2F, 9F, 20F)
+				.texOffs(956, 172).addBox(-23.04F, -25.6F, 9.6F, 1F, 3F, 19F)
+				.texOffs(484, 101).addBox(-25.92F, -22.24F, 3.2F, 7F, 7F, 29F)
+				.texOffs(956, 172).addBox(-55.04F, -25.6F, 9.6F, 1F, 3F, 19F)
+				.texOffs(508, 55).addBox(-57.92F, -21.92F, 0F, 7F, 7F, 34F)
+				.texOffs(286, 221).addBox(-57.392F, -21.392F, 33.6F, 6F, 6F, 1F)
+				.texOffs(956, 172).addBox(-74.24F, -25.6F, 9.6F, 1F, 3F, 19F)
+				.texOffs(484, 101).addBox(-77.12F, -22.24F, 3.2F, 7F, 7F, 29F)
+				.texOffs(956, 172).addBox(-93.44F, -25.6F, 9.6F, 1F, 3F, 19F)
+				.texOffs(556, 101).addBox(-95.2F, -21.6F, 0F, 5F, 5F, 31F)
+				.texOffs(300, 221).addBox(-94.48F, -20.88F, 31.488F, 3F, 3F, 4F)
+				.texOffs(380, 221).addBox(-93.64F, -20.04F, 35.712F, 2F, 2F, 3F)
+				.texOffs(176, 221).addBox(-99.52F, -19.44F, 0F, 13F, 1F, 7F)
+				.texOffs(208, 200).addBox(-93.04F, -25.92F, 0F, 1F, 13F, 7F)
+				.texOffs(956, 172).addBox(-112.64F, -25.6F, 9.6F, 1F, 3F, 19F)
+				.texOffs(508, 55).addBox(-115.52F, -21.92F, 0F, 7F, 7F, 34F)
+				.texOffs(286, 221).addBox(-114.992F, -21.392F, 33.6F, 6F, 6F, 1F)
+				.texOffs(956, 172).addBox(21.76F, -25.6F, 9.6F, 1F, 3F, 19F)
+				.texOffs(484, 101).addBox(18.88F, -22.24F, 3.2F, 7F, 7F, 29F)
+				.texOffs(956, 172).addBox(53.76F, -25.6F, 9.6F, 1F, 3F, 19F)
+				.texOffs(508, 55).addBox(50.88F, -21.92F, 0F, 7F, 7F, 34F)
+				.texOffs(286, 221).addBox(51.408F, -21.392F, 33.6F, 6F, 6F, 1F)
+				.texOffs(956, 172).addBox(72.96F, -25.6F, 9.6F, 1F, 3F, 19F)
+				.texOffs(484, 101).addBox(70.08F, -22.24F, 3.2F, 7F, 7F, 29F)
+				.texOffs(956, 172).addBox(92.16F, -25.6F, 9.6F, 1F, 3F, 19F)
+				.texOffs(556, 101).addBox(90.4F, -21.6F, 0F, 5F, 5F, 31F)
+				.texOffs(300, 221).addBox(91.12F, -20.88F, 31.488F, 3F, 3F, 4F)
+				.texOffs(380, 221).addBox(91.96F, -20.04F, 35.712F, 2F, 2F, 3F)
+				.texOffs(176, 221).addBox(86.08F, -19.44F, 0F, 13F, 1F, 7F)
+				.texOffs(208, 200).addBox(92.56F, -25.92F, 0F, 1F, 13F, 7F)
+				.texOffs(956, 172).addBox(111.36F, -25.6F, 9.6F, 1F, 3F, 19F)
+				.texOffs(508, 55).addBox(108.48F, -21.92F, 0F, 7F, 7F, 34F)
+				.texOffs(286, 221).addBox(109.008F, -21.392F, 33.6F, 6F, 6F, 1F)
+				.texOffs(754, 200).addBox(-5.6F, -19.68F, 95.2F, 2F, 14F, 2F)
+				.texOffs(134, 221).addBox(-6.08F, -19.68F, 94.72F, 3F, 6F, 3F)
+				.texOffs(1006, 200).addBox(-39.2F, -17.92F, 13.6F, 2F, 11F, 2F)
+				.texOffs(274, 221).addBox(-39.68F, -17.92F, 13.12F, 3F, 5F, 3F)
+				.texOffs(1006, 200).addBox(37.6F, -17.92F, 13.6F, 2F, 11F, 2F)
+				.texOffs(274, 221).addBox(37.12F, -17.92F, 13.12F, 3F, 5F, 3F)
+				.texOffs(474, 221).addBox(-5.12F, -23.04F, 121.6F, 4F, 2F, 1F)
+				.texOffs(474, 221).addBox(1.28F, -23.04F, 121.6F, 4F, 2F, 1F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p1 = p0.addOrReplaceChild("windscreen_540", CubeListBuilder.create()
+				.texOffs(512, 200).addBox(-6.359F, -17.0413F, -0.8F, 1F, 17F, 1F)
+				.texOffs(512, 200).addBox(6.0058F, -17.0413F, -0.8F, 1F, 17F, 1F)
+				.texOffs(528, 221).addBox(-6.359F, -17.0413F, -0.8F, 13F, 1F, 1F)
+				, PartPose.offsetAndRotation(0F, -39.2F, 96F, 0.5984F, 0F, 0F));
+		PartDefinition p2 = root.addOrReplaceChild("gear_nose", CubeListBuilder.create()
+				.texOffs(826, 200).addBox(-1.76F, -2.2176F, -5.28F, 4F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(856, 200).addBox(-1.76F, -5.28F, -2.2176F, 4F, 11F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(996, 172).addBox(1.76F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(996, 172).addBox(-2.4F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-4.8F, -5.28F, 96F, 0F, 0F, 0F));
+		PartDefinition p3 = p2.addOrReplaceChild("gear_nose_d1", CubeListBuilder.create()
+				.texOffs(826, 200).addBox(-1.76F, -2.2176F, -5.28F, 4F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p4 = p2.addOrReplaceChild("gear_nose_d2", CubeListBuilder.create()
+				.texOffs(826, 200).addBox(-1.76F, -2.2176F, -5.28F, 4F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p5 = root.addOrReplaceChild("gear_l", CubeListBuilder.create()
+				.texOffs(322, 200).addBox(-1.76F, -2.8224F, -6.72F, 4F, 6F, 13F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(356, 200).addBox(-1.76F, -6.72F, -2.8224F, 4F, 13F, 6F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(414, 172).addBox(1.76F, -6.72F, -6.72F, 1F, 13F, 13F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(414, 172).addBox(-2.4F, -6.72F, -6.72F, 1F, 13F, 13F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-38.4F, -6.72F, 14.4F, 0F, 0F, 0F));
+		PartDefinition p6 = p5.addOrReplaceChild("gear_l_d1", CubeListBuilder.create()
+				.texOffs(322, 200).addBox(-1.76F, -2.8224F, -6.72F, 4F, 6F, 13F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p7 = p5.addOrReplaceChild("gear_l_d2", CubeListBuilder.create()
+				.texOffs(322, 200).addBox(-1.76F, -2.8224F, -6.72F, 4F, 6F, 13F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p8 = root.addOrReplaceChild("gear_r", CubeListBuilder.create()
+				.texOffs(322, 200).addBox(-1.76F, -2.8224F, -6.72F, 4F, 6F, 13F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(356, 200).addBox(-1.76F, -6.72F, -2.8224F, 4F, 13F, 6F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(414, 172).addBox(1.76F, -6.72F, -6.72F, 1F, 13F, 13F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(414, 172).addBox(-2.4F, -6.72F, -6.72F, 1F, 13F, 13F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(38.4F, -6.72F, 14.4F, 0F, 0F, 0F));
+		PartDefinition p9 = p8.addOrReplaceChild("gear_r_d1", CubeListBuilder.create()
+				.texOffs(322, 200).addBox(-1.76F, -2.8224F, -6.72F, 4F, 6F, 13F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p10 = p8.addOrReplaceChild("gear_r_d2", CubeListBuilder.create()
+				.texOffs(322, 200).addBox(-1.76F, -2.8224F, -6.72F, 4F, 6F, 13F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 240);
+	}
+
+	public static Map<String, String> a10Paths() {
+		return Map.ofEntries(
+				Map.entry("body", "body"),
+				Map.entry("windscreen_540", "body/windscreen_540"),
+				Map.entry("gear_nose", "gear_nose"),
+				Map.entry("gear_nose_d1", "gear_nose/gear_nose_d1"),
+				Map.entry("gear_nose_d2", "gear_nose/gear_nose_d2"),
+				Map.entry("gear_l", "gear_l"),
+				Map.entry("gear_l_d1", "gear_l/gear_l_d1"),
+				Map.entry("gear_l_d2", "gear_l/gear_l_d2"),
+				Map.entry("gear_r", "gear_r"),
+				Map.entry("gear_r_d1", "gear_r/gear_r_d1"),
+				Map.entry("gear_r_d2", "gear_r/gear_r_d2")
+		);
+	}
+
+	public static LayerDefinition a10_glass() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(148, 139).addBox(-7.52F, -47.12F, 62.4F, 1F, 8F, 24F, EnumSet.of(Direction.WEST))
+				.texOffs(748, 139).addBox(-6.048F, -53.28F, 62.4F, 1F, 6F, 24F, EnumSet.of(Direction.WEST))
+				.texOffs(588, 172).addBox(-7.36F, -47.28F, 62.4F, 1F, 1F, 24F, EnumSet.of(Direction.DOWN))
+				.texOffs(118, 221).addBox(-7.52F, -47.12F, 86.4F, 1F, 8F, 3F, EnumSet.of(Direction.WEST))
+				.texOffs(156, 221).addBox(-7.52F, -44.96F, 89.6F, 1F, 6F, 3F, EnumSet.of(Direction.WEST))
+				.texOffs(424, 221).addBox(-7.52F, -40.16F, 92.8F, 1F, 1F, 3F, EnumSet.of(Direction.WEST))
+				.texOffs(198, 139).addBox(7.2F, -47.12F, 62.4F, 1F, 8F, 24F, EnumSet.of(Direction.EAST))
+				.texOffs(798, 139).addBox(5.728F, -53.28F, 62.4F, 1F, 6F, 24F, EnumSet.of(Direction.EAST))
+				.texOffs(588, 172).addBox(5.888F, -47.28F, 62.4F, 1F, 1F, 24F, EnumSet.of(Direction.DOWN))
+				.texOffs(126, 221).addBox(7.2F, -47.12F, 86.4F, 1F, 8F, 3F, EnumSet.of(Direction.EAST))
+				.texOffs(164, 221).addBox(7.2F, -44.96F, 89.6F, 1F, 6F, 3F, EnumSet.of(Direction.EAST))
+				.texOffs(432, 221).addBox(7.2F, -40.16F, 92.8F, 1F, 1F, 3F, EnumSet.of(Direction.EAST))
+				.texOffs(516, 172).addBox(-5.888F, -53.6F, 62.4F, 12F, 1F, 24F, EnumSet.of(Direction.DOWN))
+				.texOffs(794, 200).addBox(-7.36F, -53.6F, 62.08F, 15F, 14F, 1F, EnumSet.of(Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p1 = p0.addOrReplaceChild("windscreen_540", CubeListBuilder.create()
+				.texOffs(486, 200).addBox(-6.1824F, -17.0413F, -0.32F, 12F, 17F, 1F, EnumSet.of(Direction.SOUTH))
+				, PartPose.offsetAndRotation(0F, -39.2F, 96F, 0.5984F, 0F, 0F));
+		PartDefinition p2 = root.addOrReplaceChild("gear_nose", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(-4.8F, -5.28F, 96F, 0F, 0F, 0F));
+		PartDefinition p3 = p2.addOrReplaceChild("gear_nose_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p4 = p2.addOrReplaceChild("gear_nose_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p5 = root.addOrReplaceChild("gear_l", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(-38.4F, -6.72F, 14.4F, 0F, 0F, 0F));
+		PartDefinition p6 = p5.addOrReplaceChild("gear_l_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p7 = p5.addOrReplaceChild("gear_l_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p8 = root.addOrReplaceChild("gear_r", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(38.4F, -6.72F, 14.4F, 0F, 0F, 0F));
+		PartDefinition p9 = p8.addOrReplaceChild("gear_r_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p10 = p8.addOrReplaceChild("gear_r_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 240);
+	}
+
 	public static LayerDefinition p18_int() {
 		MeshDefinition mesh = new MeshDefinition();
 		PartDefinition root = mesh.getRoot();
@@ -18916,6 +19623,112 @@ public final class GenModels {
 				Map.entry("steering_column", "body/steering_column"),
 				Map.entry("steering_wheel", "body/steering_column/steering_wheel"),
 				Map.entry("steering_wheel_d", "body/steering_column/steering_wheel/steering_wheel_d")
+		);
+	}
+
+	public static LayerDefinition ah64_int() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(168, 80).addBox(-14.72F, -83.84F, 125.28F, 29F, 28F, 1F, EnumSet.of(Direction.NORTH))
+				.texOffs(228, 80).addBox(-14.72F, -83.84F, 76.8F, 29F, 28F, 1F, EnumSet.of(Direction.SOUTH))
+				.texOffs(208, 0).addBox(-14.72F, -83.84F, 76.8F, 1F, 28F, 50F, EnumSet.of(Direction.EAST))
+				.texOffs(310, 0).addBox(13.6F, -83.84F, 76.8F, 1F, 28F, 50F, EnumSet.of(Direction.WEST))
+				.texOffs(782, 0).addBox(-14.72F, -57.12F, 76.8F, 29F, 1F, 50F, EnumSet.of(Direction.DOWN))
+				.texOffs(676, 0).addBox(-14.72F, -83.84F, 76.8F, 3F, 2F, 50F)
+				.texOffs(676, 0).addBox(12.16F, -83.84F, 76.8F, 3F, 2F, 50F)
+				.texOffs(288, 80).addBox(-13.12F, -92.48F, 118.4F, 26F, 25F, 4F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.WEST, Direction.EAST))
+				.texOffs(584, 80).addBox(-13.12F, -94.08F, 115.84F, 26F, 2F, 6F, EnumSet.of(Direction.DOWN, Direction.NORTH, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(430, 80).addBox(-8F, -69.12F, 91.84F, 16F, 4F, 16F)
+				.texOffs(494, 80).addBox(-6.72F, -65.28F, 94.4F, 13F, 8F, 10F)
+				.texOffs(348, 80).addBox(-8F, -92.16F, 87.36F, 16F, 24F, 4F)
+				.texOffs(540, 80).addBox(-4.8F, -98.56F, 88F, 10F, 6F, 3F)
+				.texOffs(978, 0).addBox(-9.6F, -95.36F, 84.8F, 19F, 31F, 3F)
+				.texOffs(940, 0).addBox(-9.6F, -86.4F, 87.36F, 2F, 19F, 17F)
+				.texOffs(940, 0).addBox(7.68F, -86.4F, 87.36F, 2F, 19F, 17F)
+				.texOffs(566, 80).addBox(-8.64F, -90.24F, 117.76F, 8F, 8F, 1F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(566, 80).addBox(0.96F, -90.24F, 117.76F, 8F, 8F, 1F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(422, 80).addBox(-0.8F, -79.36F, 112.8F, 2F, 19F, 2F)
+				.texOffs(722, 80).addBox(-1.28F, -83.2F, 112F, 3F, 4F, 3F)
+				.texOffs(388, 80).addBox(-11.84F, -73.6F, 96.96F, 2F, 9F, 15F)
+				.texOffs(708, 80).addBox(-12.48F, -75.84F, 109.76F, 3F, 3F, 4F)
+				.texOffs(734, 80).addBox(-6.08F, -63.04F, 113.28F, 3F, 5F, 2F)
+				.texOffs(734, 80).addBox(2.88F, -63.04F, 113.28F, 3F, 5F, 2F)
+				.texOffs(0, 80).addBox(-13.44F, -65.6F, 176.48F, 27F, 29F, 1F, EnumSet.of(Direction.NORTH))
+				.texOffs(56, 80).addBox(-13.44F, -65.6F, 126.4F, 27F, 29F, 1F, EnumSet.of(Direction.SOUTH))
+				.texOffs(0, 0).addBox(-13.44F, -65.6F, 126.4F, 1F, 29F, 51F, EnumSet.of(Direction.EAST))
+				.texOffs(104, 0).addBox(12.32F, -65.6F, 126.4F, 1F, 29F, 51F, EnumSet.of(Direction.WEST))
+				.texOffs(520, 0).addBox(-13.44F, -37.92F, 126.4F, 27F, 1F, 51F, EnumSet.of(Direction.DOWN))
+				.texOffs(412, 0).addBox(-13.44F, -65.6F, 126.4F, 3F, 2F, 51F)
+				.texOffs(412, 0).addBox(10.88F, -65.6F, 126.4F, 3F, 2F, 51F)
+				.texOffs(112, 80).addBox(-11.84F, -73.92F, 168F, 24F, 26F, 4F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.WEST, Direction.EAST))
+				.texOffs(648, 80).addBox(-11.84F, -75.52F, 165.44F, 24F, 2F, 6F, EnumSet.of(Direction.DOWN, Direction.NORTH, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(430, 80).addBox(-8F, -50.56F, 143.04F, 16F, 4F, 16F)
+				.texOffs(494, 80).addBox(-6.72F, -46.72F, 145.6F, 13F, 8F, 10F)
+				.texOffs(348, 80).addBox(-8F, -73.6F, 138.56F, 16F, 24F, 4F)
+				.texOffs(540, 80).addBox(-4.8F, -80F, 139.2F, 10F, 6F, 3F)
+				.texOffs(978, 0).addBox(-9.6F, -76.8F, 136F, 19F, 31F, 3F)
+				.texOffs(940, 0).addBox(-9.6F, -67.84F, 138.56F, 2F, 19F, 17F)
+				.texOffs(940, 0).addBox(7.68F, -67.84F, 138.56F, 2F, 19F, 17F)
+				.texOffs(566, 80).addBox(-8.64F, -71.68F, 167.36F, 8F, 8F, 1F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(566, 80).addBox(0.96F, -71.68F, 167.36F, 8F, 8F, 1F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(422, 80).addBox(-0.8F, -60.8F, 164F, 2F, 19F, 2F)
+				.texOffs(722, 80).addBox(-1.28F, -64.64F, 163.2F, 3F, 4F, 3F)
+				.texOffs(388, 80).addBox(-11.84F, -55.04F, 148.16F, 2F, 9F, 15F)
+				.texOffs(708, 80).addBox(-12.48F, -57.28F, 160.96F, 3F, 3F, 4F)
+				.texOffs(734, 80).addBox(-6.08F, -43.84F, 162.88F, 3F, 5F, 2F)
+				.texOffs(734, 80).addBox(2.88F, -43.84F, 162.88F, 3F, 5F, 2F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 112);
+	}
+
+	public static Map<String, String> ah64_intPaths() {
+		return Map.ofEntries(
+				Map.entry("body", "body")
+		);
+	}
+
+	public static LayerDefinition a10_int() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(900, 0).addBox(-16F, -78.4F, 190.88F, 32F, 27F, 1F, EnumSet.of(Direction.NORTH))
+				.texOffs(0, 94).addBox(-16F, -78.4F, 124.8F, 32F, 27F, 1F, EnumSet.of(Direction.SOUTH))
+				.texOffs(0, 0).addBox(-16F, -78.4F, 124.8F, 1F, 27F, 67F, EnumSet.of(Direction.EAST))
+				.texOffs(136, 0).addBox(14.88F, -78.4F, 124.8F, 1F, 27F, 67F, EnumSet.of(Direction.WEST))
+				.texOffs(412, 0).addBox(-16F, -52.32F, 124.8F, 32F, 1F, 67F, EnumSet.of(Direction.DOWN))
+				.texOffs(272, 0).addBox(-16F, -78.4F, 124.8F, 3F, 2F, 67F)
+				.texOffs(272, 0).addBox(13.44F, -78.4F, 124.8F, 3F, 2F, 67F)
+				.texOffs(610, 0).addBox(-14.88F, -91.2F, 172.16F, 30F, 30F, 19F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.WEST, Direction.EAST))
+				.texOffs(166, 94).addBox(-14.08F, -94.08F, 169.92F, 28F, 3F, 12F, EnumSet.of(Direction.DOWN, Direction.NORTH, Direction.WEST, Direction.EAST))
+				.texOffs(370, 94).addBox(-3.52F, -95.04F, 176F, 7F, 1F, 3F)
+				.texOffs(356, 94).addBox(-3.2F, -100.48F, 176.96F, 1F, 5F, 1F)
+				.texOffs(356, 94).addBox(2.72F, -100.48F, 176.96F, 1F, 5F, 1F)
+				.texOffs(416, 94).addBox(-3.2F, -100.48F, 176.96F, 6F, 1F, 1F)
+				.texOffs(430, 94).addBox(-2.72F, -95.36F, 177.12F, 5F, 1F, 1F)
+				.texOffs(322, 94).addBox(-9.92F, -88.64F, 171.52F, 7F, 7F, 1F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(322, 94).addBox(2.88F, -88.64F, 171.52F, 7F, 7F, 1F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(360, 94).addBox(-2.24F, -88F, 171.36F, 4F, 4F, 1F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(402, 94).addBox(-2.88F, -91.2F, 171.2F, 6F, 2F, 1F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(66, 94).addBox(-7.68F, -67.2F, 134.4F, 15F, 4F, 16F)
+				.texOffs(778, 0).addBox(-8.32F, -95.04F, 128.96F, 17F, 30F, 4F)
+				.texOffs(128, 94).addBox(-6.4F, -104.64F, 128F, 13F, 10F, 6F)
+				.texOffs(390, 94).addBox(-1.92F, -65.92F, 150.4F, 4F, 2F, 2F)
+				.texOffs(820, 0).addBox(-9.6F, -63.04F, 128F, 19F, 11F, 21F)
+				.texOffs(708, 0).addBox(-13.76F, -72F, 129.6F, 5F, 14F, 30F)
+				.texOffs(708, 0).addBox(8.64F, -72F, 129.6F, 5F, 14F, 30F)
+				.texOffs(308, 94).addBox(-12.8F, -77.44F, 143.04F, 3F, 5F, 4F)
+				.texOffs(338, 94).addBox(10.56F, -78.4F, 150.72F, 2F, 6F, 2F)
+				.texOffs(346, 94).addBox(-5.44F, -58.88F, 166.4F, 3F, 5F, 2F)
+				.texOffs(346, 94).addBox(2.24F, -58.88F, 166.4F, 3F, 5F, 2F)
+				.texOffs(246, 94).addBox(-14.88F, -60.8F, 171.52F, 30F, 8F, 1F, EnumSet.of(Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 128);
+	}
+
+	public static Map<String, String> a10_intPaths() {
+		return Map.ofEntries(
+				Map.entry("body", "body")
 		);
 	}
 }

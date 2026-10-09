@@ -1134,5 +1134,15 @@
   "item.airdefense.vehicle.hint_recovery": "Stand still: its crew mend your vehicles within 14 blocks",
   "message.airdefense.repair.full": "Nothing to mend here",
   "message.airdefense.repair.done": "Mended: %s%% strength",
-  "guide.airdefense.page.34": "REPAIRS\n\nA damaged vehicle mends:\n- with a repair kit (right-click the vehicle; 4 iron + redstone) - a quarter of its strength;\n- next to a recovery vehicle (BREM-1, M88) standing still - 3% a second;\n- by a town's hangar - 1% a second.\nTOS-1A: 24 thermobaric rockets at short range."
+  "guide.airdefense.page.34": "REPAIRS\n\nA damaged vehicle mends:\n- with a repair kit (right-click the vehicle; 4 iron + redstone) - a quarter of its strength;\n- next to a recovery vehicle (BREM-1, M88) standing still - 3% a second;\n- by a town's hangar - 1% a second.\nTOS-1A: 24 thermobaric rockets at short range.",
+  "entity.airdefense.ah64": "AH-64D Apache",
+  "item.airdefense.ah64": "AH-64D Apache helicopter",
+  "entity.airdefense.a10": "A-10C Thunderbolt II",
+  "item.airdefense.a10": "A-10C Thunderbolt II attack jet",
+  "map.airdefense.short.ah64": "AH-64",
+  "map.airdefense.short.a10": "A-10",
+  "radar.airdefense.contact.heli_track": "HELICOPTER",
+  "radar.airdefense.contact.jet_track": "AIRCRAFT",
+  "nation.airdefense.war.air": "%s sends %s against %s - air raid!",
+  "guide.airdefense.page.35": "ENEMY AIRCRAFT\n\nIn a war the enemy sends attack helicopters (Mi-24, Ka-52, AH-64) and jets (Su-25, A-10) at your towns: they fire rockets and the gun, drop bombs, then fly home.\nYour air defence sees them on the radar and shoots them down - a hit aircraft falls burning. Keep a Pantsir or a Gepard by your towns!"
 }

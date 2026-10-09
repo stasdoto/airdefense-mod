@@ -96,6 +96,8 @@ public final class ModItems {
 	public static final Item BREM1 = vehicle("brem1", VehicleType.BREM1);
 	public static final Item M88 = vehicle("m88", VehicleType.M88);
 	public static final Item TOS1 = vehicle("tos1", VehicleType.TOS1);
+	public static final Item AH64 = vehicle("ah64", VehicleType.AH64);
+	public static final Item A10 = vehicle("a10", VehicleType.A10);
 	public static final Item AVENGER = vehicle("avenger", VehicleType.AVENGER);
 	public static final Item MFG = vehicle("mfg", VehicleType.MFG);
 	public static final Item ZU23 = vehicle("zu23", VehicleType.ZU23);
@@ -276,6 +278,8 @@ public final class ModItems {
 				output.accept(BREM1);
 				output.accept(M88);
 				output.accept(TOS1);
+				output.accept(AH64);
+				output.accept(A10);
 				output.accept(AVENGER);
 				output.accept(MFG);
 				output.accept(ZU23);

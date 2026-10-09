@@ -1005,6 +1005,10 @@ public class VehicleEntity extends LivingEntity {
 
 	@Override
 	public void travel(Vec3 ignored) {
+		if (vtype.isAir() && onSortie() && getControllingPassenger() == null && level() instanceof ServerLevel server) {
+			aiFly(server);
+			return;
+		}
 		Input in = level().isClientSide() ? clientInput : route != null && getControllingPassenger() == null ? autopilot() : Input.EMPTY;
 		if (vtype.isAir()) {
 			travelAir(in);
@@ -1451,6 +1455,10 @@ public class VehicleEntity extends LivingEntity {
 		if (vtype.repairs() && (tickCount + getId()) % 20 == 0) {
 			mendAround(level);
 		}
+		if (vtype.isAir() && (tickCount + getId()) % 10 == 0 && (airTrack == null || airTrack.isRemoved()) && airborne()) {
+			// 1.32: in the air it shows on radars and draws air defence fire.
+			airTrack = MissileEntity.track(level, this);
+		}
 		if (vtype.isLauncher()) {
 			tickLauncher(level);
 		} else if (vtype.isRadar()) {
@@ -1769,6 +1777,9 @@ public class VehicleEntity extends LivingEntity {
 		if (vtype.air == VehicleType.HELI && p != null) {
 			return p.getLookAngle();
 		}
+		if (p == null && aiAim != null) {
+			return aiAim;
+		}
 		return Vec3.directionFromRotation(getXRot(), getYRot());
 	}
 
@@ -1777,7 +1788,10 @@ public class VehicleEntity extends LivingEntity {
 	}
 
 	private void tickAir(ServerLevel level) {
-		setState(getDriver() != null ? DEPLOYED : STOWED);
+		setState(getDriver() != null || onSortie() ? DEPLOYED : STOWED);
+		if (onSortie()) {
+			sortieWeapons(level);
+		}
 		if (gunCooldown > 0) {
 			gunCooldown--;
 		}
@@ -2398,6 +2412,17 @@ public class VehicleEntity extends LivingEntity {
 				|| country == -1 && playersCountry(sl, m.country()))) {
 			return false;
 		}
+		// 1.32: an aircraft only when it is the enemy's: the player's air defence fires at the countries' aircraft, a
+		// country's at those of its enemies at war (the player's own included while they fight).
+		if (m.getMissileType().track() && level() instanceof ServerLevel sl2) {
+			VehicleEntity a = m.carrier();
+			if (a == null || a == this) {
+				return false;
+			}
+			if (country < 0 ? a.country < 0 || playersCountry(sl2, a.country) : !com.stasdoto.airdefense.nation.War.hostile(sl2, country, a)) {
+				return false;
+			}
+		}
 		// A battery linked to a radar station that sees the target gets its track early: it can shoot further out,
 		// and the station's better look helps tell decoys apart.
 		RadarNetwork.Station station = radarLinked && level() instanceof ServerLevel server ? RadarNetwork.coverage(server, m.position()) : null;
@@ -2454,6 +2479,10 @@ public class VehicleEntity extends LivingEntity {
 	 * or near the battery itself is worth an interceptor.
 	 */
 	private boolean threatensSomething(ServerLevel level, MissileEntity m) {
+		if (m.getMissileType().track()) {
+			// An enemy aircraft is a threat wherever it flies.
+			return true;
+		}
 		Vec3 at = m.getTarget();
 		BlockPos p = BlockPos.containing(at);
 		com.stasdoto.airdefense.nation.Politics pol = com.stasdoto.airdefense.nation.Politics.get(level.getServer());
@@ -2978,7 +3007,7 @@ public class VehicleEntity extends LivingEntity {
 		}
 		if (vtype.air == VehicleType.HELI) {
 			// The rotor: spins up with a pilot aboard.
-			engine = Mth.approach(engine, getControllingPassenger() != null ? 1 : 0, 0.008f);
+			engine = Mth.approach(engine, getControllingPassenger() != null || getState() == DEPLOYED ? 1 : 0, 0.008f);
 			radarSpin += 0.9f * engine;
 		} else if (getState() == DEPLOYED && vtype.geometry.spinner() != null) {
 			radarSpin += vtype.isRadar() ? vtype.radar.spin : 0.25f;
@@ -3132,6 +3161,19 @@ public class VehicleEntity extends LivingEntity {
 			if (cargoDelivery != 0) {
 				com.stasdoto.airdefense.nation.Arsenals.lorryLost(server, this);
 			}
+			if (airborne()) {
+				// 1.32: shot down - the crew bail out under parachutes; it falls burning and blows up where it hits.
+				for (Entity e : getPassengers()) {
+					if (e instanceof LivingEntity le) {
+						le.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SLOW_FALLING, 600, 0));
+					}
+				}
+				ejectPassengers();
+				crashing = true;
+				aircraftDown++;
+				com.stasdoto.airdefense.AirDefense.LOGGER.info("[airdefense] {} shot down at {}", vtype.id, blockPosition().toShortString());
+				return;
+			}
 			ejectPassengers();
 			// The fuel and every missile still on board go up.
 			float power = 3.5f + (vtype.isArtillery() ? Math.min(12, getAmmo()) * 0.35f
@@ -3141,8 +3183,274 @@ public class VehicleEntity extends LivingEntity {
 		}
 	}
 
+	// ------------------------------------------------------------------------------------------------
+	// 1.32: the enemy's pilots - an attack helicopter or a jet flown by a country at war against a town
+
+	/** The town to attack (its centre), where the aircraft came from, how far the sortie has got. */
+	@Nullable
+	private BlockPos sortieTarget;
+	private Vec3 sortieHome = Vec3.ZERO;
+	/** 0 = on the way in, 1 = attacking, 2 = on the way home. */
+	private int sortiePhase;
+	private int sortieTimer;
+	private int sortieRuns;
+	private boolean sortiePassed;
+	@Nullable
+	private Vec3 aiAim;
+	private int aiGunTimer;
+	private int aiRocketTimer;
+	/** For the tests: sorties flown, rocket salvos, bombs, gun bursts of the enemy's pilots. */
+	public static int sortiesFlown;
+	public static int aiRocketSalvos;
+	public static int aiBombs;
+	public static int aiGunBursts;
+
+	/** Sends this aircraft (just put in the air, nobody aboard) to attack the town at {@code target}, home after. */
+	public void startSortie(BlockPos target, Vec3 home) {
+		sortieTarget = target;
+		sortieHome = home;
+		sortiePhase = 0;
+		sortieTimer = 0;
+		sortieRuns = 0;
+		engine = 1;
+		throttle = 1;
+		setUnlimited(true);
+		sortiesFlown++;
+	}
+
+	public boolean onSortie() {
+		return sortieTarget != null;
+	}
+
+	/** 0 in, 1 attacking, 2 going home (for the tests and the map). */
+	public int sortiePhase() {
+		return sortiePhase;
+	}
+
+	@Override
+	public boolean shouldBeSaved() {
+		// An enemy sortie does not outlive the game it was flown in.
+		return !onSortie() && super.shouldBeSaved();
+	}
+
+	private static double flat(Vec3 a, Vec3 b) {
+		return Math.sqrt(Mth.square(a.x - b.x) + Mth.square(a.z - b.z));
+	}
+
+	/**
+	 * The enemy pilot flies by itself, no physics: on the way in high over the ground (a helicopter at 32 blocks, a jet
+	 * at 80), then a helicopter hangs off the town at 70-90 blocks, slowly circling, nose to it, and fires; a jet makes
+	 * bombing runs over it; then home. It keeps clear of the ground and the roofs by the heightmap.
+	 */
+	private void aiFly(ServerLevel level) {
+		Vec3 pos = position();
+		boolean jet = vtype.air == VehicleType.PLANE;
+		Vec3 tgt = Vec3.atCenterOf(sortieTarget);
+		double toTarget = flat(pos, tgt);
+		sortieTimer++;
+		Vec3 goal;
+		double cruise = jet ? 80 : 32;
+		double want = vtype.maxSpeed * (jet ? 0.85 : 0.75);
+		boolean faceTarget = false;
+		switch (sortiePhase) {
+			case 0 -> {
+				goal = tgt;
+				if (toTarget < (jet ? 300 : 120)) {
+					sortiePhase = 1;
+					sortieTimer = 0;
+				}
+			}
+			case 1 -> {
+				if (jet) {
+					goal = tgt;
+					cruise = 55;
+					// A run is over once it has passed the town well: it turns round for the next.
+					boolean past = toTarget > 220 && forward().dot(tgt.subtract(pos)) < 0;
+					if (past && !sortiePassed) {
+						sortieRuns++;
+					}
+					sortiePassed = past;
+					if (sortieRuns >= 3 || sortieTimer > 2400) {
+						sortiePhase = 2;
+					}
+				} else {
+					double a = Math.atan2(sortieHome.z - tgt.z, sortieHome.x - tgt.x) + Math.sin(sortieTimer * 0.004) * 0.9;
+					goal = tgt.add(Math.cos(a) * 80, 0, Math.sin(a) * 80);
+					want = vtype.maxSpeed * 0.35;
+					faceTarget = true;
+					cruise = 28;
+					if (sortieTimer > 900) {
+						sortiePhase = 2;
+					}
+				}
+			}
+			default -> {
+				goal = sortieHome;
+				boolean watched = level.getNearestPlayer(getX(), getY(), getZ(), 450, pl -> true) != null;
+				if (flat(pos, sortieHome) < 80 || !watched && toTarget > 500 || sortieTimer > 6000) {
+					discard();
+					return;
+				}
+			}
+		}
+		double dist = flat(pos, goal);
+		BlockPos column = BlockPos.containing(pos.x, 0, pos.z);
+		double ground = level.hasChunkAt(column) ? level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, column.getX(), column.getZ())
+				: pos.y - cruise;
+		// Look a little ahead for hills and towers.
+		Vec3 ahead = pos.add(getDeltaMovement().scale(20));
+		BlockPos ac = BlockPos.containing(ahead.x, 0, ahead.z);
+		if (level.hasChunkAt(ac)) {
+			ground = Math.max(ground, level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, ac.getX(), ac.getZ()));
+		}
+		double wantY = ground + cruise;
+		double dx = goal.x - pos.x;
+		double dz = goal.z - pos.z;
+		float headingYaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+		float faceYaw = faceTarget ? (float) Math.toDegrees(Math.atan2(-(tgt.x - pos.x), tgt.z - pos.z)) : headingYaw;
+		float turn = jet ? 2.4f : 3.5f;
+		float yawStep = Mth.clamp(Mth.wrapDegrees(faceYaw - getYRot()), -turn, turn);
+		setYRot(getYRot() + yawStep);
+		yBodyRot = yHeadRot = getYRot();
+		double vy = Mth.clamp((wantY - pos.y) * 0.06, -0.7, 0.7);
+		Vec3 h;
+		if (jet) {
+			Vec3 f = forward();
+			h = new Vec3(f.x, 0, f.z).normalize().scale(want);
+			setXRot((float) -Math.toDegrees(Math.atan2(vy, want)));
+			planeRoll = Mth.clamp(yawStep * 18f, -65f, 65f);
+		} else {
+			double sp = Math.min(want, dist * 0.04);
+			h = dist > 1e-3 ? new Vec3(dx / dist, 0, dz / dist).scale(sp) : Vec3.ZERO;
+			// Leaning into where it goes (forward and sideways from where the nose points).
+			double along = h.dot(forward());
+			double side = h.dot(right());
+			heliPitch = (float) Mth.clamp(along / vtype.maxSpeed * 18, -18, 18);
+			heliRoll = (float) Mth.clamp(side / vtype.maxSpeed * 16 + yawStep * 2, -20, 20);
+		}
+		Vec3 v = new Vec3(h.x, vy, h.z);
+		Vec3 old = getDeltaMovement();
+		// Smooth it a little (no instant reversals).
+		v = old.lerp(v, jet ? 0.25 : 0.12);
+		setDeltaMovement(v);
+		setPos(pos.add(v));
+		speed = (float) v.horizontalDistance();
+	}
+
+	/** What the enemy pilot shoots at: the town's people at arms, the player and his vehicles, near the town. */
+	@Nullable
+	private Entity sortieVictim(ServerLevel level) {
+		Vec3 tgt = Vec3.atCenterOf(sortieTarget);
+		AABB box = new AABB(tgt, tgt).inflate(110, 60, 110);
+		Entity best = null;
+		double bestD = Double.MAX_VALUE;
+		for (Entity e : level.getEntities(this, box, e -> e.isAlive() && !e.isSpectator()
+				&& (e instanceof VehicleEntity || e instanceof Player || e instanceof com.stasdoto.airdefense.nation.SoldierEntity)
+				&& com.stasdoto.airdefense.nation.War.hostile(level, country, e))) {
+			double d = e.distanceToSqr(this);
+			if (d < bestD) {
+				bestD = d;
+				best = e;
+			}
+		}
+		return best;
+	}
+
+	/** The enemy pilot's weapons: rockets and the gun at what it finds near the town, bombs on the town on a run. */
+	private void sortieWeapons(ServerLevel level) {
+		if (sortiePhase != 1 || sortieTarget == null) {
+			aiAim = null;
+			return;
+		}
+		boolean jet = vtype.air == VehicleType.PLANE;
+		Entity victim = sortieVictim(level);
+		Vec3 aimAt = victim != null ? victim.position().add(0, victim.getBbHeight() * 0.4, 0) : Vec3.atCenterOf(sortieTarget);
+		Vec3 from = nose();
+		Vec3 dir = aimAt.subtract(from).normalize();
+		// Only what is in front of the nose (within 25 degrees).
+		boolean inFront = dir.dot(Vec3.directionFromRotation(getXRot(), getYRot())) > (jet ? 0.93 : 0.85);
+		aiAim = dir;
+		if (vtype.ordnance == Ordnance.FAB250) {
+			// A bombing run: the bomb falls on the town if let go about here (it keeps the jet's speed as it drops).
+			Vec3 tgt = Vec3.atCenterOf(sortieTarget);
+			double h = Math.max(1, getY() - tgt.y);
+			double fall = Math.sqrt(2 * h / 0.06);
+			Vec3 drop = position().add(getDeltaMovement().multiply(1, 0, 1).scale(fall));
+			if (flat(drop, tgt) < 14 && ordnanceCooldown <= 0 && ordnanceLeft == 0) {
+				ordnanceLeft = 2;
+				ordnanceTimer = 0;
+				ordnanceCooldown = 60;
+				aiBombs += 2;
+			}
+		} else if (vtype.ordnance == Ordnance.S8 && inFront && victim != null && ordnanceCooldown <= 0 && ordnanceLeft == 0
+				&& from.distanceTo(aimAt) < 160) {
+			ordnanceLeft = vtype.ordnance.salvo;
+			ordnanceTimer = 0;
+			ordnanceCooldown = 90;
+			aiRocketSalvos++;
+		}
+		if (vtype.weapon != null && inFront && victim != null && roundsLeft == 0 && --aiGunTimer <= 0 && from.distanceTo(aimAt) < 140) {
+			roundsLeft = Math.max(3, vtype.weapon.burst * 3);
+			roundTimer = 0;
+			aiGunTimer = 30;
+			aiGunBursts++;
+		}
+	}
+
+	/** 1.32: what radars and air defence see of this aircraft while it flies. */
+	@Nullable
+	private MissileEntity airTrack;
+
+	/** 1.32: an aircraft shot down, still falling. For the tests: aircraft shot down. */
+	private boolean crashing;
+	public static int aircraftDown;
+
+	/** In the air (an aircraft not standing on the ground). */
+	public boolean airborne() {
+		if (!vtype.isAir() || onGround()) {
+			return false;
+		}
+		BlockPos below = blockPosition();
+		int ground = level().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, below.getX(), below.getZ());
+		return getY() - ground > 2.5;
+	}
+
+	/** A missile of an air defence got it: most often it is out of the sky at once. */
+	public void hitByMissile(ServerLevel level) {
+		float dmg = getMaxHealth() * (0.55f + level.getRandom().nextFloat() * 0.6f);
+		setHealth(Math.max(0, getHealth() - dmg));
+		Effects.airBurst(level, this, position().add(0, getBbHeight() * 0.5, 0), MissileType.STINGER);
+		if (getHealth() <= 0) {
+			die(level.damageSources().explosion(this, null));
+		}
+	}
+
+	/** The fall of a downed aircraft: it goes on along its way, nose down, trailing fire and smoke, until it hits. */
+	private void tickCrash(ServerLevel level) {
+		Vec3 v = getDeltaMovement();
+		v = new Vec3(v.x * 0.985, Math.max(v.y - 0.06, -2.2), v.z * 0.985);
+		setDeltaMovement(v);
+		move(MoverType.SELF, v);
+		setXRot(Mth.clamp(getXRot() + 1.5f, -80, 80));
+		if (vtype.air == VehicleType.HELI) {
+			setYRot(getYRot() + 9f);
+		}
+		if (tickCount % 2 == 0) {
+			level.sendParticles(net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE, getX(), getY() + 1, getZ(), 3, 0.6, 0.4, 0.6, 0.02);
+			level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLAME, getX(), getY() + 1, getZ(), 2, 0.5, 0.3, 0.5, 0.02);
+		}
+		if (onGround() || horizontalCollision || verticalCollision || isInWater() || deathTime > 400) {
+			crashing = false;
+			Effects.vehicleDestroyed(level, this, position().add(0, 1.2, 0), 5.0f);
+			setLoadedMask(0);
+		}
+	}
+
 	@Override
 	protected void tickDeath() {
+		if (crashing && level() instanceof ServerLevel server) {
+			tickCrash(server);
+		}
 		deathTime++;
 		if (deathTime >= 1200 && !level().isClientSide()) {
 			remove(RemovalReason.KILLED);

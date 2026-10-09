@@ -89,6 +89,12 @@ public class MissileEntity extends Entity {
 	private boolean decoysReleased;
 	/** Fixed per missile: a radar that sees through this share of decoys (or more) recognises this one as fake. */
 	private final double decoyRoll;
+	/** 1.32: an aircraft's track - the aircraft it flies with (server only). */
+	@org.jetbrains.annotations.Nullable
+	private com.stasdoto.airdefense.vehicle.VehicleEntity carrier;
+	/** For the tests: aircraft hit through their tracks (by guns, by missiles). */
+	public static final java.util.concurrent.atomic.AtomicInteger AIRCRAFT_GUN_HITS = new java.util.concurrent.atomic.AtomicInteger();
+	public static final java.util.concurrent.atomic.AtomicInteger AIRCRAFT_MISSILE_HITS = new java.util.concurrent.atomic.AtomicInteger();
 	/** 1.30: where it was fired from (what a counter-battery radar works out), and whether its whistle was heard. */
 	private Vec3 origin = Vec3.ZERO;
 	private boolean whistled;
@@ -196,6 +202,31 @@ public class MissileEntity extends Entity {
 		(type.isDecoy() ? MissileStats.DECOYS_LAUNCHED : type.artillery() ? MissileStats.ARTY_FIRED : MissileStats.STRIKES_LAUNCHED).incrementAndGet();
 		MissileStats.log("launch {} from {} to {}", type, fmt(pos), fmt(target));
 		return m;
+	}
+
+	/** 1.32: a track for this aircraft: flies with it, is what radars and air defence see of it. */
+	public static MissileEntity track(ServerLevel level, com.stasdoto.airdefense.vehicle.VehicleEntity aircraft) {
+		MissileEntity m = new MissileEntity(ModEntities.MISSILE, level);
+		MissileType type = aircraft.getVehicleType().air == com.stasdoto.airdefense.vehicle.VehicleType.PLANE ? MissileType.JET_TRACK : MissileType.HELI_TRACK;
+		m.setMissileType(type);
+		m.carrier = aircraft;
+		Vec3 at = aircraft.position().add(0, aircraft.getBbHeight() * 0.5, 0);
+		m.setPos(at);
+		m.launchPos = at;
+		m.target = at;
+		m.health = type.health;
+		m.speed = aircraft.getDeltaMovement().length();
+		m.lastVel = aircraft.getDeltaMovement();
+		m.setCountry(aircraft.country);
+		m.setMotor(false);
+		level.addFreshEntity(m);
+		return m;
+	}
+
+	/** The aircraft this track flies with (null for anything else). */
+	@org.jetbrains.annotations.Nullable
+	public com.stasdoto.airdefense.vehicle.VehicleEntity carrier() {
+		return carrier;
 	}
 
 	/** Launches an interceptor chasing {@code target}. */
@@ -402,6 +433,15 @@ public class MissileEntity extends Entity {
 	@Override
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
 		MissileType type = getMissileType();
+		if (type.track()) {
+			// An air defence gun's hits on the track are hits on the aircraft.
+			if (carrier != null && carrier.isAlive() && !source.is(DamageTypeTags.IS_EXPLOSION)) {
+				AIRCRAFT_GUN_HITS.incrementAndGet();
+				carrier.hurtServer(level, level.damageSources().explosion(this, null), amount * 12f);
+				return true;
+			}
+			return false;
+		}
 		if (!type.threat || isRemoved() || detonated || source.is(DamageTypeTags.IS_EXPLOSION)) {
 			return false;
 		}
@@ -505,6 +545,10 @@ public class MissileEntity extends Entity {
 
 	private void serverTick(ServerLevel level) {
 		MissileType type = getMissileType();
+		if (type.track()) {
+			trackTick();
+			return;
+		}
 		life++;
 		if (life > type.maxLife) {
 			detonate(position(), type.kind == MissileType.Kind.INTERCEPTOR || type.kind == MissileType.Kind.DRONE && getY() > target.y + 4);
@@ -777,6 +821,27 @@ public class MissileEntity extends Entity {
 		WHISTLES.incrementAndGet();
 		level.playSound(null, target.x, target.y + 3, target.z, com.stasdoto.airdefense.registry.ModSounds.SHELL_WHISTLE,
 				net.minecraft.sounds.SoundSource.HOSTILE, 6.0f, 0.92f + random.nextFloat() * 0.16f);
+	}
+
+	/** 1.32: a track keeps to its aircraft; with the aircraft down or gone (or landed), it is gone too. */
+	private void trackTick() {
+		com.stasdoto.airdefense.vehicle.VehicleEntity a = carrier;
+		if (a == null || !a.isAlive() || a.isRemoved() || a.level() != level() || !a.airborne()) {
+			discard();
+			return;
+		}
+		Vec3 vel = a.getDeltaMovement();
+		Vec3 at = a.position().add(0, a.getBbHeight() * 0.5, 0);
+		setPos(at);
+		lastVel = vel;
+		speed = vel.length();
+		setDeltaMovement(vel);
+		// Where it is heading (a battery guarding its town looks at this).
+		target = at.add(vel.scale(40));
+		setCountry(a.country);
+		if (vel.lengthSqr() > 1e-4) {
+			updateRotation(vel);
+		}
 	}
 
 	/** 1.30: the point it was fired from. */
@@ -1165,6 +1230,14 @@ public class MissileEntity extends Entity {
 			targetMissile.engagedBy = Math.max(0, targetMissile.engagedBy - 1);
 		}
 		discard();
+		if (type.track()) {
+			// A missile got the aircraft: it is badly hit (often out of the sky at once).
+			if (carrier != null && carrier.isAlive() && inAir) {
+				AIRCRAFT_MISSILE_HITS.incrementAndGet();
+				carrier.hitByMissile(level);
+			}
+			return;
+		}
 		if (type == MissileType.FAB250) {
 			MissileStats.ROCKET_IMPACTS.incrementAndGet();
 			Effects.groundImpact(level, this, at, type);
@@ -1234,6 +1307,9 @@ public class MissileEntity extends Entity {
 
 	private void clientTick() {
 		MissileType type = getMissileType();
+		if (type.track()) {
+			return;
+		}
 		Level level = level();
 		Vec3 cur = position();
 		Vec3 seg = cur.subtract(xo, yo, zo);

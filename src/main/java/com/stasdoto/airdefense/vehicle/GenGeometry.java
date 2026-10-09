@@ -402,4 +402,18 @@ public final class GenGeometry {
 			"turret", new float[]{0F, 1.55F, -0.6F}, "pack", new float[]{0F, 0.7F, -1.6F},
 			35F, 0F, new Rail[]{new Rail("pack", -0.945F, -0.12F, 4.5F), new Rail("pack", -0.945F, 0.5172F, 4.5F), new Rail("pack", -0.135F, -0.12F, 4.5F), new Rail("pack", -0.135F, 0.5172F, 4.5F), new Rail("pack", 0.135F, -0.12F, 4.5F), new Rail("pack", 0.135F, 0.5172F, 4.5F), new Rail("pack", 0.945F, -0.12F, 4.5F), new Rail("pack", 0.945F, 0.5172F, 4.5F)}, null, new String[]{}, 11F,
 			1024, 240);
+
+	public static final Geometry AH64 = new Geometry("ah64", 16.65F, 2F, 5.1F, 0F, false,
+			new Seat[]{new Seat("driver", 0F, 2.2F, 3.15F), new Seat("gunner", 0F, 1.62F, 4.75F)},
+			new Wheel[]{new Wheel("gear_l", 0.32F, false), new Wheel("gear_r", 0.32F, false), new Wheel("gear_tail", 0.18F, false)},
+			null, new float[]{0F, 0F, 0F}, null, new float[]{0F, 0F, 0F},
+			0F, 0F, new Rail[]{}, "rotor", new String[]{}, 16F,
+			1024, 240);
+
+	public static final Geometry A10 = new Geometry("a10", 16.35F, 2.4F, 4.3F, 0F, false,
+			new Seat[]{new Seat("driver", 0F, 2.15F, 4.45F)},
+			new Wheel[]{new Wheel("gear_nose", 0.33F, false), new Wheel("gear_l", 0.42F, false), new Wheel("gear_r", 0.42F, false)},
+			null, new float[]{0F, 0F, 0F}, null, new float[]{0F, 0F, 0F},
+			0F, 0F, new Rail[]{}, null, new String[]{}, 19F,
+			1024, 240);
 }

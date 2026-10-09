@@ -116,7 +116,8 @@ public final class DroneClient {
 	}
 
 	private static boolean hasEngine(MissileType t) {
-		return t.kind == MissileType.Kind.DRONE || t.kind == MissileType.Kind.CRUISE;
+		// An aircraft's track is not heard (the aircraft makes its own noise).
+		return !t.track() && (t.kind == MissileType.Kind.DRONE || t.kind == MissileType.Kind.CRUISE);
 	}
 
 	/** An engine sound that follows its drone and dies with it. */

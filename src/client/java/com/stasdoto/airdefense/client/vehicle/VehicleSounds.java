@@ -107,7 +107,7 @@ public final class VehicleSounds {
 			return switch (this) {
 				case ENGINE -> {
 					VehicleType t = v.getVehicleType();
-					boolean crewed = !v.getPassengers().isEmpty();
+					boolean crewed = !v.getPassengers().isEmpty() || v.getVehicleType().isAir() && v.getState() == VehicleEntity.DEPLOYED;
 					if (t.isAir()) {
 						// Aircraft: as loud as the engines have spun up (a pilot aboard starts them).
 						yield crewed ? Math.max(0.03f, spool) : spool;
@@ -150,7 +150,8 @@ public final class VehicleSounds {
 				return;
 			}
 			VehicleType t = vehicle.getVehicleType();
-			boolean crewed = !vehicle.getPassengers().isEmpty();
+			// 1.32: an aircraft flown by the enemy's pilot (no passenger here) is "deployed" while it flies.
+			boolean crewed = !vehicle.getPassengers().isEmpty() || t.isAir() && vehicle.getState() == VehicleEntity.DEPLOYED;
 			if (t.isAir()) {
 				spool = Mth.approach(spool, crewed ? 1f : 0f, t.air == VehicleType.HELI ? 0.006f : 0.015f);
 			}

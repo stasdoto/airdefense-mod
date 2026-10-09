@@ -219,6 +219,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("armor2")) {
 				armor2(ctx, server);
 			}
+			if (scene("airwar")) {
+				airWar(ctx, server);
+			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
@@ -1286,6 +1289,149 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		AirDefense.LOGGER.info("[airdefense-test] RESULT arty_map: enemy batteries on the map {}", fires);
 		server.runOnServer(s -> forVehicles(s.overworld(), List.of(radar, gun, enemy), Entity::discard));
 		server.runCommand(String.format("forceload remove %d %d %d %d", cx + 20, 680, cx + 60, 720));
+	}
+
+	/** An enemy aircraft on its sortie (the first one found), or null. */
+	@org.jetbrains.annotations.Nullable
+	private static VehicleEntity sortie(ServerLevel level) {
+		for (Entity e : level.getAllEntities()) {
+			if (e instanceof VehicleEntity v && v.isAlive() && v.onSortie()) {
+				return v;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * 1.32: the air war - a town of the player's country, an enemy country at war with it 900 blocks east. An enemy
+	 * attack helicopter comes in and fires at the town's soldiers; then one comes in over the player's Pantsir and is shot
+	 * down (it falls burning); then a jet makes bombing runs.
+	 */
+	private void airWar(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 120000;
+		language(ctx, "ru_ru");
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 3000");
+		camera(server, x + 0.5, ground + 6, -30, 0, 10);
+		ctx.waitTicks(40);
+		int[] ids = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var mine = com.stasdoto.airdefense.nation.Nations.countryOf(l, p, pl, true);
+			int id = p.newId();
+			BlockPos at = new BlockPos(x, ground, 0);
+			var town = new com.stasdoto.airdefense.nation.Settlement(id, "Небесное", at, at.above(2), -1, java.util.Optional.empty(), 0,
+					java.util.Map.of(), List.of(), List.of());
+			p.settlements.put(id, town);
+			town.country = mine.id;
+			int eid = p.newId();
+			BlockPos eat = new BlockPos(x + 900, ground, 0);
+			var et = new com.stasdoto.airdefense.nation.Settlement(eid, "Вражеск", eat, eat.above(2), -1, java.util.Optional.empty(), 0,
+					java.util.Map.of(), List.of(), List.of());
+			p.settlements.put(eid, et);
+			var enemy = com.stasdoto.airdefense.nation.Nations.newWorldCountry(p, eid);
+			et.country = enemy.id;
+			com.stasdoto.airdefense.nation.War.declare(l, p, enemy, mine, net.minecraft.network.chat.Component.literal("test"));
+			// The town's soldiers on the square.
+			for (int i = 0; i < 4; i++) {
+				var so = com.stasdoto.airdefense.nation.SoldierEntity.create(l, com.stasdoto.airdefense.nation.SoldierEntity.SOLDIER, mine.id, 5, id,
+						new Vec3(x - 6 + i * 4, ground, 4), 7);
+				l.addFreshEntity(so);
+			}
+			return new int[]{id, enemy.id, eid, mine.id};
+		});
+		// An attack helicopter (no air defence here yet).
+		String heli = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var t = com.stasdoto.airdefense.nation.War.airStrike(s.overworld(), p, p.country(ids[1]), p.settlements.get(ids[0]), new java.util.Random(5),
+					VehicleType.MI24);
+			return t == null ? "-" : t.id;
+		});
+		int in = waitUntil(ctx, () -> server.computeOnServer(s -> {
+			VehicleEntity v = sortie(s.overworld());
+			return v != null && v.sortiePhase() >= 1;
+		}), 900);
+		Vec3 hAt = server.computeOnServer(s -> {
+			VehicleEntity v = sortie(s.overworld());
+			return v == null ? new Vec3(x + 100, ground + 30, 0) : v.position();
+		});
+		look(server, x - 30, ground + 8, -40, hAt.x, hAt.y, hAt.z);
+		ctx.waitTicks(60);
+		ctx.takeScreenshot("w1_heli_attacks");
+		int salvos0 = VehicleEntity.aiRocketSalvos;
+		waitUntil(ctx, () -> VehicleEntity.aiRocketSalvos > salvos0 || VehicleEntity.aiGunBursts > 0, 600);
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("w2_heli_fires");
+		ctx.waitTicks(300);
+		int soldiersLeft = server.computeOnServer(s -> s.overworld().getEntitiesOfClass(com.stasdoto.airdefense.nation.SoldierEntity.class,
+				new net.minecraft.world.phys.AABB(x - 40, ground - 5, -40, x + 40, ground + 20, 40), e -> e.isAlive()).size());
+		AirDefense.LOGGER.info("[airdefense-test] RESULT air_heli: {} sent, over the town after {} ticks, rocket salvos {}, gun bursts {}, "
+				+ "soldiers left {} of 4", heli, in, VehicleEntity.aiRocketSalvos, VehicleEntity.aiGunBursts, soldiersLeft);
+		server.runOnServer(s -> {
+			for (Entity e : s.overworld().getAllEntities()) {
+				if (e instanceof VehicleEntity v && v.onSortie()) {
+					v.discard();
+				}
+			}
+		});
+
+		// Now with the player's Pantsir in the town: the next helicopter is shot down.
+		int pantsir = spawnVehicle(server, VehicleType.PANTSIR, x + 10, 10, 90);
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(pantsir), v -> v.country = -1));
+		ctx.waitTicks(60);
+		int down0 = VehicleEntity.aircraftDown;
+		int hits0 = com.stasdoto.airdefense.missile.MissileEntity.AIRCRAFT_MISSILE_HITS.get() + com.stasdoto.airdefense.missile.MissileEntity.AIRCRAFT_GUN_HITS.get();
+		server.runOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			com.stasdoto.airdefense.nation.War.airStrike(s.overworld(), p, p.country(ids[1]), p.settlements.get(ids[0]), new java.util.Random(6),
+					VehicleType.KA52);
+		});
+		look(server, x - 20, ground + 6, -25, x + 120, ground + 30, 0);
+		int downAfter = waitUntil(ctx, () -> VehicleEntity.aircraftDown > down0, 1200);
+		ctx.takeScreenshot("w3_heli_shot_down");
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("w4_heli_falls");
+		ctx.waitTicks(100);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT air_defence: aircraft shot down {} after {} ticks, hits on it {} (missiles {}, gun {})",
+				VehicleEntity.aircraftDown - down0, downAfter,
+				com.stasdoto.airdefense.missile.MissileEntity.AIRCRAFT_MISSILE_HITS.get() + com.stasdoto.airdefense.missile.MissileEntity.AIRCRAFT_GUN_HITS.get() - hits0,
+				com.stasdoto.airdefense.missile.MissileEntity.AIRCRAFT_MISSILE_HITS.get(), com.stasdoto.airdefense.missile.MissileEntity.AIRCRAFT_GUN_HITS.get());
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(pantsir), Entity::discard));
+		server.runOnServer(s -> {
+			for (Entity e : s.overworld().getAllEntities()) {
+				if (e instanceof VehicleEntity v && v.onSortie()) {
+					v.discard();
+				}
+			}
+		});
+
+		// A jet: bombing runs over the town.
+		int bombs0 = VehicleEntity.aiBombs;
+		server.runOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			com.stasdoto.airdefense.nation.War.airStrike(s.overworld(), p, p.country(ids[1]), p.settlements.get(ids[0]), new java.util.Random(7),
+					VehicleType.SU25);
+		});
+		look(server, x - 60, ground + 15, -60, x, ground + 20, 0);
+		int bombed = waitUntil(ctx, () -> VehicleEntity.aiBombs > bombs0, 900);
+		ctx.waitTicks(25);
+		ctx.takeScreenshot("w5_jet_bombs");
+		ctx.waitTicks(400);
+		String jet = server.computeOnServer(s -> {
+			VehicleEntity v = sortie(s.overworld());
+			return v == null ? "gone" : "phase " + v.sortiePhase();
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT air_jet: bombs dropped {} (first after {} ticks); then {}; sorties {}",
+				VehicleEntity.aiBombs - bombs0, bombed, jet, VehicleEntity.sortiesFlown);
+		server.runOnServer(s -> {
+			for (Entity e : s.overworld().getAllEntities()) {
+				if (e instanceof VehicleEntity v && v.onSortie()) {
+					v.discard();
+				}
+			}
+		});
+		language(ctx, "en_us");
 	}
 
 	/**

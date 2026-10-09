@@ -15,6 +15,7 @@ import trucks  # noqa: E402
 import handmade  # noqa: E402
 import artillery  # noqa: E402
 import armor2  # noqa: E402
+import aircraft2  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 MAIN = os.path.join(ROOT, 'src/main/java/com/stasdoto/airdefense/vehicle/GenGeometry.java')
@@ -33,6 +34,7 @@ def models():
     out += handmade.all_models()
     out += artillery.all_models()
     out += armor2.all_models()
+    out += aircraft2.all_models()
     return out
 
 
