@@ -25,7 +25,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: build
+  group: side
   cancel-in-progress: false
 
 jobs:
@@ -150,7 +150,7 @@ jobs:
           echo "${{ github.sha }} ${{ steps.build.outcome }}" > /tmp/out/STATUS
           # Separate result branches, so a probe or a plain build never overwrites in-game test results.
           BR=ci-out
-          if [ "${{ inputs.devkit }}" = "true" ]; then BR=ci-devkit; elif [ -n "${{ inputs.probe }}" ]; then BR=ci-probe; elif [ "${{ inputs.gametest }}" = "true" ]; then BR=ci-test; fi
+          if [ "${{ inputs.devkit }}" = "true" ]; then BR=ci-devkit; elif [ -n "${{ inputs.probe }}" ]; then BR=ci-probe; elif [ "${{ inputs.gametest }}" = "true" ]; then BR=ci-test2; fi
           cd /tmp/out
           git init -q -b "$BR"
           git config user.name "ci"; git config user.email "ci@users.noreply.github.com"
