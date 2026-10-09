@@ -1622,7 +1622,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(40);
 		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT);
 		ctx.waitForScreen(com.stasdoto.airdefense.client.map.TacticalMapScreen.class);
-		ctx.runOnClient(mc -> ((com.stasdoto.airdefense.client.map.TacticalMapScreen) mc.gui.screen()).centerOn(x, 250, 5));
+		ctx.runOnClient(mc -> ((com.stasdoto.airdefense.client.map.TacticalMapScreen) mc.gui.screen()).centerOn(x, 260, 3));
 		ctx.waitTicks(40);
 		ctx.takeScreenshot("u5_map_recon");
 		int[] mapSeen = ctx.computeOnClient(mc -> new int[]{com.stasdoto.airdefense.client.map.MapClient.spots().size(),
