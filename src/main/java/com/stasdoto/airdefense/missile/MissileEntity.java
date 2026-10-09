@@ -1112,24 +1112,47 @@ public class MissileEntity extends Entity {
 		setXRot((float) (Mth.atan2(v.y, h) * Mth.RAD_TO_DEG));
 	}
 
+	/** Whether a player (not a spectator) was near at the last look: his own loading keeps the ground ticking. */
+	private boolean playerNear;
+	/** For the tests: missiles and shells lost in flight (their chunk unloaded under them). */
+	public static final java.util.concurrent.atomic.AtomicInteger LOST = new java.util.concurrent.atomic.AtomicInteger();
+
 	private void keepChunksLoaded(ServerLevel level) {
-		if (life % 2 != 1) {
-			return;
+		if (life % 2 == 1) {
+			// Near a player his own loading keeps the ground ticking; a ticket of ours would only spread more half-made
+			// chunks round it (each ticket readies the chunks a dozen around).
+			playerNear = level.getNearestPlayer(getX(), getY(), getZ(), 120, pl -> !pl.isSpectator()) != null;
+			if (!playerNear) {
+				// Radius 2 keeps the missile's own chunk "entity ticking", so it never freezes when it flies away from
+				// players (radius 3 kept 49 chunks loaded round every missile - with many in the air, a load on the
+				// server). Also loads ~1 s ahead along the flight path.
+				ChunkPos here = ChunkPos.containing(blockPosition());
+				level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, here, 2);
+				ChunkPos ahead = ChunkPos.containing(BlockPos.containing(position().add(lastVel.scale(20))));
+				if (!ahead.equals(here)) {
+					level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, ahead, 2);
+				}
+			}
 		}
-		// Near a player his own loading keeps the ground ticking; a ticket of ours would only spread more half-made
-		// chunks round it (each ticket readies the chunks a dozen around).
-		if (level.getNearestPlayer(getX(), getY(), getZ(), 120, pl -> !pl.isSpectator()) != null) {
-			return;
+		if (!playerNear) {
+			// 1.30: and the chunk it is about to fly into. Only a ticket's own chunk ticks entities: one beside it is
+			// loaded but still. A flight that cut across the corner of a chunk none of the tickets above was centred on
+			// stopped dead there in mid-air, and was gone when that chunk unloaded (half of a counter-battery answer).
+			ChunkPos here = ChunkPos.containing(blockPosition());
+			ChunkPos next = ChunkPos.containing(BlockPos.containing(position().add(lastVel.scale(1.5))));
+			if (!next.equals(here)) {
+				level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, next, 2);
+			}
 		}
-		// Radius 2 keeps the missile's own chunk "entity ticking", so it never freezes when it flies away from
-		// players (radius 3 kept 49 chunks loaded round every missile - with many in the air, a load on the server).
-		// Also loads ~1 s ahead along the flight path.
-		ChunkPos here = ChunkPos.containing(blockPosition());
-		level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, here, 2);
-		ChunkPos ahead = ChunkPos.containing(BlockPos.containing(position().add(lastVel.scale(20))));
-		if (!ahead.equals(here)) {
-			level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, ahead, 2);
+	}
+
+	@Override
+	public void remove(Entity.RemovalReason reason) {
+		if (!detonated && level() instanceof ServerLevel && reason != Entity.RemovalReason.DISCARDED && reason != Entity.RemovalReason.KILLED) {
+			LOST.incrementAndGet();
+			AirDefense.LOGGER.info("[airdefense] {} lost in flight at {} ({})", getMissileType(), fmt(position()), reason);
 		}
+		super.remove(reason);
 	}
 
 	private void detonate(Vec3 at, boolean inAir) {

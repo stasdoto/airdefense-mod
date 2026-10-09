@@ -1117,6 +1117,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	 */
 	private void arty(ClientGameTestContext ctx, TestServerContext server) {
 		int x = 100000;
+		language(ctx, "ru_ru");
 		server.runCommand("gamemode spectator @a");
 		server.runCommand("time set 3000");
 		server.runCommand("weather clear");
@@ -1125,11 +1126,11 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		VehicleType[] line = {VehicleType.MSTA_S, VehicleType.M109, VehicleType.BM21, VehicleType.ZOOPARK, VehicleType.TPQ36};
 		List<Integer> ids = new ArrayList<>();
 		for (int i = 0; i < line.length; i++) {
-			ids.add(spawnVehicle(server, line[i], x - 24 + i * 12, 0, 0));
+			ids.add(spawnVehicle(server, line[i], x - 24 + i * 10, 0, 0));
 		}
 		server.runOnServer(s -> forVehicles(s.overworld(), ids, v -> v.country = -1));
 		ctx.waitTicks(30);
-		look(server, x - 40, ground + 6, -26, x - 4, ground + 1.5, 2);
+		look(server, x - 27, ground + 4, -15, x - 7, ground + 1.2, 0);
 		ctx.waitTicks(30);
 		ctx.takeScreenshot("a1_arty_lineup");
 		server.runOnServer(s -> forVehicles(s.overworld(), ids, v -> {
@@ -1138,7 +1139,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 		}));
 		ctx.waitTicks(120);
-		look(server, x + 30, ground + 8, 30, x - 6, ground + 2, 0);
+		look(server, x + 24, ground + 6, 19, x - 6, ground + 2.5, 0);
 		ctx.waitTicks(30);
 		ctx.takeScreenshot("a2_arty_deployed");
 		String deployed = server.computeOnServer(s -> {
@@ -1157,10 +1158,11 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		boolean ordered = server.computeOnServer(s -> s.overworld().getEntity(msta) instanceof VehicleEntity v && v.commandFire(fieldA, null, 6));
 		look(server, x - 36, ground + 4, -10, x - 24, ground + 3, 4);
 		int aimed = waitUntil(ctx, () -> VehicleEntity.artilleryRounds > r0, 400);
+		ctx.waitTicks(2);
 		ctx.takeScreenshot("a3_msta_fire");
 		ctx.waitTicks(10);
 		ctx.takeScreenshot("a4_msta_smoke");
-		look(server, x + 30, ground + 30, 440, x - 24, ground, 520);
+		look(server, x + 6, ground + 12, 478, x - 24, ground + 2, 520);
 		int flight = waitUntil(ctx, () -> com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED.size() > landed0, 700);
 		ctx.waitTicks(4);
 		ctx.takeScreenshot("a5_shells_land");
@@ -1183,7 +1185,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		boolean gradOrdered = server.computeOnServer(s -> s.overworld().getEntity(bm) instanceof VehicleEntity v && v.commandFire(fieldB, null, 0));
 		waitUntil(ctx, () -> VehicleEntity.artilleryRounds > r1 + 8, 400);
 		ctx.takeScreenshot("a6_grad_salvo");
-		look(server, x + 230, ground + 45, 600, x + 160, ground, 700);
+		look(server, x + 205, ground + 20, 640, x + 160, ground + 2, 700);
 		waitUntil(ctx, () -> com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED.size() > landed1 + 10, 900);
 		ctx.waitTicks(6);
 		ctx.takeScreenshot("a7_grad_impacts");
@@ -1225,7 +1227,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				&& v.striking() && v.loadedRounds() < v.getVehicleType().strikeLoad()), 300);
 		ctx.waitTicks(2);
 		ctx.takeScreenshot("a8b_answer_fire");
-		look(server, cx + 10, ground + 14, 650, cx + 40, ground + 1, 700);
+		look(server, cx + 16, ground + 7, 668, cx + 40, ground + 1.5, 700);
 		Vec3 enemyAt = new Vec3(cx + 40.5, ground, 700.5);
 		int hitWait = waitUntil(ctx, () -> {
 			List<Vec3> all;
@@ -1250,12 +1252,12 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		}
 		float hp1 = server.computeOnServer(s -> s.overworld().getEntity(enemy) instanceof VehicleEntity v ? v.getHealth() : 0f);
 		AirDefense.LOGGER.info("[airdefense-test] RESULT arty_cb: enemy fired {}, found after {} ticks ({}), answered after {} ({}), "
-						+ "answer near the enemy after {} ticks, nearest {} blocks, enemy health {} -> {}", enemyFired, foundAfter,
+						+ "answer near the enemy after {} ticks, nearest {} blocks, enemy health {} -> {}; rounds lost in flight {}", enemyFired, foundAfter,
 				com.stasdoto.airdefense.radar.CounterBattery.found - found0, answeredAfter,
-				com.stasdoto.airdefense.radar.CounterBattery.answered - answered0, hitWait, (int) nearest, hp0, hp1);
+				com.stasdoto.airdefense.radar.CounterBattery.answered - answered0, hitWait, (int) nearest, hp0, hp1,
+				com.stasdoto.airdefense.missile.MissileEntity.LOST.get());
 
-		// The tablet's map: the gun selected, its reach, the enemy battery's red cross (in Russian).
-		language(ctx, "ru_ru");
+		// The tablet's map: the gun selected, its reach, the enemy battery's red cross.
 		server.runCommand("gamemode creative @a");
 		camera(server, cx - 10.5, ground, -30.5, 0, 0);
 		server.runCommand("clear @a");
@@ -1268,7 +1270,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			var sc = (com.stasdoto.airdefense.client.map.TacticalMapScreen) mc.gui.screen();
 			sc.select(gun);
 			sc.pickPoint(cx + 40, 700);
-			sc.centerOn(cx, 360, 1);
+			sc.centerOn(cx, 340, 4);
 		});
 		ctx.waitTicks(40);
 		ctx.takeScreenshot("a9_map_counter_battery");
