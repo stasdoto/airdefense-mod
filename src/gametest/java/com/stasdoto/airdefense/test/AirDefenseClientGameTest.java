@@ -2294,8 +2294,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runOnServer(s -> {
 			ServerLevel l = s.overworld();
 			for (int i = 0; i < 9; i++) {
+				// Waist high: the bandits behind it are seen (a two-block wall hid them, and whether a fight began at
+				// all was down to how they wandered).
 				l.setBlockAndUpdate(new BlockPos(fx - 4 + i, ground, 22), Blocks.STONE_BRICKS.defaultBlockState());
-				l.setBlockAndUpdate(new BlockPos(fx - 4 + i, ground + 1, 22), Blocks.STONE_BRICKS.defaultBlockState());
 			}
 			for (int i = 0; i < 5; i++) {
 				var so = com.stasdoto.airdefense.nation.SoldierEntity.create(l, com.stasdoto.airdefense.nation.SoldierEntity.SOLDIER, ids[2], 5, -1,
