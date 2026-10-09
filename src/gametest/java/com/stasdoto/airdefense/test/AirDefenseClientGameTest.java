@@ -1769,7 +1769,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	 * player's town and a loitering munition at his tank.
 	 */
 	private void uav(ClientGameTestContext ctx, TestServerContext server) {
-		int x = 150000;
+		int x = 175000;
 		language(ctx, "ru_ru");
 		server.runCommand("gamemode spectator @a");
 		server.runCommand("time set 3000");
