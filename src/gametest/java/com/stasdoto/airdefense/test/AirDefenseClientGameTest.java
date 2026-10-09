@@ -1625,9 +1625,13 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		int[] cap = server.computeOnServer(s -> {
 			ServerLevel l = s.overworld();
 			com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = com.stasdoto.airdefense.nation.CityStyle.EUROPEAN;
-			var list = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), com.stasdoto.airdefense.nation.Cities.terrain(l), cellX, cellZ);
+			var flat = com.stasdoto.airdefense.nation.Cities.terrain(l);
+			var list = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), flat, cellX, cellZ);
 			com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = null;
 			var c = list.getFirst();
+			// The port is planned now, with the sea: the land round the town is made as soon as the camera comes near.
+			int wz = c.z + c.half() + 40;
+			c.port(l.getSeed(), seaTerrain(flat, c.base, c.x - 90, c.x + 90, wz, wz + 100));
 			return new int[]{c.x, c.z, c.half(), c.base};
 		});
 		int cx = cap[0];

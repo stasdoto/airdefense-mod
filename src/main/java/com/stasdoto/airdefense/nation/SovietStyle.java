@@ -58,8 +58,8 @@ final class SovietStyle {
 		Random r = Interiors.random(p, 31);
 		boolean brick = Math.floorMod(variant, 2) == 0;
 		// White silicate brick, or light grey panels with grout lines a shade darker.
-		BlockState wall = brick ? b(Blocks.SMOOTH_QUARTZ) : b(Blocks.SMOOTH_STONE);
-		BlockState seam = brick ? b(Blocks.SMOOTH_QUARTZ) : b(Blocks.STONE);
+		BlockState wall = brick ? b(Blocks.SMOOTH_QUARTZ) : concrete(DyeColor.WHITE);
+		BlockState seam = brick ? b(Blocks.SMOOTH_QUARTZ) : concrete(DyeColor.LIGHT_GRAY);
 		BlockState plinth = b(Blocks.POLISHED_ANDESITE);
 		int floors = 5;
 		StyleKit.base(p, hw, d, concrete(DyeColor.GRAY), b(Blocks.SMOOTH_STONE));
@@ -193,8 +193,8 @@ final class SovietStyle {
 		int hw = p.b.type.halfWidth();
 		int d = p.b.type.depth - 1;
 		Random r = Interiors.random(p, 32);
-		BlockState wall = Math.floorMod(variant, 3) == 0 ? concrete(DyeColor.WHITE) : b(Blocks.SMOOTH_STONE);
-		BlockState seam = b(Blocks.STONE);
+		BlockState wall = concrete(DyeColor.WHITE);
+		BlockState seam = Math.floorMod(variant, 3) == 0 ? b(Blocks.SMOOTH_STONE) : concrete(DyeColor.LIGHT_GRAY);
 		StyleKit.base(p, hw, d, seam, b(Blocks.SMOOTH_STONE));
 		int top = StyleKit.shell(p, hw, d, floors, 3, b(Blocks.POLISHED_ANDESITE), wall, seam, b(Blocks.SMOOTH_STONE));
 		for (int x = -hw; x <= hw; x += 3) {
