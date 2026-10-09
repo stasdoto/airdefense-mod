@@ -68,7 +68,8 @@ public final class Orphans {
 		if (!s.getFluidState().isEmpty()) {
 			return OTHER;
 		}
-		if (s.is(Blocks.SNOW) || s.is(BlockTags.REPLACEABLE_BY_TREES) || s.is(BlockTags.FLOWERS) || s.is(BlockTags.SAPLINGS)) {
+		// What grows up from the ground (not what hangs down: glow lichen on a cave roof, hanging roots, hanging moss).
+		if (s.is(Blocks.SNOW) || s.getBlock() instanceof net.minecraft.world.level.block.VegetationBlock) {
 			return PLANT;
 		}
 		if (s.canBeReplaced()) {
