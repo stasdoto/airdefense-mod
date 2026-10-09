@@ -144,6 +144,9 @@ public final class VehicleClient {
 		} else if (type.isRadar()) {
 			l2 = Component.translatable(v.getMode() == VehicleEntity.MODE_OFF ? "hud.airdefense.vehicle.radar_off"
 					: v.radarWorking() ? "hud.airdefense.vehicle.radar_on" : "hud.airdefense.vehicle.radar_deploying", (int) type.radar.range);
+		} else if (type.isArtillery()) {
+			l2 = Component.translatable(v.getMode() == VehicleEntity.MODE_AUTO ? "hud.airdefense.vehicle.arty_cb" : "hud.airdefense.vehicle.arty",
+					Math.max(0, v.getAmmo()), type.strikeLoad());
 		} else if (type.isLauncher()) {
 			l2 = Component.translatable(v.getState() == VehicleEntity.DEPLOYED ? "hud.airdefense.vehicle.deployed" : "hud.airdefense.vehicle.stowed",
 					Integer.bitCount(v.getLoadedMask()), type.rails());

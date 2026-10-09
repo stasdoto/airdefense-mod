@@ -19,6 +19,9 @@ public final class MissileStats {
 	public static final AtomicInteger DECOYS_LAUNCHED = new AtomicInteger();
 	public static final AtomicInteger DECOYS_DOWN = new AtomicInteger();
 	public static final AtomicInteger DECOYS_LANDED = new AtomicInteger();
+	/** 1.30: shells and artillery rockets fired, and come down. */
+	public static final AtomicInteger ARTY_FIRED = new AtomicInteger();
+	public static final AtomicInteger ARTY_IMPACTS = new AtomicInteger();
 
 	private MissileStats() {
 	}

@@ -65,7 +65,14 @@ public enum VehicleType {
 	SUPPLY_TRUCK("supply_truck", GenGeometry.SUPPLY_TRUCK, 2, 400, 160, 0.85f, 0.013f, 30, 2.5f, 3.2f),
 	// 1.24: Israel's Iron Dome - the launcher of twenty Tamirs and its EL/M-2084 radar.
 	IRON_DOME("iron_dome", GenGeometry.IRON_DOME, null, DefenseType.IRON_DOME, 220, 0.9f, 0.014f, 32, 0, 1.6f, 0, 2.55f, 3.3f),
-	ELM2084("elm2084", GenGeometry.ELM2084, RadarType.ELM2084, 200, 0.82f, 0.012f, 30, 0, 0, 2.55f, 3.3f);
+	ELM2084("elm2084", GenGeometry.ELM2084, RadarType.ELM2084, 200, 0.82f, 0.012f, 30, 0, 0, 2.55f, 3.3f),
+	// 1.30: artillery - the 2S19 Msta-S and M109A6 Paladin self-propelled howitzers, the BM-21 Grad rocket launcher, and
+	// the counter-battery radars that find the enemy's guns (Zoopark-1M on an MT-LBu, AN/TPQ-36 on a Humvee's trailer).
+	MSTA_S("msta_s", GenGeometry.MSTA_S, LauncherType.MSTA_S, 0.55f, 420, 0.85f, 0.012f, 0, 2.2f, 1.0f, 2.4f, 3.4f, 3.0f),
+	M109("m109", GenGeometry.M109, LauncherType.M109, 0.55f, 390, 0.85f, 0.013f, 0, 2.3f, 1.1f, 2.6f, 3.15f, 3.2f),
+	BM21("bm21", GenGeometry.BM21, LauncherType.BM21, null, 170, 0.92f, 0.015f, 32, 0, 1.4f, 3.0f, 2.4f, 3.1f),
+	ZOOPARK("zoopark", GenGeometry.ZOOPARK, RadarType.ZOOPARK, 240, 0.85f, 0.014f, 0, 2.6f, 0.9f, 2.85f, 2.6f),
+	TPQ36("tpq36", GenGeometry.TPQ36, RadarType.TPQ36, 130, 0.95f, 0.016f, 32, 0, 0.9f, 2.2f, 2.4f);
 
 	public static final int HELI = 1;
 	public static final int PLANE = 2;
@@ -114,6 +121,32 @@ public enum VehicleType {
 		this.radar = null;
 		this.weapon = null;
 		this.armor = 1.0f;
+		this.boat = false;
+		this.air = 0;
+		this.ordnance = null;
+		this.cargo = 0;
+		this.cargoCapacity = 0;
+		this.maxHealth = maxHealth;
+		this.maxSpeed = maxSpeed;
+		this.accel = accel;
+		this.maxSteer = maxSteer;
+		this.pivotTurn = pivotTurn;
+		this.elevationRate = elevationRate;
+		this.turretRate = turretRate;
+		this.boxWidth = boxWidth;
+		this.boxHeight = boxHeight;
+	}
+
+	/** 1.30: an armoured self-propelled gun (fires like a launcher, armoured like a fighting vehicle). */
+	VehicleType(String id, VehicleGeometry.Geometry geometry, LauncherType launcher, float armor, float maxHealth, float maxSpeed, float accel,
+			float maxSteer, float pivotTurn, float elevationRate, float turretRate, float boxWidth, float boxHeight) {
+		this.id = id;
+		this.geometry = geometry;
+		this.launcher = launcher;
+		this.defense = null;
+		this.radar = null;
+		this.weapon = null;
+		this.armor = armor;
 		this.boat = false;
 		this.air = 0;
 		this.ordnance = null;
@@ -267,9 +300,24 @@ public enum VehicleType {
 		return radar != null;
 	}
 
-	/** Vehicles with a fire control mode (air defence) or an on/off switch (radars). */
+	/** Vehicles with a fire control mode (air defence), an on/off switch (radars) or counter-battery fire (artillery). */
 	public boolean hasMode() {
-		return defense != null || radar != null;
+		return defense != null || radar != null || isArtillery();
+	}
+
+	/** 1.30: a howitzer or a rocket artillery launcher. */
+	public boolean isArtillery() {
+		return launcher != null && launcher.artillery();
+	}
+
+	/** A counter-battery radar. */
+	public boolean isCounterBattery() {
+		return radar != null && radar.counterBattery;
+	}
+
+	/** What a launcher holds when full: rounds for artillery, else one missile per rail. */
+	public int strikeLoad() {
+		return isArtillery() ? launcher.rounds : rails();
 	}
 
 	public boolean isLauncher() {
@@ -331,14 +379,14 @@ public enum VehicleType {
 	/** The second seat is in the turret (it turns with it). */
 	public boolean gunnerInTurret() {
 		return switch (this) {
-			case GEPARD, SHILKA, TUNGUSKA, TOR, BUK, STRELA10, MFG, ZU23, AVENGER -> true;
+			case GEPARD, SHILKA, TUNGUSKA, TOR, BUK, STRELA10, MFG, ZU23, AVENGER, MSTA_S, M109 -> true;
 			default -> false;
 		};
 	}
 
 	/** Missiles carried: launchers one per rail; air defence per its magazine (Patriot canisters hold several). */
 	public int magazine() {
-		return defense != null ? defense.magazine : radar != null ? 0 : weapon != null ? weapon.magazine : rails();
+		return defense != null ? defense.magazine : radar != null ? 0 : weapon != null ? weapon.magazine : strikeLoad();
 	}
 
 	/** By its id ("patriot"); Patriot if there is no such vehicle. */

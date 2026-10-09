@@ -265,6 +265,10 @@ public final class FxClient {
 				}
 			}
 			case FxPayload.GUN -> SquadAudio.play(at, SquadAudio.Kind.GUN, 1f);
+			case FxPayload.MUZZLE -> {
+				muzzle(mc, level, at, new Vec3(p.ax(), p.ay(), p.az()), p.power());
+				SquadAudio.play(at, SquadAudio.Kind.ARTILLERY, 1f);
+			}
 			case FxPayload.TRACER -> {
 				Vec3 end = new Vec3(p.ax(), p.ay(), p.az());
 				Vec3 d = end.subtract(at);
@@ -534,6 +538,44 @@ public final class FxClient {
 		if (size >= 1.5f) {
 			after((int) (dist / SOUND_BLOCKS_PER_TICK), () -> CameraShake.add((float) Math.min(0.8, size * 1.5 / (dist + 6))));
 		}
+	}
+
+	/**
+	 * 1.30: a howitzer's shot - a fireball out of the muzzle, the gas thrown sideways by the muzzle brake, a ring of
+	 * dust kicked up off the ground under the barrel, smoke hanging round the gun; the ground shakes for those near.
+	 */
+	private static void muzzle(Minecraft mc, ClientLevel level, Vec3 at, Vec3 dir, float size) {
+		RandomSource r = level.getRandom();
+		var pe = mc.particleEngine;
+		Vec3 d = dir.lengthSqr() > 1e-6 ? dir.normalize() : new Vec3(0, 0.7, 0.7);
+		Vec3 side = new Vec3(-d.z, 0, d.x);
+		side = side.lengthSqr() > 1e-6 ? side.normalize() : new Vec3(1, 0, 0);
+		pe.add(flash(level, at.x + d.x, at.y + d.y, at.z + d.z, size * 1.6f));
+		pe.add(glow(level, at.x + d.x * 2, at.y + d.y * 2, at.z + d.z * 2, size * 2.2f, 4).alpha(0.5f, 1, 0.3f));
+		// The fireball and the gas cloud straight out of the barrel.
+		for (int i = 0; i < n(14 * size, 1); i++) {
+			double sp = 0.4 + r.nextDouble() * 0.9;
+			pe.add(smokeWhite(level, at.x, at.y, at.z, d.x * sp + r.nextGaussian() * 0.08, d.y * sp + r.nextGaussian() * 0.08,
+					d.z * sp + r.nextGaussian() * 0.08, Math.max(0.5f, size * 0.7f)));
+		}
+		// The muzzle brake throws the gas out to both sides.
+		for (int s = -1; s <= 1; s += 2) {
+			for (int i = 0; i < n(6 * size, 1); i++) {
+				double sp = 0.25 + r.nextDouble() * 0.45;
+				pe.add(smokeWhite(level, at.x, at.y, at.z, side.x * s * sp + d.x * 0.15, 0.03 + r.nextDouble() * 0.05,
+						side.z * s * sp + d.z * 0.15, Math.max(0.4f, size * 0.55f)));
+			}
+		}
+		// Dust off the ground round the gun.
+		double gy = at.y - 3;
+		for (int i = 0; i < n(18 * size, 1); i++) {
+			double a = r.nextDouble() * Mth.TWO_PI;
+			double sp = 0.25 + r.nextDouble() * 0.5;
+			pe.add(dust(level, at.x - d.x * 3 + Math.cos(a) * 2, gy + 0.3, at.z - d.z * 3 + Math.sin(a) * 2, Math.cos(a) * sp, 0.02,
+					Math.sin(a) * sp, Math.max(0.4f, size * 0.6f)));
+		}
+		double dist = mc.player.position().distanceTo(at);
+		after((int) (dist / SOUND_BLOCKS_PER_TICK), () -> CameraShake.add((float) Math.min(1.0, size * 3.0 / (dist + 8))));
 	}
 
 	private static void sound(ClientLevel level, Vec3 at, int delay, SoundEvent sound, float volume, float pitch) {

@@ -842,5 +842,44 @@
       }
     ],
     "subtitle": "subtitles.airdefense.radio"
+  },
+  "arty_near": {
+    "sounds": [
+      {
+        "name": "airdefense:arty_near_0",
+        "attenuation_distance": 160
+      },
+      {
+        "name": "airdefense:arty_near_1",
+        "attenuation_distance": 160
+      }
+    ],
+    "subtitle": "subtitles.airdefense.arty"
+  },
+  "arty_far": {
+    "sounds": [
+      {
+        "name": "airdefense:arty_far_0",
+        "attenuation_distance": 1800
+      },
+      {
+        "name": "airdefense:arty_far_1",
+        "attenuation_distance": 1800
+      }
+    ],
+    "subtitle": "subtitles.airdefense.arty"
+  },
+  "shell_whistle": {
+    "sounds": [
+      {
+        "name": "airdefense:shell_whistle_0",
+        "attenuation_distance": 96
+      },
+      {
+        "name": "airdefense:shell_whistle_1",
+        "attenuation_distance": 96
+      }
+    ],
+    "subtitle": "subtitles.airdefense.whistle"
   }
 }

@@ -16,7 +16,11 @@ public enum RadarType {
 	MPQ65(340, 3, 120, 180, 0f, 0.35, 0),
 	KUPOL(270, 4, 360, 0, 0.0628f, 0.15, 12),
 	// 1.24: Iron Dome's multi-mission radar, a fast-turning AESA.
-	ELM2084(300, 2, 360, 0, 0.2094f, 0.3, 40);
+	ELM2084(300, 2, 360, 0, 0.2094f, 0.3, 40),
+	// 1.30: counter-battery radars - a fixed array watching 90 degrees ahead for shells and rockets in flight; from the
+	// rising part of their arc they work out where they were fired from. They see nothing else (no aircraft, no drones).
+	ZOOPARK(360, 2, 90, 0, 0f, 0.0, 0, true),
+	TPQ36(300, 2, 90, 180, 0f, 0.0, 0, true);
 
 	public final double range;
 	public final double minAltitude;
@@ -25,6 +29,8 @@ public enum RadarType {
 	public final float spin;
 	public final double discrimination;
 	public final int rpm;
+	/** Watches for artillery (not part of the air picture). */
+	public final boolean counterBattery;
 
 	RadarType(double range, double minAltitude, double sector, float facing, float spin, double discrimination, int rpm) {
 		this.range = range * com.stasdoto.airdefense.missile.MissileType.RANGE_SCALE;
@@ -34,6 +40,18 @@ public enum RadarType {
 		this.spin = spin;
 		this.discrimination = discrimination;
 		this.rpm = rpm;
+		this.counterBattery = false;
+	}
+
+	RadarType(double range, double minAltitude, double sector, float facing, float spin, double discrimination, int rpm, boolean counterBattery) {
+		this.range = range * com.stasdoto.airdefense.missile.MissileType.RANGE_SCALE;
+		this.minAltitude = minAltitude;
+		this.sector = sector;
+		this.facing = facing;
+		this.spin = spin;
+		this.discrimination = discrimination;
+		this.rpm = rpm;
+		this.counterBattery = counterBattery;
 	}
 
 	public boolean rotates() {

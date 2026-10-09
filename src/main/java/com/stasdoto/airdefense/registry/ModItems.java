@@ -79,6 +79,12 @@ public final class ModItems {
 	public static final Item SAMPT = vehicle("sampt", VehicleType.SAMPT);
 	public static final Item IRON_DOME = vehicle("iron_dome", VehicleType.IRON_DOME);
 	public static final Item ELM2084 = vehicle("elm2084", VehicleType.ELM2084);
+	// 1.30: artillery and counter-battery radars.
+	public static final Item MSTA_S = vehicle("msta_s", VehicleType.MSTA_S);
+	public static final Item M109 = vehicle("m109", VehicleType.M109);
+	public static final Item BM21 = vehicle("bm21", VehicleType.BM21);
+	public static final Item ZOOPARK = vehicle("zoopark", VehicleType.ZOOPARK);
+	public static final Item TPQ36 = vehicle("tpq36", VehicleType.TPQ36);
 	public static final Item AVENGER = vehicle("avenger", VehicleType.AVENGER);
 	public static final Item MFG = vehicle("mfg", VehicleType.MFG);
 	public static final Item ZU23 = vehicle("zu23", VehicleType.ZU23);
@@ -125,6 +131,10 @@ public final class ModItems {
 	public static final Item SAM_LONG = register("sam_long", Item::new, new Item.Properties().stacksTo(4));
 	public static final Item AMMO_23_BOX = register("ammo_23_box", Item::new, new Item.Properties().stacksTo(16));
 	public static final Item AMMO_127_BOX = register("ammo_127_box", Item::new, new Item.Properties().stacksTo(16));
+	// 1.30: what the artillery fires (also the flying shells' and rockets' look).
+	public static final Item SHELL_152 = missile(MissileType.SHELL_152);
+	public static final Item SHELL_155 = missile(MissileType.SHELL_155);
+	public static final Item GRAD_ROCKET = missile(MissileType.GRAD);
 
 	// Missile items: what the flying entities look like (their 3D model), also usable as decoration in item frames.
 	public static final Item ISKANDER_MISSILE = missile(MissileType.ISKANDER);
@@ -237,6 +247,11 @@ public final class ModItems {
 				output.accept(SAMPT);
 				output.accept(IRON_DOME);
 				output.accept(ELM2084);
+				output.accept(MSTA_S);
+				output.accept(M109);
+				output.accept(BM21);
+				output.accept(ZOOPARK);
+				output.accept(TPQ36);
 				output.accept(AVENGER);
 				output.accept(MFG);
 				output.accept(ZU23);
@@ -271,6 +286,9 @@ public final class ModItems {
 				output.accept(SAM_LONG);
 				output.accept(AMMO_23_BOX);
 				output.accept(AMMO_127_BOX);
+				output.accept(SHELL_152);
+				output.accept(SHELL_155);
+				output.accept(GRAD_ROCKET);
 				output.accept(MANPADS);
 				output.accept(FACTORY_KIT);
 				output.accept(FACTORY_CONTROLLER);

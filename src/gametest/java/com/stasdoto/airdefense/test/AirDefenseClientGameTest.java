@@ -213,6 +213,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("life")) {
 				life(ctx, server);
 			}
+			if (scene("arty")) {
+				arty(ctx, server);
+			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
@@ -1065,6 +1068,203 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
 		server.runCommand("gamemode spectator @a");
 		server.runOnServer(s -> forVehicles(s.overworld(), List.of(plane), Entity::discard));
+	}
+
+	/** The camera at {@code from}, looking at {@code to}. */
+	private static void look(TestServerContext server, double fx, double fy, double fz, double tx, double ty, double tz) {
+		double dx = tx - fx;
+		double dz = tz - fz;
+		float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+		float pitch = (float) Math.toDegrees(Math.atan2(-(ty - fy), Math.sqrt(dx * dx + dz * dz)));
+		camera(server, fx, fy, fz, yaw, pitch);
+	}
+
+	/** Mean and largest distance from {@code c} of the artillery rounds that came down after the {@code from}-th. */
+	private static double[] spread(int from, BlockPos c) {
+		List<Vec3> all;
+		synchronized (com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED) {
+			all = new ArrayList<>(com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED);
+		}
+		double sum = 0;
+		double max = 0;
+		int n = 0;
+		for (int i = from; i < all.size(); i++) {
+			double d = Math.sqrt(Mth.square(all.get(i).x - c.getX() - 0.5) + Mth.square(all.get(i).z - c.getZ() - 0.5));
+			sum += d;
+			max = Math.max(max, d);
+			n++;
+		}
+		return new double[]{n, n == 0 ? -1 : sum / n, max};
+	}
+
+	/**
+	 * 1.30: artillery - the guns and radars lined up and deployed, a Msta-S fire mission (the muzzle blast, where the
+	 * shells fall, their whistle), a Grad salvo, counter-battery work (an enemy Paladin found by the player's radar and
+	 * answered by his Msta-S on its own), the tablet's map with the enemy battery marked.
+	 */
+	private void arty(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 100000;
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 3000");
+		server.runCommand("weather clear");
+		camera(server, x + 0.5, ground + 6, -30, 0, 10);
+		ctx.waitTicks(40);
+		VehicleType[] line = {VehicleType.MSTA_S, VehicleType.M109, VehicleType.BM21, VehicleType.ZOOPARK, VehicleType.TPQ36};
+		List<Integer> ids = new ArrayList<>();
+		for (int i = 0; i < line.length; i++) {
+			ids.add(spawnVehicle(server, line[i], x - 24 + i * 12, 0, 0));
+		}
+		server.runOnServer(s -> forVehicles(s.overworld(), ids, v -> v.country = -1));
+		ctx.waitTicks(30);
+		look(server, x - 40, ground + 6, -26, x - 4, ground + 1.5, 2);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("a1_arty_lineup");
+		server.runOnServer(s -> forVehicles(s.overworld(), ids, v -> {
+			if (v.getVehicleType().isArtillery()) {
+				v.raiseLauncher();
+			}
+		}));
+		ctx.waitTicks(120);
+		look(server, x + 30, ground + 8, 30, x - 6, ground + 2, 0);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("a2_arty_deployed");
+		String deployed = server.computeOnServer(s -> {
+			StringBuilder b = new StringBuilder();
+			forVehicles(s.overworld(), ids, v -> b.append(v.getVehicleType().id).append(" elev ").append((int) v.elevation)
+					.append(v.getVehicleType().isRadar() ? (v.radarWorking() ? " working" : " not working") : "").append("; "));
+			return b.toString();
+		});
+
+		// The Msta-S fires six at a field 520 blocks ahead.
+		int msta = ids.get(0);
+		BlockPos fieldA = new BlockPos(x - 24, ground, 520);
+		int r0 = VehicleEntity.artilleryRounds;
+		int landed0 = com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED.size();
+		int whistles0 = com.stasdoto.airdefense.missile.MissileEntity.WHISTLES.get();
+		boolean ordered = server.computeOnServer(s -> s.overworld().getEntity(msta) instanceof VehicleEntity v && v.commandFire(fieldA, null, 6));
+		look(server, x - 36, ground + 4, -10, x - 24, ground + 3, 4);
+		int aimed = waitUntil(ctx, () -> VehicleEntity.artilleryRounds > r0, 400);
+		ctx.takeScreenshot("a3_msta_fire");
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("a4_msta_smoke");
+		look(server, x + 30, ground + 30, 440, x - 24, ground, 520);
+		int flight = waitUntil(ctx, () -> com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED.size() > landed0, 700);
+		ctx.waitTicks(4);
+		ctx.takeScreenshot("a5_shells_land");
+		waitUntil(ctx, () -> com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED.size() >= landed0 + 6, 700);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("a5b_craters");
+		double[] spreadA = spread(landed0, fieldA);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT arty_msta: ordered {} aimed after {} ticks, fired {}, first down {} ticks later, landed {} "
+						+ "mean {} max {} blocks from the aim, whistles {} | {}", ordered, aimed, VehicleEntity.artilleryRounds - r0, flight,
+				(int) spreadA[0], String.format(java.util.Locale.ROOT, "%.1f", spreadA[1]), String.format(java.util.Locale.ROOT, "%.1f", spreadA[2]),
+				com.stasdoto.airdefense.missile.MissileEntity.WHISTLES.get() - whistles0, deployed);
+
+		// The Grad ripples off all forty rockets at a field 700 blocks off.
+		int bm = ids.get(2);
+		BlockPos fieldB = new BlockPos(x + 160, ground, 700);
+		int r1 = VehicleEntity.artilleryRounds;
+		int landed1 = com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED.size();
+		look(server, x + 18, ground + 3, -14, x, ground + 2.5, 0);
+		ctx.waitTicks(10);
+		boolean gradOrdered = server.computeOnServer(s -> s.overworld().getEntity(bm) instanceof VehicleEntity v && v.commandFire(fieldB, null, 0));
+		waitUntil(ctx, () -> VehicleEntity.artilleryRounds > r1 + 8, 400);
+		ctx.takeScreenshot("a6_grad_salvo");
+		look(server, x + 230, ground + 45, 600, x + 160, ground, 700);
+		waitUntil(ctx, () -> com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED.size() > landed1 + 10, 900);
+		ctx.waitTicks(6);
+		ctx.takeScreenshot("a7_grad_impacts");
+		waitUntil(ctx, () -> com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED.size() >= landed1 + 40, 600);
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("a7b_grad_field");
+		double[] spreadB = spread(landed1, fieldB);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT arty_grad: ordered {} fired {} landed {} mean {} max {} blocks from the aim", gradOrdered,
+				VehicleEntity.artilleryRounds - r1, (int) spreadB[0], String.format(java.util.Locale.ROOT, "%.1f", spreadB[1]),
+				String.format(java.util.Locale.ROOT, "%.1f", spreadB[2]));
+		server.runOnServer(s -> forVehicles(s.overworld(), ids, Entity::discard));
+
+		// Counter-battery: the player's Zoopark looks ahead, his Msta-S beside it answers fire; an enemy Paladin 700
+		// blocks ahead shells a point near them.
+		int cx = x + 3000;
+		camera(server, cx + 0.5, ground + 6, -30, 0, 10);
+		ctx.waitTicks(40);
+		server.runCommand(String.format("forceload add %d %d %d %d", cx + 20, 680, cx + 60, 720));
+		ctx.waitTicks(20);
+		int radar = spawnVehicle(server, VehicleType.ZOOPARK, cx, 0, 0);
+		int gun = spawnVehicle(server, VehicleType.MSTA_S, cx - 30, -20, 0);
+		int enemy = spawnVehicle(server, VehicleType.M109, cx + 40, 700, 180);
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(radar, gun), v -> {
+			v.country = -1;
+			v.setModeByOrder(VehicleEntity.MODE_AUTO, null);
+		}));
+		ctx.waitTicks(120);
+		int found0 = com.stasdoto.airdefense.radar.CounterBattery.found;
+		int answered0 = com.stasdoto.airdefense.radar.CounterBattery.answered;
+		float hp0 = server.computeOnServer(s -> s.overworld().getEntity(enemy) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		int landed2 = com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED.size();
+		boolean enemyFired = server.computeOnServer(s -> s.overworld().getEntity(enemy) instanceof VehicleEntity v
+				&& v.commandFire(new BlockPos(cx + 12, ground, 70), null, 3));
+		look(server, cx + 14, ground + 7, -16, cx - 6, ground + 4, 4);
+		int foundAfter = waitUntil(ctx, () -> com.stasdoto.airdefense.radar.CounterBattery.found > found0, 800);
+		ctx.takeScreenshot("a8_zoopark_found");
+		int answeredAfter = waitUntil(ctx, () -> com.stasdoto.airdefense.radar.CounterBattery.answered > answered0, 300);
+		waitUntil(ctx, () -> VehicleEntity.artilleryRounds > 0 && server.computeOnServer(s -> s.overworld().getEntity(gun) instanceof VehicleEntity v
+				&& v.striking() && v.loadedRounds() < v.getVehicleType().strikeLoad()), 300);
+		ctx.waitTicks(2);
+		ctx.takeScreenshot("a8b_answer_fire");
+		look(server, cx + 10, ground + 14, 650, cx + 40, ground + 1, 700);
+		Vec3 enemyAt = new Vec3(cx + 40.5, ground, 700.5);
+		int hitWait = waitUntil(ctx, () -> {
+			List<Vec3> all;
+			synchronized (com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED) {
+				all = new ArrayList<>(com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED);
+			}
+			for (int i = landed2; i < all.size(); i++) {
+				if (all.get(i).distanceTo(enemyAt) < 120) {
+					return true;
+				}
+			}
+			return false;
+		}, 900);
+		ctx.waitTicks(4);
+		ctx.takeScreenshot("a8c_enemy_battery_hit");
+		ctx.waitTicks(200);
+		double nearest = 1e9;
+		synchronized (com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED) {
+			for (int i = landed2; i < com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED.size(); i++) {
+				nearest = Math.min(nearest, com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED.get(i).distanceTo(enemyAt));
+			}
+		}
+		float hp1 = server.computeOnServer(s -> s.overworld().getEntity(enemy) instanceof VehicleEntity v ? v.getHealth() : 0f);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT arty_cb: enemy fired {}, found after {} ticks ({}), answered after {} ({}), "
+						+ "answer near the enemy after {} ticks, nearest {} blocks, enemy health {} -> {}", enemyFired, foundAfter,
+				com.stasdoto.airdefense.radar.CounterBattery.found - found0, answeredAfter,
+				com.stasdoto.airdefense.radar.CounterBattery.answered - answered0, hitWait, (int) nearest, hp0, hp1);
+
+		// The tablet's map: the gun selected, its reach, the enemy battery's red cross.
+		server.runCommand("gamemode creative @a");
+		camera(server, cx - 10.5, ground, -30.5, 0, 0);
+		server.runCommand("clear @a");
+		server.runCommand("item replace entity @a hotbar.0 with airdefense:designator");
+		ctx.runOnClient(mc -> mc.player.getInventory().setSelectedSlot(0));
+		ctx.waitTicks(40);
+		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT);
+		ctx.waitForScreen(com.stasdoto.airdefense.client.map.TacticalMapScreen.class);
+		ctx.runOnClient(mc -> {
+			var sc = (com.stasdoto.airdefense.client.map.TacticalMapScreen) mc.gui.screen();
+			sc.select(gun);
+			sc.pickPoint(cx + 40, 700);
+			sc.centerOn(cx, 360, 1);
+		});
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("a9_map_counter_battery");
+		int fires = ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.map.MapClient.fires().size());
+		ctx.runOnClient(mc -> mc.gui.setScreen(null));
+		server.runCommand("clear @a");
+		server.runCommand("gamemode spectator @a");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT arty_map: enemy batteries on the map {}", fires);
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(radar, gun, enemy), Entity::discard));
+		server.runCommand(String.format("forceload remove %d %d %d %d", cx + 20, 680, cx + 60, 720));
 	}
 
 	/** A vest with these pouches in its slots (0-2 the front's lower row, 3 the chest, 4-5 the back). */

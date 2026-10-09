@@ -47,7 +47,7 @@ public final class MapServer {
 			return;
 		}
 		ServerLevel level = player.level();
-		switch (p.action()) {
+		switch (p.kind()) {
 			case MapActionPayload.REFRESH -> {
 			}
 			case MapActionPayload.RADAR -> {
@@ -60,6 +60,13 @@ public final class MapServer {
 					BlockPos target = ground(level, p.x(), p.y(), p.z());
 					DesignatorItem.setTarget(tablet, target);
 					v.commandStrike(target, player);
+				}
+			}
+			case MapActionPayload.FIRE_MISSION -> {
+				if (level.getEntity(p.vehicleId()) instanceof VehicleEntity v && v.getVehicleType().isArtillery() && mine(level, player, v)) {
+					BlockPos target = ground(level, p.x(), p.y(), p.z());
+					DesignatorItem.setTarget(tablet, target);
+					v.commandFire(target, player, p.rounds());
 				}
 			}
 			case MapActionPayload.SET_MODE -> {
@@ -164,6 +171,14 @@ public final class MapServer {
 			}
 			entries.add(v.mapEntry());
 		}
-		return new MapStatusPayload(entries);
+		List<MapStatusPayload.Fire> fires = new ArrayList<>();
+		long now = level.getGameTime();
+		for (com.stasdoto.airdefense.radar.CounterBattery.Fire f : com.stasdoto.airdefense.radar.CounterBattery.fires(level, ownId)) {
+			if (fires.size() < 32) {
+				fires.add(new MapStatusPayload.Fire((int) f.pos.x, (int) f.pos.y, (int) f.pos.z, (int) Math.min(32000, (now - f.last) / 20),
+						Math.min(32000, f.rounds)));
+			}
+		}
+		return new MapStatusPayload(entries, fires);
 	}
 }

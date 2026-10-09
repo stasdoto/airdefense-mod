@@ -57,7 +57,8 @@ public final class DroneNet {
 	public static int massStrike(ServerPlayer player, BlockPos target) {
 		ServerLevel level = player.level();
 		List<? extends VehicleEntity> launchers = level.getEntities(EntityTypeTest.forClass(VehicleEntity.class),
-				v -> v.isAlive() && v.getVehicleType().isLauncher() && v.distanceToSqr(player) < 6000.0 * 6000.0);
+				v -> v.isAlive() && v.getVehicleType().isLauncher() && v.distanceToSqr(player) < 6000.0 * 6000.0
+						&& com.stasdoto.airdefense.map.MapServer.mine(level, player, v));
 		Random r = new Random();
 		int ordered = 0;
 		for (VehicleEntity v : launchers) {

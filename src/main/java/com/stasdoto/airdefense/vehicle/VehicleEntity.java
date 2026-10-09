@@ -149,6 +149,8 @@ public class VehicleEntity extends LivingEntity {
 	@Nullable
 	private java.util.UUID planViewer;
 	private int salvoIndex;
+	/** 1.30 artillery: rounds asked for in this fire mission (0 = the usual salvo). */
+	private int missionRounds;
 
 	// Air defence state (server).
 	private int fireTimer;
@@ -341,7 +343,7 @@ public class VehicleEntity extends LivingEntity {
 			return vtype.weapon.magazine;
 		}
 		if (vtype.isLauncher()) {
-			return vtype.rails() * 2;
+			return vtype.strikeLoad() * 2;
 		}
 		if (vtype.defense == null) {
 			return 0;
@@ -399,8 +401,14 @@ public class VehicleEntity extends LivingEntity {
 		return k;
 	}
 
-	/** Launchers: missiles from the reserve onto the empty rails. */
+	/** Launchers: missiles from the reserve onto the empty rails (artillery: rounds into the gun's racks). */
 	private void reloadRails() {
+		if (vtype.isArtillery()) {
+			int have = Math.max(0, getAmmo());
+			setAmmo(have + takeReserve(vtype.strikeLoad() - have));
+			setLoadedMask(getAmmo() > 0 ? fullMask() : 0);
+			return;
+		}
 		int mask = getLoadedMask();
 		int n = takeReserve(vtype.rails() - Integer.bitCount(mask));
 		for (int i = 0; i < vtype.rails() && n > 0; i++) {
@@ -1884,7 +1892,15 @@ public class VehicleEntity extends LivingEntity {
 		setState(active ? DEPLOYED : STOWED);
 		VehicleGeometry.Geometry g = vtype.geometry;
 		setElevationTarget(active ? g.deployElevation() : g.fixedElevation());
-		if (active && Math.abs(elevation - getElevationTarget()) < 2) {
+		boolean up = active && Math.abs(elevation - getElevationTarget()) < 2;
+		if (vtype.radar.counterBattery) {
+			// 1.30: a counter-battery radar is not part of the air picture: it watches for shells and rockets.
+			if (up) {
+				com.stasdoto.airdefense.radar.CounterBattery.report(level, this, position().add(0, g.height() * 0.85, 0), getYRot(), vtype.radar);
+			} else {
+				com.stasdoto.airdefense.radar.CounterBattery.remove(level, getId());
+			}
+		} else if (up) {
 			RadarNetwork.report(level, getId(), position().add(0, g.height() * 0.85, 0), getYRot(), vtype.radar);
 		} else {
 			RadarNetwork.remove(level, getId());
@@ -1903,6 +1919,27 @@ public class VehicleEntity extends LivingEntity {
 		return commandStrike(target, player, null);
 	}
 
+	/** 1.30: a fire mission of {@code rounds} shells or rockets (0 = the usual salvo). */
+	public boolean commandFire(BlockPos target, @Nullable Player player, int rounds) {
+		int before = missionRounds;
+		missionRounds = Math.max(0, rounds);
+		boolean ok = commandStrike(target, player, null);
+		if (!ok) {
+			missionRounds = before;
+		}
+		return ok;
+	}
+
+	/** Shells, rockets or missiles ready to fire right now. */
+	public int loadedRounds() {
+		return vtype.isArtillery() ? Math.max(0, getAmmo()) : Integer.bitCount(getLoadedMask());
+	}
+
+	/** Is it busy with a strike or fire mission right now. */
+	public boolean striking() {
+		return strikePending || salvoLeft > 0;
+	}
+
 	/** Launch with a flight task (height, speed, route, how many, camera) for drones and cruise missiles. */
 	public boolean commandStrike(BlockPos target, @Nullable Player player, @Nullable com.stasdoto.airdefense.drone.FlightPlan flightPlan) {
 		LauncherType type = vtype.launcher;
@@ -1916,9 +1953,10 @@ public class VehicleEntity extends LivingEntity {
 			return false;
 		}
 		double dist = Math.sqrt(target.distToCenterSqr(position()));
-		if (dist < MIN_STRIKE_DISTANCE) {
+		int minRange = Math.max(MIN_STRIKE_DISTANCE, type.minRange);
+		if (dist < minRange) {
 			if (player != null) {
-				player.sendOverlayMessage(Component.translatable("message.airdefense.too_close", MIN_STRIKE_DISTANCE));
+				player.sendOverlayMessage(Component.translatable("message.airdefense.too_close", minRange));
 			}
 			return false;
 		}
@@ -1928,7 +1966,7 @@ public class VehicleEntity extends LivingEntity {
 			}
 			return false;
 		}
-		if (getLoadedMask() == 0) {
+		if (loadedRounds() == 0) {
 			if (player != null) {
 				player.sendOverlayMessage(Component.translatable("message.airdefense.vehicle.empty"));
 			}
@@ -1957,8 +1995,9 @@ public class VehicleEntity extends LivingEntity {
 			aimAt(strikeTarget);
 			if (strikePending && aimed()) {
 				strikePending = false;
-				int want = plan != null && plan.count() > 0 ? plan.count() : type.salvo;
-				salvoLeft = Math.min(want, Integer.bitCount(getLoadedMask()));
+				int want = plan != null && plan.count() > 0 ? plan.count() : missionRounds > 0 ? missionRounds : type.salvo;
+				salvoLeft = Math.min(want, loadedRounds());
+				missionRounds = 0;
 				salvoTimer = 0;
 			}
 			if (salvoLeft > 0 && --salvoTimer <= 0) {
@@ -1982,7 +2021,7 @@ public class VehicleEntity extends LivingEntity {
 			reloadPending = false;
 			reloadRails();
 		} else if (!reloadPending && cooldown == 0 && !strikePending && salvoLeft == 0 && isFolded() && !isUnlimited()
-				&& getReserve() > 0 && getLoadedMask() != fullMask() && tickCount % 20 == 0) {
+				&& getReserve() > 0 && (vtype.isArtillery() ? getAmmo() < vtype.strikeLoad() : getLoadedMask() != fullMask()) && tickCount % 20 == 0) {
 			// Missiles arrived after the salvo: load them.
 			reloadRails();
 		}
@@ -2007,7 +2046,14 @@ public class VehicleEntity extends LivingEntity {
 		}
 		if (vtype.elevationRate > 0) {
 			float elev = g.deployElevation();
-			if (vtype.launcher != null && vtype.launcher.missile.kind == MissileType.Kind.ROCKET) {
+			if (vtype.isArtillery()) {
+				// Shells and Grad rockets fly the same arc as in MissileEntity.startArc: the barrel (or the tubes) point
+				// along its start - howitzers up to 70 degrees, the Grad's pack up to 55.
+				double d = Math.sqrt(Mth.square(t.x - getX()) + Mth.square(t.z - getZ()));
+				double apex = Mth.clamp(d * 0.45, 60, 340);
+				elev = (float) Math.toDegrees(Math.atan2((t.y - getY()) + 4 * apex, d));
+				elev = Mth.clamp(elev, 15, vtype.launcher.gun() ? 70 : 55);
+			} else if (vtype.launcher != null && vtype.launcher.missile.kind == MissileType.Kind.ROCKET) {
 				// MLRS: point the pod along the start of the rocket's ballistic arc.
 				double d = Math.sqrt(Mth.square(t.x - getX()) + Mth.square(t.z - getZ()));
 				double apex = Mth.clamp(d * 0.45, 45, 260);
@@ -2036,6 +2082,10 @@ public class VehicleEntity extends LivingEntity {
 
 	private void fireStrike(ServerLevel level) {
 		LauncherType type = vtype.launcher;
+		if (type.artillery()) {
+			fireArtillery(level, type);
+			return;
+		}
 		int rail = nextLoadedRail();
 		if (rail < 0 || strikeTarget == null) {
 			salvoLeft = 0;
@@ -2066,6 +2116,48 @@ public class VehicleEntity extends LivingEntity {
 		setLoadedMask(getLoadedMask() & ~(1 << rail));
 		setAmmo(Math.max(0, getAmmo() - 1));
 		Effects.launchBlast(level, from.subtract(dir.scale(2.5)), type.missile);
+	}
+
+	/** For the tests: rounds fired by artillery. */
+	public static int artilleryRounds;
+
+	/**
+	 * 1.30: one round of a fire mission - a shell out of the barrel, or the next of the Grad's forty tubes. The rounds
+	 * fall round the aim point, the more widely the further it is (spread at full range).
+	 */
+	private void fireArtillery(ServerLevel level, LauncherType type) {
+		if (strikeTarget == null || getAmmo() <= 0) {
+			salvoLeft = 0;
+			return;
+		}
+		int rails = Math.max(1, vtype.rails());
+		int rail = Math.floorMod(salvoIndex * 7 + (vtype.launcher.gun() ? 0 : salvoIndex / rails), rails);
+		Vec3 from = railWorld(rail);
+		Vec3 dir = railDirection(rail);
+		RandomSource r = level.getRandom();
+		double d = Math.sqrt(strikeTarget.distToCenterSqr(position()));
+		double spread = type.spread * (0.35 + 0.65 * Math.min(1.0, d / type.maxRange));
+		// Along the line of fire the fall is longer than across it (range errors are bigger than direction errors).
+		Vec3 line = new Vec3(strikeTarget.getX() + 0.5 - getX(), 0, strikeTarget.getZ() + 0.5 - getZ());
+		line = line.lengthSqr() > 1e-4 ? line.normalize() : forward();
+		Vec3 across = new Vec3(-line.z, 0, line.x);
+		double a = r.nextGaussian() * spread * 1.3;
+		double b = r.nextGaussian() * spread * 0.8;
+		Vec3 aim = new Vec3(strikeTarget.getX() + 0.5 + line.x * a + across.x * b, strikeTarget.getY() + 1.0,
+				strikeTarget.getZ() + 0.5 + line.z * a + across.z * b);
+		MissileEntity m = MissileEntity.launchStrike(level, type.missile, from, aim, forward(), dir);
+		m.setCountry(country);
+		salvoIndex++;
+		artilleryRounds++;
+		setAmmo(Math.max(0, getAmmo() - 1));
+		if (getAmmo() <= 0) {
+			setLoadedMask(0);
+		}
+		if (type.gun()) {
+			Effects.muzzle(level, from, dir, 1.4f);
+		} else {
+			Effects.launchBlast(level, from.subtract(dir.scale(1.5)), type.missile);
+		}
 	}
 
 	private void keepLoaded(ServerLevel level) {
@@ -2700,6 +2792,15 @@ public class VehicleEntity extends LivingEntity {
 			}
 			return;
 		}
+		if (vtype.isArtillery()) {
+			// Artillery: fires only when told to, or answers the enemy's guns by itself (counter-battery fire).
+			mode = mode == MODE_OFF ? MODE_OFF : MODE_AUTO;
+			setMode(mode);
+			if (player != null) {
+				player.sendOverlayMessage(Component.translatable(mode == MODE_OFF ? "message.airdefense.arty.manual" : "message.airdefense.arty.auto"));
+			}
+			return;
+		}
 		setMode(mode);
 		burstLeft = 0;
 		if (player != null) {
@@ -2729,7 +2830,7 @@ public class VehicleEntity extends LivingEntity {
 
 	/** Auto → manual → off → auto. */
 	private void cycleMode(Player player) {
-		setModeByOrder(vtype.isRadar() ? (getMode() == MODE_OFF ? MODE_AUTO : MODE_OFF) : nextMode(getMode()), player);
+		setModeByOrder(vtype.isRadar() || vtype.isArtillery() ? (getMode() == MODE_OFF ? MODE_AUTO : MODE_OFF) : nextMode(getMode()), player);
 	}
 
 	public static int nextMode(int mode) {
@@ -2755,7 +2856,7 @@ public class VehicleEntity extends LivingEntity {
 					? Component.translatable("message.airdefense.status.firing", Math.max(1, salvoLeft))
 					: cooldown > 0
 					? Component.translatable("message.airdefense.status.reload", cooldown / 20 + 1)
-					: Component.translatable("message.airdefense.status.ready", Integer.bitCount(getLoadedMask()));
+					: Component.translatable("message.airdefense.status.ready", loadedRounds());
 			return Component.translatable("message.airdefense.vehicle.status_launcher", name, hp, ready).append(reserveText());
 		}
 		if (vtype.isTruck()) {
@@ -2959,13 +3060,15 @@ public class VehicleEntity extends LivingEntity {
 		super.die(source);
 		if (level() instanceof ServerLevel server) {
 			RadarNetwork.remove(server, getId());
+			com.stasdoto.airdefense.radar.CounterBattery.remove(server, getId());
 			com.stasdoto.airdefense.nation.Arsenals.destroyed(server, this);
 			if (cargoDelivery != 0) {
 				com.stasdoto.airdefense.nation.Arsenals.lorryLost(server, this);
 			}
 			ejectPassengers();
 			// The fuel and every missile still on board go up.
-			float power = 3.5f + Integer.bitCount(getLoadedMask()) * (vtype.isLauncher() ? 1.2f : 0.4f);
+			float power = 3.5f + (vtype.isArtillery() ? Math.min(12, getAmmo()) * 0.35f
+					: Integer.bitCount(getLoadedMask()) * (vtype.isLauncher() ? 1.2f : 0.4f));
 			Effects.vehicleDestroyed(server, this, position().add(0, 1.2, 0), Math.min(power, 9f));
 			setLoadedMask(0);
 		}

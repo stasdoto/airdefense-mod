@@ -50,7 +50,12 @@ public enum MissileType {
 	JAVELIN("javelin_missile", Kind.DIRECT, false, 2.4, 0.12, 3.2f, false, 1f, 1.0f, 0, 400, 0.18, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
 	G40("ammo_40mm", Kind.DIRECT, false, 3.2, 0.0, 1.6f, false, 1f, 1.0f, 0, 200, 0.0, Trail.NONE, null),
 	// 1.24: Iron Dome's Tamir - quick, very agile, a proximity fuse (the model is drawn at half size, so scale 2).
-	TAMIR("tamir_missile", Kind.INTERCEPTOR, false, 4.6, 0.38, 2.0f, false, 2f, 2.0f, 3.6, 170, 0.36, Trail.WHITE, ModSounds.MISSILE_FLIGHT);
+	TAMIR("tamir_missile", Kind.INTERCEPTOR, false, 4.6, 0.38, 2.0f, false, 2f, 2.0f, 3.6, 170, 0.36, Trail.WHITE, ModSounds.MISSILE_FLIGHT),
+	// 1.30: artillery. Howitzer shells have no motor: they leave the barrel at full speed and fly a high arc (the air
+	// defence leaves them be); the Grad's 122 mm rocket burns for a moment and flies the same kind of arc.
+	SHELL_152("shell_152", Kind.ROCKET, false, 4.0, 0.0, 3.4f, false, 1f, 1.0f, 0, 700, 0.0, Trail.NONE, null),
+	SHELL_155("shell_155", Kind.ROCKET, false, 4.2, 0.0, 3.5f, false, 1f, 1.0f, 0, 700, 0.0, Trail.NONE, null),
+	GRAD("grad_rocket", Kind.ROCKET, true, 3.4, 0.22, 2.5f, false, 1f, 1.0f, 0, 700, 0.0, Trail.SMALL, null);
 
 	public enum Kind { BALLISTIC, ROCKET, CRUISE, DRONE, INTERCEPTOR, DIRECT }
 
@@ -120,6 +125,16 @@ public enum MissileType {
 			case MAGURA -> 600f;
 			default -> 70f;
 		};
+	}
+
+	/** 1.30: a howitzer shell (no motor, no trail). */
+	public boolean shell() {
+		return this == SHELL_152 || this == SHELL_155;
+	}
+
+	/** 1.30: what artillery fires - shells and the Grad's rockets (a counter-battery radar tracks these back). */
+	public boolean artillery() {
+		return shell() || this == GRAD;
 	}
 
 	/** Flown by a player from its camera. */

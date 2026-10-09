@@ -73,11 +73,16 @@ public class VehicleItem extends Item {
 	@Override
 	public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
 		tooltip.accept(Component.translatable("item.airdefense.vehicle.hint").withStyle(ChatFormatting.GRAY));
-		tooltip.accept(Component.translatable(type.isLauncher() ? "item.airdefense.vehicle.hint_launcher"
+		tooltip.accept(Component.translatable(type.isArtillery() ? "item.airdefense.vehicle.hint_artillery"
+				: type.isCounterBattery() ? "item.airdefense.vehicle.hint_cb" : type.isLauncher() ? "item.airdefense.vehicle.hint_launcher"
 				: type.isTruck() ? "item.airdefense.vehicle.hint_truck" : type.isAir() ? "item.airdefense.vehicle.hint_air"
 				: type.isRadar() ? "item.airdefense.vehicle.hint_radar" : type.boat ? "item.airdefense.vehicle.hint_boat"
 				: type.isArmed() ? "item.airdefense.vehicle.hint_armed" : "item.airdefense.vehicle.hint_defense")
 				.withStyle(ChatFormatting.DARK_GRAY));
+		if (type.isArtillery()) {
+			tooltip.accept(Component.translatable("item.airdefense.arty.stats", type.launcher.maxRange, type.launcher.rounds, type.launcher.salvo)
+					.withStyle(ChatFormatting.DARK_AQUA));
+		}
 		if (type.isRadar()) {
 			tooltip.accept(Component.translatable("item.airdefense.radar.stats", (int) type.radar.range, (int) type.radar.minAltitude,
 					Component.translatable(type.radar.rotates() ? "item.airdefense.radar.rotating" : "item.airdefense.radar.sector", (int) type.radar.sector))

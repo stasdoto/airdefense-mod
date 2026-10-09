@@ -19,7 +19,7 @@ public final class GenModels {
 	/** Is there a layer of this id (a vehicle, its window glass "<id>_glass", its inside "<id>_int")? */
 	public static boolean has(String id) {
 		return switch (id) {
-			case "p18", "p18_glass", "st68", "st68_glass", "trml4d", "trml4d_glass", "sentinel", "sentinel_glass", "mpq65", "mpq65_glass", "kupol", "kupol_glass", "elm2084", "elm2084_glass", "pantsir", "pantsir_glass", "tor", "buk", "buk_glass", "s300", "s300_glass", "osa", "osa_glass", "strela10", "strela10_glass", "shilka", "tunguska", "sampt", "sampt_glass", "avenger", "avenger_glass", "mfg", "mfg_glass", "zu23", "zu23_glass", "iron_dome", "iron_dome_glass", "t72", "t90", "leopard2", "abrams", "bmp2", "bradley", "btr82", "btr82_glass", "btr4", "btr4_glass", "m113", "maxxpro", "maxxpro_glass", "kozak", "kozak_glass", "gyurza", "gyurza_glass", "raptor", "raptor_glass", "rhib", "rhib_glass", "mi8", "mi8_glass", "mi24", "mi24_glass", "ka52", "ka52_glass", "su25", "su25_glass", "f16", "f16_glass", "fuel_truck", "fuel_truck_glass", "supply_truck", "supply_truck_glass", "p18_int", "st68_int", "trml4d_int", "sentinel_int", "mpq65_int", "elm2084_int", "pantsir_int", "s300_int", "sampt_int", "avenger_int", "mfg_int", "zu23_int", "iron_dome_int", "btr82_int", "btr4_int", "maxxpro_int", "kozak_int", "gyurza_int", "raptor_int", "mi8_int", "mi24_int", "ka52_int", "su25_int", "f16_int", "fuel_truck_int", "supply_truck_int", "iskander_int", "kalibr_int", "shahed_int", "himars_int", "patriot_int", "iris_t_int", "nasams_int" -> true;
+			case "p18", "p18_glass", "st68", "st68_glass", "trml4d", "trml4d_glass", "sentinel", "sentinel_glass", "mpq65", "mpq65_glass", "kupol", "kupol_glass", "elm2084", "elm2084_glass", "pantsir", "pantsir_glass", "tor", "buk", "buk_glass", "s300", "s300_glass", "osa", "osa_glass", "strela10", "strela10_glass", "shilka", "tunguska", "sampt", "sampt_glass", "avenger", "avenger_glass", "mfg", "mfg_glass", "zu23", "zu23_glass", "iron_dome", "iron_dome_glass", "t72", "t90", "leopard2", "abrams", "bmp2", "bradley", "btr82", "btr82_glass", "btr4", "btr4_glass", "m113", "maxxpro", "maxxpro_glass", "kozak", "kozak_glass", "gyurza", "gyurza_glass", "raptor", "raptor_glass", "rhib", "rhib_glass", "mi8", "mi8_glass", "mi24", "mi24_glass", "ka52", "ka52_glass", "su25", "su25_glass", "f16", "f16_glass", "fuel_truck", "fuel_truck_glass", "supply_truck", "supply_truck_glass", "msta_s", "m109", "bm21", "bm21_glass", "zoopark", "zoopark_glass", "tpq36", "tpq36_glass", "p18_int", "st68_int", "trml4d_int", "sentinel_int", "mpq65_int", "elm2084_int", "pantsir_int", "s300_int", "sampt_int", "avenger_int", "mfg_int", "zu23_int", "iron_dome_int", "btr82_int", "btr4_int", "maxxpro_int", "kozak_int", "gyurza_int", "raptor_int", "mi8_int", "mi24_int", "ka52_int", "su25_int", "f16_int", "fuel_truck_int", "supply_truck_int", "iskander_int", "kalibr_int", "shahed_int", "himars_int", "patriot_int", "iris_t_int", "nasams_int", "bm21_int", "tpq36_int" -> true;
 			default -> false;
 		};
 	}
@@ -98,6 +98,14 @@ public final class GenModels {
 			case "fuel_truck_glass" -> fuel_truck_glass();
 			case "supply_truck" -> supply_truck();
 			case "supply_truck_glass" -> supply_truck_glass();
+			case "msta_s" -> msta_s();
+			case "m109" -> m109();
+			case "bm21" -> bm21();
+			case "bm21_glass" -> bm21_glass();
+			case "zoopark" -> zoopark();
+			case "zoopark_glass" -> zoopark_glass();
+			case "tpq36" -> tpq36();
+			case "tpq36_glass" -> tpq36_glass();
 			case "p18_int" -> p18_int();
 			case "st68_int" -> st68_int();
 			case "trml4d_int" -> trml4d_int();
@@ -131,6 +139,8 @@ public final class GenModels {
 			case "patriot_int" -> patriot_int();
 			case "iris_t_int" -> iris_t_int();
 			case "nasams_int" -> nasams_int();
+			case "bm21_int" -> bm21_int();
+			case "tpq36_int" -> tpq36_int();
 			default -> throw new IllegalArgumentException(id);
 		};
 	}
@@ -209,6 +219,14 @@ public final class GenModels {
 			case "fuel_truck_glass" -> fuel_truckPaths();
 			case "supply_truck" -> supply_truckPaths();
 			case "supply_truck_glass" -> supply_truckPaths();
+			case "msta_s" -> msta_sPaths();
+			case "m109" -> m109Paths();
+			case "bm21" -> bm21Paths();
+			case "bm21_glass" -> bm21Paths();
+			case "zoopark" -> zooparkPaths();
+			case "zoopark_glass" -> zooparkPaths();
+			case "tpq36" -> tpq36Paths();
+			case "tpq36_glass" -> tpq36Paths();
 			case "p18_int" -> p18_intPaths();
 			case "st68_int" -> st68_intPaths();
 			case "trml4d_int" -> trml4d_intPaths();
@@ -242,6 +260,8 @@ public final class GenModels {
 			case "patriot_int" -> patriot_intPaths();
 			case "iris_t_int" -> iris_t_intPaths();
 			case "nasams_int" -> nasams_intPaths();
+			case "bm21_int" -> bm21_intPaths();
+			case "tpq36_int" -> tpq36_intPaths();
 			default -> throw new IllegalArgumentException(id);
 		};
 	}
@@ -11005,6 +11025,1450 @@ public final class GenModels {
 		return LayerDefinition.create(mesh, 1024, 176);
 	}
 
+	public static LayerDefinition msta_s() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(0, 112).addBox(-28.64F, -15.2F, -49.6F, 9F, 2F, 99F)
+				.texOffs(410, 112).addBox(-28.64F, -1.6F, -44F, 9F, 2F, 88F)
+				.texOffs(786, 213).addBox(-28.64F, -13.6F, 44F, 9F, 12F, 6F, EnumSet.of(Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.DOWN, Direction.UP))
+				.texOffs(816, 213).addBox(-28.64F, -13.6F, -49.6F, 9F, 12F, 6F, EnumSet.of(Direction.NORTH, Direction.WEST, Direction.EAST, Direction.DOWN, Direction.UP))
+				.texOffs(282, 0).addBox(-28.96F, -16.48F, -53.6F, 10F, 1F, 108F)
+				.texOffs(0, 112).addBox(19.36F, -15.2F, -49.6F, 9F, 2F, 99F)
+				.texOffs(410, 112).addBox(19.36F, -1.6F, -44F, 9F, 2F, 88F)
+				.texOffs(786, 213).addBox(19.36F, -13.6F, 44F, 9F, 12F, 6F, EnumSet.of(Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.DOWN, Direction.UP))
+				.texOffs(816, 213).addBox(19.36F, -13.6F, -49.6F, 9F, 12F, 6F, EnumSet.of(Direction.NORTH, Direction.WEST, Direction.EAST, Direction.DOWN, Direction.UP))
+				.texOffs(282, 0).addBox(19.04F, -16.48F, -53.6F, 10F, 1F, 108F)
+				.texOffs(0, 0).addBox(-19.36F, -16F, -52F, 39F, 10F, 102F)
+				.texOffs(518, 0).addBox(-28.64F, -25.6F, -55.2F, 57F, 10F, 91F)
+				.texOffs(626, 213).addBox(-27.84F, -25.6F, 36F, 56F, 14F, 5F)
+				.texOffs(0, 268).addBox(-27.84F, -22F, 41F, 56F, 11F, 5F)
+				.texOffs(362, 268).addBox(-27.84F, -18.4F, 46F, 56F, 7F, 5F)
+				.texOffs(652, 268).addBox(-27.84F, -14.8F, 51F, 56F, 4F, 5F)
+				.texOffs(820, 268).addBox(-24.16F, -19.84F, 50.4F, 4F, 2F, 1F)
+				.texOffs(820, 268).addBox(20.32F, -19.84F, 50.4F, 4F, 2F, 1F)
+				.texOffs(830, 268).addBox(-25.44F, -20F, -55.84F, 3F, 2F, 1F)
+				.texOffs(830, 268).addBox(22.24F, -20F, -55.84F, 3F, 2F, 1F)
+				.texOffs(830, 112).addBox(-28.32F, -21.6F, -41.6F, 7F, 6F, 51F)
+				.texOffs(830, 112).addBox(21.28F, -21.6F, -41.6F, 7F, 6F, 51F)
+				.texOffs(524, 268).addBox(-23.2F, -30.4F, -62.4F, 46F, 5F, 6F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p1 = root.addOrReplaceChild("road_0_l", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(904, 213).addBox(-3.48F, -5.76F, -2.4192F, 7F, 12F, 5F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(370, 213).addBox(3.48F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(370, 213).addBox(-4.12F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-24F, -5.76F, -40F, 0F, 0F, 0F));
+		PartDefinition p2 = p1.addOrReplaceChild("road_0_l_d1", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p3 = p1.addOrReplaceChild("road_0_l_d2", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p4 = root.addOrReplaceChild("road_1_l", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(904, 213).addBox(-3.48F, -5.76F, -2.4192F, 7F, 12F, 5F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(370, 213).addBox(3.48F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(370, 213).addBox(-4.12F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-24F, -5.76F, -24.32F, 0F, 0F, 0F));
+		PartDefinition p5 = p4.addOrReplaceChild("road_1_l_d1", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p6 = p4.addOrReplaceChild("road_1_l_d2", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p7 = root.addOrReplaceChild("road_2_l", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(904, 213).addBox(-3.48F, -5.76F, -2.4192F, 7F, 12F, 5F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(370, 213).addBox(3.48F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(370, 213).addBox(-4.12F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-24F, -5.76F, -8.64F, 0F, 0F, 0F));
+		PartDefinition p8 = p7.addOrReplaceChild("road_2_l_d1", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p9 = p7.addOrReplaceChild("road_2_l_d2", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p10 = root.addOrReplaceChild("road_3_l", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(904, 213).addBox(-3.48F, -5.76F, -2.4192F, 7F, 12F, 5F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(370, 213).addBox(3.48F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(370, 213).addBox(-4.12F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-24F, -5.76F, 7.04F, 0F, 0F, 0F));
+		PartDefinition p11 = p10.addOrReplaceChild("road_3_l_d1", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p12 = p10.addOrReplaceChild("road_3_l_d2", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p13 = root.addOrReplaceChild("road_4_l", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(904, 213).addBox(-3.48F, -5.76F, -2.4192F, 7F, 12F, 5F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(370, 213).addBox(3.48F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(370, 213).addBox(-4.12F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-24F, -5.76F, 22.72F, 0F, 0F, 0F));
+		PartDefinition p14 = p13.addOrReplaceChild("road_4_l_d1", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p15 = p13.addOrReplaceChild("road_4_l_d2", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p16 = root.addOrReplaceChild("road_5_l", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(904, 213).addBox(-3.48F, -5.76F, -2.4192F, 7F, 12F, 5F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(370, 213).addBox(3.48F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(370, 213).addBox(-4.12F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-24F, -5.76F, 38.4F, 0F, 0F, 0F));
+		PartDefinition p17 = p16.addOrReplaceChild("road_5_l_d1", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p18 = p16.addOrReplaceChild("road_5_l_d2", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p19 = root.addOrReplaceChild("sprocket_l", CubeListBuilder.create()
+				.texOffs(260, 268).addBox(-3.248F, -2.016F, -4.8F, 6F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(292, 268).addBox(-3.248F, -4.8F, -2.016F, 6F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(604, 213).addBox(3.248F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(604, 213).addBox(-3.888F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-24F, -9.92F, 46.4F, 0F, 0F, 0F));
+		PartDefinition p20 = p19.addOrReplaceChild("sprocket_l_d1", CubeListBuilder.create()
+				.texOffs(260, 268).addBox(-3.248F, -2.016F, -4.8F, 6F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p21 = p19.addOrReplaceChild("sprocket_l_d2", CubeListBuilder.create()
+				.texOffs(260, 268).addBox(-3.248F, -2.016F, -4.8F, 6F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p22 = root.addOrReplaceChild("idler_l", CubeListBuilder.create()
+				.texOffs(312, 268).addBox(-3.248F, -1.8816F, -4.48F, 6F, 4F, 9F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(342, 268).addBox(-3.248F, -4.48F, -1.8816F, 6F, 9F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(846, 213).addBox(3.248F, -4.48F, -4.48F, 1F, 9F, 9F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(846, 213).addBox(-3.888F, -4.48F, -4.48F, 1F, 9F, 9F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-24F, -9.6F, -46.4F, 0F, 0F, 0F));
+		PartDefinition p23 = p22.addOrReplaceChild("idler_l_d1", CubeListBuilder.create()
+				.texOffs(312, 268).addBox(-3.248F, -1.8816F, -4.48F, 6F, 4F, 9F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p24 = p22.addOrReplaceChild("idler_l_d2", CubeListBuilder.create()
+				.texOffs(312, 268).addBox(-3.248F, -1.8816F, -4.48F, 6F, 4F, 9F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p25 = root.addOrReplaceChild("road_0_r", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(904, 213).addBox(-3.48F, -5.76F, -2.4192F, 7F, 12F, 5F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(370, 213).addBox(3.48F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(370, 213).addBox(-4.12F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(24F, -5.76F, -40F, 0F, 0F, 0F));
+		PartDefinition p26 = p25.addOrReplaceChild("road_0_r_d1", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p27 = p25.addOrReplaceChild("road_0_r_d2", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p28 = root.addOrReplaceChild("road_1_r", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(904, 213).addBox(-3.48F, -5.76F, -2.4192F, 7F, 12F, 5F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(370, 213).addBox(3.48F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(370, 213).addBox(-4.12F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(24F, -5.76F, -24.32F, 0F, 0F, 0F));
+		PartDefinition p29 = p28.addOrReplaceChild("road_1_r_d1", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p30 = p28.addOrReplaceChild("road_1_r_d2", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p31 = root.addOrReplaceChild("road_2_r", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(904, 213).addBox(-3.48F, -5.76F, -2.4192F, 7F, 12F, 5F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(370, 213).addBox(3.48F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(370, 213).addBox(-4.12F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(24F, -5.76F, -8.64F, 0F, 0F, 0F));
+		PartDefinition p32 = p31.addOrReplaceChild("road_2_r_d1", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p33 = p31.addOrReplaceChild("road_2_r_d2", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p34 = root.addOrReplaceChild("road_3_r", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(904, 213).addBox(-3.48F, -5.76F, -2.4192F, 7F, 12F, 5F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(370, 213).addBox(3.48F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(370, 213).addBox(-4.12F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(24F, -5.76F, 7.04F, 0F, 0F, 0F));
+		PartDefinition p35 = p34.addOrReplaceChild("road_3_r_d1", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p36 = p34.addOrReplaceChild("road_3_r_d2", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p37 = root.addOrReplaceChild("road_4_r", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(904, 213).addBox(-3.48F, -5.76F, -2.4192F, 7F, 12F, 5F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(370, 213).addBox(3.48F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(370, 213).addBox(-4.12F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(24F, -5.76F, 22.72F, 0F, 0F, 0F));
+		PartDefinition p38 = p37.addOrReplaceChild("road_4_r_d1", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p39 = p37.addOrReplaceChild("road_4_r_d2", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p40 = root.addOrReplaceChild("road_5_r", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(904, 213).addBox(-3.48F, -5.76F, -2.4192F, 7F, 12F, 5F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(370, 213).addBox(3.48F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(370, 213).addBox(-4.12F, -5.76F, -5.76F, 1F, 12F, 12F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(24F, -5.76F, 38.4F, 0F, 0F, 0F));
+		PartDefinition p41 = p40.addOrReplaceChild("road_5_r_d1", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p42 = p40.addOrReplaceChild("road_5_r_d2", CubeListBuilder.create()
+				.texOffs(866, 213).addBox(-3.48F, -2.4192F, -5.76F, 7F, 5F, 12F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p43 = root.addOrReplaceChild("sprocket_r", CubeListBuilder.create()
+				.texOffs(260, 268).addBox(-3.248F, -2.016F, -4.8F, 6F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(292, 268).addBox(-3.248F, -4.8F, -2.016F, 6F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(604, 213).addBox(3.248F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(604, 213).addBox(-3.888F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(24F, -9.92F, 46.4F, 0F, 0F, 0F));
+		PartDefinition p44 = p43.addOrReplaceChild("sprocket_r_d1", CubeListBuilder.create()
+				.texOffs(260, 268).addBox(-3.248F, -2.016F, -4.8F, 6F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p45 = p43.addOrReplaceChild("sprocket_r_d2", CubeListBuilder.create()
+				.texOffs(260, 268).addBox(-3.248F, -2.016F, -4.8F, 6F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p46 = root.addOrReplaceChild("idler_r", CubeListBuilder.create()
+				.texOffs(312, 268).addBox(-3.248F, -1.8816F, -4.48F, 6F, 4F, 9F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(342, 268).addBox(-3.248F, -4.48F, -1.8816F, 6F, 9F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(846, 213).addBox(3.248F, -4.48F, -4.48F, 1F, 9F, 9F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(846, 213).addBox(-3.888F, -4.48F, -4.48F, 1F, 9F, 9F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(24F, -9.6F, -46.4F, 0F, 0F, 0F));
+		PartDefinition p47 = p46.addOrReplaceChild("idler_r_d1", CubeListBuilder.create()
+				.texOffs(312, 268).addBox(-3.248F, -1.8816F, -4.48F, 6F, 4F, 9F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p48 = p46.addOrReplaceChild("idler_r_d2", CubeListBuilder.create()
+				.texOffs(312, 268).addBox(-3.248F, -1.8816F, -4.48F, 6F, 4F, 9F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p49 = root.addOrReplaceChild("turret", CubeListBuilder.create()
+				.texOffs(604, 112).addBox(-25.92F, -20F, -40F, 52F, 20F, 61F)
+				.texOffs(396, 213).addBox(-24F, -16F, 20.8F, 48F, 16F, 7F)
+				.texOffs(0, 213).addBox(-23.2F, -21.92F, -36.8F, 46F, 2F, 53F)
+				.texOffs(122, 268).addBox(-14.4F, -15.2F, -41.92F, 29F, 13F, 2F)
+				.texOffs(198, 213).addBox(-29.92F, -15.2F, -35.2F, 4F, 9F, 26F)
+				.texOffs(198, 213).addBox(25.92F, -15.2F, -35.2F, 4F, 9F, 26F)
+				.texOffs(216, 268).addBox(7.2F, -25.12F, -16F, 11F, 3F, 11F)
+				.texOffs(748, 213).addBox(12F, -26.4F, -12F, 1F, 1F, 18F)
+				.texOffs(484, 268).addBox(-16F, -23.52F, -19.2F, 10F, 2F, 10F)
+				.texOffs(628, 268).addBox(-17.6F, -25.92F, 6.4F, 6F, 4F, 6F)
+				.texOffs(774, 268).addBox(-24.8F, -17.6F, 24.8F, 10F, 4F, 4F)
+				.texOffs(774, 268).addBox(15.2F, -17.6F, 24.8F, 10F, 4F, 4F)
+				, PartPose.offsetAndRotation(0F, -25.6F, -9.6F, 0F, 0F, 0F));
+		PartDefinition p50 = p49.addOrReplaceChild("gun", CubeListBuilder.create()
+				.texOffs(506, 213).addBox(-8.8F, -6.72F, -5.6F, 18F, 13F, 10F)
+				.texOffs(258, 213).addBox(-6.08F, -5.44F, 4.8F, 12F, 10F, 19F)
+				.texOffs(320, 213).addBox(-4F, -7.36F, 4.8F, 3F, 3F, 22F)
+				.texOffs(320, 213).addBox(1.44F, -7.36F, 4.8F, 3F, 3F, 22F)
+				.texOffs(216, 112).addBox(-1.6F, -1.6F, 24F, 3F, 3F, 94F)
+				.texOffs(562, 213).addBox(-2.48F, -2.48F, 59.872F, 5F, 5F, 16F)
+				.texOffs(184, 268).addBox(-3.04F, -2.4F, 118.4F, 6F, 5F, 10F)
+				.texOffs(802, 268).addBox(-3.28F, -1.76F, 120.32F, 7F, 4F, 2F)
+				.texOffs(802, 268).addBox(-3.28F, -1.76F, 124.16F, 7F, 4F, 2F)
+				, PartPose.offsetAndRotation(0F, -10.4F, 28F, 0F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 288);
+	}
+
+	public static Map<String, String> msta_sPaths() {
+		return Map.ofEntries(
+				Map.entry("body", "body"),
+				Map.entry("road_0_l", "road_0_l"),
+				Map.entry("road_0_l_d1", "road_0_l/road_0_l_d1"),
+				Map.entry("road_0_l_d2", "road_0_l/road_0_l_d2"),
+				Map.entry("road_1_l", "road_1_l"),
+				Map.entry("road_1_l_d1", "road_1_l/road_1_l_d1"),
+				Map.entry("road_1_l_d2", "road_1_l/road_1_l_d2"),
+				Map.entry("road_2_l", "road_2_l"),
+				Map.entry("road_2_l_d1", "road_2_l/road_2_l_d1"),
+				Map.entry("road_2_l_d2", "road_2_l/road_2_l_d2"),
+				Map.entry("road_3_l", "road_3_l"),
+				Map.entry("road_3_l_d1", "road_3_l/road_3_l_d1"),
+				Map.entry("road_3_l_d2", "road_3_l/road_3_l_d2"),
+				Map.entry("road_4_l", "road_4_l"),
+				Map.entry("road_4_l_d1", "road_4_l/road_4_l_d1"),
+				Map.entry("road_4_l_d2", "road_4_l/road_4_l_d2"),
+				Map.entry("road_5_l", "road_5_l"),
+				Map.entry("road_5_l_d1", "road_5_l/road_5_l_d1"),
+				Map.entry("road_5_l_d2", "road_5_l/road_5_l_d2"),
+				Map.entry("sprocket_l", "sprocket_l"),
+				Map.entry("sprocket_l_d1", "sprocket_l/sprocket_l_d1"),
+				Map.entry("sprocket_l_d2", "sprocket_l/sprocket_l_d2"),
+				Map.entry("idler_l", "idler_l"),
+				Map.entry("idler_l_d1", "idler_l/idler_l_d1"),
+				Map.entry("idler_l_d2", "idler_l/idler_l_d2"),
+				Map.entry("road_0_r", "road_0_r"),
+				Map.entry("road_0_r_d1", "road_0_r/road_0_r_d1"),
+				Map.entry("road_0_r_d2", "road_0_r/road_0_r_d2"),
+				Map.entry("road_1_r", "road_1_r"),
+				Map.entry("road_1_r_d1", "road_1_r/road_1_r_d1"),
+				Map.entry("road_1_r_d2", "road_1_r/road_1_r_d2"),
+				Map.entry("road_2_r", "road_2_r"),
+				Map.entry("road_2_r_d1", "road_2_r/road_2_r_d1"),
+				Map.entry("road_2_r_d2", "road_2_r/road_2_r_d2"),
+				Map.entry("road_3_r", "road_3_r"),
+				Map.entry("road_3_r_d1", "road_3_r/road_3_r_d1"),
+				Map.entry("road_3_r_d2", "road_3_r/road_3_r_d2"),
+				Map.entry("road_4_r", "road_4_r"),
+				Map.entry("road_4_r_d1", "road_4_r/road_4_r_d1"),
+				Map.entry("road_4_r_d2", "road_4_r/road_4_r_d2"),
+				Map.entry("road_5_r", "road_5_r"),
+				Map.entry("road_5_r_d1", "road_5_r/road_5_r_d1"),
+				Map.entry("road_5_r_d2", "road_5_r/road_5_r_d2"),
+				Map.entry("sprocket_r", "sprocket_r"),
+				Map.entry("sprocket_r_d1", "sprocket_r/sprocket_r_d1"),
+				Map.entry("sprocket_r_d2", "sprocket_r/sprocket_r_d2"),
+				Map.entry("idler_r", "idler_r"),
+				Map.entry("idler_r_d1", "idler_r/idler_r_d1"),
+				Map.entry("idler_r_d2", "idler_r/idler_r_d2"),
+				Map.entry("turret", "turret"),
+				Map.entry("gun", "turret/gun")
+		);
+	}
+
+	public static LayerDefinition m109() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(720, 0).addBox(-25.2F, -13.6F, -44F, 6F, 2F, 88F)
+				.texOffs(170, 98).addBox(-25.2F, -1.6F, -38.4F, 6F, 2F, 77F)
+				.texOffs(194, 183).addBox(-25.2F, -12F, 38.4F, 6F, 10F, 6F, EnumSet.of(Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.DOWN, Direction.UP))
+				.texOffs(218, 183).addBox(-25.2F, -12F, -44F, 6F, 10F, 6F, EnumSet.of(Direction.NORTH, Direction.WEST, Direction.EAST, Direction.DOWN, Direction.UP))
+				.texOffs(256, 0).addBox(-25.52F, -14.88F, -48F, 7F, 1F, 97F)
+				.texOffs(720, 0).addBox(18.8F, -13.6F, -44F, 6F, 2F, 88F)
+				.texOffs(170, 98).addBox(18.8F, -1.6F, -38.4F, 6F, 2F, 77F)
+				.texOffs(194, 183).addBox(18.8F, -12F, 38.4F, 6F, 10F, 6F, EnumSet.of(Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.DOWN, Direction.UP))
+				.texOffs(218, 183).addBox(18.8F, -12F, -44F, 6F, 10F, 6F, EnumSet.of(Direction.NORTH, Direction.WEST, Direction.EAST, Direction.DOWN, Direction.UP))
+				.texOffs(256, 0).addBox(18.48F, -14.88F, -48F, 7F, 1F, 97F)
+				.texOffs(0, 0).addBox(-18.4F, -14.4F, -46.4F, 37F, 7F, 91F)
+				.texOffs(464, 0).addBox(-25.12F, -30.4F, -49.6F, 50F, 16F, 78F)
+				.texOffs(642, 98).addBox(-24.32F, -30.4F, 28.8F, 49F, 18F, 5F)
+				.texOffs(22, 183).addBox(-24.32F, -25.8F, 34.2F, 49F, 14F, 5F)
+				.texOffs(332, 183).addBox(-24.32F, -21.2F, 39.6F, 49F, 9F, 5F)
+				.texOffs(654, 183).addBox(-24.32F, -16.6F, 45F, 49F, 5F, 5F)
+				.texOffs(782, 183).addBox(-19.2F, -32F, 21.6F, 10F, 2F, 7F)
+				.texOffs(484, 183).addBox(4F, -30.08F, 29.6F, 18F, 1F, 12F)
+				.texOffs(242, 183).addBox(-9.6F, -28.8F, -50.72F, 19F, 14F, 1F)
+				.texOffs(958, 183).addBox(-21.12F, -21.44F, 47.2F, 4F, 2F, 1F)
+				.texOffs(958, 183).addBox(17.28F, -21.44F, 47.2F, 4F, 2F, 1F)
+				.texOffs(968, 183).addBox(-20.8F, -22.4F, -50.24F, 3F, 2F, 1F)
+				.texOffs(968, 183).addBox(17.6F, -22.4F, -50.24F, 3F, 2F, 1F)
+				.texOffs(186, 183).addBox(-5.6F, -36.8F, 40.8F, 2F, 15F, 2F)
+				.texOffs(186, 183).addBox(4F, -36.8F, 40.8F, 2F, 15F, 2F)
+				.texOffs(816, 183).addBox(-5.6F, -36.8F, 40.32F, 11F, 2F, 3F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p1 = root.addOrReplaceChild("road_0_l", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(314, 183).addBox(-2.4F, -5.28F, -2.2176F, 5F, 11F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(914, 98).addBox(2.4F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(914, 98).addBox(-3.04F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-22F, -5.28F, -34.4F, 0F, 0F, 0F));
+		PartDefinition p2 = p1.addOrReplaceChild("road_0_l_d1", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p3 = p1.addOrReplaceChild("road_0_l_d2", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p4 = root.addOrReplaceChild("road_1_l", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(314, 183).addBox(-2.4F, -5.28F, -2.2176F, 5F, 11F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(914, 98).addBox(2.4F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(914, 98).addBox(-3.04F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-22F, -5.28F, -23.2F, 0F, 0F, 0F));
+		PartDefinition p5 = p4.addOrReplaceChild("road_1_l_d1", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p6 = p4.addOrReplaceChild("road_1_l_d2", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p7 = root.addOrReplaceChild("road_2_l", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(314, 183).addBox(-2.4F, -5.28F, -2.2176F, 5F, 11F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(914, 98).addBox(2.4F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(914, 98).addBox(-3.04F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-22F, -5.28F, -12F, 0F, 0F, 0F));
+		PartDefinition p8 = p7.addOrReplaceChild("road_2_l_d1", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p9 = p7.addOrReplaceChild("road_2_l_d2", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p10 = root.addOrReplaceChild("road_3_l", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(314, 183).addBox(-2.4F, -5.28F, -2.2176F, 5F, 11F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(914, 98).addBox(2.4F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(914, 98).addBox(-3.04F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-22F, -5.28F, -0.8F, 0F, 0F, 0F));
+		PartDefinition p11 = p10.addOrReplaceChild("road_3_l_d1", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p12 = p10.addOrReplaceChild("road_3_l_d2", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p13 = root.addOrReplaceChild("road_4_l", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(314, 183).addBox(-2.4F, -5.28F, -2.2176F, 5F, 11F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(914, 98).addBox(2.4F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(914, 98).addBox(-3.04F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-22F, -5.28F, 10.4F, 0F, 0F, 0F));
+		PartDefinition p14 = p13.addOrReplaceChild("road_4_l_d1", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p15 = p13.addOrReplaceChild("road_4_l_d2", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p16 = root.addOrReplaceChild("road_5_l", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(314, 183).addBox(-2.4F, -5.28F, -2.2176F, 5F, 11F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(914, 98).addBox(2.4F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(914, 98).addBox(-3.04F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-22F, -5.28F, 21.6F, 0F, 0F, 0F));
+		PartDefinition p17 = p16.addOrReplaceChild("road_5_l_d1", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p18 = p16.addOrReplaceChild("road_5_l_d2", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p19 = root.addOrReplaceChild("road_6_l", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(314, 183).addBox(-2.4F, -5.28F, -2.2176F, 5F, 11F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(914, 98).addBox(2.4F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(914, 98).addBox(-3.04F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-22F, -5.28F, 32.8F, 0F, 0F, 0F));
+		PartDefinition p20 = p19.addOrReplaceChild("road_6_l_d1", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p21 = p19.addOrReplaceChild("road_6_l_d2", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p22 = root.addOrReplaceChild("sprocket_l", CubeListBuilder.create()
+				.texOffs(440, 183).addBox(-2.24F, -2.016F, -4.8F, 4F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(468, 183).addBox(-2.24F, -4.8F, -2.016F, 4F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(0, 183).addBox(2.24F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(0, 183).addBox(-2.88F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-22F, -8.32F, 40.8F, 0F, 0F, 0F));
+		PartDefinition p23 = p22.addOrReplaceChild("sprocket_l_d1", CubeListBuilder.create()
+				.texOffs(440, 183).addBox(-2.24F, -2.016F, -4.8F, 4F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p24 = p22.addOrReplaceChild("sprocket_l_d2", CubeListBuilder.create()
+				.texOffs(440, 183).addBox(-2.24F, -2.016F, -4.8F, 4F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p25 = root.addOrReplaceChild("idler_l", CubeListBuilder.create()
+				.texOffs(572, 183).addBox(-2.24F, -1.8816F, -4.48F, 4F, 4F, 9F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(598, 183).addBox(-2.24F, -4.48F, -1.8816F, 4F, 9F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(166, 183).addBox(2.24F, -4.48F, -4.48F, 1F, 9F, 9F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(166, 183).addBox(-2.88F, -4.48F, -4.48F, 1F, 9F, 9F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-22F, -8F, -40.8F, 0F, 0F, 0F));
+		PartDefinition p26 = p25.addOrReplaceChild("idler_l_d1", CubeListBuilder.create()
+				.texOffs(572, 183).addBox(-2.24F, -1.8816F, -4.48F, 4F, 4F, 9F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p27 = p25.addOrReplaceChild("idler_l_d2", CubeListBuilder.create()
+				.texOffs(572, 183).addBox(-2.24F, -1.8816F, -4.48F, 4F, 4F, 9F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p28 = root.addOrReplaceChild("road_0_r", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(314, 183).addBox(-2.4F, -5.28F, -2.2176F, 5F, 11F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(914, 98).addBox(2.4F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(914, 98).addBox(-3.04F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(22F, -5.28F, -34.4F, 0F, 0F, 0F));
+		PartDefinition p29 = p28.addOrReplaceChild("road_0_r_d1", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p30 = p28.addOrReplaceChild("road_0_r_d2", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p31 = root.addOrReplaceChild("road_1_r", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(314, 183).addBox(-2.4F, -5.28F, -2.2176F, 5F, 11F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(914, 98).addBox(2.4F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(914, 98).addBox(-3.04F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(22F, -5.28F, -23.2F, 0F, 0F, 0F));
+		PartDefinition p32 = p31.addOrReplaceChild("road_1_r_d1", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p33 = p31.addOrReplaceChild("road_1_r_d2", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p34 = root.addOrReplaceChild("road_2_r", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(314, 183).addBox(-2.4F, -5.28F, -2.2176F, 5F, 11F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(914, 98).addBox(2.4F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(914, 98).addBox(-3.04F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(22F, -5.28F, -12F, 0F, 0F, 0F));
+		PartDefinition p35 = p34.addOrReplaceChild("road_2_r_d1", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p36 = p34.addOrReplaceChild("road_2_r_d2", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p37 = root.addOrReplaceChild("road_3_r", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(314, 183).addBox(-2.4F, -5.28F, -2.2176F, 5F, 11F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(914, 98).addBox(2.4F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(914, 98).addBox(-3.04F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(22F, -5.28F, -0.8F, 0F, 0F, 0F));
+		PartDefinition p38 = p37.addOrReplaceChild("road_3_r_d1", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p39 = p37.addOrReplaceChild("road_3_r_d2", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p40 = root.addOrReplaceChild("road_4_r", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(314, 183).addBox(-2.4F, -5.28F, -2.2176F, 5F, 11F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(914, 98).addBox(2.4F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(914, 98).addBox(-3.04F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(22F, -5.28F, 10.4F, 0F, 0F, 0F));
+		PartDefinition p41 = p40.addOrReplaceChild("road_4_r_d1", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p42 = p40.addOrReplaceChild("road_4_r_d2", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p43 = root.addOrReplaceChild("road_5_r", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(314, 183).addBox(-2.4F, -5.28F, -2.2176F, 5F, 11F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(914, 98).addBox(2.4F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(914, 98).addBox(-3.04F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(22F, -5.28F, 21.6F, 0F, 0F, 0F));
+		PartDefinition p44 = p43.addOrReplaceChild("road_5_r_d1", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p45 = p43.addOrReplaceChild("road_5_r_d2", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p46 = root.addOrReplaceChild("road_6_r", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(314, 183).addBox(-2.4F, -5.28F, -2.2176F, 5F, 11F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(914, 98).addBox(2.4F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(914, 98).addBox(-3.04F, -5.28F, -5.28F, 1F, 11F, 11F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(22F, -5.28F, 32.8F, 0F, 0F, 0F));
+		PartDefinition p47 = p46.addOrReplaceChild("road_6_r_d1", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p48 = p46.addOrReplaceChild("road_6_r_d2", CubeListBuilder.create()
+				.texOffs(282, 183).addBox(-2.4F, -2.2176F, -5.28F, 5F, 4F, 11F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p49 = root.addOrReplaceChild("sprocket_r", CubeListBuilder.create()
+				.texOffs(440, 183).addBox(-2.24F, -2.016F, -4.8F, 4F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(468, 183).addBox(-2.24F, -4.8F, -2.016F, 4F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(0, 183).addBox(2.24F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(0, 183).addBox(-2.88F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(22F, -8.32F, 40.8F, 0F, 0F, 0F));
+		PartDefinition p50 = p49.addOrReplaceChild("sprocket_r_d1", CubeListBuilder.create()
+				.texOffs(440, 183).addBox(-2.24F, -2.016F, -4.8F, 4F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p51 = p49.addOrReplaceChild("sprocket_r_d2", CubeListBuilder.create()
+				.texOffs(440, 183).addBox(-2.24F, -2.016F, -4.8F, 4F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p52 = root.addOrReplaceChild("idler_r", CubeListBuilder.create()
+				.texOffs(572, 183).addBox(-2.24F, -1.8816F, -4.48F, 4F, 4F, 9F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(598, 183).addBox(-2.24F, -4.48F, -1.8816F, 4F, 9F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(166, 183).addBox(2.24F, -4.48F, -4.48F, 1F, 9F, 9F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(166, 183).addBox(-2.88F, -4.48F, -4.48F, 1F, 9F, 9F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(22F, -8F, -40.8F, 0F, 0F, 0F));
+		PartDefinition p53 = p52.addOrReplaceChild("idler_r_d1", CubeListBuilder.create()
+				.texOffs(572, 183).addBox(-2.24F, -1.8816F, -4.48F, 4F, 4F, 9F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p54 = p52.addOrReplaceChild("idler_r_d2", CubeListBuilder.create()
+				.texOffs(572, 183).addBox(-2.24F, -1.8816F, -4.48F, 4F, 4F, 9F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p55 = root.addOrReplaceChild("turret", CubeListBuilder.create()
+				.texOffs(336, 98).addBox(-24.32F, -16.8F, -35.2F, 49F, 17F, 61F)
+				.texOffs(750, 98).addBox(-22.4F, -15.2F, -44F, 45F, 14F, 9F)
+				.texOffs(860, 183).addBox(-23.2F, -3.2F, -47.2F, 46F, 1F, 3F)
+				.texOffs(614, 183).addBox(7.2F, -19.2F, -14.4F, 10F, 2F, 10F)
+				.texOffs(980, 98).addBox(12F, -20.48F, -11.2F, 1F, 1F, 19F)
+				.texOffs(614, 183).addBox(-17.6F, -18.4F, -14.4F, 10F, 2F, 10F)
+				.texOffs(762, 183).addBox(-20F, -21.6F, 11.2F, 5F, 5F, 5F)
+				.texOffs(612, 98).addBox(-24.96F, -14.4F, -16F, 1F, 10F, 14F)
+				.texOffs(612, 98).addBox(24.32F, -14.4F, -16F, 1F, 10F, 14F)
+				, PartPose.offsetAndRotation(0F, -30.4F, -19.2F, 0F, 0F, 0F));
+		PartDefinition p56 = p55.addOrReplaceChild("gun", CubeListBuilder.create()
+				.texOffs(858, 98).addBox(-8.8F, -6.72F, -5.6F, 18F, 13F, 10F)
+				.texOffs(556, 98).addBox(-6.08F, -5.44F, 4.8F, 12F, 10F, 16F)
+				.texOffs(938, 98).addBox(-4F, -7.36F, 4.8F, 3F, 3F, 18F)
+				.texOffs(938, 98).addBox(1.44F, -7.36F, 4.8F, 3F, 3F, 18F)
+				.texOffs(0, 98).addBox(-1.44F, -1.44F, 20.8F, 3F, 3F, 82F)
+				.texOffs(130, 183).addBox(-2.232F, -2.232F, 51.808F, 4F, 4F, 14F)
+				.texOffs(544, 183).addBox(-2.736F, -2.16F, 102.4F, 5F, 4F, 9F)
+				.texOffs(844, 183).addBox(-2.952F, -1.584F, 104.16F, 6F, 3F, 2F)
+				.texOffs(844, 183).addBox(-2.952F, -1.584F, 107.68F, 6F, 3F, 2F)
+				, PartPose.offsetAndRotation(0F, -6.4F, 25.6F, 0F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 208);
+	}
+
+	public static Map<String, String> m109Paths() {
+		return Map.ofEntries(
+				Map.entry("body", "body"),
+				Map.entry("road_0_l", "road_0_l"),
+				Map.entry("road_0_l_d1", "road_0_l/road_0_l_d1"),
+				Map.entry("road_0_l_d2", "road_0_l/road_0_l_d2"),
+				Map.entry("road_1_l", "road_1_l"),
+				Map.entry("road_1_l_d1", "road_1_l/road_1_l_d1"),
+				Map.entry("road_1_l_d2", "road_1_l/road_1_l_d2"),
+				Map.entry("road_2_l", "road_2_l"),
+				Map.entry("road_2_l_d1", "road_2_l/road_2_l_d1"),
+				Map.entry("road_2_l_d2", "road_2_l/road_2_l_d2"),
+				Map.entry("road_3_l", "road_3_l"),
+				Map.entry("road_3_l_d1", "road_3_l/road_3_l_d1"),
+				Map.entry("road_3_l_d2", "road_3_l/road_3_l_d2"),
+				Map.entry("road_4_l", "road_4_l"),
+				Map.entry("road_4_l_d1", "road_4_l/road_4_l_d1"),
+				Map.entry("road_4_l_d2", "road_4_l/road_4_l_d2"),
+				Map.entry("road_5_l", "road_5_l"),
+				Map.entry("road_5_l_d1", "road_5_l/road_5_l_d1"),
+				Map.entry("road_5_l_d2", "road_5_l/road_5_l_d2"),
+				Map.entry("road_6_l", "road_6_l"),
+				Map.entry("road_6_l_d1", "road_6_l/road_6_l_d1"),
+				Map.entry("road_6_l_d2", "road_6_l/road_6_l_d2"),
+				Map.entry("sprocket_l", "sprocket_l"),
+				Map.entry("sprocket_l_d1", "sprocket_l/sprocket_l_d1"),
+				Map.entry("sprocket_l_d2", "sprocket_l/sprocket_l_d2"),
+				Map.entry("idler_l", "idler_l"),
+				Map.entry("idler_l_d1", "idler_l/idler_l_d1"),
+				Map.entry("idler_l_d2", "idler_l/idler_l_d2"),
+				Map.entry("road_0_r", "road_0_r"),
+				Map.entry("road_0_r_d1", "road_0_r/road_0_r_d1"),
+				Map.entry("road_0_r_d2", "road_0_r/road_0_r_d2"),
+				Map.entry("road_1_r", "road_1_r"),
+				Map.entry("road_1_r_d1", "road_1_r/road_1_r_d1"),
+				Map.entry("road_1_r_d2", "road_1_r/road_1_r_d2"),
+				Map.entry("road_2_r", "road_2_r"),
+				Map.entry("road_2_r_d1", "road_2_r/road_2_r_d1"),
+				Map.entry("road_2_r_d2", "road_2_r/road_2_r_d2"),
+				Map.entry("road_3_r", "road_3_r"),
+				Map.entry("road_3_r_d1", "road_3_r/road_3_r_d1"),
+				Map.entry("road_3_r_d2", "road_3_r/road_3_r_d2"),
+				Map.entry("road_4_r", "road_4_r"),
+				Map.entry("road_4_r_d1", "road_4_r/road_4_r_d1"),
+				Map.entry("road_4_r_d2", "road_4_r/road_4_r_d2"),
+				Map.entry("road_5_r", "road_5_r"),
+				Map.entry("road_5_r_d1", "road_5_r/road_5_r_d1"),
+				Map.entry("road_5_r_d2", "road_5_r/road_5_r_d2"),
+				Map.entry("road_6_r", "road_6_r"),
+				Map.entry("road_6_r_d1", "road_6_r/road_6_r_d1"),
+				Map.entry("road_6_r_d2", "road_6_r/road_6_r_d2"),
+				Map.entry("sprocket_r", "sprocket_r"),
+				Map.entry("sprocket_r_d1", "sprocket_r/sprocket_r_d1"),
+				Map.entry("sprocket_r_d2", "sprocket_r/sprocket_r_d2"),
+				Map.entry("idler_r", "idler_r"),
+				Map.entry("idler_r_d1", "idler_r/idler_r_d1"),
+				Map.entry("idler_r_d2", "idler_r/idler_r_d2"),
+				Map.entry("turret", "turret"),
+				Map.entry("gun", "turret/gun")
+		);
+	}
+
+	public static LayerDefinition bm21() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(0, 0).addBox(-8.48F, -16F, -57.6F, 3F, 4F, 112F)
+				.texOffs(0, 0).addBox(5.92F, -16F, -57.6F, 3F, 4F, 112F)
+				.texOffs(654, 116).addBox(-7.2F, -15.36F, -52.8F, 14F, 3F, 2F)
+				.texOffs(654, 116).addBox(-7.2F, -15.36F, -33.6F, 14F, 3F, 2F)
+				.texOffs(654, 116).addBox(-7.2F, -15.36F, -14.4F, 14F, 3F, 2F)
+				.texOffs(654, 116).addBox(-7.2F, -15.36F, 4.8F, 14F, 3F, 2F)
+				.texOffs(654, 116).addBox(-7.2F, -15.36F, 24F, 14F, 3F, 2F)
+				.texOffs(654, 116).addBox(-7.2F, -15.36F, 43.2F, 14F, 3F, 2F)
+				.texOffs(536, 116).addBox(-17.6F, -18.4F, 55.2F, 35F, 6F, 4F)
+				.texOffs(484, 116).addBox(-12F, -28F, 56F, 24F, 10F, 2F)
+				.texOffs(686, 116).addBox(-15.52F, -23.04F, 57.92F, 4F, 2F, 1F)
+				.texOffs(686, 116).addBox(11.68F, -23.04F, 57.92F, 4F, 2F, 1F)
+				.texOffs(702, 0).addBox(-12F, -29.6F, 33.6F, 24F, 11F, 22F)
+				.texOffs(284, 116).addBox(-19.2F, -21.92F, 35.2F, 7F, 2F, 20F)
+				.texOffs(378, 116).addBox(-12F, -23.52F, 35.2F, 1F, 2F, 16F)
+				.texOffs(284, 116).addBox(12F, -21.92F, 35.2F, 7F, 2F, 20F)
+				.texOffs(378, 116).addBox(12F, -23.52F, 35.2F, 1F, 2F, 16F)
+				.texOffs(542, 0).addBox(-18.4F, -41.6F, 12F, 37F, 25F, 22F)
+				.texOffs(646, 116).addBox(-22.4F, -36F, 32.8F, 3F, 6F, 1F)
+				.texOffs(646, 116).addBox(19.2F, -36F, 32.8F, 3F, 6F, 1F)
+				.texOffs(230, 0).addBox(-19.2F, -19.2F, -58.4F, 38F, 3F, 68F)
+				.texOffs(472, 116).addBox(-18.4F, -16F, -56F, 3F, 10F, 3F)
+				.texOffs(180, 116).addBox(-23.2F, -24.8F, -9.6F, 4F, 6F, 18F)
+				.texOffs(472, 116).addBox(15.2F, -16F, -56F, 3F, 10F, 3F)
+				.texOffs(180, 116).addBox(19.2F, -24.8F, -9.6F, 4F, 6F, 18F)
+				.texOffs(338, 116).addBox(-7.2F, -32F, 2.4F, 14F, 13F, 6F)
+				.texOffs(696, 116).addBox(-17.6F, -18.4F, -59.04F, 3F, 2F, 1F)
+				.texOffs(696, 116).addBox(14.4F, -18.4F, -59.04F, 3F, 2F, 1F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p1 = root.addOrReplaceChild("turret", CubeListBuilder.create()
+				.texOffs(0, 116).addBox(-12F, -4.8F, -12F, 24F, 5F, 24F)
+				.texOffs(794, 0).addBox(-15.2F, -7.2F, -14.4F, 30F, 2F, 29F)
+				.texOffs(912, 0).addBox(-16.8F, -13.6F, -20.8F, 3F, 6F, 24F)
+				.texOffs(912, 0).addBox(13.6F, -13.6F, -20.8F, 3F, 6F, 24F)
+				, PartPose.offsetAndRotation(0F, -19.2F, -30.4F, 0F, 0F, 0F));
+		PartDefinition p2 = p1.addOrReplaceChild("pack", CubeListBuilder.create()
+				.texOffs(442, 0).addBox(-13F, -2.24F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-10.36F, -2.24F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-7.72F, -2.24F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-5.08F, -2.24F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-2.44F, -2.24F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(0.2F, -2.24F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(2.84F, -2.24F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(5.48F, -2.24F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(8.12F, -2.24F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(10.76F, -2.24F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-13F, -4.88F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-10.36F, -4.88F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-7.72F, -4.88F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-5.08F, -4.88F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-2.44F, -4.88F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(0.2F, -4.88F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(2.84F, -4.88F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(5.48F, -4.88F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(8.12F, -4.88F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(10.76F, -4.88F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-13F, -7.52F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-10.36F, -7.52F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-7.72F, -7.52F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-5.08F, -7.52F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-2.44F, -7.52F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(0.2F, -7.52F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(2.84F, -7.52F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(5.48F, -7.52F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(8.12F, -7.52F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(10.76F, -7.52F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-13F, -10.16F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-10.36F, -10.16F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-7.72F, -10.16F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-5.08F, -10.16F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(-2.44F, -10.16F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(0.2F, -10.16F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(2.84F, -10.16F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(5.48F, -10.16F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(8.12F, -10.16F, -2.4F, 2F, 2F, 48F)
+				.texOffs(442, 0).addBox(10.76F, -10.16F, -2.4F, 2F, 2F, 48F)
+				.texOffs(412, 116).addBox(-13.8F, -10.96F, 2.4F, 28F, 12F, 2F)
+				.texOffs(412, 116).addBox(-13.8F, -10.96F, 21.6F, 28F, 12F, 2F)
+				.texOffs(412, 116).addBox(-13.8F, -10.96F, 40F, 28F, 12F, 2F)
+				, PartPose.offsetAndRotation(0F, -13.6F, -17.6F, 0F, 0F, 0F));
+		PartDefinition p3 = root.addOrReplaceChild("wheel_1_l", CubeListBuilder.create()
+				.texOffs(96, 116).addBox(-3.36F, -4.1664F, -9.92F, 7F, 8F, 20F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(150, 116).addBox(-3.36F, -9.92F, -4.1664F, 7F, 20F, 8F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(660, 0).addBox(3.36F, -9.92F, -9.92F, 1F, 20F, 20F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(660, 0).addBox(-4F, -9.92F, -9.92F, 1F, 20F, 20F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-15.68F, -9.92F, 44F, 0F, 0F, 0F));
+		PartDefinition p4 = p3.addOrReplaceChild("wheel_1_l_d1", CubeListBuilder.create()
+				.texOffs(96, 116).addBox(-3.36F, -4.1664F, -9.92F, 7F, 8F, 20F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p5 = p3.addOrReplaceChild("wheel_1_l_d2", CubeListBuilder.create()
+				.texOffs(96, 116).addBox(-3.36F, -4.1664F, -9.92F, 7F, 8F, 20F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p6 = root.addOrReplaceChild("wheel_1_r", CubeListBuilder.create()
+				.texOffs(96, 116).addBox(-3.36F, -4.1664F, -9.92F, 7F, 8F, 20F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(150, 116).addBox(-3.36F, -9.92F, -4.1664F, 7F, 20F, 8F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(660, 0).addBox(3.36F, -9.92F, -9.92F, 1F, 20F, 20F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(660, 0).addBox(-4F, -9.92F, -9.92F, 1F, 20F, 20F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(15.68F, -9.92F, 44F, 0F, 0F, 0F));
+		PartDefinition p7 = p6.addOrReplaceChild("wheel_1_r_d1", CubeListBuilder.create()
+				.texOffs(96, 116).addBox(-3.36F, -4.1664F, -9.92F, 7F, 8F, 20F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p8 = p6.addOrReplaceChild("wheel_1_r_d2", CubeListBuilder.create()
+				.texOffs(96, 116).addBox(-3.36F, -4.1664F, -9.92F, 7F, 8F, 20F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p9 = root.addOrReplaceChild("wheel_2_l", CubeListBuilder.create()
+				.texOffs(96, 116).addBox(-3.36F, -4.1664F, -9.92F, 7F, 8F, 20F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(150, 116).addBox(-3.36F, -9.92F, -4.1664F, 7F, 20F, 8F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(660, 0).addBox(3.36F, -9.92F, -9.92F, 1F, 20F, 20F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(660, 0).addBox(-4F, -9.92F, -9.92F, 1F, 20F, 20F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-15.68F, -9.92F, -14.4F, 0F, 0F, 0F));
+		PartDefinition p10 = p9.addOrReplaceChild("wheel_2_l_d1", CubeListBuilder.create()
+				.texOffs(96, 116).addBox(-3.36F, -4.1664F, -9.92F, 7F, 8F, 20F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p11 = p9.addOrReplaceChild("wheel_2_l_d2", CubeListBuilder.create()
+				.texOffs(96, 116).addBox(-3.36F, -4.1664F, -9.92F, 7F, 8F, 20F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p12 = root.addOrReplaceChild("wheel_2_r", CubeListBuilder.create()
+				.texOffs(96, 116).addBox(-3.36F, -4.1664F, -9.92F, 7F, 8F, 20F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(150, 116).addBox(-3.36F, -9.92F, -4.1664F, 7F, 20F, 8F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(660, 0).addBox(3.36F, -9.92F, -9.92F, 1F, 20F, 20F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(660, 0).addBox(-4F, -9.92F, -9.92F, 1F, 20F, 20F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(15.68F, -9.92F, -14.4F, 0F, 0F, 0F));
+		PartDefinition p13 = p12.addOrReplaceChild("wheel_2_r_d1", CubeListBuilder.create()
+				.texOffs(96, 116).addBox(-3.36F, -4.1664F, -9.92F, 7F, 8F, 20F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p14 = p12.addOrReplaceChild("wheel_2_r_d2", CubeListBuilder.create()
+				.texOffs(96, 116).addBox(-3.36F, -4.1664F, -9.92F, 7F, 8F, 20F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p15 = root.addOrReplaceChild("wheel_3_l", CubeListBuilder.create()
+				.texOffs(96, 116).addBox(-3.36F, -4.1664F, -9.92F, 7F, 8F, 20F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(150, 116).addBox(-3.36F, -9.92F, -4.1664F, 7F, 20F, 8F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(660, 0).addBox(3.36F, -9.92F, -9.92F, 1F, 20F, 20F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(660, 0).addBox(-4F, -9.92F, -9.92F, 1F, 20F, 20F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-15.68F, -9.92F, -36.8F, 0F, 0F, 0F));
+		PartDefinition p16 = p15.addOrReplaceChild("wheel_3_l_d1", CubeListBuilder.create()
+				.texOffs(96, 116).addBox(-3.36F, -4.1664F, -9.92F, 7F, 8F, 20F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p17 = p15.addOrReplaceChild("wheel_3_l_d2", CubeListBuilder.create()
+				.texOffs(96, 116).addBox(-3.36F, -4.1664F, -9.92F, 7F, 8F, 20F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p18 = root.addOrReplaceChild("wheel_3_r", CubeListBuilder.create()
+				.texOffs(96, 116).addBox(-3.36F, -4.1664F, -9.92F, 7F, 8F, 20F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(150, 116).addBox(-3.36F, -9.92F, -4.1664F, 7F, 20F, 8F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(660, 0).addBox(3.36F, -9.92F, -9.92F, 1F, 20F, 20F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(660, 0).addBox(-4F, -9.92F, -9.92F, 1F, 20F, 20F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(15.68F, -9.92F, -36.8F, 0F, 0F, 0F));
+		PartDefinition p19 = p18.addOrReplaceChild("wheel_3_r_d1", CubeListBuilder.create()
+				.texOffs(96, 116).addBox(-3.36F, -4.1664F, -9.92F, 7F, 8F, 20F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p20 = p18.addOrReplaceChild("wheel_3_r_d2", CubeListBuilder.create()
+				.texOffs(96, 116).addBox(-3.36F, -4.1664F, -9.92F, 7F, 8F, 20F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 160);
+	}
+
+	public static Map<String, String> bm21Paths() {
+		return Map.ofEntries(
+				Map.entry("body", "body"),
+				Map.entry("turret", "turret"),
+				Map.entry("pack", "turret/pack"),
+				Map.entry("wheel_1_l", "wheel_1_l"),
+				Map.entry("wheel_1_l_d1", "wheel_1_l/wheel_1_l_d1"),
+				Map.entry("wheel_1_l_d2", "wheel_1_l/wheel_1_l_d2"),
+				Map.entry("wheel_1_r", "wheel_1_r"),
+				Map.entry("wheel_1_r_d1", "wheel_1_r/wheel_1_r_d1"),
+				Map.entry("wheel_1_r_d2", "wheel_1_r/wheel_1_r_d2"),
+				Map.entry("wheel_2_l", "wheel_2_l"),
+				Map.entry("wheel_2_l_d1", "wheel_2_l/wheel_2_l_d1"),
+				Map.entry("wheel_2_l_d2", "wheel_2_l/wheel_2_l_d2"),
+				Map.entry("wheel_2_r", "wheel_2_r"),
+				Map.entry("wheel_2_r_d1", "wheel_2_r/wheel_2_r_d1"),
+				Map.entry("wheel_2_r_d2", "wheel_2_r/wheel_2_r_d2"),
+				Map.entry("wheel_3_l", "wheel_3_l"),
+				Map.entry("wheel_3_l_d1", "wheel_3_l/wheel_3_l_d1"),
+				Map.entry("wheel_3_l_d2", "wheel_3_l/wheel_3_l_d2"),
+				Map.entry("wheel_3_r", "wheel_3_r"),
+				Map.entry("wheel_3_r_d1", "wheel_3_r/wheel_3_r_d1"),
+				Map.entry("wheel_3_r_d2", "wheel_3_r/wheel_3_r_d2")
+		);
+	}
+
+	public static LayerDefinition bm21_glass() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(614, 116).addBox(-16F, -38.72F, 33.6F, 15F, 9F, 1F, EnumSet.of(Direction.SOUTH))
+				.texOffs(614, 116).addBox(0.96F, -38.72F, 33.6F, 15F, 9F, 1F, EnumSet.of(Direction.SOUTH))
+				.texOffs(224, 116).addBox(-18.56F, -38.4F, 16F, 1F, 9F, 14F, EnumSet.of(Direction.WEST))
+				.texOffs(254, 116).addBox(18.08F, -38.4F, 16F, 1F, 9F, 14F, EnumSet.of(Direction.EAST))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p1 = root.addOrReplaceChild("turret", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, -19.2F, -30.4F, 0F, 0F, 0F));
+		PartDefinition p2 = p1.addOrReplaceChild("pack", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, -13.6F, -17.6F, 0F, 0F, 0F));
+		PartDefinition p3 = root.addOrReplaceChild("wheel_1_l", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(-15.68F, -9.92F, 44F, 0F, 0F, 0F));
+		PartDefinition p4 = p3.addOrReplaceChild("wheel_1_l_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p5 = p3.addOrReplaceChild("wheel_1_l_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p6 = root.addOrReplaceChild("wheel_1_r", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(15.68F, -9.92F, 44F, 0F, 0F, 0F));
+		PartDefinition p7 = p6.addOrReplaceChild("wheel_1_r_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p8 = p6.addOrReplaceChild("wheel_1_r_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p9 = root.addOrReplaceChild("wheel_2_l", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(-15.68F, -9.92F, -14.4F, 0F, 0F, 0F));
+		PartDefinition p10 = p9.addOrReplaceChild("wheel_2_l_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p11 = p9.addOrReplaceChild("wheel_2_l_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p12 = root.addOrReplaceChild("wheel_2_r", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(15.68F, -9.92F, -14.4F, 0F, 0F, 0F));
+		PartDefinition p13 = p12.addOrReplaceChild("wheel_2_r_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p14 = p12.addOrReplaceChild("wheel_2_r_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p15 = root.addOrReplaceChild("wheel_3_l", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(-15.68F, -9.92F, -36.8F, 0F, 0F, 0F));
+		PartDefinition p16 = p15.addOrReplaceChild("wheel_3_l_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p17 = p15.addOrReplaceChild("wheel_3_l_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p18 = root.addOrReplaceChild("wheel_3_r", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(15.68F, -9.92F, -36.8F, 0F, 0F, 0F));
+		PartDefinition p19 = p18.addOrReplaceChild("wheel_3_r_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p20 = p18.addOrReplaceChild("wheel_3_r_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 160);
+	}
+
+	public static LayerDefinition zoopark() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(804, 0).addBox(-22.8F, -12F, -52F, 6F, 2F, 104F)
+				.texOffs(0, 115).addBox(-22.8F, -1.6F, -46.4F, 6F, 2F, 93F)
+				.texOffs(118, 210).addBox(-22.8F, -10.4F, 46.4F, 6F, 9F, 6F, EnumSet.of(Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.DOWN, Direction.UP))
+				.texOffs(142, 210).addBox(-22.8F, -10.4F, -52F, 6F, 9F, 6F, EnumSet.of(Direction.NORTH, Direction.WEST, Direction.EAST, Direction.DOWN, Direction.UP))
+				.texOffs(286, 0).addBox(-23.12F, -13.28F, -56F, 7F, 1F, 113F)
+				.texOffs(804, 0).addBox(16.4F, -12F, -52F, 6F, 2F, 104F)
+				.texOffs(0, 115).addBox(16.4F, -1.6F, -46.4F, 6F, 2F, 93F)
+				.texOffs(118, 210).addBox(16.4F, -10.4F, 46.4F, 6F, 9F, 6F, EnumSet.of(Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.DOWN, Direction.UP))
+				.texOffs(142, 210).addBox(16.4F, -10.4F, -52F, 6F, 9F, 6F, EnumSet.of(Direction.NORTH, Direction.WEST, Direction.EAST, Direction.DOWN, Direction.UP))
+				.texOffs(286, 0).addBox(16.08F, -13.28F, -56F, 7F, 1F, 113F)
+				.texOffs(526, 0).addBox(-16F, -12.8F, -54.4F, 32F, 6F, 107F)
+				.texOffs(0, 0).addBox(-22.72F, -29.92F, -57.6F, 45F, 17F, 98F)
+				.texOffs(744, 115).addBox(-22.08F, -29.92F, 40F, 44F, 21F, 5F)
+				.texOffs(846, 115).addBox(-22.08F, -24.64F, 44.6F, 44F, 16F, 5F)
+				.texOffs(20, 210).addBox(-22.08F, -19.36F, 49.2F, 44F, 11F, 5F)
+				.texOffs(396, 210).addBox(-22.08F, -14.08F, 53.8F, 44F, 5F, 5F)
+				.texOffs(286, 210).addBox(-16.8F, -31.52F, 25.6F, 13F, 2F, 11F)
+				.texOffs(286, 210).addBox(4F, -31.52F, 25.6F, 13F, 2F, 11F)
+				.texOffs(196, 210).addBox(-15.2F, -28F, -58.56F, 13F, 13F, 1F)
+				.texOffs(196, 210).addBox(2.4F, -28F, -58.56F, 13F, 13F, 1F)
+				.texOffs(944, 115).addBox(12F, -37.6F, -54.4F, 10F, 8F, 13F)
+				.texOffs(842, 115).addBox(-20.8F, -54.4F, -52.8F, 1F, 24F, 1F)
+				.texOffs(516, 210).addBox(-17.92F, -19.84F, 54.4F, 4F, 2F, 1F)
+				.texOffs(516, 210).addBox(14.08F, -19.84F, 54.4F, 4F, 2F, 1F)
+				.texOffs(376, 210).addBox(-19.52F, -36F, -44.8F, 4F, 6F, 6F)
+				.texOffs(376, 210).addBox(15.68F, -36F, -44.8F, 4F, 6F, 6F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p1 = root.addOrReplaceChild("road_0_l", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(252, 210).addBox(-2.4F, -4.8F, -2.016F, 5F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(990, 115).addBox(2.4F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(990, 115).addBox(-3.04F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-19.6F, -4.8F, -42.4F, 0F, 0F, 0F));
+		PartDefinition p2 = p1.addOrReplaceChild("road_0_l_d1", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p3 = p1.addOrReplaceChild("road_0_l_d2", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p4 = root.addOrReplaceChild("road_1_l", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(252, 210).addBox(-2.4F, -4.8F, -2.016F, 5F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(990, 115).addBox(2.4F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(990, 115).addBox(-3.04F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-19.6F, -4.8F, -25.76F, 0F, 0F, 0F));
+		PartDefinition p5 = p4.addOrReplaceChild("road_1_l_d1", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p6 = p4.addOrReplaceChild("road_1_l_d2", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p7 = root.addOrReplaceChild("road_2_l", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(252, 210).addBox(-2.4F, -4.8F, -2.016F, 5F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(990, 115).addBox(2.4F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(990, 115).addBox(-3.04F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-19.6F, -4.8F, -9.12F, 0F, 0F, 0F));
+		PartDefinition p8 = p7.addOrReplaceChild("road_2_l_d1", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p9 = p7.addOrReplaceChild("road_2_l_d2", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p10 = root.addOrReplaceChild("road_3_l", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(252, 210).addBox(-2.4F, -4.8F, -2.016F, 5F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(990, 115).addBox(2.4F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(990, 115).addBox(-3.04F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-19.6F, -4.8F, 7.52F, 0F, 0F, 0F));
+		PartDefinition p11 = p10.addOrReplaceChild("road_3_l_d1", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p12 = p10.addOrReplaceChild("road_3_l_d2", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p13 = root.addOrReplaceChild("road_4_l", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(252, 210).addBox(-2.4F, -4.8F, -2.016F, 5F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(990, 115).addBox(2.4F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(990, 115).addBox(-3.04F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-19.6F, -4.8F, 24.16F, 0F, 0F, 0F));
+		PartDefinition p14 = p13.addOrReplaceChild("road_4_l_d1", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p15 = p13.addOrReplaceChild("road_4_l_d2", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p16 = root.addOrReplaceChild("road_5_l", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(252, 210).addBox(-2.4F, -4.8F, -2.016F, 5F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(990, 115).addBox(2.4F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(990, 115).addBox(-3.04F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-19.6F, -4.8F, 40.8F, 0F, 0F, 0F));
+		PartDefinition p17 = p16.addOrReplaceChild("road_5_l_d1", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p18 = p16.addOrReplaceChild("road_5_l_d2", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p19 = root.addOrReplaceChild("sprocket_l", CubeListBuilder.create()
+				.texOffs(224, 210).addBox(-2.24F, -2.016F, -4.8F, 4F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(270, 210).addBox(-2.24F, -4.8F, -2.016F, 4F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(990, 115).addBox(2.24F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(990, 115).addBox(-2.88F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-19.6F, -6.72F, 48.8F, 0F, 0F, 0F));
+		PartDefinition p20 = p19.addOrReplaceChild("sprocket_l_d1", CubeListBuilder.create()
+				.texOffs(224, 210).addBox(-2.24F, -2.016F, -4.8F, 4F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p21 = p19.addOrReplaceChild("sprocket_l_d2", CubeListBuilder.create()
+				.texOffs(224, 210).addBox(-2.24F, -2.016F, -4.8F, 4F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p22 = root.addOrReplaceChild("idler_l", CubeListBuilder.create()
+				.texOffs(334, 210).addBox(-2.24F, -1.8816F, -4.48F, 4F, 4F, 9F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(360, 210).addBox(-2.24F, -4.48F, -1.8816F, 4F, 9F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(0, 210).addBox(2.24F, -4.48F, -4.48F, 1F, 9F, 9F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(0, 210).addBox(-2.88F, -4.48F, -4.48F, 1F, 9F, 9F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-19.6F, -6.4F, -48.8F, 0F, 0F, 0F));
+		PartDefinition p23 = p22.addOrReplaceChild("idler_l_d1", CubeListBuilder.create()
+				.texOffs(334, 210).addBox(-2.24F, -1.8816F, -4.48F, 4F, 4F, 9F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p24 = p22.addOrReplaceChild("idler_l_d2", CubeListBuilder.create()
+				.texOffs(334, 210).addBox(-2.24F, -1.8816F, -4.48F, 4F, 4F, 9F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p25 = root.addOrReplaceChild("road_0_r", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(252, 210).addBox(-2.4F, -4.8F, -2.016F, 5F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(990, 115).addBox(2.4F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(990, 115).addBox(-3.04F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(19.6F, -4.8F, -42.4F, 0F, 0F, 0F));
+		PartDefinition p26 = p25.addOrReplaceChild("road_0_r_d1", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p27 = p25.addOrReplaceChild("road_0_r_d2", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p28 = root.addOrReplaceChild("road_1_r", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(252, 210).addBox(-2.4F, -4.8F, -2.016F, 5F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(990, 115).addBox(2.4F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(990, 115).addBox(-3.04F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(19.6F, -4.8F, -25.76F, 0F, 0F, 0F));
+		PartDefinition p29 = p28.addOrReplaceChild("road_1_r_d1", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p30 = p28.addOrReplaceChild("road_1_r_d2", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p31 = root.addOrReplaceChild("road_2_r", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(252, 210).addBox(-2.4F, -4.8F, -2.016F, 5F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(990, 115).addBox(2.4F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(990, 115).addBox(-3.04F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(19.6F, -4.8F, -9.12F, 0F, 0F, 0F));
+		PartDefinition p32 = p31.addOrReplaceChild("road_2_r_d1", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p33 = p31.addOrReplaceChild("road_2_r_d2", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p34 = root.addOrReplaceChild("road_3_r", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(252, 210).addBox(-2.4F, -4.8F, -2.016F, 5F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(990, 115).addBox(2.4F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(990, 115).addBox(-3.04F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(19.6F, -4.8F, 7.52F, 0F, 0F, 0F));
+		PartDefinition p35 = p34.addOrReplaceChild("road_3_r_d1", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p36 = p34.addOrReplaceChild("road_3_r_d2", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p37 = root.addOrReplaceChild("road_4_r", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(252, 210).addBox(-2.4F, -4.8F, -2.016F, 5F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(990, 115).addBox(2.4F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(990, 115).addBox(-3.04F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(19.6F, -4.8F, 24.16F, 0F, 0F, 0F));
+		PartDefinition p38 = p37.addOrReplaceChild("road_4_r_d1", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p39 = p37.addOrReplaceChild("road_4_r_d2", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p40 = root.addOrReplaceChild("road_5_r", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(252, 210).addBox(-2.4F, -4.8F, -2.016F, 5F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(990, 115).addBox(2.4F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(990, 115).addBox(-3.04F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(19.6F, -4.8F, 40.8F, 0F, 0F, 0F));
+		PartDefinition p41 = p40.addOrReplaceChild("road_5_r_d1", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p42 = p40.addOrReplaceChild("road_5_r_d2", CubeListBuilder.create()
+				.texOffs(166, 210).addBox(-2.4F, -2.016F, -4.8F, 5F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p43 = root.addOrReplaceChild("sprocket_r", CubeListBuilder.create()
+				.texOffs(224, 210).addBox(-2.24F, -2.016F, -4.8F, 4F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(270, 210).addBox(-2.24F, -4.8F, -2.016F, 4F, 10F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(990, 115).addBox(2.24F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(990, 115).addBox(-2.88F, -4.8F, -4.8F, 1F, 10F, 10F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(19.6F, -6.72F, 48.8F, 0F, 0F, 0F));
+		PartDefinition p44 = p43.addOrReplaceChild("sprocket_r_d1", CubeListBuilder.create()
+				.texOffs(224, 210).addBox(-2.24F, -2.016F, -4.8F, 4F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p45 = p43.addOrReplaceChild("sprocket_r_d2", CubeListBuilder.create()
+				.texOffs(224, 210).addBox(-2.24F, -2.016F, -4.8F, 4F, 4F, 10F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p46 = root.addOrReplaceChild("idler_r", CubeListBuilder.create()
+				.texOffs(334, 210).addBox(-2.24F, -1.8816F, -4.48F, 4F, 4F, 9F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(360, 210).addBox(-2.24F, -4.48F, -1.8816F, 4F, 9F, 4F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(0, 210).addBox(2.24F, -4.48F, -4.48F, 1F, 9F, 9F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(0, 210).addBox(-2.88F, -4.48F, -4.48F, 1F, 9F, 9F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(19.6F, -6.4F, -48.8F, 0F, 0F, 0F));
+		PartDefinition p47 = p46.addOrReplaceChild("idler_r_d1", CubeListBuilder.create()
+				.texOffs(334, 210).addBox(-2.24F, -1.8816F, -4.48F, 4F, 4F, 9F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p48 = p46.addOrReplaceChild("idler_r_d2", CubeListBuilder.create()
+				.texOffs(334, 210).addBox(-2.24F, -1.8816F, -4.48F, 4F, 4F, 9F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p49 = root.addOrReplaceChild("array", CubeListBuilder.create()
+				.texOffs(198, 115).addBox(-20.8F, -4.48F, 1.6F, 42F, 4F, 67F)
+				.texOffs(416, 115).addBox(-22.08F, -0.32F, 0.8F, 44F, 1F, 69F)
+				.texOffs(642, 115).addBox(-9.6F, -8F, 16F, 19F, 4F, 32F)
+				, PartPose.offsetAndRotation(0F, -33.92F, -41.6F, 0F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 240);
+	}
+
+	public static Map<String, String> zooparkPaths() {
+		return Map.ofEntries(
+				Map.entry("body", "body"),
+				Map.entry("road_0_l", "road_0_l"),
+				Map.entry("road_0_l_d1", "road_0_l/road_0_l_d1"),
+				Map.entry("road_0_l_d2", "road_0_l/road_0_l_d2"),
+				Map.entry("road_1_l", "road_1_l"),
+				Map.entry("road_1_l_d1", "road_1_l/road_1_l_d1"),
+				Map.entry("road_1_l_d2", "road_1_l/road_1_l_d2"),
+				Map.entry("road_2_l", "road_2_l"),
+				Map.entry("road_2_l_d1", "road_2_l/road_2_l_d1"),
+				Map.entry("road_2_l_d2", "road_2_l/road_2_l_d2"),
+				Map.entry("road_3_l", "road_3_l"),
+				Map.entry("road_3_l_d1", "road_3_l/road_3_l_d1"),
+				Map.entry("road_3_l_d2", "road_3_l/road_3_l_d2"),
+				Map.entry("road_4_l", "road_4_l"),
+				Map.entry("road_4_l_d1", "road_4_l/road_4_l_d1"),
+				Map.entry("road_4_l_d2", "road_4_l/road_4_l_d2"),
+				Map.entry("road_5_l", "road_5_l"),
+				Map.entry("road_5_l_d1", "road_5_l/road_5_l_d1"),
+				Map.entry("road_5_l_d2", "road_5_l/road_5_l_d2"),
+				Map.entry("sprocket_l", "sprocket_l"),
+				Map.entry("sprocket_l_d1", "sprocket_l/sprocket_l_d1"),
+				Map.entry("sprocket_l_d2", "sprocket_l/sprocket_l_d2"),
+				Map.entry("idler_l", "idler_l"),
+				Map.entry("idler_l_d1", "idler_l/idler_l_d1"),
+				Map.entry("idler_l_d2", "idler_l/idler_l_d2"),
+				Map.entry("road_0_r", "road_0_r"),
+				Map.entry("road_0_r_d1", "road_0_r/road_0_r_d1"),
+				Map.entry("road_0_r_d2", "road_0_r/road_0_r_d2"),
+				Map.entry("road_1_r", "road_1_r"),
+				Map.entry("road_1_r_d1", "road_1_r/road_1_r_d1"),
+				Map.entry("road_1_r_d2", "road_1_r/road_1_r_d2"),
+				Map.entry("road_2_r", "road_2_r"),
+				Map.entry("road_2_r_d1", "road_2_r/road_2_r_d1"),
+				Map.entry("road_2_r_d2", "road_2_r/road_2_r_d2"),
+				Map.entry("road_3_r", "road_3_r"),
+				Map.entry("road_3_r_d1", "road_3_r/road_3_r_d1"),
+				Map.entry("road_3_r_d2", "road_3_r/road_3_r_d2"),
+				Map.entry("road_4_r", "road_4_r"),
+				Map.entry("road_4_r_d1", "road_4_r/road_4_r_d1"),
+				Map.entry("road_4_r_d2", "road_4_r/road_4_r_d2"),
+				Map.entry("road_5_r", "road_5_r"),
+				Map.entry("road_5_r_d1", "road_5_r/road_5_r_d1"),
+				Map.entry("road_5_r_d2", "road_5_r/road_5_r_d2"),
+				Map.entry("sprocket_r", "sprocket_r"),
+				Map.entry("sprocket_r_d1", "sprocket_r/sprocket_r_d1"),
+				Map.entry("sprocket_r_d2", "sprocket_r/sprocket_r_d2"),
+				Map.entry("idler_r", "idler_r"),
+				Map.entry("idler_r_d1", "idler_r/idler_r_d1"),
+				Map.entry("idler_r_d2", "idler_r/idler_r_d2"),
+				Map.entry("array", "array")
+		);
+	}
+
+	public static LayerDefinition zoopark_glass() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(494, 210).addBox(-15.2F, -28F, 39.68F, 10F, 2F, 1F, EnumSet.of(Direction.SOUTH))
+				.texOffs(494, 210).addBox(5.6F, -28F, 39.68F, 10F, 2F, 1F, EnumSet.of(Direction.SOUTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p1 = root.addOrReplaceChild("road_0_l", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(-19.6F, -4.8F, -42.4F, 0F, 0F, 0F));
+		PartDefinition p2 = p1.addOrReplaceChild("road_0_l_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p3 = p1.addOrReplaceChild("road_0_l_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p4 = root.addOrReplaceChild("road_1_l", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(-19.6F, -4.8F, -25.76F, 0F, 0F, 0F));
+		PartDefinition p5 = p4.addOrReplaceChild("road_1_l_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p6 = p4.addOrReplaceChild("road_1_l_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p7 = root.addOrReplaceChild("road_2_l", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(-19.6F, -4.8F, -9.12F, 0F, 0F, 0F));
+		PartDefinition p8 = p7.addOrReplaceChild("road_2_l_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p9 = p7.addOrReplaceChild("road_2_l_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p10 = root.addOrReplaceChild("road_3_l", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(-19.6F, -4.8F, 7.52F, 0F, 0F, 0F));
+		PartDefinition p11 = p10.addOrReplaceChild("road_3_l_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p12 = p10.addOrReplaceChild("road_3_l_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p13 = root.addOrReplaceChild("road_4_l", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(-19.6F, -4.8F, 24.16F, 0F, 0F, 0F));
+		PartDefinition p14 = p13.addOrReplaceChild("road_4_l_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p15 = p13.addOrReplaceChild("road_4_l_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p16 = root.addOrReplaceChild("road_5_l", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(-19.6F, -4.8F, 40.8F, 0F, 0F, 0F));
+		PartDefinition p17 = p16.addOrReplaceChild("road_5_l_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p18 = p16.addOrReplaceChild("road_5_l_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p19 = root.addOrReplaceChild("sprocket_l", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(-19.6F, -6.72F, 48.8F, 0F, 0F, 0F));
+		PartDefinition p20 = p19.addOrReplaceChild("sprocket_l_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p21 = p19.addOrReplaceChild("sprocket_l_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p22 = root.addOrReplaceChild("idler_l", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(-19.6F, -6.4F, -48.8F, 0F, 0F, 0F));
+		PartDefinition p23 = p22.addOrReplaceChild("idler_l_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p24 = p22.addOrReplaceChild("idler_l_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p25 = root.addOrReplaceChild("road_0_r", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(19.6F, -4.8F, -42.4F, 0F, 0F, 0F));
+		PartDefinition p26 = p25.addOrReplaceChild("road_0_r_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p27 = p25.addOrReplaceChild("road_0_r_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p28 = root.addOrReplaceChild("road_1_r", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(19.6F, -4.8F, -25.76F, 0F, 0F, 0F));
+		PartDefinition p29 = p28.addOrReplaceChild("road_1_r_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p30 = p28.addOrReplaceChild("road_1_r_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p31 = root.addOrReplaceChild("road_2_r", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(19.6F, -4.8F, -9.12F, 0F, 0F, 0F));
+		PartDefinition p32 = p31.addOrReplaceChild("road_2_r_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p33 = p31.addOrReplaceChild("road_2_r_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p34 = root.addOrReplaceChild("road_3_r", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(19.6F, -4.8F, 7.52F, 0F, 0F, 0F));
+		PartDefinition p35 = p34.addOrReplaceChild("road_3_r_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p36 = p34.addOrReplaceChild("road_3_r_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p37 = root.addOrReplaceChild("road_4_r", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(19.6F, -4.8F, 24.16F, 0F, 0F, 0F));
+		PartDefinition p38 = p37.addOrReplaceChild("road_4_r_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p39 = p37.addOrReplaceChild("road_4_r_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p40 = root.addOrReplaceChild("road_5_r", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(19.6F, -4.8F, 40.8F, 0F, 0F, 0F));
+		PartDefinition p41 = p40.addOrReplaceChild("road_5_r_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p42 = p40.addOrReplaceChild("road_5_r_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p43 = root.addOrReplaceChild("sprocket_r", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(19.6F, -6.72F, 48.8F, 0F, 0F, 0F));
+		PartDefinition p44 = p43.addOrReplaceChild("sprocket_r_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p45 = p43.addOrReplaceChild("sprocket_r_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p46 = root.addOrReplaceChild("idler_r", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(19.6F, -6.4F, -48.8F, 0F, 0F, 0F));
+		PartDefinition p47 = p46.addOrReplaceChild("idler_r_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p48 = p46.addOrReplaceChild("idler_r_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p49 = root.addOrReplaceChild("array", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, -33.92F, -41.6F, 0F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 240);
+	}
+
+	public static LayerDefinition tpq36() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(468, 0).addBox(-17.44F, -18.4F, 51.2F, 35F, 11F, 26F)
+				.texOffs(0, 68).addBox(-17.44F, -18.4F, 4.8F, 35F, 11F, 15F)
+				.texOffs(822, 0).addBox(-15.2F, -20.8F, 51.2F, 30F, 2F, 25F)
+				.texOffs(332, 68).addBox(-16F, -16.8F, 76.8F, 32F, 9F, 2F)
+				.texOffs(498, 68).addBox(-13.92F, -17.44F, 78.4F, 4F, 2F, 1F)
+				.texOffs(498, 68).addBox(10.08F, -17.44F, 78.4F, 4F, 2F, 1F)
+				.texOffs(188, 0).addBox(-16.8F, -31.68F, 20F, 34F, 24F, 31F)
+				.texOffs(590, 0).addBox(-16.8F, -39.2F, 4F, 34F, 21F, 16F)
+				.texOffs(288, 68).addBox(-6.4F, -35.2F, 3.52F, 13F, 14F, 1F)
+				.texOffs(250, 68).addBox(-1.28F, -10.4F, -11.2F, 3F, 2F, 16F)
+				.texOffs(0, 0).addBox(-16F, -16F, -73.6F, 32F, 6F, 62F)
+				.texOffs(100, 68).addBox(-14.4F, -24F, -24F, 29F, 8F, 13F)
+				.texOffs(508, 68).addBox(-14.4F, -13.6F, -74.24F, 3F, 2F, 1F)
+				.texOffs(508, 68).addBox(11.2F, -13.6F, -74.24F, 3F, 2F, 1F)
+				.texOffs(316, 68).addBox(-15.2F, -23.2F, -68F, 3F, 7F, 5F)
+				.texOffs(316, 68).addBox(12F, -23.2F, -68F, 3F, 7F, 5F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p1 = root.addOrReplaceChild("array", CubeListBuilder.create()
+				.texOffs(318, 0).addBox(-18.4F, -4F, 0.8F, 37F, 4F, 38F)
+				.texOffs(430, 68).addBox(-16F, -5.92F, 39.2F, 32F, 2F, 2F)
+				, PartPose.offsetAndRotation(0F, -21.6F, -65.6F, 0F, 0F, 0F));
+		PartDefinition p2 = root.addOrReplaceChild("wheel_1_l", CubeListBuilder.create()
+				.texOffs(184, 68).addBox(-2.88F, -3.0912F, -7.36F, 6F, 6F, 15F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(226, 68).addBox(-2.88F, -7.36F, -3.0912F, 6F, 15F, 6F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(790, 0).addBox(2.88F, -7.36F, -7.36F, 1F, 15F, 15F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(790, 0).addBox(-3.52F, -7.36F, -7.36F, 1F, 15F, 15F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-13.6F, -7.36F, 64F, 0F, 0F, 0F));
+		PartDefinition p3 = p2.addOrReplaceChild("wheel_1_l_d1", CubeListBuilder.create()
+				.texOffs(184, 68).addBox(-2.88F, -3.0912F, -7.36F, 6F, 6F, 15F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p4 = p2.addOrReplaceChild("wheel_1_l_d2", CubeListBuilder.create()
+				.texOffs(184, 68).addBox(-2.88F, -3.0912F, -7.36F, 6F, 6F, 15F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p5 = root.addOrReplaceChild("wheel_1_r", CubeListBuilder.create()
+				.texOffs(184, 68).addBox(-2.88F, -3.0912F, -7.36F, 6F, 6F, 15F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(226, 68).addBox(-2.88F, -7.36F, -3.0912F, 6F, 15F, 6F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(790, 0).addBox(2.88F, -7.36F, -7.36F, 1F, 15F, 15F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(790, 0).addBox(-3.52F, -7.36F, -7.36F, 1F, 15F, 15F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(13.6F, -7.36F, 64F, 0F, 0F, 0F));
+		PartDefinition p6 = p5.addOrReplaceChild("wheel_1_r_d1", CubeListBuilder.create()
+				.texOffs(184, 68).addBox(-2.88F, -3.0912F, -7.36F, 6F, 6F, 15F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p7 = p5.addOrReplaceChild("wheel_1_r_d2", CubeListBuilder.create()
+				.texOffs(184, 68).addBox(-2.88F, -3.0912F, -7.36F, 6F, 6F, 15F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p8 = root.addOrReplaceChild("wheel_2_l", CubeListBuilder.create()
+				.texOffs(184, 68).addBox(-2.88F, -3.0912F, -7.36F, 6F, 6F, 15F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(226, 68).addBox(-2.88F, -7.36F, -3.0912F, 6F, 15F, 6F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(790, 0).addBox(2.88F, -7.36F, -7.36F, 1F, 15F, 15F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(790, 0).addBox(-3.52F, -7.36F, -7.36F, 1F, 15F, 15F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-13.6F, -7.36F, 12F, 0F, 0F, 0F));
+		PartDefinition p9 = p8.addOrReplaceChild("wheel_2_l_d1", CubeListBuilder.create()
+				.texOffs(184, 68).addBox(-2.88F, -3.0912F, -7.36F, 6F, 6F, 15F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p10 = p8.addOrReplaceChild("wheel_2_l_d2", CubeListBuilder.create()
+				.texOffs(184, 68).addBox(-2.88F, -3.0912F, -7.36F, 6F, 6F, 15F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p11 = root.addOrReplaceChild("wheel_2_r", CubeListBuilder.create()
+				.texOffs(184, 68).addBox(-2.88F, -3.0912F, -7.36F, 6F, 6F, 15F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(226, 68).addBox(-2.88F, -7.36F, -3.0912F, 6F, 15F, 6F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(790, 0).addBox(2.88F, -7.36F, -7.36F, 1F, 15F, 15F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(790, 0).addBox(-3.52F, -7.36F, -7.36F, 1F, 15F, 15F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(13.6F, -7.36F, 12F, 0F, 0F, 0F));
+		PartDefinition p12 = p11.addOrReplaceChild("wheel_2_r_d1", CubeListBuilder.create()
+				.texOffs(184, 68).addBox(-2.88F, -3.0912F, -7.36F, 6F, 6F, 15F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p13 = p11.addOrReplaceChild("wheel_2_r_d2", CubeListBuilder.create()
+				.texOffs(184, 68).addBox(-2.88F, -3.0912F, -7.36F, 6F, 6F, 15F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p14 = root.addOrReplaceChild("trailer_l", CubeListBuilder.create()
+				.texOffs(184, 68).addBox(-2.88F, -3.0912F, -7.36F, 6F, 6F, 15F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(226, 68).addBox(-2.88F, -7.36F, -3.0912F, 6F, 15F, 6F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(790, 0).addBox(2.88F, -7.36F, -7.36F, 1F, 15F, 15F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(790, 0).addBox(-3.52F, -7.36F, -7.36F, 1F, 15F, 15F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(-15.68F, -7.36F, -41.6F, 0F, 0F, 0F));
+		PartDefinition p15 = p14.addOrReplaceChild("trailer_l_d1", CubeListBuilder.create()
+				.texOffs(184, 68).addBox(-2.88F, -3.0912F, -7.36F, 6F, 6F, 15F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p16 = p14.addOrReplaceChild("trailer_l_d2", CubeListBuilder.create()
+				.texOffs(184, 68).addBox(-2.88F, -3.0912F, -7.36F, 6F, 6F, 15F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p17 = root.addOrReplaceChild("trailer_r", CubeListBuilder.create()
+				.texOffs(184, 68).addBox(-2.88F, -3.0912F, -7.36F, 6F, 6F, 15F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(226, 68).addBox(-2.88F, -7.36F, -3.0912F, 6F, 15F, 6F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(790, 0).addBox(2.88F, -7.36F, -7.36F, 1F, 15F, 15F, EnumSet.of(Direction.EAST, Direction.WEST))
+				.texOffs(790, 0).addBox(-3.52F, -7.36F, -7.36F, 1F, 15F, 15F, EnumSet.of(Direction.EAST, Direction.WEST))
+				, PartPose.offsetAndRotation(15.68F, -7.36F, -41.6F, 0F, 0F, 0F));
+		PartDefinition p18 = p17.addOrReplaceChild("trailer_r_d1", CubeListBuilder.create()
+				.texOffs(184, 68).addBox(-2.88F, -3.0912F, -7.36F, 6F, 6F, 15F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p19 = p17.addOrReplaceChild("trailer_r_d2", CubeListBuilder.create()
+				.texOffs(184, 68).addBox(-2.88F, -3.0912F, -7.36F, 6F, 6F, 15F, EnumSet.of(Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 96);
+	}
+
+	public static Map<String, String> tpq36Paths() {
+		return Map.ofEntries(
+				Map.entry("body", "body"),
+				Map.entry("array", "array"),
+				Map.entry("wheel_1_l", "wheel_1_l"),
+				Map.entry("wheel_1_l_d1", "wheel_1_l/wheel_1_l_d1"),
+				Map.entry("wheel_1_l_d2", "wheel_1_l/wheel_1_l_d2"),
+				Map.entry("wheel_1_r", "wheel_1_r"),
+				Map.entry("wheel_1_r_d1", "wheel_1_r/wheel_1_r_d1"),
+				Map.entry("wheel_1_r_d2", "wheel_1_r/wheel_1_r_d2"),
+				Map.entry("wheel_2_l", "wheel_2_l"),
+				Map.entry("wheel_2_l_d1", "wheel_2_l/wheel_2_l_d1"),
+				Map.entry("wheel_2_l_d2", "wheel_2_l/wheel_2_l_d2"),
+				Map.entry("wheel_2_r", "wheel_2_r"),
+				Map.entry("wheel_2_r_d1", "wheel_2_r/wheel_2_r_d1"),
+				Map.entry("wheel_2_r_d2", "wheel_2_r/wheel_2_r_d2"),
+				Map.entry("trailer_l", "trailer_l"),
+				Map.entry("trailer_l_d1", "trailer_l/trailer_l_d1"),
+				Map.entry("trailer_l_d2", "trailer_l/trailer_l_d2"),
+				Map.entry("trailer_r", "trailer_r"),
+				Map.entry("trailer_r_d1", "trailer_r/trailer_r_d1"),
+				Map.entry("trailer_r_d2", "trailer_r/trailer_r_d2")
+		);
+	}
+
+	public static LayerDefinition tpq36_glass() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(400, 68).addBox(-14.4F, -30.4F, 51.2F, 14F, 10F, 1F, EnumSet.of(Direction.SOUTH))
+				.texOffs(400, 68).addBox(0.8F, -30.4F, 51.2F, 14F, 10F, 1F, EnumSet.of(Direction.SOUTH))
+				.texOffs(690, 0).addBox(-16.96F, -29.6F, 24F, 1F, 9F, 24F, EnumSet.of(Direction.WEST))
+				.texOffs(740, 0).addBox(16.48F, -29.6F, 24F, 1F, 9F, 24F, EnumSet.of(Direction.EAST))
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p1 = root.addOrReplaceChild("array", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, -21.6F, -65.6F, 0F, 0F, 0F));
+		PartDefinition p2 = root.addOrReplaceChild("wheel_1_l", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(-13.6F, -7.36F, 64F, 0F, 0F, 0F));
+		PartDefinition p3 = p2.addOrReplaceChild("wheel_1_l_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p4 = p2.addOrReplaceChild("wheel_1_l_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p5 = root.addOrReplaceChild("wheel_1_r", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(13.6F, -7.36F, 64F, 0F, 0F, 0F));
+		PartDefinition p6 = p5.addOrReplaceChild("wheel_1_r_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p7 = p5.addOrReplaceChild("wheel_1_r_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p8 = root.addOrReplaceChild("wheel_2_l", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(-13.6F, -7.36F, 12F, 0F, 0F, 0F));
+		PartDefinition p9 = p8.addOrReplaceChild("wheel_2_l_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p10 = p8.addOrReplaceChild("wheel_2_l_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p11 = root.addOrReplaceChild("wheel_2_r", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(13.6F, -7.36F, 12F, 0F, 0F, 0F));
+		PartDefinition p12 = p11.addOrReplaceChild("wheel_2_r_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p13 = p11.addOrReplaceChild("wheel_2_r_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p14 = root.addOrReplaceChild("trailer_l", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(-15.68F, -7.36F, -41.6F, 0F, 0F, 0F));
+		PartDefinition p15 = p14.addOrReplaceChild("trailer_l_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p16 = p14.addOrReplaceChild("trailer_l_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		PartDefinition p17 = root.addOrReplaceChild("trailer_r", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(15.68F, -7.36F, -41.6F, 0F, 0F, 0F));
+		PartDefinition p18 = p17.addOrReplaceChild("trailer_r_d1", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0.7854F, 0F, 0F));
+		PartDefinition p19 = p17.addOrReplaceChild("trailer_r_d2", CubeListBuilder.create()
+				, PartPose.offsetAndRotation(0F, 0F, 0F, -0.7854F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 96);
+	}
+
 	public static LayerDefinition p18_int() {
 		MeshDefinition mesh = new MeshDefinition();
 		PartDefinition root = mesh.getRoot();
@@ -14268,6 +15732,215 @@ public final class GenModels {
 	}
 
 	public static Map<String, String> nasams_intPaths() {
+		return Map.ofEntries(
+				Map.entry("body", "body"),
+				Map.entry("steering_column", "body/steering_column"),
+				Map.entry("steering_wheel", "body/steering_column/steering_wheel"),
+				Map.entry("steering_wheel_d", "body/steering_column/steering_wheel/steering_wheel_d")
+		);
+	}
+
+	public static LayerDefinition bm21_int() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(376, 69).addBox(-36.8F, -59.2F, 66.08F, 74F, 26F, 1F, EnumSet.of(Direction.NORTH))
+				.texOffs(738, 69).addBox(-36.8F, -77.44F, 66.08F, 5F, 18F, 1F, EnumSet.of(Direction.NORTH))
+				.texOffs(750, 69).addBox(-1.92F, -77.44F, 66.08F, 4F, 18F, 1F, EnumSet.of(Direction.NORTH))
+				.texOffs(738, 69).addBox(32F, -77.44F, 66.08F, 5F, 18F, 1F, EnumSet.of(Direction.NORTH))
+				.texOffs(400, 105).addBox(-36.8F, -83.2F, 66.08F, 74F, 6F, 1F, EnumSet.of(Direction.NORTH))
+				.texOffs(176, 0).addBox(-36.8F, -83.2F, 24F, 74F, 50F, 1F, EnumSet.of(Direction.SOUTH))
+				.texOffs(0, 0).addBox(-36.8F, -59.2F, 24F, 1F, 26F, 43F, EnumSet.of(Direction.EAST))
+				.texOffs(580, 69).addBox(-36.8F, -76.8F, 24F, 1F, 18F, 8F, EnumSet.of(Direction.EAST))
+				.texOffs(580, 69).addBox(-36.8F, -76.8F, 59.2F, 1F, 18F, 8F, EnumSet.of(Direction.EAST))
+				.texOffs(326, 0).addBox(-36.8F, -83.2F, 24F, 1F, 6F, 43F, EnumSet.of(Direction.EAST))
+				.texOffs(88, 0).addBox(35.68F, -59.2F, 24F, 1F, 26F, 43F, EnumSet.of(Direction.WEST))
+				.texOffs(598, 69).addBox(35.68F, -76.8F, 24F, 1F, 18F, 8F, EnumSet.of(Direction.WEST))
+				.texOffs(598, 69).addBox(35.68F, -76.8F, 59.2F, 1F, 18F, 8F, EnumSet.of(Direction.WEST))
+				.texOffs(414, 0).addBox(35.68F, -83.2F, 24F, 1F, 6F, 43F, EnumSet.of(Direction.WEST))
+				.texOffs(502, 0).addBox(-36.8F, -83.2F, 24F, 74F, 1F, 43F, EnumSet.of(Direction.UP))
+				.texOffs(736, 0).addBox(-36.8F, -34.72F, 24F, 74F, 1F, 43F, EnumSet.of(Direction.DOWN))
+				.texOffs(750, 105).addBox(-32F, -60.32F, 64.16F, 30F, 1F, 2F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(750, 105).addBox(-32F, -77.44F, 64.16F, 30F, 1F, 2F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(682, 69).addBox(-32F, -77.44F, 64.16F, 1F, 18F, 2F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(682, 69).addBox(-3.04F, -77.44F, 64.16F, 1F, 18F, 2F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(750, 105).addBox(1.92F, -60.32F, 64.16F, 30F, 1F, 2F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(750, 105).addBox(1.92F, -77.44F, 64.16F, 30F, 1F, 2F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(682, 69).addBox(1.92F, -77.44F, 64.16F, 1F, 18F, 2F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(682, 69).addBox(30.88F, -77.44F, 64.16F, 1F, 18F, 2F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(218, 69).addBox(-35.68F, -60.32F, 32F, 2F, 1F, 27F, EnumSet.of(Direction.EAST, Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(218, 69).addBox(-35.68F, -76.8F, 32F, 2F, 1F, 27F, EnumSet.of(Direction.EAST, Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(760, 69).addBox(-35.68F, -76.8F, 32F, 2F, 18F, 1F, EnumSet.of(Direction.EAST, Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(760, 69).addBox(-35.68F, -76.8F, 58.08F, 2F, 18F, 1F, EnumSet.of(Direction.EAST, Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(276, 69).addBox(33.76F, -60.32F, 32F, 2F, 1F, 27F, EnumSet.of(Direction.WEST, Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(276, 69).addBox(33.76F, -76.8F, 32F, 2F, 1F, 27F, EnumSet.of(Direction.WEST, Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(766, 69).addBox(33.76F, -76.8F, 32F, 2F, 18F, 1F, EnumSet.of(Direction.WEST, Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(766, 69).addBox(33.76F, -76.8F, 58.08F, 2F, 18F, 1F, EnumSet.of(Direction.WEST, Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(50, 69).addBox(-35.68F, -58.56F, 53.12F, 71F, 17F, 13F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.WEST, Direction.EAST))
+				.texOffs(0, 105).addBox(-35.68F, -59.52F, 52.48F, 71F, 1F, 14F, EnumSet.of(Direction.DOWN, Direction.NORTH, Direction.UP))
+				.texOffs(170, 105).addBox(-35.68F, -41.6F, 57.92F, 71F, 7F, 8F, EnumSet.of(Direction.NORTH, Direction.DOWN))
+				.texOffs(616, 69).addBox(-24.32F, -39.36F, 40.64F, 17F, 4F, 16F)
+				.texOffs(844, 69).addBox(-22.9888F, -35.52F, 43.2F, 14F, 8F, 10F)
+				.texOffs(334, 69).addBox(-24.32F, -62.4F, 36.16F, 17F, 24F, 4F)
+				.texOffs(356, 105).addBox(-20.992F, -68.8F, 36.8F, 10F, 6F, 3F)
+				.texOffs(594, 105).addBox(-23.68F, -56.96F, 52.48F, 15F, 5F, 1F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(686, 105).addBox(-21.12F, -40F, 49.92F, 3F, 5F, 1F)
+				.texOffs(686, 105).addBox(-17.28F, -40F, 49.92F, 3F, 5F, 1F)
+				.texOffs(686, 105).addBox(-12.8F, -40F, 49.92F, 3F, 5F, 1F)
+				.texOffs(942, 69).addBox(-6.4F, -49.6F, 51.2F, 1F, 15F, 1F)
+				.texOffs(662, 105).addBox(-7.04F, -52.16F, 50.56F, 3F, 3F, 3F)
+				.texOffs(550, 105).addBox(-22.4F, -82.08F, 59.68F, 13F, 1F, 6F, EnumSet.of(Direction.UP, Direction.NORTH, Direction.WEST, Direction.EAST))
+				.texOffs(526, 69).addBox(-35.68F, -58.24F, 38.4F, 3F, 3F, 24F)
+				.texOffs(970, 0).addBox(-35.68F, -52.48F, 38.4F, 1F, 12F, 24F, EnumSet.of(Direction.EAST, Direction.DOWN))
+				.texOffs(648, 105).addBox(-35.68F, -51.52F, 53.44F, 2F, 1F, 5F)
+				.texOffs(616, 69).addBox(7.68F, -39.36F, 40.64F, 17F, 4F, 16F)
+				.texOffs(844, 69).addBox(9.0112F, -35.52F, 43.2F, 14F, 8F, 10F)
+				.texOffs(334, 69).addBox(7.68F, -62.4F, 36.16F, 17F, 24F, 4F)
+				.texOffs(356, 105).addBox(11.008F, -68.8F, 36.8F, 10F, 6F, 3F)
+				.texOffs(698, 105).addBox(10.24F, -56F, 52.64F, 12F, 4F, 1F, EnumSet.of(Direction.NORTH))
+				.texOffs(550, 105).addBox(9.6F, -82.08F, 59.68F, 13F, 1F, 6F, EnumSet.of(Direction.UP, Direction.NORTH, Direction.WEST, Direction.EAST))
+				.texOffs(526, 69).addBox(32.8F, -58.24F, 38.4F, 3F, 3F, 24F)
+				.texOffs(0, 69).addBox(34.4F, -52.48F, 38.4F, 1F, 12F, 24F, EnumSet.of(Direction.WEST, Direction.DOWN))
+				.texOffs(648, 105).addBox(34.08F, -51.52F, 53.44F, 2F, 1F, 5F)
+				.texOffs(328, 105).addBox(-6.4F, -56.96F, 52.16F, 13F, 8F, 1F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(872, 105).addBox(-6.4F, -47.36F, 52.32F, 4F, 2F, 1F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(872, 105).addBox(2.56F, -47.36F, 52.32F, 4F, 2F, 1F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(814, 105).addBox(-10.24F, -82.08F, 32.16F, 20F, 1F, 2F, EnumSet.of(Direction.UP, Direction.SOUTH, Direction.NORTH, Direction.WEST, Direction.EAST))
+				.texOffs(814, 105).addBox(-10.24F, -82.08F, 51.04F, 20F, 1F, 2F, EnumSet.of(Direction.UP, Direction.SOUTH, Direction.NORTH, Direction.WEST, Direction.EAST))
+				.texOffs(892, 69).addBox(-10.24F, -82.08F, 33.76F, 2F, 1F, 17F, EnumSet.of(Direction.UP, Direction.SOUTH, Direction.NORTH, Direction.WEST, Direction.EAST))
+				.texOffs(892, 69).addBox(8.64F, -82.08F, 33.76F, 2F, 1F, 17F, EnumSet.of(Direction.UP, Direction.SOUTH, Direction.NORTH, Direction.WEST, Direction.EAST))
+				.texOffs(776, 69).addBox(-8.64F, -82.08F, 33.76F, 17F, 1F, 17F, EnumSet.of(Direction.UP))
+				.texOffs(724, 105).addBox(-3.84F, -76.16F, 63.52F, 8F, 3F, 1F)
+				.texOffs(626, 105).addBox(-3.2F, -82.08F, 43.04F, 6F, 1F, 5F, EnumSet.of(Direction.UP, Direction.WEST, Direction.EAST, Direction.SOUTH, Direction.NORTH))
+				.texOffs(688, 69).addBox(-8F, -72F, 25.12F, 16F, 10F, 9F)
+				.texOffs(772, 69).addBox(-2.56F, -89.6F, 26.72F, 1F, 18F, 1F)
+				.texOffs(930, 69).addBox(31.2F, -48F, 25.12F, 3F, 13F, 3F)
+				.texOffs(742, 105).addBox(31.84F, -50.24F, 25.76F, 2F, 2F, 2F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p1 = p0.addOrReplaceChild("steering_column", CubeListBuilder.create()
+				.texOffs(382, 105).addBox(-1.12F, -1.12F, 0F, 2F, 2F, 7F)
+				, PartPose.offsetAndRotation(-16F, -56F, 49.28F, -0.9599F, 0F, 0F));
+		PartDefinition p2 = p1.addOrReplaceChild("steering_wheel", CubeListBuilder.create()
+				.texOffs(858, 105).addBox(-2.688F, -6.4F, -1.12F, 5F, 1F, 2F)
+				.texOffs(858, 105).addBox(-2.688F, 5.28F, -1.12F, 5F, 1F, 2F)
+				.texOffs(588, 105).addBox(-6.4F, -2.688F, -1.12F, 1F, 5F, 2F)
+				.texOffs(588, 105).addBox(5.28F, -2.688F, -1.12F, 1F, 5F, 2F)
+				.texOffs(674, 105).addBox(-1.92F, -1.92F, -0.64F, 4F, 4F, 2F)
+				.texOffs(882, 105).addBox(-5.44F, -0.64F, -0.48F, 11F, 1F, 1F)
+				.texOffs(694, 105).addBox(-0.64F, 0F, -0.48F, 1F, 5F, 1F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p3 = p2.addOrReplaceChild("steering_wheel_d", CubeListBuilder.create()
+				.texOffs(858, 105).addBox(-2.688F, -6.4F, -1.12F, 5F, 1F, 2F)
+				.texOffs(858, 105).addBox(-2.688F, 5.28F, -1.12F, 5F, 1F, 2F)
+				.texOffs(588, 105).addBox(-6.4F, -2.688F, -1.12F, 1F, 5F, 2F)
+				.texOffs(588, 105).addBox(5.28F, -2.688F, -1.12F, 1F, 5F, 2F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0.7854F));
+		return LayerDefinition.create(mesh, 1024, 128);
+	}
+
+	public static Map<String, String> bm21_intPaths() {
+		return Map.ofEntries(
+				Map.entry("body", "body"),
+				Map.entry("steering_column", "body/steering_column"),
+				Map.entry("steering_wheel", "body/steering_column/steering_wheel"),
+				Map.entry("steering_wheel_d", "body/steering_column/steering_wheel/steering_wheel_d")
+		);
+	}
+
+	public static LayerDefinition tpq36_int() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(724, 88).addBox(-33.6F, -41.6F, 101.28F, 67F, 26F, 1F, EnumSet.of(Direction.NORTH))
+				.texOffs(996, 88).addBox(-33.6F, -60.8F, 101.28F, 5F, 19F, 1F, EnumSet.of(Direction.NORTH))
+				.texOffs(1008, 88).addBox(-1.6F, -60.8F, 101.28F, 3F, 19F, 1F, EnumSet.of(Direction.NORTH))
+				.texOffs(996, 88).addBox(28.8F, -60.8F, 101.28F, 5F, 19F, 1F, EnumSet.of(Direction.NORTH))
+				.texOffs(692, 137).addBox(-33.6F, -63.36F, 101.28F, 67F, 3F, 1F, EnumSet.of(Direction.NORTH))
+				.texOffs(200, 88).addBox(-33.6F, -63.36F, 40F, 67F, 47F, 1F, EnumSet.of(Direction.SOUTH))
+				.texOffs(0, 0).addBox(-33.6F, -41.6F, 40F, 1F, 26F, 62F, EnumSet.of(Direction.EAST))
+				.texOffs(860, 88).addBox(-33.6F, -59.2F, 40F, 1F, 18F, 8F, EnumSet.of(Direction.EAST))
+				.texOffs(896, 88).addBox(-33.6F, -59.2F, 96F, 1F, 18F, 6F, EnumSet.of(Direction.EAST))
+				.texOffs(252, 0).addBox(-33.6F, -63.36F, 40F, 1F, 4F, 62F, EnumSet.of(Direction.EAST))
+				.texOffs(126, 0).addBox(32.48F, -41.6F, 40F, 1F, 26F, 62F, EnumSet.of(Direction.WEST))
+				.texOffs(878, 88).addBox(32.48F, -59.2F, 40F, 1F, 18F, 8F, EnumSet.of(Direction.WEST))
+				.texOffs(910, 88).addBox(32.48F, -59.2F, 96F, 1F, 18F, 6F, EnumSet.of(Direction.WEST))
+				.texOffs(378, 0).addBox(32.48F, -63.36F, 40F, 1F, 4F, 62F, EnumSet.of(Direction.WEST))
+				.texOffs(504, 0).addBox(-33.6F, -63.36F, 40F, 67F, 1F, 62F, EnumSet.of(Direction.UP))
+				.texOffs(762, 0).addBox(-33.6F, -17.12F, 40F, 67F, 1F, 62F, EnumSet.of(Direction.DOWN))
+				.texOffs(854, 137).addBox(-28.8F, -42.72F, 99.36F, 27F, 1F, 2F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(854, 137).addBox(-28.8F, -60.8F, 99.36F, 27F, 1F, 2F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(924, 88).addBox(-28.8F, -60.8F, 99.36F, 1F, 19F, 2F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(924, 88).addBox(-2.72F, -60.8F, 99.36F, 1F, 19F, 2F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(854, 137).addBox(1.6F, -42.72F, 99.36F, 27F, 1F, 2F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(854, 137).addBox(1.6F, -60.8F, 99.36F, 27F, 1F, 2F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(924, 88).addBox(1.6F, -60.8F, 99.36F, 1F, 19F, 2F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(924, 88).addBox(27.68F, -60.8F, 99.36F, 1F, 19F, 2F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(0, 88).addBox(-32.48F, -42.72F, 48F, 2F, 1F, 48F, EnumSet.of(Direction.EAST, Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(0, 88).addBox(-32.48F, -59.2F, 48F, 2F, 1F, 48F, EnumSet.of(Direction.EAST, Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(50, 137).addBox(-32.48F, -59.2F, 48F, 2F, 18F, 1F, EnumSet.of(Direction.EAST, Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(50, 137).addBox(-32.48F, -59.2F, 94.88F, 2F, 18F, 1F, EnumSet.of(Direction.EAST, Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(100, 88).addBox(30.56F, -42.72F, 48F, 2F, 1F, 48F, EnumSet.of(Direction.WEST, Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(100, 88).addBox(30.56F, -59.2F, 48F, 2F, 1F, 48F, EnumSet.of(Direction.WEST, Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(56, 137).addBox(30.56F, -59.2F, 48F, 2F, 18F, 1F, EnumSet.of(Direction.WEST, Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(56, 137).addBox(30.56F, -59.2F, 94.88F, 2F, 18F, 1F, EnumSet.of(Direction.WEST, Direction.DOWN, Direction.UP, Direction.SOUTH, Direction.NORTH))
+				.texOffs(456, 88).addBox(-32.48F, -40.96F, 85.28F, 65F, 17F, 16F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.WEST, Direction.EAST))
+				.texOffs(66, 137).addBox(-32.48F, -41.92F, 84.64F, 65F, 1F, 17F, EnumSet.of(Direction.DOWN, Direction.NORTH, Direction.UP))
+				.texOffs(230, 137).addBox(-32.48F, -24F, 90.08F, 65F, 7F, 11F, EnumSet.of(Direction.NORTH, Direction.DOWN))
+				.texOffs(930, 88).addBox(-22.72F, -21.76F, 58.24F, 17F, 4F, 16F)
+				.texOffs(382, 137).addBox(-21.3888F, -17.92F, 60.8F, 14F, 8F, 10F)
+				.texOffs(682, 88).addBox(-22.72F, -44.8F, 53.76F, 17F, 24F, 4F)
+				.texOffs(474, 137).addBox(-19.392F, -51.2F, 54.4F, 10F, 6F, 3F)
+				.texOffs(562, 137).addBox(-22.08F, -39.36F, 84.64F, 15F, 5F, 1F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(654, 137).addBox(-19.52F, -22.4F, 82.08F, 3F, 5F, 1F)
+				.texOffs(654, 137).addBox(-15.68F, -22.4F, 82.08F, 3F, 5F, 1F)
+				.texOffs(654, 137).addBox(-11.2F, -22.4F, 82.08F, 3F, 5F, 1F)
+				.texOffs(442, 137).addBox(-4.8F, -32F, 68.8F, 1F, 15F, 1F)
+				.texOffs(630, 137).addBox(-5.44F, -34.56F, 68.16F, 3F, 3F, 3F)
+				.texOffs(518, 137).addBox(-20.8F, -62.24F, 94.88F, 13F, 1F, 6F, EnumSet.of(Direction.UP, Direction.NORTH, Direction.WEST, Direction.EAST))
+				.texOffs(618, 88).addBox(-32.48F, -40.64F, 56F, 3F, 3F, 29F)
+				.texOffs(336, 88).addBox(-32.48F, -34.88F, 56F, 1F, 12F, 29F, EnumSet.of(Direction.EAST, Direction.DOWN))
+				.texOffs(616, 137).addBox(-32.48F, -33.92F, 71.04F, 2F, 1F, 5F)
+				.texOffs(930, 88).addBox(6.08F, -21.76F, 58.24F, 17F, 4F, 16F)
+				.texOffs(382, 137).addBox(7.4112F, -17.92F, 60.8F, 14F, 8F, 10F)
+				.texOffs(682, 88).addBox(6.08F, -44.8F, 53.76F, 17F, 24F, 4F)
+				.texOffs(474, 137).addBox(9.408F, -51.2F, 54.4F, 10F, 6F, 3F)
+				.texOffs(666, 137).addBox(8.64F, -38.4F, 84.8F, 12F, 4F, 1F, EnumSet.of(Direction.NORTH))
+				.texOffs(518, 137).addBox(8F, -62.24F, 94.88F, 13F, 1F, 6F, EnumSet.of(Direction.UP, Direction.NORTH, Direction.WEST, Direction.EAST))
+				.texOffs(618, 88).addBox(29.6F, -40.64F, 56F, 3F, 3F, 29F)
+				.texOffs(396, 88).addBox(31.2F, -34.88F, 56F, 1F, 12F, 29F, EnumSet.of(Direction.WEST, Direction.DOWN))
+				.texOffs(616, 137).addBox(30.88F, -33.92F, 71.04F, 2F, 1F, 5F)
+				.texOffs(446, 137).addBox(-6.4F, -39.36F, 84.32F, 13F, 8F, 1F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(926, 137).addBox(-6.4F, -29.76F, 84.48F, 4F, 2F, 1F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(926, 137).addBox(2.56F, -29.76F, 84.48F, 4F, 2F, 1F, EnumSet.of(Direction.NORTH, Direction.DOWN, Direction.UP, Direction.WEST, Direction.EAST))
+				.texOffs(828, 137).addBox(-3.84F, -59.52F, 98.72F, 8F, 3F, 1F)
+				.texOffs(594, 137).addBox(-3.2F, -62.24F, 68.64F, 6F, 1F, 5F, EnumSet.of(Direction.UP, Direction.WEST, Direction.EAST, Direction.SOUTH, Direction.NORTH))
+				.texOffs(0, 137).addBox(-8F, -54.4F, 41.12F, 16F, 10F, 9F)
+				.texOffs(62, 137).addBox(-2.56F, -72F, 42.72F, 1F, 18F, 1F)
+				.texOffs(430, 137).addBox(28F, -30.4F, 41.12F, 3F, 13F, 3F)
+				.texOffs(846, 137).addBox(28.64F, -32.64F, 41.76F, 2F, 2F, 2F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p1 = p0.addOrReplaceChild("steering_column", CubeListBuilder.create()
+				.texOffs(500, 137).addBox(-1.12F, -1.12F, 0F, 2F, 2F, 7F)
+				, PartPose.offsetAndRotation(-14.4F, -38.4F, 81.44F, -0.9599F, 0F, 0F));
+		PartDefinition p2 = p1.addOrReplaceChild("steering_wheel", CubeListBuilder.create()
+				.texOffs(912, 137).addBox(-2.688F, -6.4F, -1.12F, 5F, 1F, 2F)
+				.texOffs(912, 137).addBox(-2.688F, 5.28F, -1.12F, 5F, 1F, 2F)
+				.texOffs(556, 137).addBox(-6.4F, -2.688F, -1.12F, 1F, 5F, 2F)
+				.texOffs(556, 137).addBox(5.28F, -2.688F, -1.12F, 1F, 5F, 2F)
+				.texOffs(642, 137).addBox(-1.92F, -1.92F, -0.64F, 4F, 4F, 2F)
+				.texOffs(936, 137).addBox(-5.44F, -0.64F, -0.48F, 11F, 1F, 1F)
+				.texOffs(662, 137).addBox(-0.64F, 0F, -0.48F, 1F, 5F, 1F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p3 = p2.addOrReplaceChild("steering_wheel_d", CubeListBuilder.create()
+				.texOffs(912, 137).addBox(-2.688F, -6.4F, -1.12F, 5F, 1F, 2F)
+				.texOffs(912, 137).addBox(-2.688F, 5.28F, -1.12F, 5F, 1F, 2F)
+				.texOffs(556, 137).addBox(-6.4F, -2.688F, -1.12F, 1F, 5F, 2F)
+				.texOffs(556, 137).addBox(5.28F, -2.688F, -1.12F, 1F, 5F, 2F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0.7854F));
+		return LayerDefinition.create(mesh, 1024, 160);
+	}
+
+	public static Map<String, String> tpq36_intPaths() {
 		return Map.ofEntries(
 				Map.entry("body", "body"),
 				Map.entry("steering_column", "body/steering_column"),

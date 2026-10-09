@@ -213,6 +213,8 @@ public final class War {
 				}
 				Settlement target = nearestTarget(level, p, ai, enemy);
 				if (target != null) {
+					// 1.30: the attacker's guns in reach shell the town first.
+					Arsenals.barrage(level, p, ai, target);
 					// Bigger squads now (1.25), and they come by road where there is one.
 					int men = 4 + r.nextInt(5) + Math.min(4, p.settlementsOf(ai.id).size() / 2);
 					if (sendColumn(level, p, ai, target, men) == 0) {

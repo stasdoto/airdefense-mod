@@ -11,7 +11,11 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import com.stasdoto.airdefense.AirDefense;
 
 /** Server → tablet map: every vehicle in the dimension with what the map needs to show and command it. */
-public record MapStatusPayload(List<Entry> vehicles) implements CustomPacketPayload {
+public record MapStatusPayload(List<Entry> vehicles, List<Fire> fires) implements CustomPacketPayload {
+	/** 1.30: an enemy firing position found by the player's counter-battery radars: where, how long ago (s), rounds seen. */
+	public record Fire(int x, int y, int z, int age, int rounds) {
+	}
+
 	/**
 	 * One vehicle. {@code busy} = ticks until ready (launcher reload or air defence reload), {@code tracked} = entity id
 	 * of the threat an air defence is engaging (or -1), target = launcher's current aim point (if {@code hasTarget}).
@@ -46,6 +50,14 @@ public record MapStatusPayload(List<Entry> vehicles) implements CustomPacketPayl
 			buf.writeInt(e.tracked);
 			buf.writeInt(e.reserve);
 		}
+		buf.writeShort(p.fires.size());
+		for (Fire f : p.fires) {
+			buf.writeInt(f.x);
+			buf.writeInt(f.y);
+			buf.writeInt(f.z);
+			buf.writeShort(f.age);
+			buf.writeShort(f.rounds);
+		}
 	}
 
 	private static MapStatusPayload read(ByteBuf buf) {
@@ -56,7 +68,12 @@ public record MapStatusPayload(List<Entry> vehicles) implements CustomPacketPayl
 					buf.readByte(), buf.readByte(), buf.readInt(), buf.readShort(), buf.readByte(), buf.readInt(), buf.readBoolean(),
 					buf.readBoolean(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readInt()));
 		}
-		return new MapStatusPayload(list);
+		int nf = buf.readShort();
+		List<Fire> fires = new ArrayList<>(nf);
+		for (int i = 0; i < nf; i++) {
+			fires.add(new Fire(buf.readInt(), buf.readInt(), buf.readInt(), buf.readShort(), buf.readShort()));
+		}
+		return new MapStatusPayload(list, fires);
 	}
 
 	@Override

@@ -89,6 +89,15 @@ public class MissileEntity extends Entity {
 	private boolean decoysReleased;
 	/** Fixed per missile: a radar that sees through this share of decoys (or more) recognises this one as fake. */
 	private final double decoyRoll;
+	/** 1.30: where it was fired from (what a counter-battery radar works out), and whether its whistle was heard. */
+	private Vec3 origin = Vec3.ZERO;
+	private boolean whistled;
+	/** The last incoming whistle (a Grad salvo whistles once, not forty times over). */
+	private static Vec3 lastWhistleAt = Vec3.ZERO;
+	private static long lastWhistleTime = -100;
+	/** For the tests: incoming whistles played, and where artillery rounds came down (the last few hundred). */
+	public static final java.util.concurrent.atomic.AtomicInteger WHISTLES = new java.util.concurrent.atomic.AtomicInteger();
+	public static final java.util.List<Vec3> ARTY_LANDED = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
 
 	private ItemStack displayStack;
 	private MissileType displayType;
@@ -156,7 +165,8 @@ public class MissileEntity extends Entity {
 				m.phase = 1;
 				m.startArc(pos);
 				m.launchDir = m.arcPoint(0.01).subtract(pos).normalize();
-				m.speed = 0.8;
+				// A shell leaves the barrel at full speed; a rocket picks up speed as its motor burns.
+				m.speed = type.shell() ? type.maxSpeed : 0.8;
 			}
 			case CRUISE -> {
 				// Booster throws it up at ~50 degrees, then the turbojet takes over.
@@ -180,9 +190,10 @@ public class MissileEntity extends Entity {
 		}
 		m.lastVel = m.launchDir.scale(m.speed);
 		m.updateRotation(m.launchDir);
-		m.setMotor(true);
+		m.setMotor(!type.shell());
+		m.origin = pos;
 		level.addFreshEntity(m);
-		(type.isDecoy() ? MissileStats.DECOYS_LAUNCHED : MissileStats.STRIKES_LAUNCHED).incrementAndGet();
+		(type.isDecoy() ? MissileStats.DECOYS_LAUNCHED : type.artillery() ? MissileStats.ARTY_FIRED : MissileStats.STRIKES_LAUNCHED).incrementAndGet();
 		MissileStats.log("launch {} from {} to {}", type, fmt(pos), fmt(target));
 		return m;
 	}
@@ -740,8 +751,47 @@ public class MissileEntity extends Entity {
 			// Overshoot slightly so the block ray-cast definitely finds the ground at the aim point.
 			v = v.add(v.normalize().scale(2.0));
 		}
-		setMotor(type.kind == MissileType.Kind.ROCKET ? arcS < 0.25 : arcS < 0.5);
+		setMotor(type.kind == MissileType.Kind.ROCKET ? !type.shell() && arcS < (type == MissileType.GRAD ? 0.14 : 0.25) : arcS < 0.5);
+		if (type.artillery() && !whistled && arcS > 0.5 && level() instanceof ServerLevel server) {
+			whistle(server);
+		}
 		return v;
+	}
+
+	/**
+	 * 1.30: the incoming whistle - about two and a half seconds before a shell or a rocket comes down, heard round the
+	 * point it falls on (a salvo whistles once for the lot).
+	 */
+	private void whistle(ServerLevel level) {
+		double ticksLeft = position().distanceTo(target) / Math.max(0.5, speed);
+		if (ticksLeft > 52) {
+			return;
+		}
+		whistled = true;
+		long now = level.getGameTime();
+		if (now - lastWhistleTime < 10 && lastWhistleAt.distanceToSqr(target) < 40 * 40) {
+			return;
+		}
+		lastWhistleTime = now;
+		lastWhistleAt = target;
+		WHISTLES.incrementAndGet();
+		level.playSound(null, target.x, target.y + 3, target.z, com.stasdoto.airdefense.registry.ModSounds.SHELL_WHISTLE,
+				net.minecraft.sounds.SoundSource.HOSTILE, 6.0f, 0.92f + random.nextFloat() * 0.16f);
+	}
+
+	/** 1.30: the point it was fired from. */
+	public Vec3 origin() {
+		return origin;
+	}
+
+	/** Strikes worked out off-screen turn up already in the air: they still come from where they were fired. */
+	public void setOrigin(Vec3 from) {
+		origin = from;
+	}
+
+	/** Progress along its arc (0 at the gun, 1 at the target); shells and rockets only. */
+	public double arcProgress() {
+		return arcS;
 	}
 
 	/** Iskander-M: after the top of the arc it throws out two decoys that dive at points around the target. */
@@ -1112,6 +1162,23 @@ public class MissileEntity extends Entity {
 					TOP_ATTACKS.incrementAndGet();
 				}
 				Effects.rpgImpact(level, this, at, owner, directHit, type.vehicleDamage(), type.power);
+			}
+			return;
+		}
+		if (type.artillery()) {
+			MissileStats.ARTY_IMPACTS.incrementAndGet();
+			if (inAir && type == MissileType.GRAD) {
+				MissileStats.THREATS_SHOT_DOWN.incrementAndGet();
+			}
+			MissileStats.log("{} {} at {} after {} ticks (aim {})", type, inAir ? "AIR-BURST" : "IMPACT", fmt(at), life, fmt(target));
+			if (inAir) {
+				Effects.airBurst(level, this, at, type);
+			} else {
+				Effects.groundImpact(level, this, at, type);
+				com.stasdoto.airdefense.radar.CounterBattery.impact(level, this, at);
+				if (ARTY_LANDED.size() < 400) {
+					ARTY_LANDED.add(at);
+				}
 			}
 			return;
 		}

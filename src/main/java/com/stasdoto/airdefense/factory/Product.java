@@ -51,7 +51,11 @@ public enum Product {
 	AMMO_12G("ammo_12g", 140, 1, 24, cost(Items.PAPER, 4, Items.GUNPOWDER, 4, Items.IRON_NUGGET, 8)),
 	AMMO_40MM("ammo_40mm", 240, 1, 6, cost(Items.IRON_INGOT, 2, Items.GUNPOWDER, 3, Items.TNT, 1)),
 	CG_ROUND("cg_round", 320, 1, 2, cost(Items.IRON_INGOT, 3, Items.GUNPOWDER, 3, Items.TNT, 1, Items.COPPER_INGOT, 2)),
-	JAVELIN_MISSILE("javelin_missile", 700, 1, 1, cost(Items.IRON_INGOT, 6, Items.TNT, 2, Items.REDSTONE, 4, Items.GOLD_INGOT, 2));
+	JAVELIN_MISSILE("javelin_missile", 700, 1, 1, cost(Items.IRON_INGOT, 6, Items.TNT, 2, Items.REDSTONE, 4, Items.GOLD_INGOT, 2)),
+	// 1.30: artillery rounds (one item = one shell or rocket).
+	SHELL_152("shell_152", 240, 1, 4, cost(Items.IRON_INGOT, 4, Items.GUNPOWDER, 3, Items.COPPER_INGOT, 1)),
+	SHELL_155("shell_155", 240, 1, 4, cost(Items.IRON_INGOT, 4, Items.GUNPOWDER, 3, Items.COPPER_INGOT, 1)),
+	GRAD_ROCKET("grad_rocket", 300, 1, 5, cost(Items.IRON_INGOT, 3, Items.GUNPOWDER, 4, Items.REDSTONE, 1));
 
 	public record Cost(Item item, int count) {
 	}
@@ -91,6 +95,9 @@ public enum Product {
 			case KALIBR -> KALIBR;
 			case SHAHED -> SHAHED;
 			case HIMARS -> GMLRS;
+			case MSTA_S -> SHELL_152;
+			case M109 -> SHELL_155;
+			case BM21 -> GRAD_ROCKET;
 			case PATRIOT -> PAC3;
 			case IRIS_T -> IRIST;
 			case NASAMS -> AMRAAM;

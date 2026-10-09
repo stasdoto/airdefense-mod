@@ -43,6 +43,12 @@ public final class MapClient {
 		return p == null ? List.of() : p.vehicles();
 	}
 
+	/** 1.30: enemy firing positions the player's counter-battery radars have found. */
+	public static List<MapStatusPayload.Fire> fires() {
+		MapStatusPayload p = latest;
+		return p == null ? List.of() : p.fires();
+	}
+
 	/** Russian or Ukrainian game: grid squares get Cyrillic letters. */
 	public static boolean cyrillic() {
 		String lang = Minecraft.getInstance().options.languageCode;

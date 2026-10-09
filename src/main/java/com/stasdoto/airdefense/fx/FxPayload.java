@@ -24,6 +24,8 @@ public record FxPayload(int kind, double x, double y, double z, float power, dou
 	public static final int GRENADE = 6;
 	/** A smoke cloud (1.26): {@code power} its radius, {@code ax} how long it hangs (ticks). */
 	public static final int SMOKE = 7;
+	/** A howitzer firing (1.30): {@code power} the size, {@code a*} the way the barrel points. */
+	public static final int MUZZLE = 8;
 	/** For LAUNCH, {@code ax}: which launch sound (see the constants below). */
 	public static final int LAUNCH_SOUND_NONE = 0;
 	public static final int LAUNCH_SOUND_HEAVY = 1;

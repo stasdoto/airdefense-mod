@@ -209,20 +209,24 @@ public final class Arsenals extends SavedData {
 				// A radar station: the capital's batteries see further and are not fooled by decoys.
 				kit.add(east ? VehicleType.ST68 : VehicleType.TRML4D);
 				kit.addAll(east ? List.of(VehicleType.ISKANDER, VehicleType.SHAHED, VehicleType.SHAHED) : List.of(VehicleType.HIMARS, VehicleType.HIMARS));
+				// 1.30: an artillery battalion and its counter-battery radar.
+				kit.addAll(east ? List.of(VehicleType.MSTA_S, VehicleType.MSTA_S, VehicleType.BM21, VehicleType.ZOOPARK)
+						: List.of(VehicleType.M109, VehicleType.M109, VehicleType.TPQ36));
 			} else if (s.city >= 0) {
 				kit.add(east ? (r.nextBoolean() ? VehicleType.BUK : VehicleType.TOR) : (r.nextBoolean() ? VehicleType.NASAMS : VehicleType.IRIS_T));
 				kit.add(east ? VehicleType.PANTSIR : VehicleType.GEPARD);
 				kit.add(east ? (r.nextBoolean() ? VehicleType.ISKANDER : VehicleType.SHAHED) : VehicleType.HIMARS);
+				kit.add(east ? (r.nextBoolean() ? VehicleType.MSTA_S : VehicleType.BM21) : VehicleType.M109);
 			} else {
 				// A village: a short-range air defence and one launcher.
 				kit.add(east ? (r.nextBoolean() ? VehicleType.STRELA10 : VehicleType.OSA) : (r.nextBoolean() ? VehicleType.AVENGER : VehicleType.GEPARD));
 				kit.add(east ? VehicleType.SHAHED : VehicleType.HIMARS);
 			}
 			for (VehicleType t : kit) {
-				a.units.add(new Unit(t, null, false, t.isLauncher() ? t.rails() : t.magazine()));
+				a.units.add(new Unit(t, null, false, t.isLauncher() ? t.strikeLoad() : t.magazine()));
 				MissileType m = missileOf(t);
 				if (m != null) {
-					a.add(m, t.isLauncher() ? t.rails() : t.magazine());
+					a.add(m, t.isLauncher() ? t.strikeLoad() : t.magazine());
 				}
 			}
 			arsenals.put(s.id, a);
@@ -248,7 +252,7 @@ public final class Arsenals extends SavedData {
 		int n = 0;
 		for (Unit u : a.units) {
 			if (!u.lost && missileOf(u.type) == m) {
-				n += u.type.isLauncher() ? u.type.rails() : u.type.magazine();
+				n += u.type.isLauncher() ? u.type.strikeLoad() : u.type.magazine();
 			}
 		}
 		int depots = s.eco.count(BuildingType.DEPOT);
@@ -288,6 +292,7 @@ public final class Arsenals extends SavedData {
 				com.stasdoto.airdefense.util.Perf.over("arsenal of " + s.name + " produces", m0);
 			}
 		}
+		a.artillery(level, p);
 		// Deliveries arriving; a lorry on the road into town when somebody is there to see it come.
 		if (!a.deliveries.isEmpty()) {
 			for (Delivery d : List.copyOf(a.deliveries)) {
@@ -620,10 +625,10 @@ public final class Arsenals extends SavedData {
 					}
 					MissileType m = missileOf(u.type);
 					VehicleEntity v = u.entity == null ? null : level.getEntity(u.entity) instanceof VehicleEntity ve ? ve : null;
-					int loaded = v != null ? Integer.bitCount(v.getLoadedMask()) : u.ammo;
+					int loaded = v != null ? v.loadedRounds() : u.ammo;
 					if (loaded == 0 && v == null && m != null && ar.stock(m) > 0) {
 						// Reloaded at the depot.
-						int n = Math.min(u.type.rails(), ar.stock(m));
+						int n = Math.min(u.type.strikeLoad(), ar.stock(m));
 						ar.add(m, -n);
 						u.ammo = n;
 						loaded = n;
@@ -801,7 +806,7 @@ public final class Arsenals extends SavedData {
 		for (Unit u : ar.units) {
 			if (!u.lost && u.type.isLauncher()) {
 				VehicleEntity v = u.entity == null ? null : level.getEntity(u.entity) instanceof VehicleEntity ve ? ve : null;
-				int loaded = v != null ? Integer.bitCount(v.getLoadedMask()) : u.ammo;
+				int loaded = v != null ? v.loadedRounds() : u.ammo;
 				if (loaded > 0) {
 					a.fire(level, p, from, ar, u, v, target, Math.min(loaded, u.type.launcher.salvo));
 					return true;
@@ -834,30 +839,43 @@ public final class Arsenals extends SavedData {
 	 * missiles turn up on their way in (the air defence there gets its chance); else it is worked out by chance.
 	 */
 	private void fire(ServerLevel level, Politics p, Settlement from, Arsenal ar, Unit u, @Nullable VehicleEntity v, Settlement target, int salvo) {
+		fire(level, p, from, ar, u, v, target, aimPoint(level, target), salvo);
+	}
+
+	/** One strike at a point: in a town ({@code target}), or anywhere (a battery that fired at us: {@code target} null). */
+	private void fire(ServerLevel level, Politics p, Settlement from, Arsenal ar, Unit u, @Nullable VehicleEntity v, @Nullable Settlement target,
+			BlockPos aimAt, int salvo) {
 		strikes++;
-		BlockPos aimAt = aimPoint(level, target);
 		MissileType m = missileOf(u.type);
-		if (v != null && v.isAlive() && v.commandStrike(aimAt, null)) {
-			AirDefense.LOGGER.info("[airdefense] {} fires {} at {}", from.name, u.type.id, target.name);
-			tellStrike(level, p, target, from, false);
+		String where = target != null ? target.name : aimAt.toShortString();
+		if (v != null && v.isAlive() && (u.type.isArtillery() ? v.commandFire(aimAt, null, salvo) : v.commandStrike(aimAt, null))) {
+			AirDefense.LOGGER.info("[airdefense] {} fires {} at {}", from.name, u.type.id, where);
+			if (target != null) {
+				tellStrike(level, p, target, from, false);
+			}
 			return;
 		}
 		u.ammo = Math.max(0, u.ammo - salvo);
-		var watcher = level.getNearestPlayer(target.center.getX(), target.center.getY(), target.center.getZ(), target.radius + 350, pl -> true);
+		int reachOf = target != null ? target.radius + 350 : 350;
+		var watcher = level.getNearestPlayer(aimAt.getX(), aimAt.getY(), aimAt.getZ(), reachOf, pl -> true);
 		boolean seen = watcher != null;
 		if (!seen && !level.players().isEmpty() && com.stasdoto.airdefense.missile.MissileStats.debug()) {
 			var pl = level.players().getFirst();
-			AirDefense.LOGGER.info("[airdefense] strike on {} unseen: nearest player {} blocks off (reach {})", target.name,
-					(int) Math.sqrt(pl.distanceToSqr(Vec3.atCenterOf(target.center))), target.radius + 350);
+			AirDefense.LOGGER.info("[airdefense] strike on {} unseen: nearest player {} blocks off (reach {})", where,
+					(int) Math.sqrt(pl.distanceToSqr(Vec3.atCenterOf(aimAt))), reachOf);
 		}
 		if (seen && m != null) {
 			Vec3 tc = Vec3.atBottomCenterOf(aimAt);
 			Vec3 dir = Vec3.atCenterOf(from.center).subtract(tc);
 			dir = new Vec3(dir.x, 0, dir.z).normalize();
-			double dist = Math.sqrt(from.center.distSqr(target.center));
+			double dist = Math.sqrt(from.center.distSqr(aimAt));
 			double start = Math.min(dist, m.kind == MissileType.Kind.DRONE ? 300 : 360);
+			boolean arty = m.artillery();
+			double artySpread = arty && u.type.launcher != null ? u.type.launcher.spread : 3;
+			Vec3 gunsAt = Vec3.atCenterOf(from.center);
 			for (int k = 0; k < salvo; k++) {
-				double spread = (k - salvo / 2.0) * 6;
+				// Artillery comes in as one bunch (a salvo from one battery); missiles and drones in a line.
+				double spread = arty ? level.getRandom().nextGaussian() * 6 : (k - salvo / 2.0) * 6;
 				Vec3 side = new Vec3(-dir.z, 0, dir.x).scale(spread);
 				double h = switch (m.kind) {
 					case BALLISTIC -> 240;
@@ -865,8 +883,8 @@ public final class Arsenals extends SavedData {
 					case CRUISE -> 50;
 					default -> 70;
 				};
-				Vec3 at = tc.add(dir.scale(start + k * 12)).add(side).add(0, h, 0);
-				Vec3 aim = tc.add(level.getRandom().nextGaussian() * 3, 1, level.getRandom().nextGaussian() * 3);
+				Vec3 at = tc.add(dir.scale(start + (arty ? level.getRandom().nextGaussian() * 8 : k * 12))).add(side).add(0, h, 0);
+				Vec3 aim = tc.add(level.getRandom().nextGaussian() * artySpread, 1, level.getRandom().nextGaussian() * artySpread);
 				MissileType kind = m == MissileType.SHAHED && level.getRandom().nextFloat() < 0.3f ? MissileType.GERBERA : m;
 				Vec3 back = dir;
 				int sideOf = side(from);
@@ -876,11 +894,20 @@ public final class Arsenals extends SavedData {
 					Vec3 pos = new Vec3(at.x, Math.max(at.y, ground + 20), at.z);
 					MissileEntity me = MissileEntity.launchStrike(l, kind, pos, aim, back.scale(-1));
 					me.setCountry(sideOf);
+					// It still came from the town's guns (a counter-battery radar tracks it back there).
+					me.setOrigin(gunsAt);
 				});
 			}
-			com.stasdoto.airdefense.siren.Sirens.autoAlert(level, Vec3.atCenterOf(target.center), 300);
-			AirDefense.LOGGER.info("[airdefense] {} fires {} x{} at {} (seen on the way in)", from.name, m, salvo, target.name);
-			tellStrike(level, p, target, from, false);
+			com.stasdoto.airdefense.siren.Sirens.autoAlert(level, Vec3.atCenterOf(aimAt), 300);
+			AirDefense.LOGGER.info("[airdefense] {} fires {} x{} at {} (seen on the way in)", from.name, m, salvo, where);
+			if (target != null) {
+				tellStrike(level, p, target, from, false);
+			}
+			return;
+		}
+		if (target == null) {
+			// At a battery nobody is near: it is not worked out (it will have moved by the time it lands).
+			setDirty();
 			return;
 		}
 		// Nobody there to see: worked out by chance against the target's air defence and stores.
@@ -936,6 +963,142 @@ public final class Arsenals extends SavedData {
 		setDirty();
 		tellStrike(level, p, target, from, true, salvo, salvo - hits);
 		AirDefense.LOGGER.info("[airdefense] {} -> {}: {} x{}, {} shot down (out of sight)", from.name, target.name, m, salvo, salvo - hits);
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// 1.30: artillery - counter-battery answers and the barrage before an attack
+
+	/** A town's guns due to fire at a point (not saved: an answer pending over a restart is dropped). */
+	private record Answer(int from, BlockPos at, long due, int rounds) {
+	}
+
+	private final List<Answer> answers = new ArrayList<>();
+	/** When each town last answered (one answer per town per half minute). */
+	private final Map<Integer, Long> answeredAt = new HashMap<>();
+	/** For the tests: barrages fired before an attack. */
+	public static int barrages;
+
+	/** Does this country have a counter-battery radar that is not lost. */
+	private boolean hasCounterBattery(Politics p, int country) {
+		for (Settlement t : p.settlementsOf(country)) {
+			Arsenal ar = arsenals.get(t.id);
+			if (ar == null) {
+				continue;
+			}
+			for (Unit u : ar.units) {
+				if (!u.lost && u.type.isCounterBattery()) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/** The country's nearest town with a loaded gun (or rocket launcher) in reach of {@code at}. */
+	@Nullable
+	private Settlement gunsInReach(ServerLevel level, Politics p, int country, Vec3 at) {
+		Settlement best = null;
+		double bestD = Double.MAX_VALUE;
+		for (Settlement t : p.settlementsOf(country)) {
+			Arsenal ar = of(p, t);
+			double d = Math.sqrt(Mth.square(t.center.getX() - at.x) + Mth.square(t.center.getZ() - at.z));
+			if (d >= bestD) {
+				continue;
+			}
+			for (Unit u : ar.units) {
+				if (!u.lost && u.type.isArtillery() && d <= u.type.launcher.maxRange && d >= u.type.launcher.minRange && loaded(level, ar, u) > 0) {
+					best = t;
+					bestD = d;
+					break;
+				}
+			}
+		}
+		return best;
+	}
+
+	/** Rounds a unit has ready (in the world or in the books; reloaded from the stores when empty). */
+	private static int loaded(ServerLevel level, Arsenal ar, Unit u) {
+		VehicleEntity v = u.entity == null ? null : level.getEntity(u.entity) instanceof VehicleEntity ve ? ve : null;
+		if (v != null) {
+			return v.loadedRounds();
+		}
+		MissileType m = missileOf(u.type);
+		if (u.ammo == 0 && m != null && ar.stock(m) > 0) {
+			int n = Math.min(u.type.strikeLoad(), ar.stock(m));
+			ar.add(m, -n);
+			u.ammo = n;
+		}
+		return u.ammo;
+	}
+
+	/**
+	 * A town was shelled by the player's guns: if its country has a counter-battery radar, the guns of its nearest
+	 * town in reach answer at where the shells came from, in 15-30 seconds.
+	 */
+	public static boolean answerGuns(ServerLevel level, Politics p, Settlement hit, Vec3 from) {
+		Arsenals a = get(level.getServer());
+		long now = level.getGameTime();
+		Long last = a.answeredAt.get(hit.id);
+		if (last != null && now - last < 600 || !a.hasCounterBattery(p, hit.country)) {
+			return false;
+		}
+		Settlement guns = a.gunsInReach(level, p, hit.country, from);
+		if (guns == null) {
+			return false;
+		}
+		a.answeredAt.put(hit.id, now);
+		BlockPos at = com.stasdoto.airdefense.map.MapServer.ground(level, Mth.floor(from.x), com.stasdoto.airdefense.map.MapActionPayload.Y_UNKNOWN,
+				Mth.floor(from.z));
+		a.answers.add(new Answer(guns.id, at, now + 300 + level.getRandom().nextInt(300), 0));
+		AirDefense.LOGGER.info("[airdefense] {} will answer the guns at {} {}", guns.name, (int) from.x, (int) from.z);
+		return true;
+	}
+
+	/** Before a column goes in: the attacker's guns in reach lay a barrage on the town (a few rounds round its flag). */
+	public static boolean barrage(ServerLevel level, Politics p, Country attacker, Settlement target) {
+		Arsenals a = get(level.getServer());
+		Settlement guns = a.gunsInReach(level, p, attacker.id, Vec3.atCenterOf(target.flag));
+		if (guns == null) {
+			return false;
+		}
+		long now = level.getGameTime();
+		BlockPos at = target.flag;
+		a.answers.add(new Answer(guns.id, at, now + 100, 4));
+		barrages++;
+		AirDefense.LOGGER.info("[airdefense] {} lays a barrage on {}", guns.name, target.name);
+		return true;
+	}
+
+	/** The answers and barrages that are due. */
+	private void artillery(ServerLevel level, Politics p) {
+		if (answers.isEmpty()) {
+			return;
+		}
+		long now = level.getGameTime();
+		for (Answer ans : List.copyOf(answers)) {
+			if (ans.due() > now) {
+				continue;
+			}
+			answers.remove(ans);
+			Settlement from = p.settlements.get(ans.from());
+			if (from == null) {
+				continue;
+			}
+			Arsenal ar = of(p, from);
+			for (Unit u : ar.units) {
+				if (u.lost || !u.type.isArtillery()) {
+					continue;
+				}
+				int n = loaded(level, ar, u);
+				if (n == 0) {
+					continue;
+				}
+				VehicleEntity v = u.entity == null ? null : level.getEntity(u.entity) instanceof VehicleEntity ve ? ve : null;
+				int rounds = ans.rounds() > 0 ? ans.rounds() : u.type.launcher.gun() ? 4 : 20;
+				fire(level, p, from, ar, u, v, null, ans.at(), Math.min(n, rounds));
+				break;
+			}
+		}
 	}
 
 	/** Where in the target town the missiles are aimed: its square, a building now and then. */

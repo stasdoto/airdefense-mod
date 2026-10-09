@@ -38,7 +38,9 @@ public final class SquadAudio {
 		CARBINE(45, -1, 500),
 		SHOTGUN(35, -1, 400),
 		SUPPRESSED(16, -1, 90),
-		HEAVY(70, -1, 1000);
+		HEAVY(70, -1, 1000),
+		/** 1.30: a 152/155 mm howitzer - heard over the whole map. */
+		ARTILLERY(100, -1, 1800);
 
 		/** Up to here the near layer; {@code mid} (if any) up to its border; then far; silent beyond {@code max}. */
 		final double near;
@@ -71,6 +73,7 @@ public final class SquadAudio {
 			case SHOTGUN -> new SoundEvent[]{ModSounds.SHOTGUN_NEAR, null, ModSounds.SHOTGUN_FAR};
 			case SUPPRESSED -> new SoundEvent[]{ModSounds.SUPPRESSED_NEAR, null, ModSounds.SUPPRESSED_FAR};
 			case HEAVY -> new SoundEvent[]{ModSounds.HEAVY_NEAR, null, ModSounds.HEAVY_FAR};
+			case ARTILLERY -> new SoundEvent[]{ModSounds.ARTY_NEAR, null, ModSounds.ARTY_FAR};
 		};
 	}
 

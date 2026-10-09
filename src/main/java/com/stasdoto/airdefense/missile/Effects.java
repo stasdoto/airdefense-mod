@@ -41,7 +41,8 @@ public final class Effects {
 		float power = type.power;
 
 		// Debris thrown out of the crater before the blast removes the blocks.
-		int wanted = (int) (power * 2.2f);
+		// A Grad salvo is forty rockets: fewer clods each (the server would drown in falling blocks).
+		int wanted = (int) (power * (type == MissileType.GRAD ? 0.8f : 2.2f));
 		int spawned = 0;
 		for (int i = 0; i < wanted * 4 && spawned < wanted; i++) {
 			BlockPos p = BlockPos.containing(
@@ -126,6 +127,11 @@ public final class Effects {
 	}
 
 	/** Launch blast: a smoke cloud rolling out around the launcher, and the roar (each client hears it late by distance). */
+	/** 1.30: a howitzer fires - flash, blast and smoke at the muzzle, the boom heard across the map. */
+	public static void muzzle(ServerLevel level, Vec3 at, Vec3 dir, float size) {
+		Fx.send(level, FxPayload.MUZZLE, at, size, dir);
+	}
+
 	public static void launchBlast(ServerLevel level, Vec3 at, MissileType type) {
 		float size = switch (type.kind) {
 			case BALLISTIC -> 3.0f;

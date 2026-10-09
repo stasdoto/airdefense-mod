@@ -116,7 +116,8 @@ public final class RadarNetwork {
 		for (Station s : stations(level)) {
 			double r = s.type.range;
 			AABB box = new AABB(s.pos.x - r, s.pos.y - r, s.pos.z - r, s.pos.x + r, s.pos.y + r, s.pos.z + r);
-			for (MissileEntity m : MissileEntity.find(level, box, m -> m.isAlive() && !seen.containsKey(m.getId()))) {
+			// A howitzer shell is too small for a search radar (only a counter-battery radar picks it up).
+			for (MissileEntity m : MissileEntity.find(level, box, m -> m.isAlive() && !m.getMissileType().shell() && !seen.containsKey(m.getId()))) {
 				if (sees(level, s, m.position())) {
 					seen.put(m.getId(), m);
 					if (seen.size() >= max) {

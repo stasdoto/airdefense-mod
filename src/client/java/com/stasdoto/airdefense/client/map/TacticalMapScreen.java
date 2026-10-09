@@ -95,6 +95,11 @@ public class TacticalMapScreen extends Screen {
 	private Button manageButton;
 	private Button planButton;
 	private Button massButton;
+	/** 1.30: how many rounds the selected gun fires (0 = its usual fire mission). */
+	private Button roundsButton;
+	private int rounds;
+	private static final int[] GUN_ROUNDS = {0, 1, 3, 12, 30};
+	private static final int[] ROCKET_ROUNDS = {0, 10, 20};
 	/** A building picked on the map (army tab): to pull down or rebuild. */
 	private int pickedVillage = -1;
 	private int pickedIndex = -1;
@@ -152,6 +157,8 @@ public class TacticalMapScreen extends Screen {
 				.bounds(px0 + 4 + pw / 2 + 1, my1 - 20, pw - pw / 2 - 1, 20).build());
 		meButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.map.me"), b -> follow = true)
 				.bounds(px0 + 4 + pw / 2 + 1, my1 - 42, pw - pw / 2 - 1, 20).build());
+		roundsButton = addRenderableWidget(Button.builder(Component.empty(), b -> cycleRounds())
+				.bounds(px0 + 4 + pw / 2 + 1, my1 - 20, pw - pw / 2 - 1, 20).build());
 		prevTypeButton = addRenderableWidget(Button.builder(Component.literal("<"), b -> cycleRebuild(-1)).bounds(px0 + 4, my1 - 64, 18, 20).build());
 		typeButton = addRenderableWidget(Button.builder(Component.empty(), b -> cycleRebuild(1)).bounds(px0 + 24, my1 - 64, pw - 40, 20).build());
 		nextTypeButton = addRenderableWidget(Button.builder(Component.literal(">"), b -> cycleRebuild(1)).bounds(px0 + pw - 14, my1 - 64, 18, 20).build());
@@ -284,7 +291,7 @@ public class TacticalMapScreen extends Screen {
 			return Component.translatable("screen.airdefense.map.no_target");
 		}
 		double d = distanceToTarget(e);
-		if (d < VehicleEntity.MIN_STRIKE_DISTANCE) {
+		if (d < minRange(type)) {
 			return Component.translatable("screen.airdefense.map.too_close", (int) d);
 		}
 		if (d > type.launcher.maxRange) {
@@ -296,10 +303,20 @@ public class TacticalMapScreen extends Screen {
 		if (e.busy() > 0) {
 			return Component.translatable("screen.airdefense.map.st.reload", e.busy() / 20 + 1);
 		}
-		if (e.loaded() == 0) {
+		if (ready(e) == 0) {
 			return Component.translatable("screen.airdefense.map.st.empty");
 		}
 		return null;
+	}
+
+	/** Closer than this the launcher (or gun) cannot fire. */
+	private static int minRange(VehicleType type) {
+		return type.launcher == null ? VehicleEntity.MIN_STRIKE_DISTANCE : Math.max(VehicleEntity.MIN_STRIKE_DISTANCE, type.launcher.minRange);
+	}
+
+	/** Missiles on the rails, or the gun's rounds. */
+	private static int ready(MapStatusPayload.Entry e) {
+		return VehicleType.byId(e.type()).isArtillery() ? Math.max(0, e.ammo()) : Integer.bitCount(e.loaded());
 	}
 
 	private Component statusLine(MapStatusPayload.Entry e) {
@@ -310,10 +327,13 @@ public class TacticalMapScreen extends Screen {
 				s = Component.translatable("screen.airdefense.map.st.firing");
 			} else if (e.busy() > 0) {
 				s = Component.translatable("screen.airdefense.map.st.reload", e.busy() / 20 + 1);
-			} else if (e.loaded() == 0) {
+			} else if (ready(e) == 0) {
 				s = Component.translatable("screen.airdefense.map.st.empty");
 			} else {
-				s = Component.translatable("screen.airdefense.map.st.ready", Integer.bitCount(e.loaded()));
+				s = Component.translatable(type.isArtillery() ? "screen.airdefense.map.st.ready_rounds" : "screen.airdefense.map.st.ready", ready(e));
+			}
+			if (type.isArtillery() && e.mode() == VehicleEntity.MODE_AUTO) {
+				s = Component.empty().append(s).append(Component.translatable("screen.airdefense.map.st.cb"));
 			}
 		} else if (e.mode() == VehicleEntity.MODE_OFF) {
 			s = Component.translatable("screen.airdefense.map.st.off");
@@ -378,19 +398,30 @@ public class TacticalMapScreen extends Screen {
 			fireButton.visible = false;
 			modeButton.visible = false;
 			planButton.visible = false;
+			roundsButton.visible = false;
 			return;
 		}
 		MapStatusPayload.Entry sel = selectedEntry();
-		boolean defense = sel != null && typeOf(sel).hasMode();
+		boolean arty = sel != null && typeOf(sel).isArtillery();
+		boolean defense = sel != null && typeOf(sel).hasMode() && !arty;
 		fireButton.visible = !defense;
 		fireButton.active = sel != null && typeOf(sel).isLauncher() && cannotFire(sel) == null;
 		boolean planable = sel != null && typeOf(sel).launcher != null && (typeOf(sel).launcher.missile.kind == MissileType.Kind.DRONE
 				|| typeOf(sel).launcher.missile.kind == MissileType.Kind.CRUISE);
 		int pw = PANEL_W - 8;
-		fireButton.setWidth(planable ? pw / 2 - 1 : pw);
+		fireButton.setWidth(planable || arty ? pw / 2 - 1 : pw);
 		planButton.visible = planable;
-		modeButton.visible = defense;
-		if (defense && typeOf(sel).isRadar()) {
+		roundsButton.visible = arty;
+		// Artillery: the counter-battery switch takes the "me" button's place.
+		meButton.visible = !arty;
+		modeButton.visible = defense || arty;
+		modeButton.setX(arty ? px0 + 4 + pw / 2 + 1 : px0 + 4);
+		modeButton.setY(arty ? my1 - 42 : my1 - 20);
+		modeButton.setWidth(arty ? pw - pw / 2 - 1 : pw);
+		if (arty) {
+			modeButton.setMessage(Component.translatable(sel.mode() == VehicleEntity.MODE_AUTO ? "screen.airdefense.map.cb_on" : "screen.airdefense.map.cb_off"));
+			roundsButton.setMessage(Component.translatable("screen.airdefense.map.rounds", rounds > 0 ? rounds : typeOf(sel).launcher.salvo));
+		} else if (defense && typeOf(sel).isRadar()) {
 			modeButton.setMessage(Component.translatable(sel.mode() == VehicleEntity.MODE_OFF ? "screen.airdefense.map.radar_off" : "screen.airdefense.map.radar_on"));
 		} else if (defense) {
 			modeButton.setMessage(Component.translatable(switch (sel.mode()) {
@@ -403,6 +434,23 @@ public class TacticalMapScreen extends Screen {
 		meButton.active = !follow;
 	}
 
+	/** The next choice of how many rounds the selected gun fires. */
+	private void cycleRounds() {
+		MapStatusPayload.Entry sel = selectedEntry();
+		if (sel == null || !typeOf(sel).isArtillery()) {
+			return;
+		}
+		int[] choices = typeOf(sel).launcher.gun() ? GUN_ROUNDS : ROCKET_ROUNDS;
+		int k = 0;
+		for (int i = 0; i < choices.length; i++) {
+			if (choices[i] == rounds) {
+				k = i;
+			}
+		}
+		rounds = choices[(k + 1) % choices.length];
+		updateButtons();
+	}
+
 	// ------------------------------------------------------------------------------------------------
 	// Orders
 
@@ -411,7 +459,8 @@ public class TacticalMapScreen extends Screen {
 		if (sel == null || target == null || cannotFire(sel) != null) {
 			return;
 		}
-		MapClient.send(new MapActionPayload(MapActionPayload.STRIKE, sel.id(), target.getX(), target.getY(), target.getZ()));
+		int action = typeOf(sel).isArtillery() ? MapActionPayload.fireMission(rounds) : MapActionPayload.STRIKE;
+		MapClient.send(new MapActionPayload(action, sel.id(), target.getX(), target.getY(), target.getZ()));
 	}
 
 	/** The flight task window for the selected drone or cruise missile launcher. */
@@ -434,7 +483,7 @@ public class TacticalMapScreen extends Screen {
 		if (sel == null || !typeOf(sel).hasMode()) {
 			return;
 		}
-		int mode = typeOf(sel).isRadar() ? (sel.mode() == VehicleEntity.MODE_OFF ? VehicleEntity.MODE_AUTO : VehicleEntity.MODE_OFF)
+		int mode = typeOf(sel).isRadar() || typeOf(sel).isArtillery() ? (sel.mode() == VehicleEntity.MODE_OFF ? VehicleEntity.MODE_AUTO : VehicleEntity.MODE_OFF)
 				: VehicleEntity.nextMode(sel.mode());
 		MapClient.send(new MapActionPayload(MapActionPayload.SET_MODE, sel.id(), mode, 0, 0));
 	}
@@ -454,6 +503,9 @@ public class TacticalMapScreen extends Screen {
 	}
 
 	public void select(int vehicleId) {
+		if (vehicleId != selected) {
+			rounds = 0;
+		}
 		selected = vehicleId;
 		updateButtons();
 	}
@@ -709,6 +761,7 @@ public class TacticalMapScreen extends Screen {
 		drawGrid(g);
 		drawRanges(g);
 		drawVillages(g);
+		drawFires(g);
 		drawTarget(g);
 		drawMissiles(g, partialTick);
 		drawVehicles(g);
@@ -933,12 +986,41 @@ public class TacticalMapScreen extends Screen {
 				circle(g, toScreenX(e.x()), toScreenY(e.z()), type.defense.range * scale(), color, e == sel ? 0 : 3);
 			} else if (type.launcher != null && e == sel) {
 				circle(g, toScreenX(e.x()), toScreenY(e.z()), type.launcher.maxRange * scale(), 0xB0E8A33C, 4);
-				circle(g, toScreenX(e.x()), toScreenY(e.z()), VehicleEntity.MIN_STRIKE_DISTANCE * scale(), 0x80E8A33C, 2);
+				circle(g, toScreenX(e.x()), toScreenY(e.z()), minRange(type) * scale(), 0x80E8A33C, 2);
 			}
 			// Where a launcher is aiming right now.
 			if (type.launcher != null && e.hasTarget() && (e.firing() || e == sel)) {
 				line(g, toScreenX(e.x()), toScreenY(e.z()), toScreenX(e.tx() + 0.5), toScreenY(e.tz() + 0.5), 0xC0FF7A3A, 3);
 			}
+		}
+	}
+
+	/**
+	 * 1.30: enemy firing positions found by the counter-battery radars - a red cross in a circle with how long ago
+	 * they fired; they fade out over five minutes.
+	 */
+	private void drawFires(GuiGraphicsExtractor g) {
+		for (MapStatusPayload.Fire f : MapClient.fires()) {
+			double sx = toScreenX(f.x() + 0.5);
+			double sy = toScreenY(f.z() + 0.5);
+			if (sx < mx0 - 10 || sx > mx1 + 10 || sy < my0 - 10 || sy > my1 + 10) {
+				continue;
+			}
+			int a = (int) (255 * Math.max(0.35, 1 - f.age() / 300.0));
+			int c = (a << 24) | 0xFF3B30;
+			int x = (int) sx;
+			int y = (int) sy;
+			for (int k = -4; k <= 4; k++) {
+				g.fill(x + k, y + k, x + k + 1, y + k + 1, c);
+				g.fill(x + k, y - k, x + k + 1, y - k + 1, c);
+			}
+			circle(g, sx, sy, 7, c, 0);
+			if (f.age() < 20 && (System.currentTimeMillis() / 300) % 2 == 0) {
+				circle(g, sx, sy, 10, c, 0);
+			}
+			String age = f.age() < 60 ? f.age() + Component.translatable("screen.airdefense.map.sec").getString()
+					: f.age() / 60 + Component.translatable("screen.airdefense.map.min").getString();
+			small(g, Component.translatable("screen.airdefense.map.fire_pos", age).getString(), x + 10, y - 3, c);
 		}
 	}
 
@@ -951,7 +1033,7 @@ public class TacticalMapScreen extends Screen {
 		MapStatusPayload.Entry sel = selectedEntry();
 		if (sel != null && typeOf(sel).isLauncher()) {
 			double d = distanceToTarget(sel);
-			boolean ok = cannotFire(sel) == null || (d >= VehicleEntity.MIN_STRIKE_DISTANCE && d <= typeOf(sel).launcher.maxRange);
+			boolean ok = cannotFire(sel) == null || (d >= minRange(typeOf(sel)) && d <= typeOf(sel).launcher.maxRange);
 			double ex = toScreenX(sel.x());
 			double ey = toScreenY(sel.z());
 			line(g, ex, ey, sx, sy, ok ? 0xE0FFD24A : 0xE0FF6A5A, 4);
@@ -1007,7 +1089,7 @@ public class TacticalMapScreen extends Screen {
 			}
 			boolean sel = e.id() == selected;
 			int color = type.isLauncher() ? C_LAUNCHER : type.isRadar() ? C_RADAR : C_DEFENSE;
-			if (type.hasMode() && e.mode() == VehicleEntity.MODE_OFF) {
+			if (type.hasMode() && !type.isArtillery() && e.mode() == VehicleEntity.MODE_OFF) {
 				color = 0xFF8A949C;
 			}
 			int len = Math.max(8, (int) (type.geometry.length() * scale()));

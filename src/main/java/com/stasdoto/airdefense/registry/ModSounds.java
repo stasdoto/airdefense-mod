@@ -98,6 +98,10 @@ public final class ModSounds {
 	public static final SoundEvent SIREN_STOP = register("siren_stop", 260);
 	/** Handed to vanilla explosions: the client plays the real explosion sound itself, delayed by distance. */
 	public static final SoundEvent SILENT = register("silent", 16);
+	/** 1.30: a howitzer's shot near and far, and the whistle of a shell coming in. */
+	public static final SoundEvent ARTY_NEAR = register("arty_near", 200);
+	public static final SoundEvent ARTY_FAR = register("arty_far", 1800);
+	public static final SoundEvent SHELL_WHISTLE = register("shell_whistle", 110);
 
 	private ModSounds() {
 	}

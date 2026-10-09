@@ -177,6 +177,10 @@ public final class Supply {
 
 	/** {units given, ammunition points they cost}. */
 	public static int[] rearmStep(VehicleType t) {
+		if (t.isArtillery()) {
+			// A shell or a Grad rocket is cheap next to a missile.
+			return new int[]{2, 3};
+		}
 		if (t.isLauncher()) {
 			return new int[]{1, 8};
 		}

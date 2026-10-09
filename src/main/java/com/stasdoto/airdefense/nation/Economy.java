@@ -938,6 +938,11 @@ public final class Economy {
 			case FUEL_TRUCK, SUPPLY_TRUCK -> new int[]{20, 10, 60, 40};
 			case IRON_DOME -> new int[]{30, 50, 150, 95};
 			case ELM2084 -> new int[]{20, 40, 120, 75};
+			case MSTA_S -> new int[]{30, 60, 190, 115};
+			case M109 -> new int[]{30, 60, 180, 110};
+			case BM21 -> new int[]{20, 40, 120, 80};
+			case ZOOPARK -> new int[]{20, 40, 130, 80};
+			case TPQ36 -> new int[]{20, 30, 110, 70};
 		};
 	}
 

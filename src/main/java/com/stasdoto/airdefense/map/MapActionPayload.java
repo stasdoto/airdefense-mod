@@ -19,6 +19,11 @@ public record MapActionPayload(int action, int vehicleId, int x, int y, int z) i
 	public static final int RADAR = 5;
 	/** Every launcher in reach fires everything at the tablet's target. */
 	public static final int MASS_STRIKE = 6;
+	/**
+	 * 1.30: an artillery fire mission - like STRIKE, with the rounds asked for packed above the low byte
+	 * ({@link #fireMission(int)}); the low byte is the action.
+	 */
+	public static final int FIRE_MISSION = 7;
 	/** Height of a map point the client does not know: the server looks it up. */
 	public static final int Y_UNKNOWN = Integer.MIN_VALUE;
 
@@ -30,6 +35,20 @@ public record MapActionPayload(int action, int vehicleId, int x, int y, int z) i
 			ByteBufCodecs.INT, MapActionPayload::y,
 			ByteBufCodecs.INT, MapActionPayload::z,
 			MapActionPayload::new);
+
+	public static int fireMission(int rounds) {
+		return FIRE_MISSION | (Math.max(0, Math.min(99, rounds)) << 8);
+	}
+
+	/** The action without what is packed above it. */
+	public int kind() {
+		return action & 0xFF;
+	}
+
+	/** Rounds asked for in a fire mission (0 = the usual salvo). */
+	public int rounds() {
+		return action >> 8;
+	}
 
 	public static MapActionPayload radar() {
 		return new MapActionPayload(RADAR, -1, 0, 0, 0);
