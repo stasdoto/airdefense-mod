@@ -61,12 +61,14 @@ public final class Repairs extends SavedData {
 	).apply(i, Repairs::new));
 	public static final SavedDataType<Repairs> TYPE = new SavedDataType<>(AirDefense.id("repairs"), Repairs::new, CODEC, null);
 
-	/** Quiet time before work starts: in survival, with a creative player near by. */
+	/** Quiet time before work starts: in survival, with a creative player near by (his own towns), in a country at war. */
 	private static final int WAIT = 600;
 	private static final int WAIT_CREATIVE = 40;
-	/** Blocks put back per second: by the town's people, and with a creative player near by. */
+	private static final int WAIT_WAR = 3600;
+	/** Blocks put back per second: by the town's people, with a creative player near by (his own towns), at war. */
 	private static final int RATE = 12;
 	private static final int RATE_CREATIVE = 6000;
+	private static final int RATE_WAR = 4;
 
 	private final List<Zone> zones = new ArrayList<>();
 	/** The work out for each zone being rebuilt (not saved: worked out again after a restart). */
@@ -170,8 +172,13 @@ public final class Repairs extends SavedData {
 			if (!loaded(level, box)) {
 				continue;
 			}
-			boolean creative = creativeNear(level, z);
-			if (now - z.since < (creative ? WAIT_CREATIVE : WAIT)) {
+			boolean creative = creativeNear(level, p, z);
+			// 1.33: a town of a country at war rebuilds slowly, and only after things have been quiet for a few
+			// minutes (an enemy's town the player is shelling no longer stands up again in seconds).
+			Settlement owner = p.settlements.get(z.town);
+			Country oc = owner == null ? null : p.country(owner.country);
+			boolean war = !creative && oc != null && !oc.wars.isEmpty();
+			if (now - z.since < (creative ? WAIT_CREATIVE : war ? WAIT_WAR : WAIT)) {
 				continue;
 			}
 			List<long[]> todo = work.get(z.key());
@@ -179,7 +186,7 @@ public final class Repairs extends SavedData {
 				todo = plan(level, p, z);
 				work.put(z.key(), todo);
 			}
-			int budget = creative ? RATE_CREATIVE : RATE;
+			int budget = creative ? RATE_CREATIVE : war ? RATE_WAR : RATE;
 			int done = 0;
 			Map<Long, BlockState> plan = plans.get(z.key());
 			while (!todo.isEmpty() && done < budget) {
@@ -281,9 +288,16 @@ public final class Repairs extends SavedData {
 				&& level.isLoaded(new BlockPos(box.minX(), box.minY(), box.maxZ())) && level.isLoaded(new BlockPos(box.maxX(), box.minY(), box.minZ()));
 	}
 
-	private static boolean creativeNear(ServerLevel level, Zone z) {
+	/**
+	 * A player in creative mode near by, and the damage is in one of his own towns (or out on a road, no town's): it all
+	 * comes back at once. Other towns (the enemy's he is shelling, free villages) rebuild at their own pace (1.33).
+	 */
+	private static boolean creativeNear(ServerLevel level, Politics p, Zone z) {
+		Settlement s = p.settlements.get(z.town);
+		Country c = s == null ? null : p.country(s.country);
 		for (ServerPlayer pl : level.players()) {
-			if (pl.getAbilities().instabuild && !pl.isSpectator() && pl.distanceToSqr(z.x, z.y, z.z) < 220 * 220) {
+			if (pl.getAbilities().instabuild && !pl.isSpectator() && pl.distanceToSqr(z.x, z.y, z.z) < 220 * 220
+					&& (s == null || c != null && pl.getUUID().equals(c.owner))) {
 				return true;
 			}
 		}

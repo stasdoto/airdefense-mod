@@ -1169,5 +1169,6 @@
   "hud.airdefense.vehicle.ship": "GUN %s mm · %s: %s of %s",
   "message.airdefense.vehicle.status_ship": "%s: health %s%%, %s mm gun, %s: %s of %s, fuel %s/%s l",
   "nation.airdefense.war.navy": "%s sends %s against %s - warship off the coast!",
-  "guide.airdefense.page.36": "THE NAVY\n\nWarships (Buyan-M, Visby) carry a gun, eight cruise missiles and a close-in gun of their own. Put one on the water, take the gunner's seat and aim with the mouse; missiles go from the tablet's map.\nCoastal launchers (Bastion-P, NMESIS) sink ships: mark the ship on the map. In a war the enemy's ships come to your towns by the sea."
+  "guide.airdefense.page.36": "THE NAVY\n\nWarships (Buyan-M, Visby) carry a gun, eight cruise missiles and a close-in gun of their own. Put one on the water, take the gunner's seat and aim with the mouse; missiles go from the tablet's map.\nCoastal launchers (Bastion-P, NMESIS) sink ships: mark the ship on the map. In a war the enemy's ships come to your towns by the sea.",
+  "nation.airdefense.strike.wave": "%s strikes %s with missiles from %s places!"
 }

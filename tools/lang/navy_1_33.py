@@ -42,6 +42,8 @@ S = {
                                                '%s: міцність %s%%, гармата %s мм, %s: %s з %s, пальне %s/%s л'),
     'nation.airdefense.war.navy': ('%s sends %s against %s - warship off the coast!', '%s посылает %s к городу %s — вражеский корабль у берега!',
                                    '%s посилає %s до міста %s — ворожий корабель біля берега!'),
+    'nation.airdefense.strike.wave': ('%s strikes %s with missiles from %s places!', '%s наносит ракетный удар по городу %s — пуски из %s мест!',
+                                      '%s завдає ракетного удару по місту %s — пуски з %s місць!'),
     'guide.airdefense.page.36': (
         'THE NAVY\n\nWarships (Buyan-M, Visby) carry a gun, eight cruise missiles and a close-in gun of their own. Put one on the water, take the gunner\'s seat and aim with the mouse; missiles go from the tablet\'s map.\nCoastal launchers (Bastion-P, NMESIS) sink ships: mark the ship on the map. In a war the enemy\'s ships come to your towns by the sea.',
         'ФЛОТ\n\nБоевые корабли («Буян-М», «Висбю»): пушка, восемь крылатых ракет и своя скорострельная пушка от дронов и ракет. Спусти корабль на воду, сядь наводчиком и целься мышью; ракеты — с карты планшета.\nБереговые комплексы («Бастион-П», NMESIS) топят корабли: отметь корабль на карте. На войне враг посылает корабли к твоим приморским городам.',

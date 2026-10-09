@@ -683,6 +683,22 @@ public final class Arsenals extends SavedData {
 	// ------------------------------------------------------------------------------------------------
 	// War: towns fire at the enemy's towns in range
 
+	/** 1.33: when each country at war may send its next strike wave (game time; not saved). */
+	private static final Map<Integer, Long> NEXT_WAVE = new HashMap<>();
+	/** 1.33: when a town may be struck again by anybody (one wave at a time, however many countries are at war with it). */
+	private static final Map<Integer, Long> TARGET_NEXT = new HashMap<>();
+	/** While a wave goes out its launches do not each warn the player: one warning for the wave. */
+	private static boolean muteStrikes;
+	/** For the tests: strike waves, and launch sites in them. */
+	public static int waves;
+	public static int waveSites;
+
+	/**
+	 * The countries at war strike the enemy's towns. 1.33: a country sends one wave at a time (every two to five
+	 * minutes): a few of its towns' launchers (more for a bigger country, three at most) at one target, with one warning
+	 * for the whole wave - before, each of a country's villages fired on its own, ten at once, and the warnings flooded
+	 * the chat.
+	 */
 	private void war(ServerLevel level, Politics p) {
 		long now = level.getGameTime();
 		Random r = new Random(now * 31 + 7);
@@ -690,37 +706,72 @@ public final class Arsenals extends SavedData {
 			if (c.owner != null || c.wars.isEmpty()) {
 				continue;
 			}
-			for (Settlement s : p.settlementsOf(c.id)) {
-				Arsenal ar = arsenals.get(s.id);
-				if (ar == null || ar.nextStrike > now || r.nextInt(100) >= 30) {
-					continue;
+			Long next = NEXT_WAVE.get(c.id);
+			if (next != null && next > now || r.nextInt(100) >= 30) {
+				continue;
+			}
+			List<Settlement> towns = new ArrayList<>(p.settlementsOf(c.id));
+			java.util.Collections.shuffle(towns, r);
+			int most = 1 + Math.min(2, towns.size() / 6);
+			Settlement waveTarget = null;
+			Settlement first = null;
+			int sites = 0;
+			muteStrikes = true;
+			try {
+				for (Settlement s : towns) {
+					Arsenal ar = arsenals.get(s.id);
+					if (ar == null || ar.nextStrike > now) {
+						continue;
+					}
+					for (int i = 0; i < ar.units.size(); i++) {
+						Unit u = ar.units.get(i);
+						if (u.lost || !u.type.isLauncher()) {
+							continue;
+						}
+						MissileType m = missileOf(u.type);
+						VehicleEntity v = u.entity == null ? null : level.getEntity(u.entity) instanceof VehicleEntity ve ? ve : null;
+						int loaded = v != null ? v.loadedRounds() : u.ammo;
+						if (loaded == 0 && v == null && m != null && ar.stock(m) > 0) {
+							// Reloaded at the depot.
+							int n = Math.min(u.type.strikeLoad(), ar.stock(m));
+							ar.add(m, -n);
+							u.ammo = n;
+							loaded = n;
+						}
+						if (loaded == 0) {
+							continue;
+						}
+						Settlement target = waveTarget != null ? waveTarget : target(p, c, s, u.type);
+						if (target == null || waveTarget != null && Math.sqrt(s.center.distSqr(waveTarget.center)) > u.type.launcher.maxRange
+								|| waveTarget == null && TARGET_NEXT.getOrDefault(target.id, 0L) > now) {
+							continue;
+						}
+						fire(level, p, s, ar, u, v, target, Math.min(loaded, u.type.launcher.salvo));
+						ar.nextStrike = now + 2400 + r.nextInt(3600);
+						waveTarget = target;
+						if (first == null) {
+							first = s;
+						}
+						sites++;
+						setDirty();
+						break;
+					}
+					if (sites >= most) {
+						break;
+					}
 				}
-				for (int i = 0; i < ar.units.size(); i++) {
-					Unit u = ar.units.get(i);
-					if (u.lost || !u.type.isLauncher()) {
-						continue;
-					}
-					MissileType m = missileOf(u.type);
-					VehicleEntity v = u.entity == null ? null : level.getEntity(u.entity) instanceof VehicleEntity ve ? ve : null;
-					int loaded = v != null ? v.loadedRounds() : u.ammo;
-					if (loaded == 0 && v == null && m != null && ar.stock(m) > 0) {
-						// Reloaded at the depot.
-						int n = Math.min(u.type.strikeLoad(), ar.stock(m));
-						ar.add(m, -n);
-						u.ammo = n;
-						loaded = n;
-					}
-					if (loaded == 0) {
-						continue;
-					}
-					Settlement target = target(p, c, s, u.type);
-					if (target == null) {
-						continue;
-					}
-					fire(level, p, s, ar, u, v, target, Math.min(loaded, u.type.launcher.salvo));
-					ar.nextStrike = now + 2400 + r.nextInt(3600);
-					setDirty();
-					break;
+			} finally {
+				muteStrikes = false;
+			}
+			if (sites > 0) {
+				NEXT_WAVE.put(c.id, now + 2400 + r.nextInt(3600));
+				TARGET_NEXT.put(waveTarget.id, now + 1800);
+				waves++;
+				waveSites += sites;
+				Country owner = p.country(waveTarget.country);
+				if (owner != null && owner.owner != null && level.getServer().getPlayerList().getPlayer(owner.owner) instanceof ServerPlayer pl) {
+					pl.sendSystemMessage(sites == 1 ? Component.translatable("nation.airdefense.strike.incoming", first.name, waveTarget.name)
+							: Component.translatable("nation.airdefense.strike.wave", c.name, waveTarget.name, sites));
 				}
 			}
 		}
@@ -1193,6 +1244,9 @@ public final class Arsenals extends SavedData {
 	}
 
 	private static void tellStrike(ServerLevel level, Politics p, Settlement target, Settlement from, boolean remote, int fired, int down) {
+		if (muteStrikes) {
+			return;
+		}
 		Country c = p.country(target.country);
 		if (c == null || c.owner == null || !(level.getServer().getPlayerList().getPlayer(c.owner) instanceof ServerPlayer owner)) {
 			return;
