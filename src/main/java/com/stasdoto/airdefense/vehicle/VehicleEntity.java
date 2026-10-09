@@ -944,11 +944,15 @@ public class VehicleEntity extends LivingEntity {
 			return;
 		}
 		Vec3 point = aiTarget.position().add(0, aiTarget.getBbHeight() * 0.5, 0);
-		setTurretTarget(relativeBearing(point));
-		Vec3 muzzle = railWorld(0);
-		double h = Math.sqrt(Mth.square(point.x - getX()) + Mth.square(point.z - getZ()));
-		double base = vtype.geometry.turretPivot()[1] + getY();
-		setElevationTarget(Mth.clamp((float) Math.toDegrees(Math.atan2(point.y - Math.max(base, muzzle.y - 0.5), Math.max(1, h))), -8, w.maxElevation));
+		if (vtype.isShip()) {
+			aimGun(point, w);
+		} else {
+			setTurretTarget(relativeBearing(point));
+			Vec3 muzzle = railWorld(0);
+			double h = Math.sqrt(Mth.square(point.x - getX()) + Mth.square(point.z - getZ()));
+			double base = vtype.geometry.turretPivot()[1] + getY();
+			setElevationTarget(Mth.clamp((float) Math.toDegrees(Math.atan2(point.y - Math.max(base, muzzle.y - 0.5), Math.max(1, h))), -8, w.maxElevation));
+		}
 		float yawErr = Math.abs(Mth.wrapDegrees(turretYaw - getTurretTarget()));
 		if (yawErr < 4 && gunCooldown == 0 && roundsLeft == 0 && (getAmmo() > 0 || vtype.isShip())) {
 			roundsLeft = vtype.isShip() ? w.burst : Math.min(w.burst, getAmmo());
@@ -1614,6 +1618,21 @@ public class VehicleEntity extends LivingEntity {
 
 	/** The turret and gun towards a point. */
 	private void aimGun(Vec3 point, Weapon w) {
+		if (vtype.isShip()) {
+			// 1.33: a warship's gun stands far from her middle (on the bow): the bearing and the angle are taken from the
+			// gun itself, or every shot would land a ship's half-length off (and long at a shallow angle).
+			VehicleGeometry.Geometry g = vtype.geometry;
+			float[] tp = g.turretPivot();
+			float[] ep = g.elevatorPivot();
+			Vec3 pivot = toWorld(tp[0], tp[1], tp[2]);
+			double dx = point.x - pivot.x;
+			double dz = point.z - pivot.z;
+			float worldYaw = (float) (Mth.atan2(-dx, dz) * Mth.RAD_TO_DEG);
+			setTurretTarget(Mth.wrapDegrees(worldYaw - getYRot()));
+			double h = Math.max(1, Math.sqrt(dx * dx + dz * dz) - ep[2]);
+			setElevationTarget(Mth.clamp((float) Math.toDegrees(Math.atan2(point.y - (pivot.y + ep[1]), h)), -8, w.maxElevation));
+			return;
+		}
 		setTurretTarget(relativeBearing(point));
 		Vec3 muzzle = railWorld(0);
 		double h = Math.sqrt(Mth.square(point.x - getX()) + Mth.square(point.z - getZ()));
