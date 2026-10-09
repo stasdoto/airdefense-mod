@@ -1194,6 +1194,7 @@ public class MissileEntity extends Entity {
 				MissileStats.THREATS_SHOT_DOWN.incrementAndGet();
 			}
 			MissileStats.log("{} {} at {} after {} ticks (aim {})", type, inAir ? "AIR-BURST" : "IMPACT", fmt(at), life, fmt(target));
+			Effects.fragments(level, this, at, type);
 			if (inAir) {
 				Effects.airBurst(level, this, at, type);
 			} else {

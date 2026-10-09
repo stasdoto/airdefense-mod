@@ -256,6 +256,28 @@ public final class Effects {
 				ModParticles.GLOW, ModParticles.GLOW, WeightedList.of(), Holder.direct(ModSounds.SILENT));
 	}
 
+	/**
+	 * 1.30: the fragments of a shell or an artillery rocket - they fly further than the blast and cut into vehicles too
+	 * (a near miss damages a gun or a carrier; a few in a row finish it), less with distance.
+	 */
+	public static void fragments(ServerLevel level, Entity source, Vec3 at, MissileType type) {
+		double r = type.shell() ? 9 : 7;
+		float vehicle = type.shell() ? 150f : 90f;
+		float people = type.shell() ? 16f : 12f;
+		DamageSource src = level.damageSources().explosion(source, null);
+		for (Entity e : level.getEntities(source, new AABB(at, at).inflate(r + 3))) {
+			if (!(e instanceof net.minecraft.world.entity.LivingEntity le) || !le.isAlive() || e.isSpectator()) {
+				continue;
+			}
+			double d = Math.sqrt(e.getBoundingBox().distanceToSqr(at));
+			if (d > r) {
+				continue;
+			}
+			float k = (float) (1 - d / r);
+			le.hurtServer(level, src, (e instanceof VehicleEntity ? vehicle : people) * k);
+		}
+	}
+
 	private static void shockWave(ServerLevel level, Entity source, Vec3 at, double outer, double inner, double strength) {
 		AABB box = new AABB(at.x - outer, at.y - outer, at.z - outer, at.x + outer, at.y + outer, at.z + outer);
 		for (Entity e : level.getEntities(source, box)) {
