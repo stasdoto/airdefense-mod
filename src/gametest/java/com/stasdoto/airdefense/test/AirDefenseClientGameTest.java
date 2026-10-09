@@ -272,6 +272,31 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					com.stasdoto.airdefense.nation.CityGen.chunks,
 					com.stasdoto.airdefense.nation.CityGen.chunks == 0 ? 0 : com.stasdoto.airdefense.nation.CityGen.nanos / 1000 / com.stasdoto.airdefense.nation.CityGen.chunks);
 			ctx.takeScreenshot("140_real_capital");
+			// 1.35: what is left floating round the capital (halves of trees, crowns, plants where the ground was levelled).
+			int half = cap[2];
+			int[] orphans = server.computeOnServer(s -> {
+				ServerLevel l = s.overworld();
+				int left = 0;
+				int looked = 0;
+				for (int x = cx - half - 48; x <= cx + half + 48; x += 16) {
+					for (int z = cz - half - 48; z <= cz + half + 48; z += 16) {
+						var cp = new net.minecraft.world.level.ChunkPos(x >> 4, z >> 4);
+						boolean all = true;
+						for (int dx = -1; dx <= 1 && all; dx++) {
+							for (int dz = -1; dz <= 1 && all; dz++) {
+								all = l.hasChunk(cp.x() + dx, cp.z() + dz);
+							}
+						}
+						if (all) {
+							looked++;
+							left += com.stasdoto.airdefense.nation.Orphans.count(l, cp, base - 2, base + 90);
+						}
+					}
+				}
+				return new int[]{looked, left};
+			});
+			AirDefense.LOGGER.info("[airdefense-test] RESULT real_orphans: removed by the generator {}, by the sweep {}; left round the capital {} (in {} chunks)",
+					com.stasdoto.airdefense.nation.Orphans.removedAtGeneration, com.stasdoto.airdefense.nation.Orphans.removedLater, orphans[1], orphans[0]);
 			camera(server, cx + 0.5, base + 140, cz + 0.5, 0, 90);
 			ctx.waitTicks(100);
 			ctx.takeScreenshot("141_real_capital_top");

@@ -317,10 +317,94 @@ public final class CityGen {
 			port(w, pt, cp);
 		}
 		w.finish();
+		if (!w.capturing() && w.lo <= w.hi && Orphans.atGeneration) {
+			// 1.35: the halves of trees, crowns, plants left in the air where the ground was levelled here.
+			orphans(w, cities, x0, z0);
+		}
 		if (!w.capturing()) {
 			chunks++;
 			nanos += System.nanoTime() - t0;
 		}
+	}
+
+	/** The floating leftovers round a levelled chunk (see {@link Orphans}): its trees' halves next door included. */
+	private static void orphans(Writer w, List<Cities.City> cities, int x0, int z0) {
+		int yMax = w.hi;
+		for (int x = x0 - Orphans.REACH; x < x0 + 16 + Orphans.REACH; x += 3) {
+			for (int z = z0 - Orphans.REACH; z < z0 + 16 + Orphans.REACH; z += 3) {
+				yMax = Math.max(yMax, w.top(x, z) + 1);
+			}
+		}
+		int yMin = w.lo - 1;
+		yMax = Math.min(yMax, yMin + 160);
+		Orphans.removedAtGeneration += Orphans.sweep(new Orphans.Access() {
+			@Override
+			public BlockState get(BlockPos p) {
+				return w.level.getBlockState(p);
+			}
+
+			@Override
+			public void set(BlockPos p, BlockState s) {
+				w.level.setBlock(p, s, Block.UPDATE_CLIENTS | Block.UPDATE_SKIP_ON_PLACE);
+			}
+		}, x0, z0, yMin, yMax, l -> {
+			for (Cities.City c : cities) {
+				if (decor(c).trees.contains(l)) {
+					return true;
+				}
+			}
+			return false;
+		}, false);
+	}
+
+	/**
+	 * Is anything of a town, a road, a village or a depot (levelled ground) in or by this chunk (1.35: the chunks of towns
+	 * made before the floating leftovers were cleared at generation are looked over as they load).
+	 */
+	public static boolean levelled(ServerLevel level, ChunkPos cp) {
+		Cities.Terrain t = Cities.terrain(level);
+		long seed = level.getSeed();
+		int mx = cp.getMiddleBlockX();
+		int mz = cp.getMiddleBlockZ();
+		for (Cities.City c : Cities.citiesAround(seed, t, mx, mz)) {
+			if (c.outside(mx, mz) <= Cities.MARGIN + 24) {
+				return true;
+			}
+			for (Hamlets.Hamlet h : c.hamlets(seed, t)) {
+				if (h.near(mx, mz, 24)) {
+					return true;
+				}
+			}
+			Depots.Depot d = c.depot(seed, t);
+			if (d != null && d.near(mx, mz, 24)) {
+				return true;
+			}
+		}
+		for (Cities.Road r : Cities.roadsNear(seed, t, mx, mz)) {
+			if (r.maxX >= mx - 30 && r.minX <= mx + 30 && r.maxZ >= mz - 30 && r.minZ <= mz + 30) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Our own logs (the trees the town planted) round {@code pos}'s chunk. */
+	public static java.util.function.LongPredicate ownTrees(ServerLevel level, ChunkPos cp) {
+		Cities.Terrain t = Cities.terrain(level);
+		List<Cities.City> near = new ArrayList<>();
+		for (Cities.City c : Cities.citiesAround(level.getSeed(), t, cp.getMiddleBlockX(), cp.getMiddleBlockZ())) {
+			if (c.outside(cp.getMiddleBlockX(), cp.getMiddleBlockZ()) <= Cities.MARGIN + 40) {
+				near.add(c);
+			}
+		}
+		return l -> {
+			for (Cities.City c : near) {
+				if (decor(c).trees.contains(l)) {
+					return true;
+				}
+			}
+			return false;
+		};
 	}
 
 	/**
@@ -488,6 +572,8 @@ public final class CityGen {
 			}
 		}
 		w.set(pos.set(x, target, z), surface);
+		w.lo = Math.min(w.lo, target);
+		w.hi = Math.max(w.hi, g[1] + 1);
 		for (int y = target + 1; y <= g[1] + 1; y++) {
 			if (!w.get(pos.set(x, y, z)).isAir()) {
 				w.set(pos, AIR);
@@ -1082,6 +1168,9 @@ public final class CityGen {
 		final java.util.Map<Long, BlockState> capture;
 		@org.jetbrains.annotations.Nullable
 		final net.minecraft.world.level.levelgen.structure.BoundingBox box;
+		/** 1.35: the lowest ground levelled in this chunk and the highest it cleared up to. */
+		int lo = Integer.MAX_VALUE;
+		int hi = Integer.MIN_VALUE;
 
 		Writer(WorldGenLevel level) {
 			this(level, null, null);
