@@ -457,7 +457,7 @@ public final class Orphans {
 			}
 			for (int i = 0; i < f.pos.length; i++) {
 				p.set(f.pos[i]);
-				if (level.isLoaded(p) && level.getBlockState(p) == f.was[i]) {
+				if (level.isLoaded(p) && same(level.getBlockState(p), f.was[i])) {
 					level.setBlock(p, Blocks.AIR.defaultBlockState(), LIVE_FLAGS);
 					removedLater++;
 				} else {
@@ -466,6 +466,20 @@ public final class Orphans {
 			}
 		}
 		return any;
+	}
+
+	/**
+	 * Still the block the sweeping thread saw: the same block (leaves may have counted their distance from a trunk again
+	 * meanwhile - not if somebody has put leaves there by hand since).
+	 */
+	private static boolean same(BlockState now, BlockState was) {
+		if (now == was) {
+			return true;
+		}
+		if (now.getBlock() != was.getBlock()) {
+			return false;
+		}
+		return !now.hasProperty(BlockStateProperties.PERSISTENT) || !now.getValue(BlockStateProperties.PERSISTENT);
 	}
 
 	/** Trunks, crowns, mushrooms, vines: what can be left hanging (a section without any needs no looking at). */
