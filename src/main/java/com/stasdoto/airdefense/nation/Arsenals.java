@@ -507,6 +507,9 @@ public final class Arsenals extends SavedData {
 
 	/** Ticks to make one missile (or drone), and what it takes from the town's stores. */
 	static int buildTicks(MissileType m) {
+		if (m.artillery()) {
+			return 1200;
+		}
 		return switch (m.kind) {
 			case BALLISTIC -> 9000;
 			case CRUISE -> 7200;
@@ -527,6 +530,9 @@ public final class Arsenals extends SavedData {
 	}
 
 	static int fuelFor(MissileType m) {
+		if (m.artillery()) {
+			return 10;
+		}
 		return switch (m.kind) {
 			case BALLISTIC -> 120;
 			case CRUISE -> 80;
@@ -583,7 +589,8 @@ public final class Arsenals extends SavedData {
 		ar.progress += factory ? 600 : 200;
 		if (ar.progress >= buildTicks(ar.making)) {
 			MissileType m = ar.making;
-			int count = m.kind == MissileType.Kind.ROCKET ? 3 : 1;
+			// Shells and Grad rockets come a dozen at a time.
+			int count = m.artillery() ? 12 : m.kind == MissileType.Kind.ROCKET ? 3 : 1;
 			Integer to = pendingFor.remove(s.id);
 			Settlement dest = to == null ? null : p.settlements.get(to);
 			if (dest == null || dest.id == s.id) {
