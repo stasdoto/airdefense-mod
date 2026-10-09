@@ -207,6 +207,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("styles")) {
 				styles(ctx, server);
 			}
+			if (scene("port")) {
+				port(ctx, server);
+			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
@@ -1607,6 +1610,99 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 		}
 		AirDefense.LOGGER.info("[airdefense-test] RESULT styles: {}", report);
+	}
+
+	/**
+	 * 1.28: a port. The flat test world has no sea, so one is dug south of a European capital (water two deep) and the
+	 * town is built with a terrain that knows about it.
+	 */
+	private void port(ClientGameTestContext ctx, TestServerContext server) {
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 5000");
+		server.runCommand("difficulty peaceful");
+		int cellX = 50;
+		int cellZ = 40;
+		int[] cap = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = com.stasdoto.airdefense.nation.CityStyle.EUROPEAN;
+			var list = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), com.stasdoto.airdefense.nation.Cities.terrain(l), cellX, cellZ);
+			com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = null;
+			var c = list.getFirst();
+			return new int[]{c.x, c.z, c.half(), c.base};
+		});
+		int cx = cap[0];
+		int cz = cap[1];
+		int half = cap[2];
+		int base = cap[3];
+		int wz0 = cz + half + 40;
+		int wz1 = wz0 + 100;
+		int wx0 = cx - 90;
+		int wx1 = cx + 90;
+		// Dig the sea: the grass gone, water in its place two deep.
+		camera(server, cx + 0.5, base + 60, wz0 + 20, 0, 60);
+		ctx.waitTicks(80);
+		for (int x = wx0; x <= wx1; x += 60) {
+			int xe = Math.min(wx1, x + 59);
+			server.runCommand(String.format("fill %d %d %d %d %d %d minecraft:water", x, base - 2, wz0, xe, base - 1, wz1));
+			server.runCommand(String.format("fill %d %d %d %d %d %d minecraft:air", x, base, wz0, xe, base, wz1));
+		}
+		ctx.waitTicks(10);
+		String plan = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var flat = com.stasdoto.airdefense.nation.Cities.terrain(l);
+			var sea = seaTerrain(flat, base, wx0, wx1, wz0, wz1);
+			var c = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), sea, cellX, cellZ).getFirst();
+			var pt = c.port(l.getSeed(), sea);
+			if (pt == null) {
+				return "no port";
+			}
+			long t0 = System.nanoTime();
+			int before = com.stasdoto.airdefense.nation.CityGen.chunks;
+			int m = half + 12;
+			for (int qx = Math.floorDiv(Math.min(cx - m, pt.x0), 16); qx <= Math.floorDiv(Math.max(cx + m, pt.x1), 16); qx++) {
+				for (int qz = Math.floorDiv(Math.min(cz - m, pt.z0), 16); qz <= Math.floorDiv(Math.max(cz + m, pt.z1), 16); qz++) {
+					com.stasdoto.airdefense.nation.CityGen.generate(l, sea, l.getSeed(), new net.minecraft.world.level.ChunkPos(qx, qz));
+				}
+			}
+			return "sea " + pt.sea + " shore " + pt.shore + " mid " + pt.mid + " y " + pt.y + " floor " + pt.floor + " buildings " + pt.buildings.size()
+					+ " road " + (pt.access != null) + "; " + (com.stasdoto.airdefense.nation.CityGen.chunks - before) + " chunks in "
+					+ (System.nanoTime() - t0) / 1_000_000 + " ms";
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT port: {}", plan);
+		ctx.waitTicks(100);
+		shot(ctx, server, new float[]{cx + 0.5f, base + 70, wz0 - 60, 0, 40}, "p1_port_aerial", 60);
+		shot(ctx, server, new float[]{cx + 40.5f, base + 14, wz0 + 10, 120, 12}, "p2_port_quay", 30);
+		shot(ctx, server, new float[]{cx - 50.5f, base + 6, wz0 + 30, -100, 2}, "p3_port_ship", 30);
+		shot(ctx, server, new float[]{cx + 0.5f, base + 30, wz0 + 70, 180, 25}, "p4_port_from_sea", 30);
+		server.runCommand("time set 18000");
+		ctx.waitTicks(20);
+		shot(ctx, server, new float[]{cx + 0.5f, base + 30, wz0 + 70, 180, 25}, "p5_port_night", 40);
+		server.runCommand("time set 5000");
+	}
+
+	/** The flat world's terrain with a sea dug into it (see {@link #port}). */
+	private static com.stasdoto.airdefense.nation.Cities.Terrain seaTerrain(com.stasdoto.airdefense.nation.Cities.Terrain flat, int base, int wx0, int wx1,
+			int wz0, int wz1) {
+		return new com.stasdoto.airdefense.nation.Cities.Terrain() {
+			private boolean wet(int x, int z) {
+				return x >= wx0 && x <= wx1 && z >= wz0 && z <= wz1;
+			}
+
+			@Override
+			public int top(int x, int z) {
+				return wet(x, z) ? base - 1 : flat.top(x, z);
+			}
+
+			@Override
+			public int sea() {
+				return base;
+			}
+
+			@Override
+			public int floor(int x, int z) {
+				return wet(x, z) ? base - 3 : flat.top(x, z);
+			}
+		};
 	}
 
 	/** Like {@link #facing}, for the capital of another cell. */

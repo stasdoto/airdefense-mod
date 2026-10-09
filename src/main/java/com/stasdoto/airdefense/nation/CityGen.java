@@ -129,7 +129,14 @@ public final class CityGen {
 				depots.add(d);
 			}
 		}
-		if (cities.isEmpty() && roads.isEmpty() && hamlets.isEmpty() && depots.isEmpty()) {
+		List<Ports.Port> ports = new ArrayList<>();
+		for (Cities.City c : Cities.citiesAround(seed, t, mx, mz)) {
+			Ports.Port pt = c.port(seed, t);
+			if (pt != null && pt.near(mx, mz, 16)) {
+				ports.add(pt);
+			}
+		}
+		if (cities.isEmpty() && roads.isEmpty() && hamlets.isEmpty() && depots.isEmpty() && ports.isEmpty()) {
 			return;
 		}
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
@@ -174,6 +181,15 @@ public final class CityGen {
 					continue;
 				}
 				boolean done = false;
+				for (Ports.Port pt : ports) {
+					if (portColumn(w, pt, x, z, pos)) {
+						done = true;
+						break;
+					}
+				}
+				if (done) {
+					continue;
+				}
 				for (Depots.Depot d : depots) {
 					if (depotColumn(w, d, x, z, pos)) {
 						done = true;
@@ -211,6 +227,9 @@ public final class CityGen {
 		}
 		for (Depots.Depot d : depots) {
 			depot(w, d, cp);
+		}
+		for (Ports.Port pt : ports) {
+			port(w, pt, cp);
 		}
 		w.finish();
 		if (!w.capturing()) {
@@ -579,6 +598,99 @@ public final class CityGen {
 			shape(w, x, z, target, surface, g, pos);
 		}
 		return true;
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Ports (1.28): the quay over the shore, the piers out on their piles, the land blended in round it
+
+	private static final BlockState QUAY = Blocks.SMOOTH_STONE.defaultBlockState();
+	private static final BlockState QUAY_EDGE = Blocks.POLISHED_ANDESITE.defaultBlockState();
+	private static final BlockState QUAY_LINE = Blocks.CONCRETE.pick(DyeColor.YELLOW).defaultBlockState();
+	private static final BlockState PIER = Blocks.SPRUCE_PLANKS.defaultBlockState();
+	private static final BlockState PILE = Blocks.STONE_BRICKS.defaultBlockState();
+
+	private static boolean portColumn(Writer w, Ports.Port p, int x, int z, BlockPos.MutableBlockPos pos) {
+		int[] l = p.local(x, z);
+		int u = l[0];
+		int v = l[1];
+		if (p.onQuay(u, v)) {
+			int[] g = ground(w, x, z, pos);
+			BlockState surface = u >= p.face - 1 ? QUAY_EDGE : u == p.face - 3 ? QUAY_LINE : u < p.back + 14 ? ASPHALT : QUAY;
+			shape(w, x, z, p.y, surface, g, pos);
+			// The quay wall down into the water.
+			if (u == p.face) {
+				for (int y = g[0] + 1; y < p.y; y++) {
+					w.set(pos.set(x, y, z), PILE);
+				}
+			}
+			return true;
+		}
+		int k = p.pier(u, v);
+		if (k >= 0) {
+			int[] g = ground(w, x, z, pos);
+			w.set(pos.set(x, p.y, z), Math.abs(v - p.piers[k]) == 2 ? QUAY_EDGE : PIER);
+			if (Math.floorMod(u - p.face, 5) == 0 && Math.abs(v - p.piers[k]) == 2) {
+				for (int y = g[0] + 1; y < p.y; y++) {
+					w.set(pos.set(x, y, z), PILE);
+				}
+			}
+			return true;
+		}
+		int o = p.outLand(u, v);
+		if (o == 0 || o > Ports.BLEND || u >= p.shore) {
+			return false;
+		}
+		int[] g = ground(w, x, z, pos);
+		if (g[2] == 1) {
+			return false;
+		}
+		double f = o / (double) (Ports.BLEND + 1);
+		f = f * f * (3 - 2 * f);
+		int target = (int) Math.round(p.y * (1 - f) + g[0] * f);
+		if (target != g[0]) {
+			BlockState top = w.get(pos.set(x, g[0], z));
+			BlockState surface = top.is(BlockTags.SAND) || top.is(Blocks.SNOW_BLOCK) || top.is(BlockTags.DIRT) ? top : GRASS;
+			shape(w, x, z, target, surface, g, pos);
+		}
+		return true;
+	}
+
+	private static void port(Writer w, Ports.Port p, ChunkPos cp) {
+		int x0 = cp.getMinBlockX();
+		int z0 = cp.getMinBlockZ();
+		for (Building b : p.buildings) {
+			int reach = Math.max(b.type.width, b.type.depth) + 3;
+			if (b.origin.getX() + reach < x0 || b.origin.getX() - reach > x0 + 15 || b.origin.getZ() + reach < z0 || b.origin.getZ() - reach > z0 + 15) {
+				continue;
+			}
+			long key = -(p.key() * 64 + b.id) - 9_000_000L;
+			List<Blueprints.Placement> plan = PLANS.get(key);
+			if (plan == null) {
+				if (PLANS.size() > 160) {
+					PLANS.clear();
+				}
+				plan = Blueprints.placements(b, DyeColor.byId(p.city.color));
+				PLANS.put(key, plan);
+			}
+			for (Blueprints.Placement pl : plan) {
+				boolean mine = in(pl.pos(), x0, z0);
+				if (pl.pair()) {
+					if (mine || in(pl.pos2(), x0, z0)) {
+						w.set(pl.pos(), pl.state());
+						w.set(pl.pos2(), pl.state2());
+					}
+				} else if (mine) {
+					w.set(pl.pos(), pl.state());
+				}
+			}
+		}
+		List<long[]> list = p.blocks().get(ChunkPos.pack(cp.x(), cp.z()));
+		if (list != null) {
+			BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+			for (long[] e : list) {
+				w.set(pos.set((int) e[0], (int) e[1], (int) e[2]), p.state(e[3]));
+			}
+		}
 	}
 
 	/** The yard: asphalt, white parking bays in front of the warehouses. */

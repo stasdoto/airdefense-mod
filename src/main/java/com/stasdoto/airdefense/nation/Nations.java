@@ -268,6 +268,17 @@ public final class Nations {
 				s.eco.buildings.add(nb);
 			}
 		}
+		// The port by the shore (1.28).
+		Ports.Port port = c.port(level.getSeed(), Cities.terrain(level));
+		if (port != null) {
+			for (Building b : port.buildings) {
+				Building nb = new Building(p.newId(), b.type, b.origin, b.facing, true);
+				nb.variant = b.variant;
+				nb.style = b.style;
+				nb.done = true;
+				s.eco.buildings.add(nb);
+			}
+		}
 		p.settlements.put(id, s);
 		stockUp(s, c, r);
 		long cell = Cities.cellKey(c.cx, c.cz);

@@ -65,6 +65,11 @@ public final class Cities {
 
 		int sea();
 
+		/** 1.28: the floor under the water (the top of the ground where it is dry). */
+		default int floor(int x, int z) {
+			return top(x, z);
+		}
+
 		/** 1.28: the climate at a spot ({@link CityStyle#TEMPERATE}, COLD or DRY), from the biome there. */
 		default int climate(int x, int z) {
 			return CityStyle.TEMPERATE;
@@ -85,6 +90,11 @@ public final class Cities {
 			@Override
 			public int sea() {
 				return sea;
+			}
+
+			@Override
+			public int floor(int x, int z) {
+				return gen.getBaseHeight(x, z, Heightmap.Types.OCEAN_FLOOR_WG, level, rs) - 1;
 			}
 
 			@Override
@@ -170,6 +180,22 @@ public final class Cities {
 
 		private volatile Depots.Depot depot;
 		private volatile boolean depotPlanned;
+		private volatile Ports.Port port;
+		private volatile boolean portPlanned;
+
+		/** 1.28: the town's port on the nearest shore (planned on first use), or null. */
+		@Nullable
+		public Ports.Port port(long seed, Terrain t) {
+			if (!portPlanned) {
+				synchronized (this) {
+					if (!portPlanned) {
+						port = Ports.plan(seed, t, this);
+						portPlanned = true;
+					}
+				}
+			}
+			return port;
+		}
 
 		/** The town's depot by the highway (planned on first use), or null where there is no room for one. */
 		@Nullable
@@ -563,6 +589,10 @@ public final class Cities {
 			Depots.Depot d = c.depot(seed, t);
 			if (d != null && d.access != null) {
 				out.add(d.access);
+			}
+			Ports.Port port = c.port(seed, t);
+			if (port != null && port.access != null) {
+				out.add(port.access);
 			}
 		}
 		return out;
