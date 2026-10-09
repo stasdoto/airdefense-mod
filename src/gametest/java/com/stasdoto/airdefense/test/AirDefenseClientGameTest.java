@@ -277,9 +277,10 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			ctx.takeScreenshot("140_real_capital");
 			// 1.35: what is left floating round the capital (halves of trees, crowns, plants where the ground was levelled), once
 			// the chunks the generator cut back afterwards have been looked over again.
-			int swept = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Orphans.pending() == 0, 1200);
-			AirDefense.LOGGER.info("[airdefense-test] RESULT real_recheck: {} chunks cut back after they were made, looked over again within {} ticks",
-					com.stasdoto.airdefense.nation.Orphans.rechecks, swept);
+			int swept = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Orphans.idleTicks >= 80, 1500);
+			AirDefense.LOGGER.info("[airdefense-test] RESULT real_recheck: {} chunks looked over again once complete ({} looked at, {} still waiting for "
+					+ "their neighbours), done within {} ticks", com.stasdoto.airdefense.nation.Orphans.rechecks,
+					com.stasdoto.airdefense.nation.Orphans.chunksLooked, com.stasdoto.airdefense.nation.Orphans.pending(), swept);
 			int half = cap[2];
 			int[] orphans = server.computeOnServer(s -> {
 				ServerLevel l = s.overworld();
@@ -1661,7 +1662,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		shot(ctx, server, new float[]{x + 8.5f, ground + 3.5f, 32.5f, 180, 10}, "st4_big_a", 20);
 		shot(ctx, server, new float[]{x + 24.5f, ground + 3.5f, 33.5f, 180, 10}, "st4_big_b", 20);
 		// The traffic light close by: the heads change in turn (green - yellow - red), six seconds apart.
-		shot(ctx, server, new float[]{x + 19.0f, ground + 4.2f, 3.0f, 135, 16}, "st5_traffic_a", 20);
+		shot(ctx, server, new float[]{x + 19.0f, ground + 2.4f, 3.0f, 135, -8}, "st5_traffic_a", 20);
 		ctx.waitTicks(105);
 		ctx.takeScreenshot("st5_traffic_b");
 		server.runCommand("time set 18000");
@@ -1736,7 +1737,6 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (k == 0 || k == 2 || k == 3) {
 				// A crossing by the town hall (a traffic light on its corner) and the square.
 				shot(ctx, server, new float[]{cap[4] - 9.5f, base + 4, cap[5] - 11.5f, -35, 12}, tag + "_crossing", 60);
-				shot(ctx, server, new float[]{(cap[4] + cap[6]) / 2f, base + 7, cap[5] - 7.5f, 0, 22}, tag + "_square", 40);
 			}
 		}
 		ctx.runOnClient(mc -> mc.options.renderDistance().set(8));

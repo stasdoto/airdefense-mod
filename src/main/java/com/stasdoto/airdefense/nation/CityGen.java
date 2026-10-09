@@ -330,9 +330,9 @@ public final class CityGen {
 	/** The floating leftovers round a levelled chunk (see {@link Orphans}): its trees' halves next door included. */
 	private static void orphans(Writer w, List<Cities.City> cities, int x0, int z0) {
 		int yMax = w.hi;
-		for (int x = x0 - Orphans.REACH; x < x0 + 16 + Orphans.REACH; x += 3) {
-			for (int z = z0 - Orphans.REACH; z < z0 + 16 + Orphans.REACH; z += 3) {
-				yMax = Math.max(yMax, w.top(x, z) + 1);
+		for (int x = x0 - Orphans.REACH; x < x0 + 16 + Orphans.REACH; x++) {
+			for (int z = z0 - Orphans.REACH; z < z0 + 16 + Orphans.REACH; z++) {
+				yMax = Math.max(yMax, w.top(x, z) + 2);
 			}
 		}
 		int yMin = w.lo - 1;
@@ -461,6 +461,11 @@ public final class CityGen {
 			return;
 		}
 		ChunkPos cp = chunk.getPos();
+		if (levelled(level, cp)) {
+			// 1.35: by now the neighbours have grown their trees and levelled their own ground (and this chunk is about to cut
+			// back what reached in): what all that left hanging round here is looked over once the neighbours are all loaded.
+			Orphans.recheck(cp);
+		}
 		Cities.Terrain t = Cities.terrain(level);
 		long seed = level.getSeed();
 		int x0 = cp.getMinBlockX();
@@ -513,7 +518,6 @@ public final class CityGen {
 		}
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 		Cities.Road.Spot probe = new Cities.Road.Spot();
-		boolean cut = false;
 		for (int x = x0; x < x0 + 16; x++) {
 			for (int z = z0; z < z0 + 16; z++) {
 				int from = Integer.MIN_VALUE;
@@ -568,15 +572,9 @@ public final class CityGen {
 							|| st.is(Blocks.RED_MUSHROOM_BLOCK) || st.is(Blocks.BROWN_MUSHROOM_BLOCK) || st.is(Blocks.MUSHROOM_STEM)) {
 						// No side effects: a bee nest's block entity would be looked up through the level - the very chunk being made (a deadlock).
 						chunk.setBlockState(pos, AIR, Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
-						cut = true;
 					}
 				}
 			}
-		}
-		if (cut) {
-			// 1.35: what was cut here may have been holding up the rest of a tree next to it (the trunk of a tree that grew in
-			// after the ground was levelled): the chunk is looked over again once its neighbours are all there.
-			Orphans.recheck(cp);
 		}
 	}
 

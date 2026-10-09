@@ -518,9 +518,9 @@ def head(c, phase):
            box((c - 1, 14, 5.5), (c + 1, 18, 7.5), 'black')]
     for col, y in (('red', 21.5), ('yellow', 14), ('green', 6.5)):
         els.append(box((c - 2.5, y, 1.7), (c + 2.5, y + 5, 2), {'north': 'lens_%s_%s' % (col, phase)}, uv={'north': FULL}, emit=15))
-        els.append(box((c - 3, y + 5, -1), (c + 3, y + 5.6, 2), 'black'))
-        els.append(box((c - 3, y + 1.5, -0.5), (c - 2.6, y + 5, 2), 'black'))
-        els.append(box((c + 2.6, y + 1.5, -0.5), (c + 3, y + 5, 2), 'black'))
+        els.append(box((c - 3, y + 5, 0), (c + 3, y + 5.6, 2), 'black'))
+        els.append(box((c - 3, y + 2.5, 0.5), (c - 2.6, y + 5, 2), 'black'))
+        els.append(box((c + 2.6, y + 2.5, 0.5), (c + 3, y + 5, 2), 'black'))
     return els
 
 

@@ -291,9 +291,13 @@ public final class Orphans {
 			if (level.dimension() == net.minecraft.world.level.Level.OVERWORLD && pending() > 0) {
 				long t0 = System.nanoTime();
 				// Up to a millisecond and a half a tick, at most four chunks.
+				boolean worked = false;
 				for (int n = 0; n < 4 && pending() > 0 && System.nanoTime() - t0 < 1_500_000; n++) {
-					step(level);
+					worked |= step(level);
 				}
+				idleTicks = worked ? 0 : idleTicks + 1;
+			} else {
+				idleTicks++;
 			}
 		});
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
@@ -320,6 +324,9 @@ public final class Orphans {
 		}
 	}
 
+	/** For the tests: ticks since a chunk was last looked over (the ones still waiting wait for their neighbours). */
+	public static volatile int idleTicks;
+
 	/** For the tests: chunks waiting to be looked over. */
 	public static int pending() {
 		synchronized (QUEUE) {
@@ -327,7 +334,8 @@ public final class Orphans {
 		}
 	}
 
-	private static void step(net.minecraft.server.level.ServerLevel level) {
+	/** Looks over the next chunk in the queue if its neighbours are there; true if it did. */
+	private static boolean step(net.minecraft.server.level.ServerLevel level) {
 		long key;
 		synchronized (QUEUE) {
 			key = QUEUE.poll();
@@ -335,7 +343,7 @@ public final class Orphans {
 		}
 		net.minecraft.world.level.ChunkPos cp = net.minecraft.world.level.ChunkPos.unpack(key);
 		if (!level.hasChunk(cp.x(), cp.z())) {
-			return;
+			return false;
 		}
 		for (int dx = -1; dx <= 1; dx++) {
 			for (int dz = -1; dz <= 1; dz++) {
@@ -346,7 +354,7 @@ public final class Orphans {
 							QUEUE.add(key);
 						}
 					}
-					return;
+					return false;
 				}
 			}
 		}
@@ -354,7 +362,7 @@ public final class Orphans {
 			DONE.add(key);
 		}
 		if (!CityGen.levelled(level, cp)) {
-			return;
+			return false;
 		}
 		chunksLooked++;
 		int x0 = cp.getMinBlockX();
@@ -366,8 +374,8 @@ public final class Orphans {
 				yMin = Math.min(yMin, level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.OCEAN_FLOOR, x, z));
 			}
 		}
-		for (int x = x0 - REACH; x < x0 + 16 + REACH; x += 3) {
-			for (int z = z0 - REACH; z < z0 + 16 + REACH; z += 3) {
+		for (int x = x0 - REACH; x < x0 + 16 + REACH; x++) {
+			for (int z = z0 - REACH; z < z0 + 16 + REACH; z++) {
 				yMax = Math.max(yMax, level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z));
 			}
 		}
@@ -384,6 +392,7 @@ public final class Orphans {
 				level.setBlock(p, s, LIVE_FLAGS);
 			}
 		}, x0, z0, yMin, yMax, CityGen.ownTrees(level, cp), false);
+		return true;
 	}
 
 	/** For the tests: orphans left round this chunk now (counted, not removed). */
