@@ -978,5 +978,12 @@
   "item.airdefense.ammo_crate": "Ящик с патронами",
   "tooltip.airdefense.ammo_crate": "Открыть (ПКМ): по три магазина ко всему оружию на панели быстрого доступа.",
   "message.airdefense.ammo_crate.no_guns": "Нет оружия на панели",
-  "message.airdefense.ammo_crate.opened": "Патроны взяты: для %s видов оружия"
+  "message.airdefense.ammo_crate.opened": "Патроны взяты: для %s видов оружия",
+  "style.airdefense.classic": "Современный",
+  "style.airdefense.soviet": "Советский",
+  "style.airdefense.european": "Европейский",
+  "style.airdefense.american": "Американский",
+  "style.airdefense.desert": "Пустынный",
+  "nation.airdefense.style": "Стиль: %s",
+  "guide.airdefense.page.29": "ГОРОДА МИРА\n\nКаждая страна строит по-своему: советский стиль (панельки, дачи), европейский (черепица, фахверк, церковь), американский (кирпичные дома с пожарными лестницами, пригороды, торговые ряды), пустынный (песчаник, купола, пальмы, базар).\nУ города на берегу моря — порт: краны, контейнеры, корабль, маяк."
 }

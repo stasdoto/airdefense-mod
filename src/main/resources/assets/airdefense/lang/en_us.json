@@ -978,5 +978,12 @@
   "item.airdefense.ammo_crate": "Ammunition crate",
   "tooltip.airdefense.ammo_crate": "Open (RMB): three magazines for every gun on your hotbar.",
   "message.airdefense.ammo_crate.no_guns": "No guns on your hotbar",
-  "message.airdefense.ammo_crate.opened": "Rounds for %s guns taken"
+  "message.airdefense.ammo_crate.opened": "Rounds for %s guns taken",
+  "style.airdefense.classic": "Modern",
+  "style.airdefense.soviet": "Soviet",
+  "style.airdefense.european": "European",
+  "style.airdefense.american": "American",
+  "style.airdefense.desert": "Desert",
+  "nation.airdefense.style": "Style: %s",
+  "guide.airdefense.page.29": "CITIES OF THE WORLD\n\nEvery country builds its own way: Soviet (panel blocks, dachas), European (tiled roofs, half-timbering, a church), American (brick walk-ups, suburbs, strip malls), desert (sandstone, domes, palms, a bazaar).\nA town by the sea has a port: cranes, containers, a ship, a lighthouse."
 }

@@ -403,6 +403,7 @@ public final class Atlas {
 			if (in(o, c.x, c.z, 0)) {
 				c.hamlets(seed, t);
 				c.depot(seed, t);
+				c.port(seed, t);
 			}
 		});
 		// Capitals first (each founds its country), then the other towns, then the hamlets.
@@ -432,6 +433,12 @@ public final class Atlas {
 		for (Hamlets.Hamlet h : hamlets) {
 			if (h.road != null) {
 				roads.add(h.road);
+			}
+		}
+		for (Cities.City c : cities) {
+			Ports.Port pt = in(o, c.x, c.z, 0) ? c.port(seed, t) : null;
+			if (pt != null && pt.access != null) {
+				roads.add(pt.access);
 			}
 		}
 		// Only what lies in the atlas (with a margin for the borders) is founded.
@@ -520,7 +527,33 @@ public final class Atlas {
 					depots.add(d);
 				}
 			}
-			out.writeShort(depots.size());
+			// 1.28: the ports go along as yards too (the quay, its warehouses).
+			List<Ports.Port> ports = new ArrayList<>();
+			for (Cities.City c : plan.cities) {
+				Ports.Port pt = c.port(seed, terrain);
+				if (pt != null) {
+					ports.add(pt);
+				}
+			}
+			out.writeShort(depots.size() + ports.size());
+			for (Ports.Port pt : ports) {
+				int[] a = pt.world(pt.back, pt.mid - Ports.HALF);
+				int[] e = pt.world(pt.face, pt.mid + Ports.HALF);
+				out.writeLong(pt.city.key());
+				out.writeInt(Math.min(a[0], e[0]));
+				out.writeInt(Math.min(a[1], e[1]));
+				out.writeInt(Math.max(a[0], e[0]));
+				out.writeInt(Math.max(a[1], e[1]));
+				out.writeByte(pt.buildings.size());
+				for (Building b : pt.buildings) {
+					net.minecraft.core.BlockPos ba = b.at(-b.type.halfWidth(), 0, 0);
+					net.minecraft.core.BlockPos be = b.at(b.type.halfWidth(), 0, b.type.depth - 1);
+					out.writeInt(Math.min(ba.getX(), be.getX()));
+					out.writeInt(Math.min(ba.getZ(), be.getZ()));
+					out.writeInt(Math.max(ba.getX(), be.getX()));
+					out.writeInt(Math.max(ba.getZ(), be.getZ()));
+				}
+			}
 			for (Depots.Depot d : depots) {
 				out.writeLong(d.city.key());
 				out.writeInt(d.x0);

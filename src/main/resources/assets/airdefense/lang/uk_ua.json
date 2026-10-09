@@ -978,5 +978,12 @@
   "item.airdefense.ammo_crate": "Ящик з набоями",
   "tooltip.airdefense.ammo_crate": "Відкрити (ПКМ): по три магазини до всієї зброї на панелі швидкого доступу.",
   "message.airdefense.ammo_crate.no_guns": "Немає зброї на панелі",
-  "message.airdefense.ammo_crate.opened": "Набої взято: для %s видів зброї"
+  "message.airdefense.ammo_crate.opened": "Набої взято: для %s видів зброї",
+  "style.airdefense.classic": "Сучасний",
+  "style.airdefense.soviet": "Радянський",
+  "style.airdefense.european": "Європейський",
+  "style.airdefense.american": "Американський",
+  "style.airdefense.desert": "Пустельний",
+  "nation.airdefense.style": "Стиль: %s",
+  "guide.airdefense.page.29": "МІСТА СВІТУ\n\nКожна країна будує по-своєму: радянський стиль (панельки, дачі), європейський (черепиця, фахверк, церква), американський (цегляні будинки з пожежними драбинами, передмістя, торгові ряди), пустельний (пісковик, куполи, пальми, базар).\nУ міста на березі моря — порт: крани, контейнери, корабель, маяк."
 }
