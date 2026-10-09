@@ -1622,7 +1622,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(40);
 		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT);
 		ctx.waitForScreen(com.stasdoto.airdefense.client.map.TacticalMapScreen.class);
-		ctx.runOnClient(mc -> ((com.stasdoto.airdefense.client.map.TacticalMapScreen) mc.gui.screen()).centerOn(x, 220, 4));
+		ctx.runOnClient(mc -> ((com.stasdoto.airdefense.client.map.TacticalMapScreen) mc.gui.screen()).centerOn(x, 250, 5));
 		ctx.waitTicks(40);
 		ctx.takeScreenshot("u5_map_recon");
 		int[] mapSeen = ctx.computeOnClient(mc -> new int[]{com.stasdoto.airdefense.client.map.MapClient.spots().size(),
@@ -1685,9 +1685,10 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		waitUntil(ctx, () -> server.computeOnServer(s -> droneOf(s.overworld(), MissileType.LANCET, x) != null), 300);
 		ctx.waitTicks(5);
 		ctx.takeScreenshot("u6_lancet_launch");
+		// The camera by the tank before the Lancet gets there (its ground drawn by then).
+		look(server, x + 132, ground + 7, 310, x + 150, ground + 8, 330);
 		int found = waitUntil(ctx, () -> MissileEntity.PREY_FOUND.get() > prey0, 1200);
-		look(server, x + 128, ground + 6, 312, x + 150, ground + 3, 330);
-		ctx.waitTicks(12);
+		ctx.waitTicks(7);
 		ctx.takeScreenshot("u7_lancet_dive");
 		int hit = waitUntil(ctx, () -> MissileEntity.LOITER_HITS.get() > hits0, 400);
 		ctx.waitTicks(3);
@@ -1705,10 +1706,13 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		waitUntil(ctx, () -> server.computeOnServer(s -> droneOf(s.overworld(), MissileType.TB2, x) != null), 300);
 		ctx.waitTicks(15);
 		ctx.takeScreenshot("u9_tb2_takeoff");
+		look(server, x - 126, ground + 5, 316, x - 150, ground + 14, 330);
 		int dropped = waitUntil(ctx, () -> MissileEntity.BOMBS_DROPPED.get() > bombs0, 1500);
-		look(server, x - 128, ground + 8, 312, x - 150, ground + 3, 330);
-		ctx.waitTicks(16);
+		ctx.waitTicks(14);
 		ctx.takeScreenshot("u10_tb2_bomb");
+		waitUntil(ctx, () -> server.computeOnServer(s -> !(s.overworld().getEntity(col[6]) instanceof VehicleEntity v) || v.getHealth() < bmphp0), 200);
+		ctx.waitTicks(2);
+		ctx.takeScreenshot("u10b_tb2_bomb_hit");
 		ctx.waitTicks(200);
 		float bmphp1 = server.computeOnServer(s -> s.overworld().getEntity(col[6]) instanceof VehicleEntity v && v.isAlive() ? v.getHealth() : 0f);
 		AirDefense.LOGGER.info("[airdefense-test] RESULT uav_tb2: ordered {}, first bomb after {} ticks, bombs {}, BMP health {} -> {}", tb2Ok, dropped,
@@ -1716,11 +1720,12 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 
 		// A Switchblade at the BTR by (x+168, 336).
 		int hits1 = MissileEntity.LOITER_HITS.get();
+		look(server, x + 17, ground + 4, 12, x + 8, ground + 2.5, 0);
+		ctx.waitTicks(40);
 		boolean swOk = server.computeOnServer(s -> s.overworld().getEntity(own[3]) instanceof VehicleEntity v
 				&& v.commandStrike(new BlockPos(x + 168, ground, 340), null));
-		look(server, x + 18, ground + 4, 14, x + 8, ground + 2, 0);
 		waitUntil(ctx, () -> server.computeOnServer(s -> droneOf(s.overworld(), MissileType.SWITCHBLADE, x) != null), 300);
-		ctx.waitTicks(4);
+		ctx.waitTicks(3);
 		ctx.takeScreenshot("u11_switchblade_launch");
 		int swHit = waitUntil(ctx, () -> MissileEntity.LOITER_HITS.get() > hits1, 1500);
 		AirDefense.LOGGER.info("[airdefense-test] RESULT uav_switchblade: ordered {}, hit after {} ticks", swOk, swHit);
@@ -1745,10 +1750,10 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		int jammed = waitUntil(ctx, () -> com.stasdoto.airdefense.drone.Jammers.linksLost > lost0, 900);
 		Vec3 jp = server.computeOnServer(s -> {
 			MissileEntity m = droneOf(s.overworld(), MissileType.LANCET, x);
-			return m == null ? new Vec3(x - 300, ground + 30, 30) : m.position();
+			return m == null ? new Vec3(x - 300, ground + 30, 30) : m.position().add(m.getFlightVelocity().scale(4));
 		});
-		look(server, jp.x + 10, jp.y + 4, jp.z - 10, jp.x, jp.y - 4, jp.z);
-		ctx.waitTicks(15);
+		look(server, jp.x + 4, jp.y + 2, jp.z - 5, jp.x, jp.y - 1, jp.z);
+		ctx.waitTicks(3);
 		ctx.takeScreenshot("u13_lancet_jammed");
 		int drifted = waitUntil(ctx, () -> com.stasdoto.airdefense.drone.Jammers.drifted > drift0, 900);
 		ctx.waitTicks(300);

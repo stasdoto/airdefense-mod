@@ -129,7 +129,12 @@ public final class Recon {
 			s.pos = e.position();
 			s.last = now;
 			if (player) {
-				e.addEffect(new MobEffectInstance(MobEffects.GLOWING, 50, 0, false, false));
+				// (Vehicles take no potion effects: they are marked by hand.)
+				if (e instanceof VehicleEntity v) {
+					v.markSeen(now + 50);
+				} else {
+					e.addEffect(new MobEffectInstance(MobEffects.GLOWING, 50, 0, false, false));
+				}
 			}
 		}
 	}

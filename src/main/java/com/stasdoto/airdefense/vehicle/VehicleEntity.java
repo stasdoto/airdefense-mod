@@ -1480,6 +1480,10 @@ public class VehicleEntity extends LivingEntity {
 				return;
 			}
 		}
+		if (markedUntil != 0 && level.getGameTime() > markedUntil) {
+			markedUntil = 0;
+			setGlowingTag(false);
+		}
 		if (vtype.repairs() && (tickCount + getId()) % 20 == 0) {
 			mendAround(level);
 		}
@@ -2061,6 +2065,16 @@ public class VehicleEntity extends LivingEntity {
 			RadarNetwork.report(level, getId(), position().add(0, g.height() * 0.85, 0), getYRot(), vtype.radar);
 		} else {
 			RadarNetwork.remove(level, getId());
+		}
+	}
+
+	/** 1.34: seen by one of the player's reconnaissance drones until this game time: it glows (marked) till then. */
+	private long markedUntil;
+
+	public void markSeen(long until) {
+		markedUntil = until;
+		if (!hasGlowingTag()) {
+			setGlowingTag(true);
 		}
 	}
 
@@ -4060,6 +4074,8 @@ public class VehicleEntity extends LivingEntity {
 	@Override
 	protected void readAdditionalSaveData(ValueInput input) {
 		super.readAdditionalSaveData(input);
+		// A drone's mark does not outlive a restart (a vehicle glows only while it is seen).
+		setGlowingTag(false);
 		setMode(input.getIntOr("vehicle_mode", vtype.hasMode() ? MODE_AUTO : MODE_OFF));
 		setLoadedMask(input.getIntOr("vehicle_loaded", fullMask()));
 		setAmmo(input.getIntOr("vehicle_ammo", vtype.magazine()));
