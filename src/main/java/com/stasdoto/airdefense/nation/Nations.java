@@ -713,16 +713,13 @@ public final class Nations {
 			s.guardsAlive = guards.size();
 			Country c = p.country(s.country);
 			int want = c != null ? Math.max(1, Math.min(5, s.population / 3)) + (c.cityState ? 1 : 0) : s.population >= 5 ? 1 : 0;
-			if ((level.getGameTime() / 20 + s.id) % 10 == 0) {
-				thinOut(level, p, s, want);
-			}
+			// (Every ten seconds, with the rest of this.)
+			thinOut(level, p, s, want);
 			if (guards.size() < want && s.captureTicks == 0 && !s.riot && s.aiCaptureTicks == 0 && level.getNearestPlayer(s.flag.getX(), s.flag.getY(), s.flag.getZ(), 12, false) == null
 					&& level.getNearestPlayer(s.flag.getX(), s.flag.getY(), s.flag.getZ(), 160, false) != null) {
 				spawnGuard(level, s, c);
 			}
-			if ((level.getGameTime() / 20 + s.id) % 30 == 0) {
-				strayFlags(level, s);
-			}
+			strayFlags(level, s);
 			placeFlag(level, p, s);
 		}
 	}

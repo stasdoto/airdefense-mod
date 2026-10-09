@@ -233,7 +233,7 @@ public final class Sirens extends SavedData {
 		if (!pending.isEmpty()) {
 			placePending(level);
 		}
-		if (now % 200 == 47) {
+		if (++thinClock % 10 == 0) {
 			thinOut(level);
 		}
 		boolean changed = false;
@@ -334,6 +334,8 @@ public final class Sirens extends SavedData {
 
 	/** For the tests: sirens taken down as one too many. */
 	public static int doubled;
+	/** Seconds counted for {@link #thinOut} (every ten). */
+	private int thinClock;
 
 	/** A siren already stands within this many blocks of the place (along the street): no second one there. */
 	private boolean sirenNear(BlockPos p, int r) {
