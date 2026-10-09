@@ -1079,7 +1079,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			f.set(mc.reloadResourcePacks());
 		});
 		int t = waitUntil(ctx, () -> f.get() != null && f.get().isDone(), 2400);
-		ctx.waitTicks(20);
+		// The loading screen fades out over a second or two.
+		ctx.waitTicks(80);
 		AirDefense.LOGGER.info("[airdefense-test] language {} after {} ticks", code, t);
 	}
 
@@ -1130,7 +1131,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		}
 		server.runOnServer(s -> forVehicles(s.overworld(), ids, v -> v.country = -1));
 		ctx.waitTicks(30);
-		look(server, x - 27, ground + 4, -15, x - 7, ground + 1.2, 0);
+		look(server, x - 24, ground + 3.5, -12, x - 9, ground + 1.2, 0);
 		ctx.waitTicks(30);
 		ctx.takeScreenshot("a1_arty_lineup");
 		server.runOnServer(s -> forVehicles(s.overworld(), ids, v -> {
