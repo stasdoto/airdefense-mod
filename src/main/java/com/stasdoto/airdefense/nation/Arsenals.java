@@ -335,7 +335,9 @@ public final class Arsenals extends SavedData {
 		Arsenals a = get(level.getServer());
 		for (Settlement s : p.settlements.values()) {
 			Arsenal ar = a.of(p, s);
-			if (s.city >= 0 && NAVY_CHECKED.add(s.id)) {
+			// (Looked at once a player comes within a few hundred blocks: finding a port reads the terrain.)
+			if (s.city >= 0 && !NAVY_CHECKED.contains(s.id) && level.getNearestPlayer(s.center.getX(), s.center.getY(), s.center.getZ(), 700, pl -> true) != null) {
+				NAVY_CHECKED.add(s.id);
 				a.navy(level, p, s, ar);
 			}
 			boolean near = level.isLoaded(s.center) && level.getNearestPlayer(s.center.getX(), s.center.getY(), s.center.getZ(), 240,
