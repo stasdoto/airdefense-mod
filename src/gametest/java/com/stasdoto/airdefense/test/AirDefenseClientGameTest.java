@@ -2205,6 +2205,17 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
 			var p = com.stasdoto.airdefense.nation.Politics.get(s);
 			var country = com.stasdoto.airdefense.nation.Nations.countryOf(l, p, pl, true);
+			// The player's own town here (else the villager below founds a village of some other country on the spot,
+			// and its guards and garrison get mixed up in the scene).
+			int tid = p.newId();
+			BlockPos tat = new BlockPos(x, ground, 0);
+			var town = new com.stasdoto.airdefense.nation.Settlement(tid, "Ясное", tat, tat.above(2), -1, java.util.Optional.empty(), 0,
+					java.util.Map.of(), List.of(), List.of());
+			p.settlements.put(tid, town);
+			town.country = country.id;
+			var ar = com.stasdoto.airdefense.nation.Arsenals.get(s).of(p, town);
+			ar.units.clear();
+			ar.stock.clear();
 			var v = net.minecraft.world.entity.EntityTypes.VILLAGER.create(l, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
 			v.snapTo(x - 1.5, ground, -2.5, 180f, 0f);
 			v.setNoAi(true);
