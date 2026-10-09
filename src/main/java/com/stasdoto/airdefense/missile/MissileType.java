@@ -55,7 +55,9 @@ public enum MissileType {
 	// defence leaves them be); the Grad's 122 mm rocket burns for a moment and flies the same kind of arc.
 	SHELL_152("shell_152", Kind.ROCKET, false, 4.0, 0.0, 3.4f, false, 1f, 1.0f, 0, 700, 0.0, Trail.NONE, null),
 	SHELL_155("shell_155", Kind.ROCKET, false, 4.2, 0.0, 3.5f, false, 1f, 1.0f, 0, 700, 0.0, Trail.NONE, null),
-	GRAD("grad_rocket", Kind.ROCKET, true, 3.4, 0.22, 2.5f, false, 1f, 1.0f, 0, 700, 0.0, Trail.SMALL, null);
+	GRAD("grad_rocket", Kind.ROCKET, true, 3.4, 0.22, 2.5f, false, 1f, 1.0f, 0, 700, 0.0, Trail.SMALL, null),
+	// 1.31: the TOS-1A's 220 mm thermobaric rocket: a cloud of fuel set off - a huge fireball and a blast that crushes.
+	TOS("tos_rocket", Kind.ROCKET, true, 2.8, 0.2, 5.5f, true, 1f, 2.0f, 0, 700, 0.0, Trail.MEDIUM, null);
 
 	public enum Kind { BALLISTIC, ROCKET, CRUISE, DRONE, INTERCEPTOR, DIRECT }
 
@@ -134,7 +136,7 @@ public enum MissileType {
 
 	/** 1.30: what artillery fires - shells and the Grad's rockets (a counter-battery radar tracks these back). */
 	public boolean artillery() {
-		return shell() || this == GRAD;
+		return shell() || this == GRAD || this == TOS;
 	}
 
 	/** Flown by a player from its camera. */

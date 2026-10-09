@@ -72,7 +72,20 @@ public enum VehicleType {
 	M109("m109", GenGeometry.M109, LauncherType.M109, 0.55f, 390, 0.85f, 0.013f, 0, 2.3f, 1.1f, 2.6f, 3.15f, 3.2f),
 	BM21("bm21", GenGeometry.BM21, LauncherType.BM21, null, 170, 0.92f, 0.015f, 32, 0, 1.4f, 3.0f, 2.4f, 3.1f),
 	ZOOPARK("zoopark", GenGeometry.ZOOPARK, RadarType.ZOOPARK, 240, 0.85f, 0.014f, 0, 2.6f, 0.9f, 2.85f, 2.6f),
-	TPQ36("tpq36", GenGeometry.TPQ36, RadarType.TPQ36, 130, 0.95f, 0.016f, 32, 0, 0.9f, 2.2f, 2.4f);
+	TPQ36("tpq36", GenGeometry.TPQ36, RadarType.TPQ36, 130, 0.95f, 0.016f, 32, 0, 0.9f, 2.2f, 2.4f),
+	// 1.31: more armour - the T-80BVM (gas turbine: the fastest tank), Challenger 2 (the heaviest armour), BMP-3, CV9030,
+	// the Stryker, the Tigr-M and the up-armoured Humvee; the BREM-1 and M88 recovery vehicles that mend the others; the
+	// TOS-1A heavy flamethrower system.
+	T80BVM("t80bvm", GenGeometry.T80BVM, Weapon.CANNON_125, 0.27f, false, 740, 1.02f, 0.017f, 0, 2.5f, 2.0f, 3.3f, 3.4f, 2.3f),
+	CHALLENGER2("challenger2", GenGeometry.CHALLENGER2, Weapon.CANNON_120, 0.21f, false, 880, 0.82f, 0.011f, 0, 2.1f, 2.0f, 3.0f, 3.4f, 2.5f),
+	BMP3("bmp3", GenGeometry.BMP3, Weapon.AUTO_30, 0.52f, false, 340, 1.0f, 0.016f, 0, 3.0f, 4.0f, 5.0f, 3.1f, 2.4f),
+	CV90("cv90", GenGeometry.CV90, Weapon.AUTO_30, 0.45f, false, 380, 0.98f, 0.016f, 0, 2.9f, 4.0f, 5.0f, 3.15f, 2.7f),
+	STRYKER("stryker", GenGeometry.STRYKER, Weapon.HMG_127, 0.62f, false, 280, 1.15f, 0.02f, 30, 0, 6.0f, 8.0f, 2.7f, 2.6f),
+	TIGR("tigr", GenGeometry.TIGR, Weapon.HMG_127, 0.75f, false, 200, 1.3f, 0.025f, 34, 0, 6.0f, 8.0f, 2.4f, 2.4f),
+	HMMWV("hmmwv", GenGeometry.HMMWV, Weapon.HMG_127, 0.8f, false, 170, 1.35f, 0.026f, 35, 0, 6.0f, 8.0f, 2.2f, 2.0f),
+	BREM1("brem1", GenGeometry.BREM1, Weapon.HMG_127, 0.33f, false, 620, 0.85f, 0.012f, 0, 2.2f, 6.0f, 8.0f, 3.4f, 2.4f),
+	M88("m88", GenGeometry.M88, Weapon.HMG_127, 0.33f, false, 640, 0.8f, 0.012f, 0, 2.0f, 6.0f, 8.0f, 3.4f, 2.8f),
+	TOS1("tos1", GenGeometry.TOS1, LauncherType.TOS1, 0.33f, 640, 0.85f, 0.012f, 0, 2.2f, 1.0f, 2.0f, 3.4f, 2.4f);
 
 	public static final int HELI = 1;
 	public static final int PLANE = 2;
@@ -305,6 +318,11 @@ public enum VehicleType {
 		return defense != null || radar != null || isArtillery();
 	}
 
+	/** 1.31: a recovery vehicle - it mends its side's vehicles round it while it stands. */
+	public boolean repairs() {
+		return this == BREM1 || this == M88;
+	}
+
 	/** 1.30: a howitzer or a rocket artillery launcher. */
 	public boolean isArtillery() {
 		return launcher != null && launcher.artillery();
@@ -379,7 +397,7 @@ public enum VehicleType {
 	/** The second seat is in the turret (it turns with it). */
 	public boolean gunnerInTurret() {
 		return switch (this) {
-			case GEPARD, SHILKA, TUNGUSKA, TOR, BUK, STRELA10, MFG, ZU23, AVENGER, MSTA_S, M109 -> true;
+			case GEPARD, SHILKA, TUNGUSKA, TOR, BUK, STRELA10, MFG, ZU23, AVENGER, MSTA_S, M109, TOS1 -> true;
 			default -> false;
 		};
 	}

@@ -18,7 +18,9 @@ public enum LauncherType {
 	// rounds, not one missile per rail; the spread is how widely the shells fall round the aim point at full range.
 	MSTA_S(MissileType.SHELL_152, 6, 50, 140, 5.0, ModSounds.ARTY_NEAR, 260, 30, 110),
 	M109(MissileType.SHELL_155, 6, 44, 140, 4.5, ModSounds.ARTY_NEAR, 280, 30, 110),
-	BM21(MissileType.GRAD, 40, 3, 600, 12.0, ModSounds.LAUNCH_MLRS, 200, 40, 90);
+	BM21(MissileType.GRAD, 40, 3, 600, 12.0, ModSounds.LAUNCH_MLRS, 200, 40, 90),
+	// 1.31: TOS-1A - 24 thermobaric rockets in 7 seconds at short range.
+	TOS1(MissileType.TOS, 24, 6, 900, 10.0, ModSounds.LAUNCH_MLRS, 120, 24, 80);
 
 	public final MissileType missile;
 	public final int salvo;

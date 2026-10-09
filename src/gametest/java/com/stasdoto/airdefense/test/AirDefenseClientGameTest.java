@@ -216,6 +216,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("arty")) {
 				arty(ctx, server);
 			}
+			if (scene("armor2")) {
+				armor2(ctx, server);
+			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
@@ -1283,6 +1286,101 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		AirDefense.LOGGER.info("[airdefense-test] RESULT arty_map: enemy batteries on the map {}", fires);
 		server.runOnServer(s -> forVehicles(s.overworld(), List.of(radar, gun, enemy), Entity::discard));
 		server.runCommand(String.format("forceload remove %d %d %d %d", cx + 20, 680, cx + 60, 720));
+	}
+
+	/**
+	 * 1.31: the new armour lined up; a recovery vehicle mending a damaged tank, a repair kit used by hand, a hangar-less
+	 * check of the numbers; a TOS-1A salvo.
+	 */
+	private void armor2(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 110000;
+		language(ctx, "ru_ru");
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 3000");
+		camera(server, x + 0.5, ground + 6, -30, 0, 10);
+		ctx.waitTicks(40);
+		VehicleType[] front = {VehicleType.T80BVM, VehicleType.CHALLENGER2, VehicleType.BMP3, VehicleType.CV90, VehicleType.TOS1};
+		VehicleType[] back = {VehicleType.STRYKER, VehicleType.TIGR, VehicleType.HMMWV, VehicleType.BREM1, VehicleType.M88};
+		List<Integer> ids = new ArrayList<>();
+		for (int i = 0; i < front.length; i++) {
+			ids.add(spawnVehicle(server, front[i], x - 22 + i * 11, 0, 0));
+		}
+		for (int i = 0; i < back.length; i++) {
+			ids.add(spawnVehicle(server, back[i], x - 22 + i * 11, -16, 0));
+		}
+		server.runOnServer(s -> forVehicles(s.overworld(), ids, v -> v.country = -1));
+		ctx.waitTicks(30);
+		look(server, x - 30, ground + 5, 14, x - 8, ground + 1.2, -2);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("b1_armour_front");
+		look(server, x + 30, ground + 6, -32, x + 6, ground + 1.2, -12);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("b2_armour_back");
+		server.runOnServer(s -> forVehicles(s.overworld(), ids, Entity::discard));
+
+		// A recovery vehicle mends a damaged tank beside it.
+		int rx = x + 400;
+		camera(server, rx + 0.5, ground + 6, -20, 0, 10);
+		ctx.waitTicks(30);
+		int tank = spawnVehicle(server, VehicleType.T80BVM, rx, 0, 0);
+		int brem = spawnVehicle(server, VehicleType.BREM1, rx + 7, -4, 0);
+		int kitTarget = spawnVehicle(server, VehicleType.CHALLENGER2, rx - 30, 0, 0);
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(tank, brem, kitTarget), v -> {
+			v.country = -1;
+			if (v.getVehicleType() != VehicleType.BREM1) {
+				v.setHealth(v.getMaxHealth() * 0.4f);
+			}
+		}));
+		float before = server.computeOnServer(s -> s.overworld().getEntity(tank) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		look(server, rx + 14, ground + 4, 10, rx + 3, ground + 1, -2);
+		ctx.waitTicks(200);
+		ctx.takeScreenshot("b3_recovery_mends");
+		float after = server.computeOnServer(s -> s.overworld().getEntity(tank) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		float max = server.computeOnServer(s -> s.overworld().getEntity(tank) instanceof VehicleEntity v ? v.getMaxHealth() : -1f);
+		// A repair kit by hand: the player stands by the Challenger and right-clicks it.
+		server.runCommand("gamemode survival @a");
+		server.runCommand("clear @a");
+		server.runCommand("item replace entity @a hotbar.0 with airdefense:repair_kit 3");
+		ctx.runOnClient(mc -> mc.player.getInventory().setSelectedSlot(0));
+		camera(server, rx - 29.5, ground, -3.9, 0, 20);
+		ctx.waitTicks(30);
+		float kit0 = server.computeOnServer(s -> s.overworld().getEntity(kitTarget) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT);
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("b4_repair_kit");
+		float kit1 = server.computeOnServer(s -> s.overworld().getEntity(kitTarget) instanceof VehicleEntity v ? v.getHealth() : -1f);
+		int kitsLeft = server.computeOnServer(s -> s.getPlayerList().getPlayers().getFirst().getInventory().getItem(0).getCount());
+		server.runCommand("clear @a");
+		server.runCommand("gamemode spectator @a");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT armour_repair: recovery vehicle {} -> {} of {} in 10 s; repair kit {} -> {} (kits left {})",
+				before, after, max, kit0, kit1, kitsLeft);
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(tank, brem, kitTarget), Entity::discard));
+
+		// The TOS-1A: 24 thermobaric rockets at a field 400 blocks off.
+		int tx = x + 800;
+		camera(server, tx + 0.5, ground + 6, -20, 0, 10);
+		ctx.waitTicks(30);
+		int tos = spawnVehicle(server, VehicleType.TOS1, tx, 0, 0);
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(tos), v -> v.country = -1));
+		BlockPos field = new BlockPos(tx + 20, ground, 400);
+		int r0 = VehicleEntity.artilleryRounds;
+		int landed0 = com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED.size();
+		boolean fired = server.computeOnServer(s -> s.overworld().getEntity(tos) instanceof VehicleEntity v && v.commandFire(field, null, 0));
+		look(server, tx - 16, ground + 4, -12, tx, ground + 2.5, 2);
+		waitUntil(ctx, () -> VehicleEntity.artilleryRounds > r0 + 6, 400);
+		ctx.takeScreenshot("b5_tos_salvo");
+		look(server, tx + 60, ground + 22, 340, tx + 20, ground + 2, 400);
+		waitUntil(ctx, () -> com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED.size() > landed0 + 6, 700);
+		ctx.waitTicks(6);
+		ctx.takeScreenshot("b6_tos_impacts");
+		waitUntil(ctx, () -> com.stasdoto.airdefense.missile.MissileEntity.ARTY_LANDED.size() >= landed0 + 24, 500);
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("b7_tos_field");
+		double[] sp = spread(landed0, field);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT armour_tos: ordered {} fired {} landed {} mean {} blocks from the aim", fired,
+				VehicleEntity.artilleryRounds - r0, (int) sp[0], String.format(java.util.Locale.ROOT, "%.1f", sp[1]));
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(tos), Entity::discard));
+		language(ctx, "en_us");
 	}
 
 	/** A vest with these pouches in its slots (0-2 the front's lower row, 3 the chest, 4-5 the back). */

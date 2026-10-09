@@ -557,6 +557,12 @@ public class VehicleEntity extends LivingEntity {
 			return InteractionResult.PASS;
 		}
 		ItemStack stack = player.getItemInHand(hand);
+		if (stack.is(com.stasdoto.airdefense.registry.ModItems.REPAIR_KIT)) {
+			if (!level().isClientSide()) {
+				repairByHand(player, stack);
+			}
+			return InteractionResult.SUCCESS;
+		}
 		if (stack.is(com.stasdoto.airdefense.registry.ModItems.JERRYCAN)) {
 			if (!level().isClientSide()) {
 				pourFuel(player, stack);
@@ -1442,6 +1448,9 @@ public class VehicleEntity extends LivingEntity {
 				return;
 			}
 		}
+		if (vtype.repairs() && (tickCount + getId()) % 20 == 0) {
+			mendAround(level);
+		}
 		if (vtype.isLauncher()) {
 			tickLauncher(level);
 		} else if (vtype.isRadar()) {
@@ -1454,6 +1463,64 @@ public class VehicleEntity extends LivingEntity {
 			tickArmed(level);
 		} else {
 			tickDefense(level);
+		}
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// 1.31: repairs
+
+	/** How far round a recovery vehicle mends (blocks). */
+	public static final double MEND_RANGE = 14;
+	/** For the tests: health given back by recovery vehicles, by repair kits, by hangars. */
+	public static float mendedByRecovery;
+	public static float mendedByKits;
+	public static float mendedByHangars;
+
+	/**
+	 * A recovery vehicle standing still: every second its crew put 3% back on each damaged vehicle of its side within
+	 * {@link #MEND_RANGE} (not on itself - another one mends it), with sparks and the clang of tools.
+	 */
+	private void mendAround(ServerLevel level) {
+		if (stationaryTicks < 40 || !isAlive()) {
+			return;
+		}
+		com.stasdoto.airdefense.nation.Politics p = com.stasdoto.airdefense.nation.Politics.get(level.getServer());
+		List<VehicleEntity> near = level.getEntitiesOfClass(VehicleEntity.class, getBoundingBox().inflate(MEND_RANGE),
+				v -> v != this && v.isAlive() && v.getHealth() < v.getMaxHealth() && com.stasdoto.airdefense.radar.CounterBattery.sameSide(p, v.country, country));
+		for (VehicleEntity v : near) {
+			float add = Math.min(v.getMaxHealth() * 0.03f, v.getMaxHealth() - v.getHealth());
+			v.setHealth(v.getHealth() + add);
+			mendedByRecovery += add;
+			level.sendParticles(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, v.getX(), v.getY() + 1.2, v.getZ(), 6, 0.8, 0.4, 0.8, 0.05);
+			if (level.getRandom().nextInt(3) == 0) {
+				level.playSound(null, v.getX(), v.getY(), v.getZ(), net.minecraft.sounds.SoundEvents.ANVIL_USE, SoundSource.NEUTRAL, 0.35f,
+						0.8f + level.getRandom().nextFloat() * 0.4f);
+			}
+		}
+	}
+
+	/** A repair kit used on the vehicle: a quarter of its strength back. */
+	private void repairByHand(Player player, ItemStack stack) {
+		if (getHealth() >= getMaxHealth()) {
+			player.sendOverlayMessage(Component.translatable("message.airdefense.repair.full"));
+			return;
+		}
+		float add = Math.min(getMaxHealth() * 0.25f, getMaxHealth() - getHealth());
+		setHealth(getHealth() + add);
+		mendedByKits += add;
+		if (!player.getAbilities().instabuild) {
+			stack.shrink(1);
+		}
+		level().playSound(null, getX(), getY(), getZ(), net.minecraft.sounds.SoundEvents.ANVIL_USE, SoundSource.NEUTRAL, 0.6f, 1.0f);
+		player.sendOverlayMessage(Component.translatable("message.airdefense.repair.done", (int) Math.ceil(getHealth() / getMaxHealth() * 100)));
+	}
+
+	/** By a town's hangar: mended a little every second (called by the town). */
+	public void mendAtHangar(float share) {
+		if (isAlive() && getHealth() < getMaxHealth()) {
+			float add = Math.min(getMaxHealth() * share, getMaxHealth() - getHealth());
+			setHealth(getHealth() + add);
+			mendedByHangars += add;
 		}
 	}
 

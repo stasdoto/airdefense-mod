@@ -261,9 +261,11 @@ public final class Effects {
 	 * (a near miss damages a gun or a carrier; a few in a row finish it), less with distance.
 	 */
 	public static void fragments(ServerLevel level, Entity source, Vec3 at, MissileType type) {
-		double r = type.shell() ? 9 : 7;
-		float vehicle = type.shell() ? 150f : 90f;
-		float people = type.shell() ? 16f : 12f;
+		// The TOS-1A's thermobaric warhead: its blast wave crushes over a wide circle.
+		boolean tos = type == MissileType.TOS;
+		double r = type.shell() ? 9 : tos ? 13 : 7;
+		float vehicle = type.shell() ? 150f : tos ? 130f : 90f;
+		float people = type.shell() ? 16f : tos ? 30f : 12f;
 		DamageSource src = level.damageSources().explosion(source, null);
 		for (Entity e : level.getEntities(source, new AABB(at, at).inflate(r + 3))) {
 			if (!(e instanceof net.minecraft.world.entity.LivingEntity le) || !le.isAlive() || e.isSpectator()) {

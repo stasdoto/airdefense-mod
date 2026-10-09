@@ -85,6 +85,17 @@ public final class ModItems {
 	public static final Item BM21 = vehicle("bm21", VehicleType.BM21);
 	public static final Item ZOOPARK = vehicle("zoopark", VehicleType.ZOOPARK);
 	public static final Item TPQ36 = vehicle("tpq36", VehicleType.TPQ36);
+	// 1.31: more armour, recovery vehicles, the TOS-1A.
+	public static final Item T80BVM = vehicle("t80bvm", VehicleType.T80BVM);
+	public static final Item CHALLENGER2 = vehicle("challenger2", VehicleType.CHALLENGER2);
+	public static final Item BMP3 = vehicle("bmp3", VehicleType.BMP3);
+	public static final Item CV90 = vehicle("cv90", VehicleType.CV90);
+	public static final Item STRYKER = vehicle("stryker", VehicleType.STRYKER);
+	public static final Item TIGR = vehicle("tigr", VehicleType.TIGR);
+	public static final Item HMMWV = vehicle("hmmwv", VehicleType.HMMWV);
+	public static final Item BREM1 = vehicle("brem1", VehicleType.BREM1);
+	public static final Item M88 = vehicle("m88", VehicleType.M88);
+	public static final Item TOS1 = vehicle("tos1", VehicleType.TOS1);
 	public static final Item AVENGER = vehicle("avenger", VehicleType.AVENGER);
 	public static final Item MFG = vehicle("mfg", VehicleType.MFG);
 	public static final Item ZU23 = vehicle("zu23", VehicleType.ZU23);
@@ -135,6 +146,9 @@ public final class ModItems {
 	public static final Item SHELL_152 = missile(MissileType.SHELL_152);
 	public static final Item SHELL_155 = missile(MissileType.SHELL_155);
 	public static final Item GRAD_ROCKET = missile(MissileType.GRAD);
+	public static final Item TOS_ROCKET = missile(MissileType.TOS);
+	/** 1.31: right-click a vehicle with it - a quarter of its strength back. */
+	public static final Item REPAIR_KIT = register("repair_kit", Item::new, new Item.Properties().stacksTo(16));
 
 	// Missile items: what the flying entities look like (their 3D model), also usable as decoration in item frames.
 	public static final Item ISKANDER_MISSILE = missile(MissileType.ISKANDER);
@@ -252,6 +266,16 @@ public final class ModItems {
 				output.accept(BM21);
 				output.accept(ZOOPARK);
 				output.accept(TPQ36);
+				output.accept(T80BVM);
+				output.accept(CHALLENGER2);
+				output.accept(BMP3);
+				output.accept(CV90);
+				output.accept(STRYKER);
+				output.accept(TIGR);
+				output.accept(HMMWV);
+				output.accept(BREM1);
+				output.accept(M88);
+				output.accept(TOS1);
 				output.accept(AVENGER);
 				output.accept(MFG);
 				output.accept(ZU23);
@@ -289,6 +313,8 @@ public final class ModItems {
 				output.accept(SHELL_152);
 				output.accept(SHELL_155);
 				output.accept(GRAD_ROCKET);
+				output.accept(TOS_ROCKET);
+				output.accept(REPAIR_KIT);
 				output.accept(MANPADS);
 				output.accept(FACTORY_KIT);
 				output.accept(FACTORY_CONTROLLER);

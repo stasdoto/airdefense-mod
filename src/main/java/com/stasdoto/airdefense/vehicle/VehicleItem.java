@@ -73,7 +73,7 @@ public class VehicleItem extends Item {
 	@Override
 	public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
 		tooltip.accept(Component.translatable("item.airdefense.vehicle.hint").withStyle(ChatFormatting.GRAY));
-		tooltip.accept(Component.translatable(type.isArtillery() ? "item.airdefense.vehicle.hint_artillery"
+		tooltip.accept(Component.translatable(type.repairs() ? "item.airdefense.vehicle.hint_recovery" : type.isArtillery() ? "item.airdefense.vehicle.hint_artillery"
 				: type.isCounterBattery() ? "item.airdefense.vehicle.hint_cb" : type.isLauncher() ? "item.airdefense.vehicle.hint_launcher"
 				: type.isTruck() ? "item.airdefense.vehicle.hint_truck" : type.isAir() ? "item.airdefense.vehicle.hint_air"
 				: type.isRadar() ? "item.airdefense.vehicle.hint_radar" : type.boat ? "item.airdefense.vehicle.hint_boat"

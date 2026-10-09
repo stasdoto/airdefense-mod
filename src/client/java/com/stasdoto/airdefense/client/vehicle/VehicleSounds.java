@@ -81,7 +81,8 @@ public final class VehicleSounds {
 		if (t.air == VehicleType.PLANE) {
 			return ModSounds.JET;
 		}
-		if (t == VehicleType.ABRAMS) {
+		if (t == VehicleType.ABRAMS || t == VehicleType.T80BVM) {
+			// Gas turbines: the Abrams and the T-80.
 			return ModSounds.ENGINE_TURBINE;
 		}
 		return t.tracked() ? ModSounds.ENGINE_TRACKED : ModSounds.ENGINE_TRUCK;
@@ -173,7 +174,7 @@ public final class VehicleSounds {
 						pitch = 0.55f + 0.35f * spool + 0.35f * thr;
 					} else {
 						volume = level * 1.2f;
-						pitch = t == VehicleType.ABRAMS ? 0.8f + level * 0.45f : 0.62f + level * 0.95f;
+						pitch = t == VehicleType.ABRAMS ? 0.8f + level * 0.45f : t == VehicleType.T80BVM ? 0.9f + level * 0.5f : 0.62f + level * 0.95f;
 						if (t.boat) {
 							pitch *= 1.15f;
 						}

@@ -212,6 +212,11 @@ public final class Arsenals extends SavedData {
 				// 1.30: an artillery battalion and its counter-battery radar.
 				kit.addAll(east ? List.of(VehicleType.MSTA_S, VehicleType.MSTA_S, VehicleType.BM21, VehicleType.ZOOPARK)
 						: List.of(VehicleType.M109, VehicleType.M109, VehicleType.TPQ36));
+				// 1.31: a recovery vehicle mends the garrison's vehicles; the eastern capitals keep a TOS-1A.
+				kit.add(east ? VehicleType.BREM1 : VehicleType.M88);
+				if (east) {
+					kit.add(VehicleType.TOS1);
+				}
 			} else if (s.city >= 0) {
 				kit.add(east ? (r.nextBoolean() ? VehicleType.BUK : VehicleType.TOR) : (r.nextBoolean() ? VehicleType.NASAMS : VehicleType.IRIS_T));
 				kit.add(east ? VehicleType.PANTSIR : VehicleType.GEPARD);

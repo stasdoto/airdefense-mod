@@ -433,15 +433,29 @@ public final class War {
 		// The vehicles: by how many men there are and which side's kit.
 		boolean east = SoldierEntity.bloc(ai.id) == com.stasdoto.airdefense.weapon.GunType.Bloc.EAST;
 		List<com.stasdoto.airdefense.vehicle.VehicleType> kit = new ArrayList<>();
+		// 1.31: each country has its own pick of armour (by its id, so it stays the same), the newer kit too.
+		java.util.Random pick = new java.util.Random(ai.id * 7349L + 11);
+		com.stasdoto.airdefense.vehicle.VehicleType car = east ? pick(pick, com.stasdoto.airdefense.vehicle.VehicleType.BTR82,
+				com.stasdoto.airdefense.vehicle.VehicleType.TIGR) : pick(pick, com.stasdoto.airdefense.vehicle.VehicleType.MAXXPRO,
+				com.stasdoto.airdefense.vehicle.VehicleType.HMMWV, com.stasdoto.airdefense.vehicle.VehicleType.STRYKER);
+		com.stasdoto.airdefense.vehicle.VehicleType ifv = east ? pick(pick, com.stasdoto.airdefense.vehicle.VehicleType.BMP2,
+				com.stasdoto.airdefense.vehicle.VehicleType.BMP3) : pick(pick, com.stasdoto.airdefense.vehicle.VehicleType.BRADLEY,
+				com.stasdoto.airdefense.vehicle.VehicleType.CV90);
+		com.stasdoto.airdefense.vehicle.VehicleType tank = east ? pick(pick, com.stasdoto.airdefense.vehicle.VehicleType.T72,
+				com.stasdoto.airdefense.vehicle.VehicleType.T90, com.stasdoto.airdefense.vehicle.VehicleType.T80BVM)
+				: pick(pick, com.stasdoto.airdefense.vehicle.VehicleType.LEOPARD2, com.stasdoto.airdefense.vehicle.VehicleType.ABRAMS,
+				com.stasdoto.airdefense.vehicle.VehicleType.CHALLENGER2);
+		com.stasdoto.airdefense.vehicle.VehicleType apc = east ? com.stasdoto.airdefense.vehicle.VehicleType.BTR82
+				: pick(pick, com.stasdoto.airdefense.vehicle.VehicleType.M113, com.stasdoto.airdefense.vehicle.VehicleType.STRYKER);
 		if (men <= 4) {
-			kit.add(east ? com.stasdoto.airdefense.vehicle.VehicleType.BTR82 : com.stasdoto.airdefense.vehicle.VehicleType.MAXXPRO);
+			kit.add(car);
 		} else if (men <= 8) {
-			kit.add(east ? com.stasdoto.airdefense.vehicle.VehicleType.BMP2 : com.stasdoto.airdefense.vehicle.VehicleType.BRADLEY);
+			kit.add(ifv);
 			kit.add(com.stasdoto.airdefense.vehicle.VehicleType.SUPPLY_TRUCK);
 		} else {
-			kit.add(east ? com.stasdoto.airdefense.vehicle.VehicleType.T72 : com.stasdoto.airdefense.vehicle.VehicleType.LEOPARD2);
-			kit.add(east ? com.stasdoto.airdefense.vehicle.VehicleType.BMP2 : com.stasdoto.airdefense.vehicle.VehicleType.BRADLEY);
-			kit.add(east ? com.stasdoto.airdefense.vehicle.VehicleType.BTR82 : com.stasdoto.airdefense.vehicle.VehicleType.M113);
+			kit.add(tank);
+			kit.add(ifv);
+			kit.add(apc);
 			kit.add(com.stasdoto.airdefense.vehicle.VehicleType.SUPPLY_TRUCK);
 		}
 		int left = men;
@@ -454,7 +468,8 @@ public final class War {
 			double[] ahead = ap.at(Math.max(0, s - 6));
 			BlockPos at = BlockPos.containing(pt[0], 0, pt[1]);
 			int seats = type == com.stasdoto.airdefense.vehicle.VehicleType.SUPPLY_TRUCK ? 10 : type.isArmed() && type.weapon.cannon() ? 0
-					: type == com.stasdoto.airdefense.vehicle.VehicleType.MAXXPRO ? 6 : 8;
+					: type == com.stasdoto.airdefense.vehicle.VehicleType.MAXXPRO || type == com.stasdoto.airdefense.vehicle.VehicleType.TIGR ? 6
+					: type == com.stasdoto.airdefense.vehicle.VehicleType.HMMWV ? 4 : 8;
 			int n = Math.min(left, seats);
 			left -= n;
 			// From where it stands, along the road behind the ones in front.
@@ -485,6 +500,11 @@ public final class War {
 			AirDefense.LOGGER.info("[airdefense] {} sends a column ({} vehicles, {} men) against {}", ai.name, sent, men, target.name);
 		}
 		return sent;
+	}
+
+	@SafeVarargs
+	private static <T> T pick(java.util.Random r, T... options) {
+		return options[r.nextInt(options.length)];
 	}
 
 	/** An enemy squad turns up 50-70 blocks from the village (on the side of their own land) and heads for its flag. */

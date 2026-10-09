@@ -105,6 +105,11 @@ public final class Economy {
 				hangarStep(level, p, s);
 				Perf.over("hangar in " + s.name, p0);
 			}
+			if (Math.floorMod(t + s.id, 20) == 17 && e.count(BuildingType.HANGAR) > 0) {
+				p0 = System.nanoTime();
+				hangarRepair(level, s);
+				Perf.over("hangar repairs in " + s.name, p0);
+			}
 			if (Math.floorMod(t + s.id, 40) == 23 && e.count(BuildingType.BARRACKS) > 0) {
 				p0 = System.nanoTime();
 				barracksHeal(level, s);
@@ -943,6 +948,15 @@ public final class Economy {
 			case BM21 -> new int[]{20, 40, 120, 80};
 			case ZOOPARK -> new int[]{20, 40, 130, 80};
 			case TPQ36 -> new int[]{20, 30, 110, 70};
+			case T80BVM -> new int[]{30, 60, 210, 120};
+			case CHALLENGER2 -> new int[]{30, 70, 240, 135};
+			case BMP3 -> new int[]{30, 40, 130, 75};
+			case CV90 -> new int[]{30, 40, 135, 75};
+			case STRYKER -> new int[]{20, 30, 100, 60};
+			case TIGR -> new int[]{20, 15, 60, 40};
+			case HMMWV -> new int[]{20, 10, 50, 35};
+			case BREM1, M88 -> new int[]{30, 50, 170, 100};
+			case TOS1 -> new int[]{30, 60, 200, 120};
 		};
 	}
 
@@ -1212,6 +1226,19 @@ public final class Economy {
 			owner.sendOverlayMessage(Component.translatable("nation.airdefense.eco.born", s.name));
 		}
 		return true;
+	}
+
+	/** 1.31: the town's vehicles standing by its hangar get mended a little every second (1% of their strength). */
+	private static void hangarRepair(ServerLevel level, Settlement s) {
+		for (Building b : s.eco.buildings) {
+			if (!b.done || b.type != BuildingType.HANGAR || !level.isLoaded(b.middle())) {
+				continue;
+			}
+			for (VehicleEntity v : level.getEntitiesOfClass(VehicleEntity.class, new AABB(b.middle()).inflate(24, 8, 24),
+					v -> v.isAlive() && v.getHealth() < v.getMaxHealth() && (v.country == s.country || v.country == -1 && owned(Politics.get(level.getServer()), s)))) {
+				v.mendAtHangar(0.01f);
+			}
+		}
 	}
 
 	/** Soldiers and guards near a barracks get their wounds seen to. */

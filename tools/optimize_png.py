@@ -16,8 +16,9 @@ MIN = int(sys.argv[1]) if len(sys.argv) > 1 else 24
 def main():
     before = after = 0
     for dirpath, _, files in os.walk(ROOT):
-        # The guns are seen up close in the hand: they keep their full colour.
-        if dirpath.replace('\\', '/').endswith('textures/item/gun'):
+        # The guns are seen up close in the hand, the helmets on the head: they keep their full colour.
+        d = dirpath.replace('\\', '/')
+        if d.endswith('textures/item/gun') or d.endswith('textures/entity/gear'):
             continue
         for f in files:
             if not f.endswith('.png'):

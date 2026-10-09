@@ -55,7 +55,10 @@ public enum Product {
 	// 1.30: artillery rounds (one item = one shell or rocket).
 	SHELL_152("shell_152", 240, 1, 4, cost(Items.IRON_INGOT, 4, Items.GUNPOWDER, 3, Items.COPPER_INGOT, 1)),
 	SHELL_155("shell_155", 240, 1, 4, cost(Items.IRON_INGOT, 4, Items.GUNPOWDER, 3, Items.COPPER_INGOT, 1)),
-	GRAD_ROCKET("grad_rocket", 300, 1, 5, cost(Items.IRON_INGOT, 3, Items.GUNPOWDER, 4, Items.REDSTONE, 1));
+	GRAD_ROCKET("grad_rocket", 300, 1, 5, cost(Items.IRON_INGOT, 3, Items.GUNPOWDER, 4, Items.REDSTONE, 1)),
+	// 1.31: the TOS-1A's thermobaric rockets, and repair kits.
+	TOS_ROCKET("tos_rocket", 400, 1, 4, cost(Items.IRON_INGOT, 4, Items.GUNPOWDER, 6, Items.BLAZE_POWDER, 1)),
+	REPAIR_KIT("repair_kit", 200, 1, 2, cost(Items.IRON_INGOT, 4, Items.REDSTONE, 1));
 
 	public record Cost(Item item, int count) {
 	}
@@ -98,6 +101,10 @@ public enum Product {
 			case MSTA_S -> SHELL_152;
 			case M109 -> SHELL_155;
 			case BM21 -> GRAD_ROCKET;
+			case TOS1 -> TOS_ROCKET;
+			case T80BVM, CHALLENGER2 -> SHELL_TANK;
+			case BMP3, CV90 -> AMMO_30;
+			case STRYKER, TIGR, HMMWV, BREM1, M88 -> AMMO_127;
 			case PATRIOT -> PAC3;
 			case IRIS_T -> IRIST;
 			case NASAMS -> AMRAAM;
