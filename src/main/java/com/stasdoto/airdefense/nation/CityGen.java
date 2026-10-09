@@ -332,7 +332,8 @@ public final class CityGen {
 					}
 					if (st.is(BlockTags.LEAVES) || st.is(BlockTags.LOGS) || st.is(Blocks.VINE) || st.is(Blocks.BEE_NEST) || st.is(Blocks.SNOW)
 							|| st.is(Blocks.RED_MUSHROOM_BLOCK) || st.is(Blocks.BROWN_MUSHROOM_BLOCK) || st.is(Blocks.MUSHROOM_STEM)) {
-						chunk.setBlockState(pos, AIR, 0);
+						// No side effects: a bee nest's block entity would be looked up through the level - the very chunk being made (a deadlock).
+						chunk.setBlockState(pos, AIR, Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
 					}
 				}
 			}
