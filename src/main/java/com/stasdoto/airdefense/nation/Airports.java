@@ -228,7 +228,7 @@ public final class Airports {
 			}
 		}
 		int sea = t.sea();
-		// Every candidate site first roughly (six samples), then the three likeliest carefully (thirty-six).
+		// Every candidate site first roughly (its four corners), then the two likeliest more carefully (eighteen samples).
 		List<double[]> rough = new ArrayList<>();
 		for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
 			// A highway leaves this way (to the next capital, to a satellite): the airport only off to one side of it, clear
@@ -251,7 +251,7 @@ public final class Airports {
 					// The fence on the town side is gap blocks out from the edge; the threshold is MID (+ shift) along.
 					int sx = e[0] + d[0] * (gap + V1) - ux * (MID + shift);
 					int sz = e[1] + d[1] * (gap + V1) - uz * (MID + shift);
-					double score = sample(seed, t, c, sx, sz, ux, uz, vx, vz, 2, 1, null);
+					double score = sample(seed, t, c, sx, sz, ux, uz, vx, vz, 1, 1, null);
 					if (score < Double.MAX_VALUE) {
 						rough.add(new double[]{score + gap * 0.2 + Math.abs(shift) * 0.1, sx, sz, ux, uz, vx, vz});
 					}
@@ -261,10 +261,10 @@ public final class Airports {
 		rough.sort((p, q) -> Double.compare(p[0], q[0]));
 		Airport best = null;
 		double bestScore = Double.MAX_VALUE;
-		for (int i = 0; i < Math.min(3, rough.size()); i++) {
+		for (int i = 0; i < Math.min(2, rough.size()); i++) {
 			double[] r = rough.get(i);
 			int[] level = new int[1];
-			double score = sample(seed, t, c, (int) r[1], (int) r[2], (int) r[3], (int) r[4], (int) r[5], (int) r[6], 8, 3, level);
+			double score = sample(seed, t, c, (int) r[1], (int) r[2], (int) r[3], (int) r[4], (int) r[5], (int) r[6], 5, 2, level);
 			if (score < bestScore) {
 				bestScore = score;
 				best = new Airport(c, (int) r[1], (int) r[2], (int) r[3], (int) r[4], (int) r[5], (int) r[6], Math.max(sea + 2, level[0]));
@@ -285,6 +285,17 @@ public final class Airports {
 	private static double sample(long seed, Cities.Terrain t, Cities.City c, int sx, int sz, int ux, int uz, int vx, int vz, int nu, int nv,
 			@Nullable int[] level) {
 		int sea = t.sea();
+		// The towns first (no terrain samples needed: those are dear), then the ground.
+		for (int i = 0; i <= 4; i++) {
+			for (int j = 0; j <= 2; j++) {
+				int[] w = world(sx, sz, ux, uz, vx, vz, U0 + (U1 - U0) * i / 4, V0 + (V1 - V0) * j / 2);
+				for (Cities.City o : Cities.citiesAround(seed, t, w[0], w[1])) {
+					if (o.outside(w[0], w[1]) < (o == c ? 30 : 60)) {
+						return no(o == c ? "own town" : "other town");
+					}
+				}
+			}
+		}
 		int[] hs = new int[(nu + 1) * (nv + 1)];
 		int k = 0;
 		int wet = 0;
@@ -294,11 +305,6 @@ public final class Airports {
 				int y = t.top(w[0], w[1]);
 				if (y <= sea && ++wet > Math.max(0, hs.length / 12)) {
 					return no("water");
-				}
-				for (Cities.City o : Cities.citiesAround(seed, t, w[0], w[1])) {
-					if (o.outside(w[0], w[1]) < (o == c ? 30 : 60)) {
-						return no(o == c ? "own town" : "other town");
-					}
 				}
 				hs[k++] = y;
 			}
