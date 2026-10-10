@@ -130,6 +130,11 @@ public final class Hamlets {
 						REJECTED[2]++;
 					}
 				}
+				if (Railways.close(seed, t, hx, hz, 60)) {
+					// 1.39: clear of the railways.
+					clash = true;
+					REJECTED[2]++;
+				}
 				Depots.Depot depot = c.depot(seed, t);
 				if (depot != null && depot.out(hx, hz) < 75) {
 					clash = true;
@@ -146,6 +151,7 @@ public final class Hamlets {
 				}
 				Hamlet h = new Hamlet(c, out.size(), hx, hz, Math.max(t.sea() + 1, y));
 				layout(t, h, new Random(h.seed()));
+				Railways.raiseRoad(seed, t, h.road);
 				out.add(h);
 				break;
 			}

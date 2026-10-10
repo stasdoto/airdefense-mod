@@ -252,6 +252,225 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		if (scene("realcity")) {
 			realCity(ctx);
 		}
+		if (scene("rail")) {
+			rail(ctx);
+		}
+	}
+
+	/**
+	 * Looks at the track block {x, y, z, dir x, dir z} from {@code dist} blocks off to one side ({@code side}: 1 left of
+	 * the way, -1 right) and {@code back} blocks back along it, at least {@code up} above the rails and 3 above the ground.
+	 */
+	private static void railCam(ClientGameTestContext ctx, TestServerContext server, int[] p, int side, double dist, double up, double back) {
+		double ax = -p[4] * side;
+		double az = p[3] * side;
+		double al = Math.hypot(ax, az);
+		double fx = p[0] + 0.5 + ax / al * dist - p[3] * back;
+		double fz = p[2] + 0.5 + az / al * dist - p[4] * back;
+		look(server, fx, p[1] + up, fz, p[0] + 0.5, p[1] + 1, p[2] + 0.5);
+		ctx.waitTicks(140);
+		int ground = server.computeOnServer(s -> s.overworld().getHeight(Heightmap.Types.MOTION_BLOCKING, (int) Math.floor(fx), (int) Math.floor(fz)));
+		look(server, fx, Math.max(p[1] + up, ground + 3), fz, p[0] + 0.5 + p[3] * 4, p[1] + 1.5, p[2] + 0.5 + p[4] * 4);
+		ctx.runOnClient(mc -> mc.gui.hud.getChat().clearMessages(false));
+		ctx.waitTicks(30);
+	}
+
+	/** 1.39: the railway out of the capital in a normal world - the station, a bridge, a tunnel, the trains on it. */
+	private void rail(ClientGameTestContext ctx) {
+		try (TestSingleplayerContext sp = ctx.worldBuilder().setUseConsistentSettings(false).adjustSettings(st -> st.setSeed("airdefense")).create()) {
+			TestServerContext server = sp.getServer();
+			language(ctx, "ru_ru");
+			server.runCommand("gamemode spectator @a");
+			server.runCommand("time set 6000");
+			server.runCommand("weather clear");
+			server.runCommand("gamerule advance_time false");
+			server.runCommand("gamerule advance_weather false");
+			// The line's points to look at: {x, y, z, dir x, dir z} for the station, a bridge, a tunnel mouth, a diagonal, the open line.
+			int[][] spots = server.computeOnServer(s -> {
+				ServerLevel l = s.overworld();
+				var t = com.stasdoto.airdefense.nation.Cities.terrain(l);
+				long t0 = System.nanoTime();
+				java.util.List<com.stasdoto.airdefense.nation.Railways.Line> lines = new java.util.ArrayList<>();
+				for (int r = 0; r <= 2 && lines.isEmpty(); r++) {
+					for (int cx = -r; cx <= r && lines.isEmpty(); cx++) {
+						for (int cz = -r; cz <= r && lines.isEmpty(); cz++) {
+							if (Math.max(Math.abs(cx), Math.abs(cz)) == r) {
+								lines.addAll(com.stasdoto.airdefense.nation.Railways.lines(l.getSeed(), t, cx, cz));
+							}
+						}
+					}
+				}
+				AirDefense.LOGGER.info("[airdefense-test] RESULT rail_plan: {} lines planned, {} given up, in {} ms (the test's own call); planning took {} ms "
+						+ "in all; roads raised over a line {}; ways given up: {}", com.stasdoto.airdefense.nation.Railways.planned,
+						com.stasdoto.airdefense.nation.Railways.refused, (System.nanoTime() - t0) / 1_000_000,
+						com.stasdoto.airdefense.nation.Railways.planNanos / 1_000_000, com.stasdoto.airdefense.nation.Railways.bridged,
+						com.stasdoto.airdefense.nation.Railways.WHY);
+				if (lines.isEmpty()) {
+					return null;
+				}
+				var line = lines.getFirst();
+				int n = line.length();
+				int bridges = 0;
+				int tunnels = 0;
+				int diag = -1;
+				int bridge = -1;
+				int bestBridge = 0;
+				int tunnel = -1;
+				int run = 0;
+				for (int i = 0; i < n; i++) {
+					int kd = line.kind(t, i);
+					if (kd == 1) {
+						bridges++;
+						run++;
+						if (run > bestBridge) {
+							bestBridge = run;
+							bridge = i - run / 2;
+						}
+					} else {
+						run = 0;
+					}
+					if (kd == 2) {
+						tunnels++;
+						if (tunnel < 0 && i > 8) {
+							tunnel = i - 8;
+						}
+					}
+					if (diag < 0 && (line.dir[i] & 1) == 1 && i + 20 < n && (line.dir[i + 20] & 1) == 1) {
+						diag = i + 10;
+					}
+				}
+				AirDefense.LOGGER.info("[airdefense-test] RESULT rail_line: {} blocks from {} {} to {} {}, {} on bridges, {} in tunnels, platform side {}", n,
+						line.xs[0], line.zs[0], line.xs[n - 1], line.zs[n - 1], bridges, tunnels, line.platform);
+				// A road over the line on its bridge.
+				int under = -1;
+				var probe = new com.stasdoto.airdefense.nation.Cities.Road.Spot();
+				for (int i = 0; i < n && under < 0; i += 2) {
+					for (var r : com.stasdoto.airdefense.nation.Cities.roadsNear(l.getSeed(), t, line.xs[i], line.zs[i])) {
+						if (r.locate(line.xs[i] + 0.5, line.zs[i] + 0.5, r.half + 1, probe) && probe.along > 0 && probe.along < r.length
+								&& r.height(probe.along) >= line.y(i) + 6) {
+							under = i;
+							break;
+						}
+					}
+				}
+				// The roundabout on the highway nearest the first station.
+				int[] ring = null;
+				double best = 1e9;
+				for (var r : com.stasdoto.airdefense.nation.Cities.roadsNear(l.getSeed(), t, line.xs[0], line.zs[0])) {
+					if (!r.highway) {
+						continue;
+					}
+					for (double at : new double[]{30, r.length - 30}) {
+						double[] c = r.pointAt(at);
+						double d = Math.hypot(c[0] - line.xs[0], c[1] - line.zs[0]);
+						if (d < best) {
+							best = d;
+							ring = new int[]{(int) Math.floor(c[0]), (int) Math.floor(r.height(at)), (int) Math.floor(c[1]), 1, 0, 1};
+						}
+					}
+				}
+				int[] pick = {12, bridge, tunnel, diag, n / 3, under};
+				int[][] out = new int[pick.length][];
+				for (int k = 0; k < pick.length; k++) {
+					int i = pick[k];
+					if (i < 0) {
+						continue;
+					}
+					int j = Math.min(n - 1, i + 1);
+					out[k] = new int[]{line.xs[i], line.y(i), line.zs[i], line.xs[j] - line.xs[i], line.zs[j] - line.zs[i], line.platform};
+				}
+				int[][] all = java.util.Arrays.copyOf(out, out.length + 1);
+				all[out.length] = ring;
+				return all;
+			});
+			if (spots == null) {
+				return;
+			}
+			String[] names = {"rl1_station", "rl2_bridge", "rl3_tunnel", "rl4_diagonal", "rl5_line", "rl9_road_over", "rl10_roundabout"};
+			for (int k = 0; k < spots.length; k++) {
+				int[] p = spots[k];
+				if (p == null) {
+					continue;
+				}
+				// From the side (the platform side at the station), back along the line a little, above the trees.
+				// The station and the tunnel mouth from above the line, looking along it (they lie in cuttings).
+				int side = k == 0 ? p[5] : 1;
+				boolean along = k == 0 || k == 2;
+				if (k == 6) {
+					// The roundabout from straight above.
+					camera(server, p[0] + 0.5, p[1] + 34, p[2] + 0.5, 0, 90);
+					ctx.waitTicks(140);
+					ctx.runOnClient(mc -> mc.gui.hud.getChat().clearMessages(false));
+					ctx.waitTicks(20);
+				} else {
+					railCam(ctx, server, p, side, along ? 4 : k == 1 ? 40 : 22, along ? 16 : 12, along ? 22 : 18);
+				}
+				ctx.takeScreenshot(names[k]);
+			}
+			AirDefense.LOGGER.info("[airdefense-test] RESULT rail_built: {} track blocks laid, {} chunks made, avg {} us per chunk; client saw {} track blocks",
+					server.computeOnServer(s -> com.stasdoto.airdefense.nation.Rails.laid()), com.stasdoto.airdefense.nation.CityGen.chunks,
+					com.stasdoto.airdefense.nation.CityGen.chunks == 0 ? 0 : com.stasdoto.airdefense.nation.CityGen.nanos / 1000 / com.stasdoto.airdefense.nation.CityGen.chunks,
+					ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.Trains.indexed()));
+			// The trains: stand by the open line and wait for one of each.
+			int[] p = spots[4];
+			double ax = -p[4];
+			double az = p[3];
+			double al = Math.hypot(ax, az);
+			ax /= al;
+			az /= al;
+			String[] trainNames = {"rl6_electric", "rl7_goods"};
+			for (int kind = 1; kind <= 2; kind++) {
+				int k = kind;
+				railCam(ctx, server, p, 1, 18, 7, 0);
+				ctx.runOnClient(mc -> {
+					for (var tr : new java.util.ArrayList<>(com.stasdoto.airdefense.client.nation.Trains.ALL)) {
+						tr.done = true;
+						tr.stuck = 1000;
+					}
+					com.stasdoto.airdefense.client.nation.Trains.forceKind = k;
+					com.stasdoto.airdefense.client.nation.Trains.forceSpawn = true;
+				});
+				int waited = waitUntil(ctx, () -> ctx.computeOnClient(mc -> {
+					for (var tr : com.stasdoto.airdefense.client.nation.Trains.ALL) {
+						if (tr.pose.length > 1 && tr.electric == (k == 1)) {
+							double[] h = tr.pose[1];
+							return Math.hypot(h[0] - p[0], h[2] - p[2]) < 14;
+						}
+					}
+					return false;
+				}), 1500);
+				ctx.takeScreenshot(trainNames[kind - 1]);
+				AirDefense.LOGGER.info("[airdefense-test] RESULT rail_train_{}: came by after {} ticks; trains made {}, taken away {}, hoots {}",
+						kind == 1 ? "electric" : "goods", waited, ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.Trains.made),
+						ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.Trains.gone),
+						ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.Trains.hoots));
+			}
+			// An electric train at the station: it runs in, stops, sets off back.
+			int[] st = spots[0];
+			double sx = -st[4];
+			double sz = st[3];
+			double sl = Math.hypot(sx, sz);
+			railCam(ctx, server, st, st[5], 6, 14, 26);
+			ctx.runOnClient(mc -> {
+				for (var tr : new java.util.ArrayList<>(com.stasdoto.airdefense.client.nation.Trains.ALL)) {
+					tr.done = true;
+					tr.stuck = 1000;
+				}
+				com.stasdoto.airdefense.client.nation.Trains.forceKind = 1;
+				com.stasdoto.airdefense.client.nation.Trains.forceSpawn = true;
+			});
+			int stopped = waitUntil(ctx, () -> ctx.computeOnClient(mc -> {
+				for (var tr : com.stasdoto.airdefense.client.nation.Trains.ALL) {
+					if (tr.stops > 0 || tr.waiting > 0) {
+						return true;
+					}
+				}
+				return false;
+			}), 2400);
+			ctx.waitTicks(20);
+			ctx.takeScreenshot("rl8_at_the_station");
+			AirDefense.LOGGER.info("[airdefense-test] RESULT rail_station: an electric train stopped at the station after {} ticks", stopped);
+		}
 	}
 
 	/** A normal world (hills, rivers, forests): the capital of the first country as the world generator builds it. */

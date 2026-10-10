@@ -1,0 +1,475 @@
+{
+ "parent": "minecraft:block/block",
+ "ambientocclusion": false,
+ "textures": {
+  "ballast": "airdefense:block/street/ballast",
+  "sleeper": "airdefense:block/street/sleeper",
+  "rail_steel": "airdefense:block/street/rail_steel",
+  "particle": "airdefense:block/street/ballast"
+ },
+ "elements": [
+  {
+   "from": [
+    -16,
+    0,
+    0.0
+   ],
+   "to": [
+    0,
+    2,
+    16.0
+   ],
+   "faces": {
+    "up": {
+     "texture": "#ballast",
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ]
+    },
+    "north": {
+     "texture": "#ballast",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    },
+    "south": {
+     "texture": "#ballast",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    },
+    "east": {
+     "texture": "#ballast",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    },
+    "west": {
+     "texture": "#ballast",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    0,
+    0,
+    0.0
+   ],
+   "to": [
+    16,
+    2,
+    16.0
+   ],
+   "faces": {
+    "up": {
+     "texture": "#ballast",
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ]
+    },
+    "north": {
+     "texture": "#ballast",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    },
+    "south": {
+     "texture": "#ballast",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    16,
+    0,
+    0.0
+   ],
+   "to": [
+    32,
+    2,
+    16.0
+   ],
+   "faces": {
+    "up": {
+     "texture": "#ballast",
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ]
+    },
+    "north": {
+     "texture": "#ballast",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    },
+    "south": {
+     "texture": "#ballast",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    },
+    "east": {
+     "texture": "#ballast",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    },
+    "west": {
+     "texture": "#ballast",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    -9,
+    2,
+    2.5
+   ],
+   "to": [
+    25,
+    3.5,
+    5.5
+   ],
+   "faces": {
+    "up": {
+     "texture": "#sleeper",
+     "uv": [
+      0,
+      0,
+      16,
+      3.0
+     ]
+    },
+    "north": {
+     "texture": "#sleeper",
+     "uv": [
+      0,
+      0,
+      16,
+      1.5
+     ]
+    },
+    "south": {
+     "texture": "#sleeper",
+     "uv": [
+      0,
+      0,
+      16,
+      1.5
+     ]
+    },
+    "east": {
+     "texture": "#sleeper",
+     "uv": [
+      0,
+      0,
+      3.0,
+      1.5
+     ]
+    },
+    "west": {
+     "texture": "#sleeper",
+     "uv": [
+      0,
+      0,
+      3.0,
+      1.5
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    -9,
+    2,
+    10.5
+   ],
+   "to": [
+    25,
+    3.5,
+    13.5
+   ],
+   "faces": {
+    "up": {
+     "texture": "#sleeper",
+     "uv": [
+      0,
+      0,
+      16,
+      3.0
+     ]
+    },
+    "north": {
+     "texture": "#sleeper",
+     "uv": [
+      0,
+      0,
+      16,
+      1.5
+     ]
+    },
+    "south": {
+     "texture": "#sleeper",
+     "uv": [
+      0,
+      0,
+      16,
+      1.5
+     ]
+    },
+    "east": {
+     "texture": "#sleeper",
+     "uv": [
+      0,
+      0,
+      3.0,
+      1.5
+     ]
+    },
+    "west": {
+     "texture": "#sleeper",
+     "uv": [
+      0,
+      0,
+      3.0,
+      1.5
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    -4,
+    3.5,
+    0.0
+   ],
+   "to": [
+    -2,
+    6,
+    16.0
+   ],
+   "faces": {
+    "up": {
+     "texture": "#rail_steel",
+     "uv": [
+      6,
+      0,
+      10,
+      16
+     ]
+    },
+    "east": {
+     "texture": "#rail_steel",
+     "uv": [
+      0,
+      0,
+      16,
+      2.5
+     ]
+    },
+    "west": {
+     "texture": "#rail_steel",
+     "uv": [
+      0,
+      0,
+      16,
+      2.5
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    18,
+    3.5,
+    0.0
+   ],
+   "to": [
+    20,
+    6,
+    16.0
+   ],
+   "faces": {
+    "up": {
+     "texture": "#rail_steel",
+     "uv": [
+      6,
+      0,
+      10,
+      16
+     ]
+    },
+    "east": {
+     "texture": "#rail_steel",
+     "uv": [
+      0,
+      0,
+      16,
+      2.5
+     ]
+    },
+    "west": {
+     "texture": "#rail_steel",
+     "uv": [
+      0,
+      0,
+      16,
+      2.5
+     ]
+    }
+   }
+  }
+ ],
+ "display": {
+  "gui": {
+   "rotation": [
+    30,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0.0,
+    0
+   ],
+   "scale": [
+    0.45,
+    0.45,
+    0.45
+   ]
+  },
+  "ground": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    3,
+    0
+   ],
+   "scale": [
+    0.25,
+    0.25,
+    0.25
+   ]
+  },
+  "fixed": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.36000000000000004,
+    0.36000000000000004,
+    0.36000000000000004
+   ]
+  },
+  "thirdperson_righthand": {
+   "rotation": [
+    75,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    2.5,
+    0
+   ],
+   "scale": [
+    0.27,
+    0.27,
+    0.27
+   ]
+  },
+  "firstperson_righthand": {
+   "rotation": [
+    0,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.28800000000000003,
+    0.28800000000000003,
+    0.28800000000000003
+   ]
+  },
+  "firstperson_lefthand": {
+   "rotation": [
+    0,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.28800000000000003,
+    0.28800000000000003,
+    0.28800000000000003
+   ]
+  }
+ }
+}

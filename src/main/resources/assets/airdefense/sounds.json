@@ -973,5 +973,36 @@
       }
     ],
     "subtitle": "subtitles.airdefense.service_siren"
+  },
+  "train_horn": {
+    "sounds": [
+      {
+        "name": "airdefense:train_horn",
+        "attenuation_distance": 200
+      }
+    ],
+    "subtitle": "subtitles.airdefense.train_horn"
+  },
+  "loco_horn": {
+    "sounds": [
+      {
+        "name": "airdefense:loco_horn",
+        "attenuation_distance": 220
+      }
+    ],
+    "subtitle": "subtitles.airdefense.train_horn"
+  },
+  "train_clack": {
+    "sounds": [
+      {
+        "name": "airdefense:train_clack_0",
+        "attenuation_distance": 64
+      },
+      {
+        "name": "airdefense:train_clack_1",
+        "attenuation_distance": 64
+      }
+    ],
+    "subtitle": "subtitles.airdefense.train_clack"
   }
 }

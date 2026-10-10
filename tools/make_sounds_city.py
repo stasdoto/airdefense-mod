@@ -156,6 +156,46 @@ def service_siren():
     save('service_siren', y, peak=0.7)
 
 
+def horn_chord(freqs, beeps, length, name, peak, bright=0.4):
+    """A train's horn: reeds sounding a chord (rich in harmonics), on for the given (start, end) blasts, a long echo."""
+    t = t_axis(length)
+    tone = np.zeros_like(t)
+    for f in freqs:
+        ph = 2 * np.pi * f * t * (1 + 0.002 * np.sin(2 * np.pi * 5 * t))
+        tone += np.sin(ph) + bright * np.sign(np.sin(ph)) * 0.5 + 0.3 * np.sin(2 * ph) + 0.15 * np.sin(3 * ph)
+    gate = np.zeros_like(t)
+    for a, b in beeps:
+        gate += ((t >= a) & (t < b)).astype(float)
+    gate = lp(np.clip(gate, 0, 1), 25)
+    y = bp(tone, 150, 5000) * gate
+    y = np.tanh(1.3 * y / np.max(np.abs(y)))
+    y = reverb(y, length, 1.6, damp=2500, mix=0.35)
+    save(name, y, peak=peak)
+
+
+def train_horn():
+    """1.39: the electric train's horn - a high two-note call, short then long."""
+    horn_chord((660, 830), [(0.0, 0.35), (0.55, 1.6)], 3.2, 'train_horn', 0.75, bright=0.6)
+
+
+def loco_horn():
+    """The diesel's horn: a low, deep chord, one long blast."""
+    horn_chord((233, 294, 349), [(0.0, 1.9)], 3.6, 'loco_horn', 0.85, bright=0.3)
+
+
+def train_clack(i):
+    """The wheels over a rail joint: a bogie's two axles, ta-dam, over the rumble of the train."""
+    length = 0.9
+    t = t_axis(length)
+    y = lp(brown(length), 300) * 0.35 * np.exp(-t / 0.6)
+    for at, amp in ((0.02, 1.0), (0.17 + 0.02 * i, 0.85)):
+        tt = t_axis(0.12)
+        hit = bp(white(0.12), 600, 4000) * np.exp(-tt / 0.012) + np.sin(2 * np.pi * (180 + 30 * i) * tt) * np.exp(-tt / 0.03) * 0.8
+        ms.place(y, hit, at, amp)
+    y = reverb(y, length, 0.5, damp=3000, mix=0.2)
+    save('train_clack_%d' % i, y, peak=0.7)
+
+
 def register():
     with open(SOUNDS_JSON, encoding='utf-8') as fh:
         d = json.load(fh)
@@ -168,6 +208,9 @@ def register():
         'city_owl': (['owl'], 64, 'city_owl'),
         'town_bell': (['town_bell'], 160, 'town_bell'),
         'service_siren': (['service_siren'], 160, 'service_siren'),
+        'train_horn': (['train_horn'], 200, 'train_horn'),
+        'loco_horn': (['loco_horn'], 220, 'train_horn'),
+        'train_clack': (['train_clack_0', 'train_clack_1'], 64, 'train_clack'),
     }
     for key, (files, dist, sub) in entries.items():
         d[key] = {'sounds': [{'name': 'airdefense:' + f, 'attenuation_distance': dist} for f in files], 'subtitle': 'subtitles.airdefense.' + sub}
@@ -188,4 +231,8 @@ if __name__ == '__main__':
     owl()
     bell()
     service_siren()
+    train_horn()
+    loco_horn()
+    for i in range(2):
+        train_clack(i)
     register()

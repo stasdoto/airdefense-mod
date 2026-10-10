@@ -270,6 +270,11 @@ public final class Ports {
 				if (!ok || c.outside(w[0], w[1]) > 140) {
 					continue;
 				}
+				int[] mid = probe.world(shore - LAND / 2, v0);
+				if (Railways.close(seed, t, mid[0], mid[1], LAND / 2 + HALF + 16)) {
+					// 1.39: clear of the railways.
+					continue;
+				}
 				if (score < bestScore) {
 					bestScore = score;
 					best = new Port(c, dir, shore, v0, sea + 1, sea, floor);
@@ -291,6 +296,7 @@ public final class Ports {
 			best.buildings.add(b);
 		}
 		best.access = access(t, c, best);
+		Railways.raiseRoad(seed, t, best.access);
 		return best;
 	}
 

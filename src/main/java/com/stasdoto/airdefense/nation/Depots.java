@@ -110,6 +110,10 @@ public final class Depots {
 					int x1 = x0 + w - 1;
 					int z1 = z0 + d - 1;
 					double score = site(t, c, road, x0, z0, x1, z1);
+					if (Railways.close(seed, t, (x0 + x1) / 2, (z0 + z1) / 2, Math.max(x1 - x0, z1 - z0) / 2 + 16)) {
+						// 1.39: clear of the railways.
+						score += 10000;
+					}
 					if (score < bestScore) {
 						bestScore = score;
 						int y = level(t, x0, z0, x1, z1);
@@ -131,6 +135,7 @@ public final class Depots {
 		if (best == null || bestScore > 400) {
 			return null;
 		}
+		Railways.raiseRoad(seed, t, best.access);
 		// The warehouses side by side along the back of the yard.
 		Direction facing = best.front.getOpposite();
 		boolean alongX = best.front.getAxis() == Direction.Axis.Z;

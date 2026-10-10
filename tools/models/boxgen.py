@@ -102,6 +102,15 @@ STYLES = {
     'beacon_red': dict(kind='plain', base=0xFF2A1E, flat=True),
     'stripe_yellow': dict(kind='plain', base=0xE6C21E),
     'yellow': dict(kind='plain', base=0xC9A227),
+    # 1.39: the trains - the electric train's green, red and yellow, the locomotive's green, the wagons, the coal.
+    'rail_green': dict(kind='plain', base=0x2F6A45),
+    'rail_red': dict(kind='plain', base=0xA8261F),
+    'rail_yellow': dict(kind='plain', base=0xE1B227),
+    'loco_green': dict(kind='plain', base=0x46613C),
+    'wagon_brown': dict(kind='plain', base=0x6A3B27),
+    'tank_black': dict(kind='plain', base=0x26272A),
+    'coal': dict(kind='camo', base=0x1C1C1D, c2=0x2C2C2E, c3=0x111112, blob=1),
+    'window': dict(kind='plain', base=0x22303B),
     'chrome': dict(kind='plain', base=0xB9BEC2),
     # The head-up display's combiner glass (the inside is drawn solid: a dark green tinted pane).
     'hud': dict(kind='plain', base=0x2F5240, flat=True),
@@ -758,8 +767,9 @@ def build(models, java_main, java_client, tex_dir, item_dir, pkg_main, pkg_clien
         img = m.paint_atlas(uv, regions, W, H)
         Image.fromarray(img, 'RGBA').save(os.path.join(tex_dir, m.id + '.png'), optimize=True)
         if m.interior_of is None:
-            Image.fromarray(wreck(img, m.seed + 99), 'RGBA').save(os.path.join(tex_dir, m.id + '_wreck.png'), optimize=True)
-            if item_dir:
+            if not getattr(m, 'no_item', False):
+                Image.fromarray(wreck(img, m.seed + 99), 'RGBA').save(os.path.join(tex_dir, m.id + '_wreck.png'), optimize=True)
+            if item_dir and not getattr(m, 'no_item', False):
                 m.icon(os.path.join(item_dir, m.id + '.png'))
             geoms.append(m.java_geometry(W, H))
         has_glass = m.interior_of is None and any(True for _ in m.glass_boxes())

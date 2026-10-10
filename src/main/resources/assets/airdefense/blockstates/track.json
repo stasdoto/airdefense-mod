@@ -1,0 +1,116 @@
+{
+ "variants": {
+  "dir=0,lift=0": {
+   "model": "airdefense:block/street/track_straight_0"
+  },
+  "dir=0,lift=1": {
+   "model": "airdefense:block/street/track_straight_1"
+  },
+  "dir=0,lift=2": {
+   "model": "airdefense:block/street/track_straight_2"
+  },
+  "dir=0,lift=3": {
+   "model": "airdefense:block/street/track_straight_3"
+  },
+  "dir=0,lift=4": {
+   "model": "airdefense:block/street/track_straight_4"
+  },
+  "dir=0,lift=5": {
+   "model": "airdefense:block/street/track_straight_5"
+  },
+  "dir=0,lift=6": {
+   "model": "airdefense:block/street/track_straight_6"
+  },
+  "dir=0,lift=7": {
+   "model": "airdefense:block/street/track_straight_7"
+  },
+  "dir=1,lift=0": {
+   "model": "airdefense:block/street/track_diag_0",
+   "y": 90
+  },
+  "dir=1,lift=1": {
+   "model": "airdefense:block/street/track_diag_1",
+   "y": 90
+  },
+  "dir=1,lift=2": {
+   "model": "airdefense:block/street/track_diag_2",
+   "y": 90
+  },
+  "dir=1,lift=3": {
+   "model": "airdefense:block/street/track_diag_3",
+   "y": 90
+  },
+  "dir=1,lift=4": {
+   "model": "airdefense:block/street/track_diag_4",
+   "y": 90
+  },
+  "dir=1,lift=5": {
+   "model": "airdefense:block/street/track_diag_5",
+   "y": 90
+  },
+  "dir=1,lift=6": {
+   "model": "airdefense:block/street/track_diag_6",
+   "y": 90
+  },
+  "dir=1,lift=7": {
+   "model": "airdefense:block/street/track_diag_7",
+   "y": 90
+  },
+  "dir=2,lift=0": {
+   "model": "airdefense:block/street/track_straight_0",
+   "y": 90
+  },
+  "dir=2,lift=1": {
+   "model": "airdefense:block/street/track_straight_1",
+   "y": 90
+  },
+  "dir=2,lift=2": {
+   "model": "airdefense:block/street/track_straight_2",
+   "y": 90
+  },
+  "dir=2,lift=3": {
+   "model": "airdefense:block/street/track_straight_3",
+   "y": 90
+  },
+  "dir=2,lift=4": {
+   "model": "airdefense:block/street/track_straight_4",
+   "y": 90
+  },
+  "dir=2,lift=5": {
+   "model": "airdefense:block/street/track_straight_5",
+   "y": 90
+  },
+  "dir=2,lift=6": {
+   "model": "airdefense:block/street/track_straight_6",
+   "y": 90
+  },
+  "dir=2,lift=7": {
+   "model": "airdefense:block/street/track_straight_7",
+   "y": 90
+  },
+  "dir=3,lift=0": {
+   "model": "airdefense:block/street/track_diag_0"
+  },
+  "dir=3,lift=1": {
+   "model": "airdefense:block/street/track_diag_1"
+  },
+  "dir=3,lift=2": {
+   "model": "airdefense:block/street/track_diag_2"
+  },
+  "dir=3,lift=3": {
+   "model": "airdefense:block/street/track_diag_3"
+  },
+  "dir=3,lift=4": {
+   "model": "airdefense:block/street/track_diag_4"
+  },
+  "dir=3,lift=5": {
+   "model": "airdefense:block/street/track_diag_5"
+  },
+  "dir=3,lift=6": {
+   "model": "airdefense:block/street/track_diag_6"
+  },
+  "dir=3,lift=7": {
+   "model": "airdefense:block/street/track_diag_7"
+  }
+ }
+}

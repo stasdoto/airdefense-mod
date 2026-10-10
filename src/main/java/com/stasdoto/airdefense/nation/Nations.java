@@ -67,11 +67,13 @@ public final class Nations {
 					Cities.shapes = Politics.get(server).shapes >= 1;
 					Cities.parks = Politics.get(server).shapes >= 2;
 					Cities.shelters = Politics.get(server).shapes >= 3;
+					Cities.railways = Politics.get(server).shapes >= 4;
 				} catch (RuntimeException e) {
 					Cities.styles = true;
 					Cities.shapes = true;
 					Cities.parks = true;
 					Cities.shelters = true;
+					Cities.railways = true;
 				}
 				com.stasdoto.airdefense.AirDefense.LOGGER.info("[airdefense] town styles {}", Cities.styles ? "on" : "off (an older world)");
 			}
