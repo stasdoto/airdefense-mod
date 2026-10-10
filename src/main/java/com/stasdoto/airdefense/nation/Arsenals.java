@@ -464,10 +464,16 @@ public final class Arsenals extends SavedData {
 	/** Seconds a unit's vehicle has not been found where it should be. */
 	private static final Map<UUID, Integer> MISSING = new HashMap<>();
 
+	/** 1.48.1: places found per second - a capital's whole arsenal looked its spots up at once (a quarter-second hitch). */
+	private static int spotBudget;
+
 	private static BlockPos spot(ServerLevel level, Settlement s, int index, boolean launcher) {
 		long key = s.id * 64L + index;
 		BlockPos cached = SPOTS.get(key);
 		if (cached == null) {
+			if (spotBudget-- <= 0) {
+				return null;
+			}
 			if (SPOTS.size() > 4096) {
 				SPOTS.clear();
 			}
@@ -599,6 +605,7 @@ public final class Arsenals extends SavedData {
 		}
 		// A couple of vehicles a second: a whole city's arsenal at once froze the server for a second or two.
 		int budget = 2;
+		spotBudget = 3;
 		for (int i = 0; i < ar.units.size(); i++) {
 			Unit u = ar.units.get(i);
 			if (u.lost) {
