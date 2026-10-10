@@ -184,7 +184,7 @@ public final class Rails {
 	/** A bridge's deck: railings along its edges, a pillar down to the ground every 16 blocks (not onto a road). */
 	private static void deck(CityGen.Writer w, Railways.Line l, int nb, int x, int z, int y, double d, boolean pillars, BlockPos.MutableBlockPos pos) {
 		w.set(pos.set(x, y - 1, z), DECK);
-		for (int yy = y; yy <= y + 5; yy++) {
+		for (int yy = y; yy <= y + 6; yy++) {
 			if (!w.get(pos.set(x, yy, z)).isAir()) {
 				w.set(pos, AIR);
 			}
@@ -201,7 +201,7 @@ public final class Rails {
 				w.set(pos, PILLAR);
 			}
 		}
-		w.levelled(y - 1, y + 5);
+		w.levelled(y - 1, y + 6);
 	}
 
 	/** Inside a tunnel: the floor, the clear way (the train with its pantograph is over five blocks high), the lining, a lamp now and then. */
