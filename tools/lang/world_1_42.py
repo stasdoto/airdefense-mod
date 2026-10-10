@@ -69,8 +69,13 @@ RULER_NAMES = [('Alexander', 'Александр', 'Олександр'), ('Yaro
                ('Leopold', 'Леопольд', 'Леопольд'), ('Maximilian', 'Максимилиан', 'Максиміліан'), ('Stephen', 'Стефан', 'Стефан'),
                ('Michael', 'Михаил', 'Михайло'), ('Boris', 'Борис', 'Борис'), ('Igor', 'Игорь', 'Ігор'), ('Svyatoslav', 'Святослав', 'Святослав'),
                ('Dmitry', 'Дмитрий', 'Дмитро')]
+TITLES_F = [('President', 'Президент', 'Президентка'), ('Queen', 'Королева', 'Королева'), ('Princess', 'Княгиня', 'Княгиня'),
+            ('Prime Minister', 'Премьер-министр', "Прем'єр-міністерка"), ('Chancellor', 'Канцлер', 'Канцлерка'),
+            ('Empress', 'Императрица', 'Імператриця'), ('Grand Duchess', 'Великая герцогиня', 'Велика герцогиня')]
 for i, t in enumerate(TITLES):
     NAMES['ruler.airdefense.title.%d' % i] = t
+for i, t in enumerate(TITLES_F):
+    NAMES['ruler.airdefense.title_f.%d' % i] = t
 for i, n in enumerate(RULER_NAMES):
     NAMES['ruler.airdefense.name.%d' % i] = n
 

@@ -434,7 +434,8 @@ public class SettlementScreen extends Screen {
 		y += 11;
 		if (!info.mine() && info.rulerTitle() >= 0) {
 			// 1.42: who rules this country, what kind of ruler, how it stands with the player's country.
-			Component ruler = Component.translatable("ruler.airdefense.full", Component.translatable("ruler.airdefense.title." + info.rulerTitle()),
+			Component ruler = Component.translatable("ruler.airdefense.full",
+					Component.translatable(com.stasdoto.airdefense.nation.Diplomacy.titleKey(info.rulerTitle(), info.rulerName())),
 					Component.translatable("ruler.airdefense.name." + info.rulerName()),
 					com.stasdoto.airdefense.nation.Diplomacy.roman(info.rulerNumber()));
 			g.text(font, Component.translatable("screen.airdefense.village.ruler", ruler,

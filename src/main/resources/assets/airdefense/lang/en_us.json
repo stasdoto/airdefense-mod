@@ -1387,5 +1387,12 @@
   "ruler.airdefense.name.28": "Boris",
   "ruler.airdefense.name.29": "Igor",
   "ruler.airdefense.name.30": "Svyatoslav",
-  "ruler.airdefense.name.31": "Dmitry"
+  "ruler.airdefense.name.31": "Dmitry",
+  "ruler.airdefense.title_f.0": "President",
+  "ruler.airdefense.title_f.1": "Queen",
+  "ruler.airdefense.title_f.2": "Princess",
+  "ruler.airdefense.title_f.3": "Prime Minister",
+  "ruler.airdefense.title_f.4": "Chancellor",
+  "ruler.airdefense.title_f.5": "Empress",
+  "ruler.airdefense.title_f.6": "Grand Duchess"
 }

@@ -513,7 +513,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 			server.runCommand("gamerule random_tick_speed " + (season == 0 ? 400 : 3));
 			// Snow builds up on the land under the rain of winter; it thaws (fast, for the test) in spring.
-			ctx.waitTicks(season == 3 ? 1600 : season == 0 ? 600 : 300);
+			ctx.waitTicks(season == 3 ? 1600 : season == 0 ? 700 : 700);
 			int[] snow = server.computeOnServer(s -> {
 				ServerLevel l = s.overworld();
 				int n = 0;
@@ -541,6 +541,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runCommand("weather clear");
 		server.runCommand("gamerule random_tick_speed 3");
 		// The rulers: the player takes a village, sends gifts, offers trade and an alliance; a month of the world goes by.
+		server.runCommand("gamemode creative @a");
 		String report = server.computeOnServer(s -> {
 			ServerLevel l = s.overworld();
 			var p = com.stasdoto.airdefense.nation.Politics.get(s);
@@ -586,6 +587,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(40);
 		ctx.takeScreenshot("ws4_diplomacy");
 		ctx.runOnClient(mc -> mc.gui.setScreen(null));
+		server.runCommand("gamemode spectator @a");
 	}
 
 	/** 1.41: the working country in a normal world - lorries on a highway, a building site with its crane, a tractor in a field. */

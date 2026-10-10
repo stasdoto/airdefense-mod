@@ -7,8 +7,8 @@ import net.minecraft.network.chat.Component;
 import com.stasdoto.airdefense.nation.Seasons;
 
 /**
- * 1.42: the season on the client - the grass and the leaves coloured for it (in four steps through each season, so the
- * world is drawn again only now and then), a word in the chat when a new season comes.
+ * 1.42: the season on the client - the grass and the leaves coloured for it (the world is drawn again only when the
+ * season changes), a word in the chat when a new season comes.
  */
 public final class SeasonColors {
 	/** The step the colours are drawn for (season * 4 + quarter), and the one last drawn. */
@@ -29,7 +29,8 @@ public final class SeasonColors {
 			announced = -1;
 		}
 		Seasons.update(mc.level.getOverworldClockTime());
-		int s = Seasons.season * 4 + Math.min(3, (int) (Seasons.progress * 4));
+		// One look for the whole season (the world is drawn again only when the season changes: four times a year).
+		int s = Seasons.season * 4 + 2;
 		step = s;
 		if (drawn != s) {
 			drawn = s;

@@ -66,9 +66,11 @@ public final class Diplomacy extends SavedData {
 					out.add((long) v[1]);
 				});
 				return out;
-			})
-	).apply(i, (rulers, relations) -> {
+			}),
+			Codec.LONG.optionalFieldOf("day", 0L).forGetter(d -> d.day)
+	).apply(i, (rulers, relations, day) -> {
 		Diplomacy d = new Diplomacy();
+		d.day = day;
 		for (int k = 0; k + 5 < rulers.size(); k += 6) {
 			d.rulers.put((int) (long) rulers.get(k), new Ruler((int) (long) rulers.get(k + 1), (int) (long) rulers.get(k + 2), (int) (long) rulers.get(k + 3),
 					(int) (long) rulers.get(k + 4), rulers.get(k + 5)));
@@ -83,6 +85,8 @@ public final class Diplomacy extends SavedData {
 	private final Map<Integer, Ruler> rulers = new HashMap<>();
 	/** Two countries (the smaller id first) -> {standing, treaties}. */
 	private final Map<Long, int[]> relations = new HashMap<>();
+	/** Days gone by (counted by the daily round). */
+	private long day;
 	/** For the tests: rulers who gave way, alliances made, offers accepted. */
 	public static int successions;
 	public static int alliances;
@@ -111,7 +115,7 @@ public final class Diplomacy extends SavedData {
 		if (r == null) {
 			Random rnd = new Random(level.getSeed() ^ c.id * 0x9E3779B97F4A7C15L);
 			int title = c.cityState ? 2 : rnd.nextInt(TITLES);
-			r = new Ruler(title, rnd.nextInt(NAMES), 1 + rnd.nextInt(4), rnd.nextInt(4), level.getGameTime() / 24000);
+			r = new Ruler(title, rnd.nextInt(NAMES), 1 + rnd.nextInt(4), rnd.nextInt(4), day);
 			rulers.put(c.id, r);
 			setDirty();
 		}
@@ -123,8 +127,13 @@ public final class Diplomacy extends SavedData {
 		if (r == null) {
 			return Component.empty();
 		}
-		return Component.translatable("ruler.airdefense.full", Component.translatable("ruler.airdefense.title." + r.title),
+		return Component.translatable("ruler.airdefense.full", Component.translatable(titleKey(r.title, r.name)),
 				Component.translatable("ruler.airdefense.name." + r.name), roman(r.number));
+	}
+
+	/** The names 10..16 are women's: their titles are the queens' and princesses'. */
+	public static String titleKey(int title, int name) {
+		return name >= 10 && name <= 16 ? "ruler.airdefense.title_f." + title : "ruler.airdefense.title." + title;
 	}
 
 	public static String roman(int n) {
@@ -174,7 +183,8 @@ public final class Diplomacy extends SavedData {
 
 	/** What the standing between them drifts back to: their rulers' characters, their treaties, a war between them. */
 	private int base(Politics p, ServerLevel level, Country a, Country b) {
-		int s = 0;
+		// The world's own countries like or dislike each other of old (the same for every two, from the seed).
+		int s = a.owner == null && b.owner == null ? (int) Math.floorMod(level.getSeed() ^ pair(a.id, b.id) * 0x9E3779B97F4A7C15L, 101L) - 40 : 0;
 		for (Country c : new Country[]{a, b}) {
 			Ruler r = ruler(level, c);
 			if (r != null) {
@@ -253,7 +263,8 @@ public final class Diplomacy extends SavedData {
 	public static void daily(ServerLevel level, Politics p) {
 		Diplomacy d = get(level.getServer());
 		Random r = new Random();
-		long day = level.getGameTime() / 24000;
+		long day = ++d.day;
+		d.setDirty();
 		List<Country> all = new ArrayList<>();
 		for (Country c : p.countries.values()) {
 			if (c.cityState || p.settlements.get(c.capital) == null && c.owner == null) {
