@@ -111,6 +111,10 @@ STYLES = {
     'tank_black': dict(kind='plain', base=0x26272A),
     'coal': dict(kind='camo', base=0x1C1C1D, c2=0x2C2C2E, c3=0x111112, blob=1),
     'window': dict(kind='plain', base=0x22303B),
+    # 1.40: the airliners' blue and red, a green navigation light.
+    'liner_blue': dict(kind='plain', base=0x1F3F8C),
+    'liner_red': dict(kind='plain', base=0xB0262A),
+    'green_light': dict(kind='plain', base=0x2EC24A, flat=True),
     'chrome': dict(kind='plain', base=0xB9BEC2),
     # The head-up display's combiner glass (the inside is drawn solid: a dark green tinted pane).
     'hud': dict(kind='plain', base=0x2F5240, flat=True),

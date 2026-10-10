@@ -334,6 +334,9 @@ public final class Railways {
 					return no(c == a || c == b ? "own town" : "other town");
 				}
 			}
+			if (Airports.inside(seed, t, bx, bz, 30)) {
+				return no("airport");
+			}
 		}
 		// The ground along it every 16 blocks (the terrain's estimate is dear: as few samples as will do), the water as a
 		// floor a little above the sea; not across the sea.

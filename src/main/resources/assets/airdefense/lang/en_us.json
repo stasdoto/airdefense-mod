@@ -1305,5 +1305,11 @@
   "block.airdefense.station_sign": "Station sign",
   "entity.airdefense.train": "Train",
   "subtitles.airdefense.train_horn": "Train hoots",
-  "subtitles.airdefense.train_clack": "Train wheels clatter"
+  "subtitles.airdefense.train_clack": "Train wheels clatter",
+  "block.airdefense.runway_light": "Runway light",
+  "block.airdefense.windsock": "Windsock",
+  "block.airdefense.airport_sign": "Airport sign",
+  "block.airdefense.threshold": "Runway threshold mark",
+  "block.airdefense.stand": "Aircraft stand mark",
+  "entity.airdefense.airliner": "Airliner"
 }

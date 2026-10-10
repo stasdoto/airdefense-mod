@@ -1,0 +1,100 @@
+{
+ "variants": {
+  "facing=north,index=0": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=north,index=1": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=north,index=2": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=north,index=3": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=north,index=4": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=north,index=5": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=north,index=6": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=north,index=7": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=east,index=0": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=east,index=1": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=east,index=2": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=east,index=3": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=east,index=4": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=east,index=5": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=east,index=6": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=east,index=7": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=south,index=0": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=south,index=1": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=south,index=2": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=south,index=3": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=south,index=4": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=south,index=5": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=south,index=6": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=south,index=7": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=west,index=0": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=west,index=1": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=west,index=2": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=west,index=3": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=west,index=4": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=west,index=5": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=west,index=6": {
+   "model": "airdefense:block/street/stand"
+  },
+  "facing=west,index=7": {
+   "model": "airdefense:block/street/stand"
+  }
+ }
+}

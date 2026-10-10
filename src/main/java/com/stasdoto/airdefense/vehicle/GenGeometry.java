@@ -361,6 +361,20 @@ public final class GenGeometry {
 			0F, 0F, new Rail[]{}, null, new String[]{}, 12F,
 			1024, 640);
 
+	public static final Geometry AIRLINER = new Geometry("airliner", 38.26F, 34.22F, 11.9F, 0F, false,
+			new Seat[]{},
+			new Wheel[]{},
+			null, new float[]{0F, 0F, 0F}, null, new float[]{0F, 0F, 0F},
+			0F, 0F, new Rail[]{}, null, new String[]{}, 12F,
+			1024, 2448);
+
+	public static final Geometry TURBOPROP = new Geometry("turboprop", 28.075F, 27F, 7.549F, 0F, false,
+			new Seat[]{},
+			new Wheel[]{},
+			null, new float[]{0F, 0F, 0F}, null, new float[]{0F, 0F, 0F},
+			0F, 0F, new Rail[]{}, null, new String[]{}, 12F,
+			1024, 1440);
+
 	public static final Geometry MSTA_S = new Geometry("msta_s", 13.05F, 3.58F, 3.25F, 0F, true,
 			new Seat[]{new Seat("driver", 0F, 1F, 2.3F), new Seat("gunner", 0.8F, 2.75F, -1.25F)},
 			new Wheel[]{new Wheel("road_0_l", 0.36F, false), new Wheel("road_1_l", 0.36F, false), new Wheel("road_2_l", 0.36F, false), new Wheel("road_3_l", 0.36F, false), new Wheel("road_4_l", 0.36F, false), new Wheel("road_5_l", 0.36F, false), new Wheel("sprocket_l", 0.3F, false), new Wheel("idler_l", 0.28F, false), new Wheel("road_0_r", 0.36F, false), new Wheel("road_1_r", 0.36F, false), new Wheel("road_2_r", 0.36F, false), new Wheel("road_3_r", 0.36F, false), new Wheel("road_4_r", 0.36F, false), new Wheel("road_5_r", 0.36F, false), new Wheel("sprocket_r", 0.3F, false), new Wheel("idler_r", 0.28F, false)},

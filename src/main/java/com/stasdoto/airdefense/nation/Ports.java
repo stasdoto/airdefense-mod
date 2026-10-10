@@ -271,7 +271,7 @@ public final class Ports {
 					continue;
 				}
 				int[] mid = probe.world(shore - LAND / 2, v0);
-				if (Railways.close(seed, t, mid[0], mid[1], LAND / 2 + HALF + 16)) {
+				if (Railways.close(seed, t, mid[0], mid[1], LAND / 2 + HALF + 16) || Airports.inside(seed, t, mid[0], mid[1], LAND / 2 + HALF + 16)) {
 					// 1.39: clear of the railways.
 					continue;
 				}
