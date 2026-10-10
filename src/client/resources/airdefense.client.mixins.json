@@ -10,7 +10,8 @@
     "CameraMixin",
     "LivingEntityRendererMixin",
     "LocalPlayerMixin",
-    "HandsRendererMixin"
+    "HandsRendererMixin",
+    "BiomeColorsMixin"
   ],
   "injectors": {
     "defaultRequire": 0

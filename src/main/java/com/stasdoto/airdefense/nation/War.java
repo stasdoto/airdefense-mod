@@ -71,6 +71,8 @@ public final class War {
 			tell(level, c, message);
 		}
 		AirDefense.LOGGER.info("[airdefense] war: {} against {}", attacker.name, defender.name);
+		// 1.42: the standing falls; the defender's allies join in.
+		Diplomacy.warBegan(level, p, attacker, defender);
 	}
 
 	public static void peace(ServerLevel level, Politics p, Country a, Country b) {
@@ -84,6 +86,7 @@ public final class War {
 		PEACE_SINCE.put(pair(a.id, b.id), level.getGameTime());
 		p.setDirty();
 		peaces++;
+		Diplomacy.peaceMade(level, a, b);
 		Component message = Component.translatable("nation.airdefense.war.peace", a.name, b.name);
 		tell(level, a, message);
 		tell(level, b, message);
@@ -112,6 +115,7 @@ public final class War {
 			return false;
 		}
 		declare(level, p, mine, target, Component.translatable("nation.airdefense.war.why_player"));
+		Diplomacy.playerWar(level, p, mine, target);
 		level.playSound(null, player.blockPosition(), SoundEvents.RAID_HORN.value(), SoundSource.NEUTRAL, 2f, 0.9f);
 		return true;
 	}
@@ -195,6 +199,7 @@ public final class War {
 			attacks(level, p);
 		}
 		if (t % 24000 == 12000) {
+			Diplomacy.daily(level, p);
 			neighbours(level, p);
 		}
 	}
@@ -773,7 +778,8 @@ public final class War {
 				}
 				Settlement ca = p.settlements.get(a.capital);
 				Settlement cb = p.settlements.get(b.capital);
-				if (ca.center.distSqr(cb.center) < 3200.0 * 3200.0 && r.nextInt(100) < 4) {
+				// 1.42: likelier between warlike rulers and bad neighbours, seldom between friends, never between allies.
+				if (ca.center.distSqr(cb.center) < 3200.0 * 3200.0 && r.nextDouble() * 100 < 4 * Diplomacy.get(level.getServer()).quarrel(level, a, b)) {
 					declare(level, p, a, b, Component.translatable("nation.airdefense.war.why_border"));
 					for (ServerPlayer pl : level.getServer().getPlayerList().getPlayers()) {
 						pl.sendSystemMessage(Component.translatable("nation.airdefense.war.news", a.name, b.name));
@@ -797,7 +803,8 @@ public final class War {
 				continue;
 			}
 			for (Country ai : new ArrayList<>(p.countries.values())) {
-				if (ai.owner != null || ai.cityState || ai.atWarWith(player.id) || r.nextInt(100) >= 8) {
+				if (ai.owner != null || ai.cityState || ai.atWarWith(player.id)
+						|| r.nextDouble() * 100 >= 8 * Diplomacy.get(level.getServer()).quarrel(level, ai, player)) {
 					continue;
 				}
 				Long since = PEACE_SINCE.get(pair(ai.id, player.id));

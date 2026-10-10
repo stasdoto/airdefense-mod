@@ -88,6 +88,10 @@ public class SettlementScreen extends Screen {
 	private Button cancel;
 	private Button calm;
 	private Button declareWar;
+	/** 1.42: a gift to the ruler, a trade treaty, an alliance. */
+	private Button gift;
+	private Button trade;
+	private Button alliance;
 	private Button peace;
 	private Button tribute;
 
@@ -167,6 +171,13 @@ public class SettlementScreen extends Screen {
 				b -> send(NationActionPayload.PEACE, 0, 0)).bounds(x0 + 6, by, bw, 20).build());
 		tribute = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.tribute", 0),
 				b -> send(NationActionPayload.TRIBUTE, 0, 0)).bounds(x0 + 12 + bw, by, bw, 20).build());
+		int dw = (w - 24) / 3;
+		gift = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.gift", com.stasdoto.airdefense.nation.Diplomacy.GIFT_PRICE),
+				b -> send(NationActionPayload.GIFT, 0, 0)).bounds(x0 + 6, by - 24, dw, 20).build());
+		trade = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.trade"),
+				b -> send(NationActionPayload.TRADE, 0, 0)).bounds(x0 + 12 + dw, by - 24, dw, 20).build());
+		alliance = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.alliance"),
+				b -> send(NationActionPayload.ALLIANCE, 0, 0)).bounds(x0 + 18 + 2 * dw, by - 24, dw, 20).build());
 		calm = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.calm", 0),
 				b -> send(NationActionPayload.CALM, 0, 0)).bounds(x0 + w - 136, y0 + 54, 128, 14).build());
 		// Tabs.
@@ -281,6 +292,12 @@ public class SettlementScreen extends Screen {
 		buy.setMessage(Component.translatable("screen.airdefense.village.buy", info.price()));
 		take.visible = !mine && info.creative();
 		declareWar.visible = !mine && info.war() == 1;
+		boolean dealings = !mine && info.rulerTitle() >= 0 && info.hasCountry() && info.war() == 1;
+		gift.visible = dealings;
+		trade.visible = dealings;
+		alliance.visible = dealings;
+		trade.active = (info.treaties() & com.stasdoto.airdefense.nation.Diplomacy.TRADE) == 0;
+		alliance.active = (info.treaties() & com.stasdoto.airdefense.nation.Diplomacy.ALLY) == 0;
 		peace.visible = !mine && info.war() == 2;
 		tribute.visible = !mine && info.war() == 2 && info.tribute() > 0;
 		tribute.setMessage(Component.translatable("screen.airdefense.village.tribute", info.tribute()));
@@ -415,6 +432,29 @@ public class SettlementScreen extends Screen {
 		}
 		g.text(font, Component.translatable("screen.airdefense.village.people", info.population(), info.guards()), x, y, C_TEXT);
 		y += 11;
+		if (!info.mine() && info.rulerTitle() >= 0) {
+			// 1.42: who rules this country, what kind of ruler, how it stands with the player's country.
+			Component ruler = Component.translatable("ruler.airdefense.full",
+					Component.translatable(com.stasdoto.airdefense.nation.Diplomacy.titleKey(info.rulerTitle(), info.rulerName())),
+					Component.translatable("ruler.airdefense.name." + info.rulerName()),
+					com.stasdoto.airdefense.nation.Diplomacy.roman(info.rulerNumber()));
+			g.text(font, Component.translatable("screen.airdefense.village.ruler", ruler,
+					Component.translatable("ruler.airdefense.trait." + info.rulerTrait())), x, y, C_TEXT);
+			y += 11;
+			if (info.hasCountry()) {
+				int st = info.standing();
+				String mood = st >= 50 ? "friendly" : st >= 15 ? "warm" : st > -15 ? "neutral" : st > -50 ? "cool" : "hostile";
+				Component deals = Component.empty();
+				if ((info.treaties() & com.stasdoto.airdefense.nation.Diplomacy.ALLY) != 0) {
+					deals = Component.translatable("screen.airdefense.village.allied");
+				} else if ((info.treaties() & com.stasdoto.airdefense.nation.Diplomacy.TRADE) != 0) {
+					deals = Component.translatable("screen.airdefense.village.trading");
+				}
+				g.text(font, Component.translatable("screen.airdefense.village.standing", (st > 0 ? "+" : "") + st,
+						Component.translatable("screen.airdefense.village.standing." + mood), deals), x, y, st >= 15 ? C_OK : st <= -15 ? C_BAD : C_TEXT);
+				y += 11;
+			}
+		}
 		if (info.mine()) {
 			g.text(font, Component.translatable("screen.airdefense.village.army", info.soldiers(), info.mobilizable()), x, y, C_TEXT);
 			y += 11;

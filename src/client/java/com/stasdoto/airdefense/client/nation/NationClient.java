@@ -38,6 +38,7 @@ public final class NationClient {
 			Traffic.tick(mc);
 			Cranes.tick(mc);
 			Farms.tick(mc);
+			SeasonColors.tick(mc);
 		});
 		// Villagers as people of every look (only the drawing changes).
 		EntityRenderers.register(EntityTypes.VILLAGER, HumanVillagerRenderer::new);
