@@ -126,6 +126,8 @@ public final class Cities {
 	public static volatile boolean parks = true;
 	/** 1.37: shelter entrances and signs in the towns (worlds started since). */
 	public static volatile boolean shelters = true;
+	/** 1.39: the railways between the capitals (worlds started since). */
+	public static volatile boolean railways = true;
 	@Nullable
 	public static volatile CityForm FORCE_FORM;
 

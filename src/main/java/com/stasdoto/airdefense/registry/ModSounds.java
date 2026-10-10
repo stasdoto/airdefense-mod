@@ -33,6 +33,10 @@ public final class ModSounds {
 	public static final SoundEvent TOWN_BELL = register("town_bell", 160);
 	/** 1.38: an emergency vehicle's siren (a three-second wail, played again while it drives with its lights on). */
 	public static final SoundEvent SERVICE_SIREN = register("service_siren", 160);
+	/** 1.39: the trains - the electric train's horn, the diesel's, the wheels over the rail joints. */
+	public static final SoundEvent TRAIN_HORN = register("train_horn", 200);
+	public static final SoundEvent LOCO_HORN = register("loco_horn", 220);
+	public static final SoundEvent TRAIN_CLACK = register("train_clack", 64);
 	/** The Shahed's two-stroke buzz, near and far (looped on the client while one flies). */
 	public static final SoundEvent SHAHED_LOOP = register("shahed_loop", 160);
 	public static final SoundEvent SHAHED_FAR = register("shahed_far", 600);

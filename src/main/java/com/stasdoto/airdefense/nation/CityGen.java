@@ -221,7 +221,13 @@ public final class CityGen {
 				ports.add(pt);
 			}
 		}
-		if (cities.isEmpty() && roads.isEmpty() && hamlets.isEmpty() && depots.isEmpty() && ports.isEmpty()) {
+		List<Railways.Line> lines = new ArrayList<>();
+		for (Railways.Line l : Railways.near(seed, t, mx, mz)) {
+			if (l.near(mx, mz, 8 + Railways.SIDE + 4)) {
+				lines.add(l);
+			}
+		}
+		if (cities.isEmpty() && roads.isEmpty() && hamlets.isEmpty() && depots.isEmpty() && ports.isEmpty() && lines.isEmpty()) {
 			return;
 		}
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
@@ -302,6 +308,9 @@ public final class CityGen {
 				}
 			}
 		}
+		for (Railways.Line l : lines) {
+			Rails.build(w, l, roads, cp);
+		}
 		for (Cities.City c : cities) {
 			buildings(w, c, cp);
 			decor(w, c, cp);
@@ -377,6 +386,11 @@ public final class CityGen {
 			}
 			Depots.Depot d = c.depot(seed, t);
 			if (d != null && d.near(mx, mz, 24)) {
+				return true;
+			}
+		}
+		for (Railways.Line l : Railways.near(seed, t, mx, mz)) {
+			if (l.near(mx, mz, 30) && l.locate(mx + 0.5, mz + 0.5, 0, l.length(), 30, new Railways.Spot())) {
 				return true;
 			}
 		}
@@ -627,7 +641,7 @@ public final class CityGen {
 	// Columns
 
 	/** The ground of a column: the top solid block under trees, plants, snow and water; and how high it all goes. */
-	private static int[] ground(Writer w, int x, int z, BlockPos.MutableBlockPos pos) {
+	static int[] ground(Writer w, int x, int z, BlockPos.MutableBlockPos pos) {
 		int top = w.top(x, z);
 		int y = top;
 		int wet = 0;
@@ -650,7 +664,7 @@ public final class CityGen {
 	}
 
 	/** Raises or cuts the column to {@code target} with {@code surface} on top, clears everything above. */
-	private static void shape(Writer w, int x, int z, int target, BlockState surface, int[] g, BlockPos.MutableBlockPos pos) {
+	static void shape(Writer w, int x, int z, int target, BlockState surface, int[] g, BlockPos.MutableBlockPos pos) {
 		int ground = g[0];
 		if (ground < target) {
 			for (int y = ground + 1; y < target; y++) {
@@ -1236,7 +1250,7 @@ public final class CityGen {
 		}
 	}
 
-	private static long mix(long z) {
+	static long mix(long z) {
 		z = (z ^ (z >>> 33)) * 0xff51afd7ed558ccdL;
 		z = (z ^ (z >>> 33)) * 0xc4ceb9fe1a85ec53L;
 		return z ^ (z >>> 33);
@@ -1245,7 +1259,7 @@ public final class CityGen {
 	// ------------------------------------------------------------------------------------------------
 
 	/** Writes blocks; fences, panes, walls and stairs get their shapes fixed afterwards (by the game, or right here). */
-	private static final class Writer {
+	static final class Writer {
 		final WorldGenLevel level;
 		final boolean live;
 		final List<BlockPos> shapes = new ArrayList<>();
@@ -1307,6 +1321,12 @@ public final class CityGen {
 					level.getChunk(q).markPosForPostProcessing(q);
 				}
 			}
+		}
+
+		/** The ground of a column was shaped from {@code lo} up to {@code hi} (for the leftovers sweep). */
+		void levelled(int lo, int hi) {
+			this.lo = Math.min(this.lo, lo);
+			this.hi = Math.max(this.hi, hi);
 		}
 
 		void finish() {

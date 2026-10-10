@@ -97,6 +97,12 @@ public final class StreetBlocks {
 	public static final Block SHELTER_SIGN = sign("shelter_sign");
 	public static final Block SPORT_NET = thing("sport_net", 0, MapColor.SNOW, SoundType.WOOL, 0, 0, 7, 16, 16, 9);
 
+	// 1.39: the railway - the track, the buffer stop at the end of a line, the station's sign.
+	public static final Block TRACK = register("track", TrackBlock::new, BlockBehaviour.Properties.of().mapColor(MapColor.STONE).strength(2f, 6f)
+			.sound(SoundType.METAL).noOcclusion());
+	public static final Block BUFFER_STOP = thing("buffer_stop", 0, MapColor.COLOR_RED, SoundType.METAL, 0, 0, 4, 16, 15, 16);
+	public static final Block STATION_SIGN = thing("station_sign", 0, MapColor.COLOR_BLUE, SoundType.METAL, 0, 0, 7, 16, 16, 9);
+
 	/** A manhole cover set in the asphalt: a whole block (it is the road surface). */
 	public static final Block MANHOLE = register("manhole", Block::new, BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY).strength(1.8f, 6f)
 			.sound(SoundType.STONE));

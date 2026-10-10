@@ -1299,5 +1299,11 @@
   "subtitles.airdefense.service_siren": "Воет сирена",
   "message.airdefense.vehicle.status_service": "%s: прочность %s%%, топливо %s/%s",
   "hud.airdefense.vehicle.service": "Служебная машина",
-  "hud.airdefense.vehicle.service_call": "На вызове: мигалки и сирена"
+  "hud.airdefense.vehicle.service_call": "На вызове: мигалки и сирена",
+  "block.airdefense.track": "Железнодорожный путь",
+  "block.airdefense.buffer_stop": "Тупиковый упор",
+  "block.airdefense.station_sign": "Табличка станции",
+  "entity.airdefense.train": "Поезд",
+  "subtitles.airdefense.train_horn": "Гудит поезд",
+  "subtitles.airdefense.train_clack": "Стучат колёса поезда"
 }

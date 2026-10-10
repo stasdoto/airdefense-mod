@@ -1299,5 +1299,11 @@
   "subtitles.airdefense.service_siren": "Siren wails",
   "message.airdefense.vehicle.status_service": "%s: health %s%%, fuel %s/%s",
   "hud.airdefense.vehicle.service": "Service vehicle",
-  "hud.airdefense.vehicle.service_call": "On a call: lights and siren"
+  "hud.airdefense.vehicle.service_call": "On a call: lights and siren",
+  "block.airdefense.track": "Railway track",
+  "block.airdefense.buffer_stop": "Buffer stop",
+  "block.airdefense.station_sign": "Station sign",
+  "entity.airdefense.train": "Train",
+  "subtitles.airdefense.train_horn": "Train hoots",
+  "subtitles.airdefense.train_clack": "Train wheels clatter"
 }

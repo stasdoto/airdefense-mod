@@ -252,6 +252,170 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		if (scene("realcity")) {
 			realCity(ctx);
 		}
+		if (scene("rail")) {
+			rail(ctx);
+		}
+	}
+
+	/** 1.39: the railway out of the capital in a normal world - the station, a bridge, a tunnel, the trains on it. */
+	private void rail(ClientGameTestContext ctx) {
+		try (TestSingleplayerContext sp = ctx.worldBuilder().setUseConsistentSettings(false).adjustSettings(st -> st.setSeed("airdefense")).create()) {
+			TestServerContext server = sp.getServer();
+			language(ctx, "ru_ru");
+			server.runCommand("gamemode spectator @a");
+			server.runCommand("time set 6000");
+			server.runCommand("weather clear");
+			server.runCommand("gamerule advance_time false");
+			server.runCommand("gamerule advance_weather false");
+			// The line's points to look at: {x, y, z, dir x, dir z} for the station, a bridge, a tunnel mouth, a diagonal, the open line.
+			int[][] spots = server.computeOnServer(s -> {
+				ServerLevel l = s.overworld();
+				var t = com.stasdoto.airdefense.nation.Cities.terrain(l);
+				long t0 = System.nanoTime();
+				java.util.List<com.stasdoto.airdefense.nation.Railways.Line> lines = new java.util.ArrayList<>();
+				for (int cx = -1; cx <= 1 && lines.isEmpty(); cx++) {
+					for (int cz = -1; cz <= 1 && lines.isEmpty(); cz++) {
+						lines.addAll(com.stasdoto.airdefense.nation.Railways.lines(l.getSeed(), t, cx, cz));
+					}
+				}
+				AirDefense.LOGGER.info("[airdefense-test] RESULT rail_plan: {} lines planned, {} given up, in {} ms",
+						com.stasdoto.airdefense.nation.Railways.planned, com.stasdoto.airdefense.nation.Railways.refused, (System.nanoTime() - t0) / 1_000_000);
+				if (lines.isEmpty()) {
+					return null;
+				}
+				var line = lines.getFirst();
+				int n = line.length();
+				int bridges = 0;
+				int tunnels = 0;
+				int diag = -1;
+				int bridge = -1;
+				int bestBridge = 0;
+				int tunnel = -1;
+				int run = 0;
+				for (int i = 0; i < n; i++) {
+					if (line.kind[i] == 1) {
+						bridges++;
+						run++;
+						if (run > bestBridge) {
+							bestBridge = run;
+							bridge = i - run / 2;
+						}
+					} else {
+						run = 0;
+					}
+					if (line.kind[i] == 2) {
+						tunnels++;
+						if (tunnel < 0 && i > 8) {
+							tunnel = i - 8;
+						}
+					}
+					if (diag < 0 && (line.dir[i] & 1) == 1 && i + 20 < n && (line.dir[i + 20] & 1) == 1) {
+						diag = i + 10;
+					}
+				}
+				AirDefense.LOGGER.info("[airdefense-test] RESULT rail_line: {} blocks from {} {} to {} {}, {} on bridges, {} in tunnels, platform side {}", n,
+						line.xs[0], line.zs[0], line.xs[n - 1], line.zs[n - 1], bridges, tunnels, line.platform);
+				int[] pick = {12, bridge, tunnel, diag, n / 3};
+				int[][] out = new int[pick.length][];
+				for (int k = 0; k < pick.length; k++) {
+					int i = pick[k];
+					if (i < 0) {
+						continue;
+					}
+					int j = Math.min(n - 1, i + 1);
+					out[k] = new int[]{line.xs[i], line.y(i), line.zs[i], line.xs[j] - line.xs[i], line.zs[j] - line.zs[i]};
+				}
+				return out;
+			});
+			if (spots == null) {
+				return;
+			}
+			String[] names = {"rl1_station", "rl2_bridge", "rl3_tunnel", "rl4_diagonal", "rl5_line"};
+			for (int k = 0; k < spots.length; k++) {
+				int[] p = spots[k];
+				if (p == null) {
+					continue;
+				}
+				// From the side (the platform side for the station) and a little above, along the line.
+				double ax = -p[4];
+				double az = p[3];
+				double al = Math.hypot(ax, az);
+				ax /= al;
+				az /= al;
+				double side = k == 1 ? 34 : 16;
+				double up = k == 1 ? 10 : 7;
+				double fx = p[0] + 0.5 + ax * side - p[3] * 14;
+				double fz = p[2] + 0.5 + az * side - p[4] * 14;
+				look(server, fx, p[1] + up, fz, p[0] + 0.5 + p[3] * 10, p[1] + 1, p[2] + 0.5 + p[4] * 10);
+				ctx.waitTicks(k == 0 ? 260 : 160);
+				ctx.takeScreenshot(names[k]);
+			}
+			AirDefense.LOGGER.info("[airdefense-test] RESULT rail_built: {} track blocks laid, {} chunks made, avg {} us per chunk; client saw {} track blocks",
+					server.computeOnServer(s -> com.stasdoto.airdefense.nation.Rails.laid()), com.stasdoto.airdefense.nation.CityGen.chunks,
+					com.stasdoto.airdefense.nation.CityGen.chunks == 0 ? 0 : com.stasdoto.airdefense.nation.CityGen.nanos / 1000 / com.stasdoto.airdefense.nation.CityGen.chunks,
+					ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.Trains.indexed()));
+			// The trains: stand by the open line and wait for one of each.
+			int[] p = spots[4];
+			double ax = -p[4];
+			double az = p[3];
+			double al = Math.hypot(ax, az);
+			ax /= al;
+			az /= al;
+			String[] trainNames = {"rl6_electric", "rl7_goods"};
+			for (int kind = 1; kind <= 2; kind++) {
+				int k = kind;
+				look(server, p[0] + 0.5 + ax * 14, p[1] + 5, p[2] + 0.5 + az * 14, p[0] + 0.5, p[1] + 2, p[2] + 0.5);
+				ctx.waitTicks(40);
+				ctx.runOnClient(mc -> {
+					for (var tr : new java.util.ArrayList<>(com.stasdoto.airdefense.client.nation.Trains.ALL)) {
+						tr.done = true;
+						tr.stuck = 1000;
+					}
+					com.stasdoto.airdefense.client.nation.Trains.forceKind = k;
+					com.stasdoto.airdefense.client.nation.Trains.forceSpawn = true;
+				});
+				int waited = waitUntil(ctx, () -> ctx.computeOnClient(mc -> {
+					for (var tr : com.stasdoto.airdefense.client.nation.Trains.ALL) {
+						if (tr.pose.length > 1 && tr.electric == (k == 1)) {
+							double[] h = tr.pose[1];
+							return Math.hypot(h[0] - p[0], h[2] - p[2]) < 14;
+						}
+					}
+					return false;
+				}), 1500);
+				ctx.takeScreenshot(trainNames[kind - 1]);
+				AirDefense.LOGGER.info("[airdefense-test] RESULT rail_train_{}: came by after {} ticks; trains made {}, taken away {}, hoots {}",
+						kind == 1 ? "electric" : "goods", waited, ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.Trains.made),
+						ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.Trains.gone),
+						ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.Trains.hoots));
+			}
+			// An electric train at the station: it runs in, stops, sets off back.
+			int[] st = spots[0];
+			double sx = -st[4];
+			double sz = st[3];
+			double sl = Math.hypot(sx, sz);
+			look(server, st[0] + 0.5 + sx / sl * 12, st[1] + 6, st[2] + 0.5 + sz / sl * 12 + 0, st[0] + 0.5 + st[3] * 8, st[1] + 2, st[2] + 0.5 + st[4] * 8);
+			ctx.waitTicks(80);
+			ctx.runOnClient(mc -> {
+				for (var tr : new java.util.ArrayList<>(com.stasdoto.airdefense.client.nation.Trains.ALL)) {
+					tr.done = true;
+					tr.stuck = 1000;
+				}
+				com.stasdoto.airdefense.client.nation.Trains.forceKind = 1;
+				com.stasdoto.airdefense.client.nation.Trains.forceSpawn = true;
+			});
+			int stopped = waitUntil(ctx, () -> ctx.computeOnClient(mc -> {
+				for (var tr : com.stasdoto.airdefense.client.nation.Trains.ALL) {
+					if (tr.stops > 0 || tr.waiting > 0) {
+						return true;
+					}
+				}
+				return false;
+			}), 2400);
+			ctx.waitTicks(20);
+			ctx.takeScreenshot("rl8_at_the_station");
+			AirDefense.LOGGER.info("[airdefense-test] RESULT rail_station: an electric train stopped at the station after {} ticks", stopped);
+		}
 	}
 
 	/** A normal world (hills, rivers, forests): the capital of the first country as the world generator builds it. */

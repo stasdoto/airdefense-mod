@@ -68,6 +68,13 @@ public final class ModEntities {
 			PEDESTRIAN_KEY, EntityType.Builder.<com.stasdoto.airdefense.nation.PedestrianEntity>of(com.stasdoto.airdefense.nation.PedestrianEntity::new,
 					MobCategory.MISC).sized(0.6f, 1.8f).eyeHeight(1.62f).clientTrackingRange(4).noSave().noSummon().build(PEDESTRIAN_KEY));
 
+	private static final ResourceKey<EntityType<?>> TRAIN_KEY = ResourceKey.create(Registries.ENTITY_TYPE, AirDefense.id("train"));
+
+	/** 1.39: trains on the railways (made only on the client, round the player). */
+	public static final EntityType<com.stasdoto.airdefense.nation.TrainEntity> TRAIN = Registry.register(BuiltInRegistries.ENTITY_TYPE,
+			TRAIN_KEY, EntityType.Builder.<com.stasdoto.airdefense.nation.TrainEntity>of(com.stasdoto.airdefense.nation.TrainEntity::new,
+					MobCategory.MISC).sized(3f, 4f).clientTrackingRange(16).noSave().noSummon().build(TRAIN_KEY));
+
 	private static final Map<VehicleType, EntityType<VehicleEntity>> VEHICLES = new EnumMap<>(VehicleType.class);
 
 	static {

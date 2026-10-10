@@ -26,6 +26,8 @@ public final class NationClient {
 		EntityRenderers.register(ModEntities.WORKER, WorkerRenderer::new);
 		EntityRenderers.register(ModEntities.PEDESTRIAN, PedestrianRenderer::new);
 		Pedestrians.init();
+		EntityRenderers.register(ModEntities.TRAIN, TrainRenderer::new);
+		Trains.init();
 		// Villagers as people of every look (only the drawing changes).
 		EntityRenderers.register(EntityTypes.VILLAGER, HumanVillagerRenderer::new);
 		ClientPlayNetworking.registerGlobalReceiver(NationMapPayload.TYPE, (payload, context) -> map = payload);
