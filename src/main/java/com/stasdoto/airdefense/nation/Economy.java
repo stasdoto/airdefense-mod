@@ -941,6 +941,8 @@ public final class Economy {
 			case SU25 -> new int[]{40, 40, 220, 130};
 			case F16 -> new int[]{40, 40, 240, 140};
 			case FUEL_TRUCK, SUPPLY_TRUCK -> new int[]{20, 10, 60, 40};
+			case FIRE_TRUCK, AMBULANCE -> new int[]{20, 10, 70, 45};
+			case POLICE_CAR -> new int[]{10, 5, 40, 30};
 			case IRON_DOME -> new int[]{30, 50, 150, 95};
 			case ELM2084 -> new int[]{20, 40, 120, 75};
 			case MSTA_S -> new int[]{30, 60, 190, 115};

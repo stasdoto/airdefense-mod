@@ -143,6 +143,19 @@ def bell():
     save('town_bell', y, peak=0.8)
 
 
+def service_siren():
+    """1.38: an emergency vehicle's siren - a wail rising and falling (three seconds, played again while it drives)."""
+    length = 3.0
+    t = t_axis(length)
+    f = 700 + 650 * (0.5 - 0.5 * np.cos(2 * np.pi * t / length))
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    tone = np.sin(ph) + 0.35 * np.sign(np.sin(ph)) + 0.2 * np.sin(2 * ph)
+    tone = bp(tone, 400, 4500)
+    y = np.tanh(1.6 * tone)
+    y = reverb(y, length, 0.6, damp=4000, mix=0.2)
+    save('service_siren', y, peak=0.7)
+
+
 def register():
     with open(SOUNDS_JSON, encoding='utf-8') as fh:
         d = json.load(fh)
@@ -154,6 +167,7 @@ def register():
         'city_crickets': (['crickets'], 24, 'city_crickets'),
         'city_owl': (['owl'], 64, 'city_owl'),
         'town_bell': (['town_bell'], 160, 'town_bell'),
+        'service_siren': (['service_siren'], 160, 'service_siren'),
     }
     for key, (files, dist, sub) in entries.items():
         d[key] = {'sounds': [{'name': 'airdefense:' + f, 'attenuation_distance': dist} for f in files], 'subtitle': 'subtitles.airdefense.' + sub}
@@ -173,4 +187,5 @@ if __name__ == '__main__':
     crickets()
     owl()
     bell()
+    service_siren()
     register()

@@ -964,5 +964,14 @@
       }
     ],
     "subtitle": "subtitles.airdefense.town_bell"
+  },
+  "service_siren": {
+    "sounds": [
+      {
+        "name": "airdefense:service_siren",
+        "attenuation_distance": 160
+      }
+    ],
+    "subtitle": "subtitles.airdefense.service_siren"
   }
 }

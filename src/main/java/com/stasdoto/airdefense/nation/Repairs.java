@@ -128,6 +128,10 @@ public final class Repairs extends SavedData {
 		r.zones.add(new Zone((int) Math.floor(at.x), (int) Math.floor(at.y), (int) Math.floor(at.z), rr, now, town));
 		noted++;
 		r.setDirty();
+		if (town >= 0) {
+			// 1.38: the fire engine, the ambulance and the police come.
+			Services.explosion(level, at, town);
+		}
 	}
 
 	/** Whose land a point is for rebuilding: a settlement's id, -1 for a road or a planned town not founded, -2 none. */

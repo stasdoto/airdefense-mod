@@ -1285,5 +1285,19 @@
   "subtitles.airdefense.city_owl": "Owl hoots",
   "subtitles.airdefense.town_bell": "Town hall bell",
   "block.airdefense.shelter_entrance": "Shelter entrance",
-  "block.airdefense.shelter_sign": "Shelter sign"
+  "block.airdefense.shelter_sign": "Shelter sign",
+  "entity.airdefense.fire_truck": "Fire engine",
+  "entity.airdefense.ambulance": "Ambulance",
+  "entity.airdefense.police_car": "Police car",
+  "item.airdefense.fire_truck": "Fire engine",
+  "item.airdefense.ambulance": "Ambulance",
+  "item.airdefense.police_car": "Police car",
+  "map.airdefense.short.fire_truck": "FIRE",
+  "map.airdefense.short.ambulance": "AMB",
+  "map.airdefense.short.police_car": "POLICE",
+  "item.airdefense.vehicle.hint_service": "The towns send these themselves: the fire engine puts out fires, the ambulance and the police come to a blast. You can drive one too",
+  "subtitles.airdefense.service_siren": "Siren wails",
+  "message.airdefense.vehicle.status_service": "%s: health %s%%, fuel %s/%s",
+  "hud.airdefense.vehicle.service": "Service vehicle",
+  "hud.airdefense.vehicle.service_call": "On a call: lights and siren"
 }

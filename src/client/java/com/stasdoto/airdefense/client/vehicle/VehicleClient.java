@@ -136,6 +136,8 @@ public final class VehicleClient {
 			}
 			l2 = Component.translatable(type.air == VehicleType.PLANE ? "hud.airdefense.vehicle.plane" : "hud.airdefense.vehicle.heli",
 					Math.max(0, (int) (v.getY() - ground)), (int) (v.throttle * 100), weapons);
+		} else if (type.isService()) {
+			l2 = Component.translatable(v.beaconsOn() ? "hud.airdefense.vehicle.service_call" : "hud.airdefense.vehicle.service");
 		} else if (type.isTruck()) {
 			l2 = Component.translatable("hud.airdefense.vehicle.cargo_goods", Component.translatable("nation.airdefense.goods." + v.getCargoKind()),
 					v.getCargo(), type.cargoCapacity, Component.translatable("hud.airdefense.truck." + v.truckModeKey()));
@@ -165,7 +167,7 @@ public final class VehicleClient {
 			};
 			l2 = Component.translatable(mode, v.getAmmo(), type.magazine());
 		}
-		if (!type.isRadar() && !type.isTruck()) {
+		if (!type.isRadar() && !type.isTruck() && !type.isService()) {
 			l2 = Component.empty().append(l2).append(v.reserveText());
 		}
 		if (!v.infiniteFuel()) {

@@ -95,6 +95,12 @@ STYLES = {
     'switches': dict(kind='switches', base=0x3A3D40),
     'radio': dict(kind='radio', base=0x55603C),
     'red': dict(kind='plain', base=0xA4281E),
+    # 1.38: the emergency services - fire engine red, the police blue, the beacons (drawn bright).
+    'fire_red': dict(kind='plain', base=0xB8211B),
+    'police_blue': dict(kind='plain', base=0x23409A),
+    'beacon_blue': dict(kind='plain', base=0x2C5BFF, flat=True),
+    'beacon_red': dict(kind='plain', base=0xFF2A1E, flat=True),
+    'stripe_yellow': dict(kind='plain', base=0xE6C21E),
     'yellow': dict(kind='plain', base=0xC9A227),
     'chrome': dict(kind='plain', base=0xB9BEC2),
     # The head-up display's combiner glass (the inside is drawn solid: a dark green tinted pane).

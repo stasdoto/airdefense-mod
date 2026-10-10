@@ -462,6 +462,86 @@ public final class CityShape {
 		return segV(k, l - 1) || segV(k, l) || segH(l, k - 1) || segH(l, k);
 	}
 
+	/** 1.38: every crossing of the town's streets, as block positions {x, z}. */
+	public List<int[]> crossings() {
+		List<int[]> out = new ArrayList<>();
+		for (int k = 0; k <= n; k++) {
+			for (int l = 0; l <= n; l++) {
+				if (node(k, l)) {
+					out.add(new int[]{gx[k], gz[l]});
+				}
+			}
+		}
+		return out;
+	}
+
+	/**
+	 * 1.38: the way along the streets from the crossing nearest (x0, z0) to the crossing nearest (x1, z1): the crossings
+	 * passed, in order (block positions {x, z}). Empty if there is none.
+	 */
+	public List<int[]> route(int x0, int z0, int x1, int z1) {
+		int[] a = nearestNode(x0, z0);
+		int[] b = nearestNode(x1, z1);
+		List<int[]> out = new ArrayList<>();
+		if (a == null || b == null) {
+			return out;
+		}
+		int m = n + 1;
+		int[] prev = new int[m * m];
+		java.util.Arrays.fill(prev, -2);
+		java.util.ArrayDeque<Integer> q = new java.util.ArrayDeque<>();
+		int start = a[0] * m + a[1];
+		int goal = b[0] * m + b[1];
+		prev[start] = -1;
+		q.add(start);
+		while (!q.isEmpty()) {
+			int c = q.poll();
+			if (c == goal) {
+				break;
+			}
+			int k = c / m;
+			int l = c % m;
+			// Along a vertical street (x line k) to the next row, or a horizontal one (z line l) to the next column.
+			int[][] steps = {{k, l + 1, segV(k, l) ? 1 : 0}, {k, l - 1, segV(k, l - 1) ? 1 : 0}, {k + 1, l, segH(l, k) ? 1 : 0},
+					{k - 1, l, segH(l, k - 1) ? 1 : 0}};
+			for (int[] st : steps) {
+				if (st[2] == 0 || st[0] < 0 || st[1] < 0 || st[0] > n || st[1] > n) {
+					continue;
+				}
+				int d = st[0] * m + st[1];
+				if (prev[d] == -2) {
+					prev[d] = c;
+					q.add(d);
+				}
+			}
+		}
+		if (prev[goal] == -2) {
+			return out;
+		}
+		for (int c = goal; c != -1; c = prev[c]) {
+			out.add(0, new int[]{gx[c / m], gz[c % m]});
+		}
+		return out;
+	}
+
+	private int[] nearestNode(int x, int z) {
+		int[] best = null;
+		long bd = Long.MAX_VALUE;
+		for (int k = 0; k <= n; k++) {
+			for (int l = 0; l <= n; l++) {
+				if (!node(k, l)) {
+					continue;
+				}
+				long d = (long) (gx[k] - x) * (gx[k] - x) + (long) (gz[l] - z) * (gz[l] - z);
+				if (d < bd) {
+					bd = d;
+					best = new int[]{k, l};
+				}
+			}
+		}
+		return best;
+	}
+
 	/** Index of the cell (between lines) holding v, or -1 / n outside. */
 	private static int cell(int[] g, int v) {
 		if (v < g[0]) {

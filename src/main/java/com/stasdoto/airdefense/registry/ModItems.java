@@ -138,6 +138,9 @@ public final class ModItems {
 	public static final Item F16 = vehicle("f16", VehicleType.F16);
 	public static final Item FUEL_TRUCK = vehicle("fuel_truck", VehicleType.FUEL_TRUCK);
 	public static final Item SUPPLY_TRUCK = vehicle("supply_truck", VehicleType.SUPPLY_TRUCK);
+	public static final Item FIRE_TRUCK = vehicle("fire_truck", VehicleType.FIRE_TRUCK);
+	public static final Item AMBULANCE = vehicle("ambulance", VehicleType.AMBULANCE);
+	public static final Item POLICE_CAR = vehicle("police_car", VehicleType.POLICE_CAR);
 	public static final Item S8_ROCKETS = register("s8_rockets", Item::new, new Item.Properties().stacksTo(8));
 	public static final Item FAB250 = register("fab250", Item::new, new Item.Properties().stacksTo(4));
 	public static final Item TANK_SHELL = register("tank_shell", Item::new, new Item.Properties().stacksTo(8));
@@ -338,6 +341,9 @@ public final class ModItems {
 				output.accept(F16);
 				output.accept(FUEL_TRUCK);
 				output.accept(SUPPLY_TRUCK);
+				output.accept(FIRE_TRUCK);
+				output.accept(AMBULANCE);
+				output.accept(POLICE_CAR);
 				output.accept(S8_ROCKETS);
 				output.accept(FAB250);
 				output.accept(TANK_SHELL);

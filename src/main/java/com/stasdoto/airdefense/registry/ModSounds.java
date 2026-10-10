@@ -31,6 +31,8 @@ public final class ModSounds {
 	public static final SoundEvent CITY_CRICKETS = register("city_crickets", 24);
 	public static final SoundEvent CITY_OWL = register("city_owl", 64);
 	public static final SoundEvent TOWN_BELL = register("town_bell", 160);
+	/** 1.38: an emergency vehicle's siren (a three-second wail, played again while it drives with its lights on). */
+	public static final SoundEvent SERVICE_SIREN = register("service_siren", 160);
 	/** The Shahed's two-stroke buzz, near and far (looped on the client while one flies). */
 	public static final SoundEvent SHAHED_LOOP = register("shahed_loop", 160);
 	public static final SoundEvent SHAHED_FAR = register("shahed_far", 600);

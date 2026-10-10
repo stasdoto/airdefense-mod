@@ -85,7 +85,7 @@ public class VehicleItem extends Item {
 				: type.isCounterBattery() ? "item.airdefense.vehicle.hint_cb"
 				: type.launcher != null && type.launcher.missile.recon() ? "item.airdefense.vehicle.hint_recon"
 				: type.isDroneLauncher() ? "item.airdefense.vehicle.hint_loiter" : type.isLauncher() ? "item.airdefense.vehicle.hint_launcher"
-				: type.isTruck() ? "item.airdefense.vehicle.hint_truck" : type.isAir() ? "item.airdefense.vehicle.hint_air"
+				: type.isService() ? "item.airdefense.vehicle.hint_service" : type.isTruck() ? "item.airdefense.vehicle.hint_truck" : type.isAir() ? "item.airdefense.vehicle.hint_air"
 				: type.isJammer() ? "item.airdefense.vehicle.hint_ew" : type.isRadar() ? "item.airdefense.vehicle.hint_radar" : type.boat ? "item.airdefense.vehicle.hint_boat"
 				: type.isArmed() ? "item.airdefense.vehicle.hint_armed" : "item.airdefense.vehicle.hint_defense")
 				.withStyle(ChatFormatting.DARK_GRAY));
