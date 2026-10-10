@@ -329,9 +329,13 @@ public final class Airports {
 		for (int i = 0; i <= nu; i++) {
 			for (int j = 0; j <= nv; j++) {
 				int[] w = world(sx, sz, ux, uz, vx, vz, U0 + (U1 - U0) * i / nu, V0 + (V1 - V0) * j / nv);
+				// Water may be filled in (a pond, a stream), but not too much of it (not the sea).
 				int y = t.top(w[0], w[1]);
-				if (y <= sea && ++wet > Math.max(0, hs.length / 12)) {
-					return no("water");
+				if (y <= sea) {
+					y = sea;
+					if (++wet * 5 > hs.length * 2) {
+						return no("water");
+					}
 				}
 				hs[k++] = y;
 			}
@@ -339,10 +343,10 @@ public final class Airports {
 		int[] sorted = hs.clone();
 		java.util.Arrays.sort(sorted);
 		int median = sorted[k / 2];
-		if (sorted[k - 1] - sorted[0] > 18) {
+		if (sorted[k - 1] - sorted[0] > 24) {
 			return no("steep");
 		}
-		double score = wet * 40;
+		double score = wet * 4;
 		for (int y : hs) {
 			score += Math.abs(y - median);
 		}
