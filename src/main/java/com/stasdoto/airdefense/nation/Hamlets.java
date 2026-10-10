@@ -130,6 +130,11 @@ public final class Hamlets {
 						REJECTED[2]++;
 					}
 				}
+				if (Airports.inside(seed, t, hx, hz, 50) || Airports.crosses(seed, t, hx, hz, c.x, c.z, 16)) {
+					// 1.40: clear of the airports (and its road into town not over one).
+					clash = true;
+					REJECTED[2]++;
+				}
 				if (Railways.close(seed, t, hx, hz, 60)) {
 					// 1.39: clear of the railways.
 					clash = true;

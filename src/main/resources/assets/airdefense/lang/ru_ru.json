@@ -1305,5 +1305,11 @@
   "block.airdefense.station_sign": "Табличка станции",
   "entity.airdefense.train": "Поезд",
   "subtitles.airdefense.train_horn": "Гудит поезд",
-  "subtitles.airdefense.train_clack": "Стучат колёса поезда"
+  "subtitles.airdefense.train_clack": "Стучат колёса поезда",
+  "block.airdefense.runway_light": "Огонь ВПП",
+  "block.airdefense.windsock": "Ветроуказатель",
+  "block.airdefense.airport_sign": "Вывеска аэропорта",
+  "block.airdefense.threshold": "Метка торца ВПП",
+  "block.airdefense.stand": "Метка стоянки самолёта",
+  "entity.airdefense.airliner": "Авиалайнер"
 }

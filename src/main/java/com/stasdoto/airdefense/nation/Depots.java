@@ -110,8 +110,9 @@ public final class Depots {
 					int x1 = x0 + w - 1;
 					int z1 = z0 + d - 1;
 					double score = site(t, c, road, x0, z0, x1, z1);
-					if (Railways.close(seed, t, (x0 + x1) / 2, (z0 + z1) / 2, Math.max(x1 - x0, z1 - z0) / 2 + 16)) {
-						// 1.39: clear of the railways.
+					if (Railways.close(seed, t, (x0 + x1) / 2, (z0 + z1) / 2, Math.max(x1 - x0, z1 - z0) / 2 + 16)
+							|| Airports.inside(seed, t, (x0 + x1) / 2, (z0 + z1) / 2, Math.max(x1 - x0, z1 - z0) / 2 + 16)) {
+						// 1.39: clear of the railways (1.40: and the airports).
 						score += 10000;
 					}
 					if (score < bestScore) {

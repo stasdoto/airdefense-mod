@@ -128,6 +128,8 @@ public final class Cities {
 	public static volatile boolean shelters = true;
 	/** 1.39: the railways between the capitals; roundabouts where the highways come into the towns, lamps on the bridges (worlds started since). */
 	public static volatile boolean railways = true;
+	/** 1.40: the capitals' airports (worlds started since). */
+	public static volatile boolean airports = true;
 	@Nullable
 	public static volatile CityForm FORCE_FORM;
 
@@ -620,6 +622,12 @@ public final class Cities {
 			if (port != null && port.access != null) {
 				out.add(port.access);
 			}
+			if (c.capital()) {
+				Airports.Airport a = Airports.of(seed, t, c.cx, c.cz);
+				if (a != null) {
+					out.add(Airports.access(seed, t, a));
+				}
+			}
 		}
 		return out;
 	}
@@ -810,6 +818,10 @@ public final class Cities {
 
 	/** Other cities on the way cost a lot to pass through (roads go round them). */
 	private static double avoidTowns(long seed, Terrain t, City a, City b, int x, int z) {
+		if (Airports.inside(seed, t, x, z, 24)) {
+			// 1.40: round the airports.
+			return 1;
+		}
 		for (City c : citiesAround(seed, t, x, z)) {
 			if (c == a || c == b) {
 				continue;

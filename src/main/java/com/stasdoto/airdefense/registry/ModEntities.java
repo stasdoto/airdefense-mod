@@ -75,6 +75,13 @@ public final class ModEntities {
 			TRAIN_KEY, EntityType.Builder.<com.stasdoto.airdefense.nation.TrainEntity>of(com.stasdoto.airdefense.nation.TrainEntity::new,
 					MobCategory.MISC).sized(3f, 4f).clientTrackingRange(16).noSave().noSummon().build(TRAIN_KEY));
 
+	private static final ResourceKey<EntityType<?>> PLANE_KEY = ResourceKey.create(Registries.ENTITY_TYPE, AirDefense.id("airliner"));
+
+	/** 1.40: the airliners at the airports (made only on the client, round the player). */
+	public static final EntityType<com.stasdoto.airdefense.nation.PlaneEntity> PLANE = Registry.register(BuiltInRegistries.ENTITY_TYPE,
+			PLANE_KEY, EntityType.Builder.<com.stasdoto.airdefense.nation.PlaneEntity>of(com.stasdoto.airdefense.nation.PlaneEntity::new,
+					MobCategory.MISC).sized(4f, 4f).clientTrackingRange(16).noSave().noSummon().build(PLANE_KEY));
+
 	private static final Map<VehicleType, EntityType<VehicleEntity>> VEHICLES = new EnumMap<>(VehicleType.class);
 
 	static {

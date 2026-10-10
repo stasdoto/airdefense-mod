@@ -1305,5 +1305,11 @@
   "block.airdefense.station_sign": "Табличка станції",
   "entity.airdefense.train": "Потяг",
   "subtitles.airdefense.train_horn": "Гуде потяг",
-  "subtitles.airdefense.train_clack": "Стукотять колеса потяга"
+  "subtitles.airdefense.train_clack": "Стукотять колеса потяга",
+  "block.airdefense.runway_light": "Вогонь ЗПС",
+  "block.airdefense.windsock": "Вітровказівник",
+  "block.airdefense.airport_sign": "Вивіска аеропорту",
+  "block.airdefense.threshold": "Мітка торця ЗПС",
+  "block.airdefense.stand": "Мітка стоянки літака",
+  "entity.airdefense.airliner": "Авіалайнер"
 }

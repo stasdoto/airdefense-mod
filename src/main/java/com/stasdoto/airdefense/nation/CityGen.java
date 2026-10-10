@@ -242,7 +242,8 @@ public final class CityGen {
 				lines.add(l);
 			}
 		}
-		if (cities.isEmpty() && roads.isEmpty() && hamlets.isEmpty() && depots.isEmpty() && ports.isEmpty() && lines.isEmpty()) {
+		List<Airports.Airport> airports = Airports.near(seed, t, mx, mz, 8 + Airports.BLEND + 2);
+		if (cities.isEmpty() && roads.isEmpty() && hamlets.isEmpty() && depots.isEmpty() && ports.isEmpty() && lines.isEmpty() && airports.isEmpty()) {
 			return;
 		}
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
@@ -271,6 +272,13 @@ public final class CityGen {
 				}
 				if (ring != null) {
 					ringColumn(w, ring, x, z, pos);
+					continue;
+				}
+				boolean field = false;
+				for (Airports.Airport a : airports) {
+					field |= AirportGen.column(w, a, x, z, true, pos);
+				}
+				if (field) {
 					continue;
 				}
 				Cities.Road road = null;
@@ -312,6 +320,11 @@ public final class CityGen {
 						break;
 					}
 				}
+				for (Airports.Airport a : airports) {
+					if (!done && AirportGen.column(w, a, x, z, false, pos)) {
+						done = true;
+					}
+				}
 				if (done) {
 					continue;
 				}
@@ -335,6 +348,9 @@ public final class CityGen {
 		}
 		for (Railways.Line l : lines) {
 			Rails.build(w, t, l, roads, cities, cp);
+		}
+		for (Airports.Airport a : airports) {
+			AirportGen.build(w, a, cp);
 		}
 		for (Cities.City c : cities) {
 			buildings(w, c, cp);
@@ -411,6 +427,11 @@ public final class CityGen {
 			}
 			Depots.Depot d = c.depot(seed, t);
 			if (d != null && d.near(mx, mz, 24)) {
+				return true;
+			}
+		}
+		if (Cities.airports) {
+			for (Airports.Airport a : Airports.near(seed, t, mx, mz, 24)) {
 				return true;
 			}
 		}

@@ -252,7 +252,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		if (scene("realcity")) {
 			realCity(ctx);
 		}
-		if (scene("rail")) {
+		if (scene("rail") || scene("airport")) {
 			rail(ctx);
 		}
 	}
@@ -285,6 +285,12 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			server.runCommand("weather clear");
 			server.runCommand("gamerule advance_time false");
 			server.runCommand("gamerule advance_weather false");
+			if (scene("airport")) {
+				airport(ctx, server);
+			}
+			if (!scene("rail")) {
+				return;
+			}
 			// The line's points to look at: {x, y, z, dir x, dir z} for the station, a bridge, a tunnel mouth, a diagonal, the open line.
 			int[][] spots = server.computeOnServer(s -> {
 				ServerLevel l = s.overworld();
@@ -471,6 +477,102 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			ctx.takeScreenshot("rl8_at_the_station");
 			AirDefense.LOGGER.info("[airdefense-test] RESULT rail_station: an electric train stopped at the station after {} ticks", stopped);
 		}
+	}
+
+	/** 1.40: a capital's airport in a normal world - from above, the terminal, the runway; planes parked, landing, leaving. */
+	private void airport(ClientGameTestContext ctx, TestServerContext server) {
+		// {threshold x, z, u x, u z, v x, v z, y}
+		int[] a = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var t = com.stasdoto.airdefense.nation.Cities.terrain(l);
+			long t0 = System.nanoTime();
+			com.stasdoto.airdefense.nation.Airports.Airport found = null;
+			for (int r = 0; r <= 2 && found == null; r++) {
+				for (int cx = -r; cx <= r && found == null; cx++) {
+					for (int cz = -r; cz <= r && found == null; cz++) {
+						if (Math.max(Math.abs(cx), Math.abs(cz)) == r) {
+							found = com.stasdoto.airdefense.nation.Airports.of(l.getSeed(), t, cx, cz);
+						}
+					}
+				}
+			}
+			AirDefense.LOGGER.info("[airdefense-test] RESULT airport_plan: {} planned, {} capitals without room for one, in {} ms",
+					com.stasdoto.airdefense.nation.Airports.planned, com.stasdoto.airdefense.nation.Airports.refused, (System.nanoTime() - t0) / 1_000_000);
+			if (found == null) {
+				return null;
+			}
+			AirDefense.LOGGER.info("[airdefense-test] RESULT airport_at: threshold {} {} level {}, runway along {} {}, apron towards {} {}, town {} at {} {}",
+					found.sx, found.sz, found.y, found.ux, found.uz, found.vx, found.vz, found.city.size, found.city.x, found.city.z);
+			return new int[]{found.sx, found.sz, found.ux, found.uz, found.vx, found.vz, found.y};
+		});
+		if (a == null) {
+			return;
+		}
+		java.util.function.BiFunction<Double, Double, double[]> at = (u, v) -> new double[]{a[0] + 0.5 + u * a[2] + v * a[4], a[1] + 0.5 + u * a[3] + v * a[5]};
+		int mid = com.stasdoto.airdefense.nation.Airports.MID;
+		// The terminal and the apron first (the planes are put on the stands when the player comes near).
+		double[] term = at.apply((double) mid, 175.0);
+		double[] apron = at.apply((double) mid, 90.0);
+		look(server, term[0], a[6] + 30, term[1], apron[0], a[6] + 2, apron[1]);
+		ctx.waitTicks(300);
+		int parked = waitUntil(ctx, () -> ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.planes().size()) > 0, 400);
+		ctx.waitTicks(40);
+		ctx.runOnClient(mc -> mc.gui.hud.getChat().clearMessages(false));
+		ctx.takeScreenshot("ap1_terminal_apron");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT airport_parked: {} planes at the stands after {} ticks, {} airports seen",
+				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.planes().size()), parked,
+				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.airports()));
+		// From above, the whole airport.
+		double[] c = at.apply((double) mid, 60.0);
+		double[] eye = at.apply((double) mid, 330.0);
+		look(server, eye[0], a[6] + 170, eye[1], c[0], a[6], c[1]);
+		ctx.waitTicks(200);
+		ctx.takeScreenshot("ap2_from_above");
+		// A plane lands: watched from beside the runway near the threshold.
+		double[] side = at.apply(150.0, -40.0);
+		double[] touch = at.apply(60.0, 0.0);
+		look(server, side[0], a[6] + 8, side[1], touch[0], a[6] + 6, touch[1]);
+		ctx.waitTicks(60);
+		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.force = 1);
+		int landing = waitUntil(ctx, () -> ctx.computeOnClient(mc -> {
+			for (double[] p : com.stasdoto.airdefense.client.nation.AirTraffic.planes()) {
+				if (p[3] == 0 && Math.hypot(p[0] - touch[0], p[2] - touch[1]) < 140) {
+					return true;
+				}
+			}
+			return false;
+		}), 1400);
+		ctx.takeScreenshot("ap3_landing");
+		int down = waitUntil(ctx, () -> ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.landed) > 0, 2400);
+		ctx.takeScreenshot("ap4_parked_after_landing");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT airport_landing: on the approach after {} ticks, at the stand {} ticks later", landing, down);
+		// One leaves: watched from beside the runway half way along.
+		double[] side2 = at.apply(300.0, -45.0);
+		double[] run = at.apply(380.0, 0.0);
+		look(server, side2[0], a[6] + 6, side2[1], run[0], a[6] + 5, run[1]);
+		ctx.waitTicks(40);
+		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.force = 2);
+		int rolling = waitUntil(ctx, () -> ctx.computeOnClient(mc -> {
+			for (double[] p : com.stasdoto.airdefense.client.nation.AirTraffic.planes()) {
+				if (p[3] == 2 && p[4] > 1.5) {
+					return true;
+				}
+			}
+			return false;
+		}), 2400);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("ap5_take_off");
+		int gone = waitUntil(ctx, () -> ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.departed) > 0, 1200);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT airport_take_off: on the run after {} ticks, gone {} ticks later; parked {}, landed {}, left {}",
+				rolling, gone, ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.parked),
+				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.landed),
+				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.departed));
+		// At night: the runway's lights, the terminal's windows.
+		server.runCommand("time set 18000");
+		look(server, eye[0], a[6] + 120, eye[1], c[0], a[6], c[1]);
+		ctx.waitTicks(100);
+		ctx.takeScreenshot("ap6_night");
+		server.runCommand("time set 6000");
 	}
 
 	/** A normal world (hills, rivers, forests): the capital of the first country as the world generator builds it. */

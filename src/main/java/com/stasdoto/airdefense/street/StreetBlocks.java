@@ -103,6 +103,16 @@ public final class StreetBlocks {
 	public static final Block BUFFER_STOP = thing("buffer_stop", 0, MapColor.COLOR_RED, SoundType.METAL, 0, 0, 4, 16, 15, 16);
 	public static final Block STATION_SIGN = thing("station_sign", 0, MapColor.COLOR_BLUE, SoundType.METAL, 0, 0, 7, 16, 16, 9);
 
+	// 1.40: the airports - the runway's edge lights, a windsock, the terminal's sign; the markers the planes find their way
+	// by (a whole block of the runway's and the apron's surface: a threshold, a stand).
+	public static final Block RUNWAY_LIGHT = thing("runway_light", 12, MapColor.METAL, SoundType.GLASS, 5, 0, 5, 11, 5, 11);
+	public static final Block WINDSOCK = thing("windsock", 0, MapColor.COLOR_ORANGE, SoundType.WOOL, 0, 0, 0, 16, 16, 16);
+	public static final Block AIRPORT_SIGN = thing("airport_sign", 10, MapColor.COLOR_BLUE, SoundType.METAL, 0, 0, 6, 16, 16, 10);
+	public static final Block THRESHOLD = register("threshold", p -> new StreetBlock(p, new double[]{0, 0, 0, 16, 16, 16}),
+			BlockBehaviour.Properties.of().mapColor(MapColor.SNOW).strength(1.8f, 6f).sound(SoundType.STONE));
+	public static final Block STAND = register("stand", StandBlock::new,
+			BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_YELLOW).strength(1.8f, 6f).sound(SoundType.STONE));
+
 	/** A manhole cover set in the asphalt: a whole block (it is the road surface). */
 	public static final Block MANHOLE = register("manhole", Block::new, BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY).strength(1.8f, 6f)
 			.sound(SoundType.STONE));
