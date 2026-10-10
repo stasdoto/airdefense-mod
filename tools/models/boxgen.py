@@ -31,7 +31,7 @@ STYLES = {
     # Woodland camouflage (NATO / Ukrainian vehicles).
     'camo': dict(kind='camo', base=0x4A5A32, c2=0x5E4A30, c3=0x22281C),
     # Russian / Soviet protective green.
-    'rgreen': dict(kind='plain', base=0x56633A),
+    'rgreen': dict(kind='plain', base=0x515C37),
     # Ukrainian digital-ish green (Soviet vehicles in Ukrainian service).
     'ugreen': dict(kind='camo', base=0x55613A, c2=0x3C4A2A, c3=0x6B6C47, blob=3),
     # Bundeswehr / NATO plain dark green.
@@ -56,6 +56,8 @@ STYLES = {
     'steel': dict(kind='plain', base=0x8A8F94),
     'rust': dict(kind='plain', base=0x6E4A2E),
     'canvas': dict(kind='plain', base=0x6E6B4C),
+    # 1.44: the unditching log.
+    'wood': dict(kind='camo', base=0x6B4E32, c2=0x5A4029, c3=0x7C5C3C, blob=2),
     # Window glass: see-through (drawn translucent near the vehicle, when its inside is drawn too).
     'glass': dict(kind='glass', base=0x2A3946, alpha=118),
     'light': dict(kind='plain', base=0xF2E7B0, flat=True),
@@ -127,6 +129,19 @@ STYLES = {
 }
 
 
+# 1.44: how worn and dirty each paint gets (1 = an army vehicle in the field). Styles not listed: by their kind.
+WEAR = {
+    'white': 0.35, 'chrome': 0.0, 'liner_blue': 0.25, 'liner_red': 0.25, 'fire_red': 0.35, 'police_blue': 0.35,
+    'stripe_yellow': 0.4, 'yellow': 0.6, 'red': 0.5, 'orange': 0.5, 'light': 0.0, 'redlight': 0.0, 'hud': 0.0,
+    'radome': 0.4, 'rail_green': 0.55, 'rail_red': 0.55, 'rail_yellow': 0.55, 'tractor_red': 0.7, 'crane_yellow': 0.6,
+    'concrete': 0.5, 'window': 0.0, 'coal': 0.0, 'gravel': 0.0, 'black': 0.5, 'dark': 0.6,
+}
+# Paints that are armour: welded plates with panel seams and rivets.
+ARMOUR = {'camo', 'rgreen', 'ugreen', 'nato', 'olive', 'tan', 'sand', 'grey', 'navy', 'visby', 'deck', 'dgrey', 'steel'}
+DUST = (126, 110, 84)
+MUD = (74, 62, 46)
+
+
 def mul(c, k):
     return tuple(max(0, min(255, int(round(v * k)))) for v in c)
 
@@ -189,10 +204,15 @@ class Painter:
         elif kind == 'camo':
             region[..., :3] = mul(base, k)
             cell = st.get('blob', 7)
-            f2 = self.noise_field(w, h, cell)
-            f3 = self.noise_field(w, h, cell)
-            m2 = f2 > 0.62
-            m3 = f3 > 0.70
+            if cell >= 5 and w >= 6 and h >= 6:
+                # 1.44: swathes running slantwise (as painted on real vehicles), two layers of noise for ragged edges.
+                f2 = self.skewed(w, h, cell) * 0.8 + self.noise_field(w, h, 2) * 0.2
+                f3 = self.skewed(w, h, cell) * 0.8 + self.noise_field(w, h, 2) * 0.2
+                m2 = f2 > 0.6
+                m3 = (f3 > 0.66) & ~m2
+            else:
+                m2 = self.noise_field(w, h, cell) > 0.62
+                m3 = self.noise_field(w, h, cell) > 0.70
             region[m2, :3] = mul(rgb(st['c2']), k)
             region[m3, :3] = mul(rgb(st['c3']), k)
             region[..., :3] += self.rng.normal(0, 2.5, (h, w, 1))
@@ -221,10 +241,20 @@ class Painter:
             region[::3, :, :3] = mul(base, k * 0.6)
             region[..., :3] += self.rng.normal(0, 2.0, (h, w, 1))
         elif kind == 'track':
+            # 1.44: link plates 4 texels long: the gap, the pin (shiny), the plate, its grouser; the guide horn in the middle.
             region[..., :3] = mul(base, k)
-            region[::3, :, :3] = mul(base, k * 0.55)
-            region[1::3, :, :3] = mul(base, k * 1.25)
-            region[..., :3] += self.rng.normal(0, 2.0, (h, w, 1))
+            region[0::4, :, :3] = mul(base, k * 0.45)
+            region[1::4, :, :3] = mul(base, k * 1.45)
+            region[3::4, :, :3] = mul(base, k * 0.85)
+            if w >= 5:
+                c = w // 2
+                region[2::4, c:c + 1, :3] = mul(base, k * 1.6)
+            region[:, 0, :3] *= 1.2
+            region[:, -1, :3] *= 1.2
+            mud = self.noise_field(w, h, 3)
+            a = np.clip((mud - 0.45) * 1.6, 0, 0.7)[..., None]
+            region[..., :3] = region[..., :3] * (1 - a) + np.array(mul(MUD, k)) * a
+            region[..., :3] += self.rng.normal(0, 2.5, (h, w, 1))
         elif kind == 'wheel':
             # Round wheel seen from the side: transparent outside the circle.
             cx = (w - 1) / 2.0
@@ -247,6 +277,13 @@ class Painter:
                     region[by, bx, :3] = mul(hub, k * 0.55)
             # Sidewall line.
             region[(d > r * (1 - ring)) & (d < r * (1 - ring) + 1.0), :3] = mul(base, k * 0.6)
+            if r >= 4:
+                # 1.44: the dished hub - lighter towards its rim, darker in the middle - and a little dust on the rubber.
+                hubm = inner & (d > r * 0.18)
+                t = np.clip(d / max(1.0, r * (1 - ring)), 0, 1)
+                region[hubm, :3] *= (0.85 + 0.25 * t[hubm])[..., None]
+                rub = (d <= r) & ~inner
+                region[rub, :3] = region[rub, :3] * 0.8 + np.array(mul(DUST, k * 0.6)) * 0.2
         elif kind == 'seat':
             region[..., :3] = mul(base, k)
             region[..., :3] += self.rng.normal(0, 2.5, (h, w, 1))
@@ -341,12 +378,87 @@ class Painter:
             raise ValueError(kind)
         if kind == 'glass':
             region[..., 3] = st.get('alpha', 255)
+        if kind in ('plain', 'camo') and not flat:
+            wear = WEAR.get(style, 0.25 if style.startswith('int_') else 1.0)
+            self.weather(region, w, h, face, wear, k, style in ARMOUR)
         if kind in ('plain', 'camo', 'glass', 'pixel', 'multicam', 'molle', 'cross') and not flat and w >= 4 and h >= 4:
-            region[0, :, :3] *= 0.78
-            region[-1, :, :3] *= 0.72
-            region[:, 0, :3] *= 0.8
-            region[:, -1, :3] *= 0.8
+            # Edges: a worn light lip along the top, shadowed sides and bottom (the boxes read as solid plates).
+            region[0, :, :3] *= 1.12 if face in ('front', 'back', 'left', 'right') else 0.82
+            region[-1, :, :3] *= 0.7
+            region[:, 0, :3] *= 0.82
+            region[:, -1, :3] *= 0.82
         img[y0:y0 + h, x0:x0 + w] = np.clip(region, 0, 255)
+
+    def skewed(self, w, h, cell):
+        """Noise stretched along a slant (camouflage swathes)."""
+        big = self.noise_field(w + h, h, cell)
+        yy = np.arange(h)[:, None]
+        xx = np.arange(w)[None, :] + yy // 2
+        return big[np.broadcast_to(yy, (h, w)), np.clip(xx, 0, w + h - 1)]
+
+    def weather(self, region, w, h, face, wear, k, armour):
+        """1.44: paint that has seen the field - faded in patches, dust rising from below, rain streaks down the sides,
+        chipped edges, and on armour the seams of the welded plates with their rivets. Not the clean plastic of before."""
+        if wear <= 0 or w < 3 or h < 3:
+            return
+        c = region[..., :3]
+        # Faded patches, large and small.
+        m1 = self.noise_field(w, h, 9) - 0.5
+        m2 = self.noise_field(w, h, 3) - 0.5
+        c *= (1 + wear * (0.17 * m1 + 0.07 * m2))[..., None]
+        # Sun-bleached patches go warmer (yellowish), the shaded ones cooler.
+        c[..., 0] += wear * 10 * m1
+        c[..., 2] -= wear * 6 * m1
+        dust = np.array(mul(DUST, k))
+        side = face in ('front', 'back', 'left', 'right')
+        if side and h >= 5:
+            # Dust and mud thrown up from the ground: thickest at the bottom of each plate.
+            yy = (np.arange(h) / max(1, h - 1))[:, None]
+            n = self.noise_field(w, h, 4)
+            a = np.clip((yy - 0.45) / 0.55, 0, 1) ** 1.6 * (0.3 + 0.6 * n) * wear * 0.7
+            c[:] = c * (1 - a[..., None]) + dust * a[..., None]
+            # Rain streaks running down from the top edge.
+            for _ in range(max(1, w // 5)):
+                x = int(self.rng.integers(0, w))
+                length = int(self.rng.integers(max(2, h // 4), h + 1))
+                fade = np.linspace(1.0, 0.2, length)[:, None]
+                c[:length, x] *= 1 - 0.12 * wear * fade
+        elif face == 'top':
+            # Dust settled on the flat tops.
+            n = self.noise_field(w, h, 3)
+            a = np.clip((n - 0.5) * 1.5, 0, 0.45) * wear
+            c[:] = c * (1 - a[..., None]) + dust * 1.08 * a[..., None]
+        else:
+            c *= 0.88
+        # Chipped paint along the edges: lighter scratches and the odd dark spot of bare metal.
+        if w >= 4 and h >= 4:
+            border = np.zeros((h, w), dtype=bool)
+            border[:2, :] = border[-1:, :] = True
+            border[:, :1] = border[:, -1:] = True
+            r = self.rng.random((h, w))
+            c[border & (r < 0.22 * wear)] *= 1.22
+            c[border & (r > 1 - 0.05 * wear)] *= 0.55
+        # Seams of the plates every 0.8-1.2 m (on armour), with a lit edge beside each and a row of rivets.
+        if armour and wear >= 0.5:
+            long_axis = 1 if w >= h else 0
+            span = w if long_axis == 1 else h
+            if span >= 16 and min(w, h) >= 6:
+                step = int(self.rng.integers(13, 20))
+                pos = int(self.rng.integers(5, step))
+                while pos < span - 4:
+                    if long_axis == 1:
+                        c[1:-1, pos] *= 0.68
+                        c[1:-1, pos + 1] *= 1.07
+                        c[2:-2:3, pos - 1] *= 1.18
+                    else:
+                        c[pos, 1:-1] *= 0.68
+                        c[pos + 1, 1:-1] *= 1.07
+                        c[pos - 1, 2:-2:3] *= 1.18
+                    pos += step
+            # Rivets along the top edge of the larger side plates.
+            if side and w >= 10 and h >= 8:
+                c[2, 2:-2:3] *= 1.2
+                c[3, 2:-2:3] *= 0.8
 
 
 # ----------------------------------------------------------------------------------------------------------------
