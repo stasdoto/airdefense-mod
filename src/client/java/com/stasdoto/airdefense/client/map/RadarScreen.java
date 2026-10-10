@@ -115,10 +115,10 @@ public class RadarScreen extends Screen {
 		cx = (px0 - 4) / 2 + 2;
 		cy = height / 2 + 6;
 		radius = Math.max(40, Math.min((px0 - 8) / 2, height / 2 - 18));
-		addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.radar.to_map"), b -> minecraft.gui.setScreen(new TacticalMapScreen()))
+		addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.radar.to_map"), b -> minecraft.gui.setScreen(new TacticalMapScreen()))
 				.bounds(px0 + 4, height - 24, PANEL_W - 8, 20).build());
-		addRenderableWidget(UiButton.builder(Component.literal("+"), b -> zoomBy(-1)).bounds(6, height - 24, 20, 20).build());
-		addRenderableWidget(UiButton.builder(Component.literal("-"), b -> zoomBy(1)).bounds(28, height - 24, 20, 20).build());
+		addRenderableWidget(UiButton.create(Component.literal("+"), b -> zoomBy(-1)).bounds(6, height - 24, 20, 20).build());
+		addRenderableWidget(UiButton.create(Component.literal("-"), b -> zoomBy(1)).bounds(28, height - 24, 20, 20).build());
 		Player p = minecraft.player;
 		if (p != null) {
 			centerX = p.getX();

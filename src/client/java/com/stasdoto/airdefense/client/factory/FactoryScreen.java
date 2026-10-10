@@ -62,13 +62,13 @@ public class FactoryScreen extends Screen {
 		y0 = (height - h) / 2;
 		int rx = x0 + 168;
 		int rw = w - 176;
-		order1 = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.factory.order1"), b -> send(FactoryActionPayload.ORDER, 1))
+		order1 = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.factory.order1"), b -> send(FactoryActionPayload.ORDER, 1))
 				.bounds(rx, y0 + 112, rw / 2 - 2, 18).build());
-		order5 = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.factory.order5"), b -> send(FactoryActionPayload.ORDER, 5))
+		order5 = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.factory.order5"), b -> send(FactoryActionPayload.ORDER, 5))
 				.bounds(rx + rw / 2 + 2, y0 + 112, rw - rw / 2 - 2, 18).build());
-		cancel = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.factory.cancel"), b -> send(FactoryActionPayload.CANCEL, 0))
+		cancel = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.factory.cancel"), b -> send(FactoryActionPayload.CANCEL, 0))
 				.bounds(rx, y0 + 160, rw, 16).build());
-		take = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.factory.take"), b -> send(FactoryActionPayload.TAKE, 0))
+		take = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.factory.take"), b -> send(FactoryActionPayload.TAKE, 0))
 				.bounds(rx, y0 + h - 20, rw, 18).build());
 	}
 

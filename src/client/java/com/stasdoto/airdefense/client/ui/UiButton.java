@@ -24,7 +24,7 @@ public class UiButton extends Button {
 	}
 
 	/** Like the game's own Button.builder: label and action, then bounds (and a style), then build. */
-	public static Builder builder(Component label, OnPress action) {
+	public static Builder create(Component label, OnPress action) {
 		return new Builder(label, action);
 	}
 
