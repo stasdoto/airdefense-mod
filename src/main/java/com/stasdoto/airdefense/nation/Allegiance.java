@@ -73,6 +73,15 @@ public final class Allegiance {
 		}
 	}
 
+	/** For the tests: as if this player had never chosen (asked again on the next second). */
+	public static void forget(ServerLevel level, ServerPlayer player) {
+		Politics p = Politics.get(level.getServer());
+		leave(level, p, player);
+		p.chosen.remove(player.getUUID());
+		ASKED.remove(player.getUUID());
+		p.setDirty();
+	}
+
 	/** The countries to choose from: the world's own near the spawn (not the one-town states), and the players'. */
 	public static List<Country> choices(ServerLevel level, Politics p) {
 		BlockPos spawn = level.getRespawnData().pos();
