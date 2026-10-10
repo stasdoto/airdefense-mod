@@ -113,6 +113,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("showroom")) {
 				showroom(ctx, server);
 			}
+			if (scene("tactics")) {
+				tactics(ctx, server);
+			}
 			if (scene("armor")) {
 				armor(ctx, server);
 			}
@@ -1609,6 +1612,98 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.takeScreenshot("96_mfg_fight");
 		ctx.waitTicks(260);
 		report("mfg_zu23_vs_5_shahed", before);
+	}
+
+	/**
+	 * 1.47: the smarter enemy - two squads of countries at war meet in the open behind a low wall: they spot for each
+	 * other, go for the most dangerous man, bound forward by turns, keep heads down with suppressing fire; a shell's
+	 * whistle scatters the men where it will land; a tank hit lays smoke and picks its target.
+	 */
+	private void tactics(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 64000;
+		server.runCommand("time set 6000");
+		int[] c0 = server.computeOnServer(s -> new int[]{com.stasdoto.airdefense.nation.SoldierEntity.spotted, com.stasdoto.airdefense.nation.SoldierEntity.retargets,
+				com.stasdoto.airdefense.nation.SoldierEntity.suppressed, com.stasdoto.airdefense.nation.SoldierEntity.bounds,
+				com.stasdoto.airdefense.nation.SoldierEntity.scattered, com.stasdoto.airdefense.nation.SoldierEntity.routed,
+				com.stasdoto.airdefense.nation.SoldierEntity.tookCover, VehicleEntity.aiPicks, VehicleEntity.aiSmokes});
+		int[] sides = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			int[] ids = new int[2];
+			for (int k = 0; k < 2; k++) {
+				int id = p.newId();
+				var st = new com.stasdoto.airdefense.nation.Settlement(id, "Тактика " + k, new BlockPos(x + 2000 * (k * 2 - 1), ground, 0),
+						new BlockPos(x + 2000 * (k * 2 - 1), ground + 2, 0), -1, java.util.Optional.empty(), 0, java.util.Map.of(), List.of(), List.of());
+				p.settlements.put(id, st);
+				var c = com.stasdoto.airdefense.nation.Nations.newWorldCountry(p, id);
+				st.country = c.id;
+				ids[k] = c.id;
+			}
+			com.stasdoto.airdefense.nation.War.declare(l, p, p.country(ids[0]), p.country(ids[1]), net.minecraft.network.chat.Component.literal("test"));
+			// A low wall across the field for cover.
+			for (int dx = -12; dx <= 12; dx++) {
+				l.setBlockAndUpdate(new BlockPos(x + dx, ground, 8), net.minecraft.world.level.block.Blocks.COBBLESTONE_WALL.defaultBlockState());
+			}
+			var r = new java.util.Random(47);
+			for (int k = 0; k < 2; k++) {
+				for (int i = 0; i < 6; i++) {
+					var e = com.stasdoto.airdefense.nation.SoldierEntity.create(l, com.stasdoto.airdefense.nation.SoldierEntity.SOLDIER, ids[k], k == 0 ? 14 : 11, -1,
+							new Vec3(x - 8 + i * 3 + 0.5, ground, k == 0 ? 14.5 : -30.5), r.nextInt());
+					l.addFreshEntity(e);
+				}
+			}
+			return ids;
+		});
+		look(server, x - 26, ground + 14, -8, x, ground + 1, -6);
+		ctx.waitTicks(200);
+		ctx.takeScreenshot("tc1_firefight");
+		// A shell comes down on the attackers.
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var near = l.getEntitiesOfClass(com.stasdoto.airdefense.nation.SoldierEntity.class, new net.minecraft.world.phys.AABB(x - 40, ground - 4, -60, x + 40, ground + 8, 40),
+					e -> e.isAlive() && e.country() == sides[1]);
+			if (!near.isEmpty()) {
+				com.stasdoto.airdefense.nation.SoldierEntity.incoming(l, near.getFirst().position(), 12);
+			}
+		});
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("tc2_scatter");
+		// A tank of each side: one is hit hard (it lays smoke), both pick targets.
+		int[] tanks = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			VehicleEntity a = VehicleEntity.spawn(l, VehicleType.T72, new Vec3(x - 30.5, ground, 30.5), 180);
+			a.country = sides[0];
+			VehicleEntity b = VehicleEntity.spawn(l, VehicleType.LEOPARD2, new Vec3(x + 30.5, ground, -50.5), 0);
+			b.country = sides[1];
+			b.hurtServer(l, l.damageSources().explosion(null, a), 260f);
+			return new int[]{a.getId(), b.getId()};
+		});
+		ctx.waitTicks(200);
+		look(server, x + 10, ground + 12, -70, x + 30, ground + 1, -50);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("tc3_tank_smoke");
+		String res = server.computeOnServer(s -> String.format(java.util.Locale.ROOT,
+				"spotted %d, retargets %d, suppressing bursts %d, bounds %d, scattered %d, routed %d, took cover %d; vehicle targets picked %d, smoke screens %d; "
+						+ "alive %d vs %d",
+				com.stasdoto.airdefense.nation.SoldierEntity.spotted - c0[0], com.stasdoto.airdefense.nation.SoldierEntity.retargets - c0[1],
+				com.stasdoto.airdefense.nation.SoldierEntity.suppressed - c0[2], com.stasdoto.airdefense.nation.SoldierEntity.bounds - c0[3],
+				com.stasdoto.airdefense.nation.SoldierEntity.scattered - c0[4], com.stasdoto.airdefense.nation.SoldierEntity.routed - c0[5],
+				com.stasdoto.airdefense.nation.SoldierEntity.tookCover - c0[6], VehicleEntity.aiPicks - c0[7], VehicleEntity.aiSmokes - c0[8],
+				s.overworld().getEntitiesOfClass(com.stasdoto.airdefense.nation.SoldierEntity.class, new net.minecraft.world.phys.AABB(x - 80, ground - 4, -100, x + 80, ground + 10, 80),
+						e -> e.isAlive() && e.country() == sides[0]).size(),
+				s.overworld().getEntitiesOfClass(com.stasdoto.airdefense.nation.SoldierEntity.class, new net.minecraft.world.phys.AABB(x - 80, ground - 4, -100, x + 80, ground + 10, 80),
+						e -> e.isAlive() && e.country() == sides[1]).size()));
+		AirDefense.LOGGER.info("[airdefense-test] RESULT tactics: {}", res);
+		server.runOnServer(s -> {
+			for (int id : tanks) {
+				Entity e = s.overworld().getEntity(id);
+				if (e != null) {
+					e.discard();
+				}
+			}
+			s.overworld().getEntitiesOfClass(com.stasdoto.airdefense.nation.SoldierEntity.class,
+					new net.minecraft.world.phys.AABB(x - 120, ground - 4, -140, x + 120, ground + 10, 120)).forEach(Entity::discard);
+		});
 	}
 
 	/** 1.44: the vehicles close up in daylight, from the front quarter and the back quarter (to judge their looks). */

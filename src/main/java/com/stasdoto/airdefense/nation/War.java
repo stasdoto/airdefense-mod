@@ -397,29 +397,46 @@ public final class War {
 				r.nextInt(3), size >= 4 ? 1 : 0, true);
 	}
 
-	/** The enemy's loaded village nearest to the attacker's own villages (within 900 blocks). */
+	/**
+	 * The enemy's loaded village to strike: near the attacker's own villages (within 900 blocks), and (1.47) weak - few
+	 * guards and soldiers at home, not the capital with its batteries - over strong; a town the enemy took from the
+	 * attacker first of all (a counter-attack).
+	 */
 	@Nullable
 	private static Settlement nearestTarget(ServerLevel level, Politics p, Country ai, Country enemy) {
 		Settlement best = null;
-		double bestD = 900.0 * 900.0;
+		double bestScore = Double.MAX_VALUE;
 		List<Settlement> own = p.settlementsOf(ai.id);
 		for (Settlement s : p.settlementsOf(enemy.id)) {
 			if (!level.isLoaded(s.flag)) {
 				continue;
 			}
+			double near = own.isEmpty() ? 0 : Double.MAX_VALUE;
 			for (Settlement o : own) {
-				double d = o.center.distSqr(s.center);
-				if (d < bestD) {
-					bestD = d;
-					best = s;
-				}
+				near = Math.min(near, Math.sqrt(o.center.distSqr(s.center)));
 			}
-			if (own.isEmpty() && best == null) {
+			if (near > 900) {
+				continue;
+			}
+			int defenders = Nations.guards(level, s).size() + Nations.soldiers(level, s).size();
+			double score = near + defenders * 70 + (enemy.capital == s.id ? 350 : 0);
+			if (LOST.getOrDefault((long) s.id, -1) == ai.id) {
+				score -= 400;
+			}
+			if (score < bestScore) {
+				bestScore = score;
 				best = s;
 			}
 		}
+		if (best != null) {
+			smartTargets++;
+		}
 		return best;
 	}
+
+	/** 1.47: towns taken in a war, by the country that lost them (for the counter-attacks); for the tests: targets chosen. */
+	static final Map<Long, Integer> LOST = new HashMap<>();
+	public static int smartTargets;
 
 	/** The way into a town by road: the road, which end is out of town, how far back it starts, the points to drive. */
 	public static final class Approach {

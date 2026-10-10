@@ -1028,20 +1028,44 @@ public class VehicleEntity extends LivingEntity {
 		double reach = vtype.isShip() ? 320 : 140;
 		if (aiTarget == null || !aiTarget.isAlive() || aiTarget.distanceToSqr(this) > reach * reach || (tickCount + getId()) % 40 == 0) {
 			aiTarget = null;
-			double best = reach * reach;
+			// 1.47: the most dangerous enemy in sight, not just the nearest: what hit it lately, armour for a gun that
+			// can kill armour, men for a machine gun, anyone who fires missiles.
+			double best = Double.MAX_VALUE;
+			boolean bigGun = w.vehicleDamage >= 15;
 			for (Entity e : level.getEntities(this, getBoundingBox().inflate(reach, 60, reach),
 					e -> e.isAlive() && !e.isSpectator() && com.stasdoto.airdefense.nation.War.hostile(level, country, e))) {
-				double d = e.distanceToSqr(this);
-				if (d < best && sees(level, e)) {
-					best = d;
+				double d = Math.sqrt(e.distanceToSqr(this));
+				double sc = d;
+				if (e == lastAttacker && level.getGameTime() - lastAttackedAt < 200) {
+					sc -= 60;
+				}
+				if (e instanceof VehicleEntity v) {
+					sc += bigGun ? (v.vtype.isArmed() ? -50 : -25) : 25;
+				} else if (bigGun) {
+					sc += 20;
+				}
+				if (e instanceof com.stasdoto.airdefense.nation.SoldierEntity so && so.gun() != null && so.gun().rocket()) {
+					sc -= 30;
+				}
+				if (sc < best && sees(level, e)) {
+					best = sc;
 					aiTarget = e;
 				}
+			}
+			if (aiTarget != null) {
+				aiPicks++;
 			}
 		}
 		if (aiTarget == null) {
 			return;
 		}
 		Vec3 point = aiTarget.position().add(0, aiTarget.getBbHeight() * 0.5, 0);
+		// 1.47: a moving target is led - aimed where it will be when the round gets there.
+		Vec3 vel = aiTarget.getDeltaMovement();
+		if (vel.horizontalDistanceSqr() > 0.0025) {
+			double flight = Math.sqrt(aiTarget.distanceToSqr(this)) / Math.max(4.0, w.speed);
+			point = point.add(vel.x * flight, 0, vel.z * flight);
+		}
 		if (vtype.isShip()) {
 			aimGun(point, w);
 		} else {
@@ -1061,6 +1085,12 @@ public class VehicleEntity extends LivingEntity {
 
 	@Nullable
 	private Entity aiTarget;
+	/** 1.47: who hit it last, and when (the AI deals with them first); for the tests: targets picked, smoke screens laid by the AI. */
+	@Nullable
+	private Entity lastAttacker;
+	private long lastAttackedAt;
+	public static int aiPicks;
+	public static int aiSmokes;
 
 	private boolean sees(ServerLevel level, Entity e) {
 		Vec3 from = position().add(0, vtype.geometry.height() * 0.8, 0);
@@ -1105,6 +1135,25 @@ public class VehicleEntity extends LivingEntity {
 		com.stasdoto.airdefense.fx.Fx.send(level, com.stasdoto.airdefense.fx.FxPayload.LAUNCH, position().add(0, vtype.geometry.height(), 0), 0.4f,
 				new Vec3(com.stasdoto.airdefense.fx.FxPayload.LAUNCH_SOUND_LIGHT, 0, 0));
 		player.sendOverlayMessage(Component.translatable("message.airdefense.vehicle.smoke"));
+	}
+
+	/** 1.47: the AI crew's smoke screen (as the player's, towards whoever hit them). */
+	private void aiSmoke(ServerLevel level) {
+		smokeReady = level.getGameTime() + 600;
+		float yaw = getYRot() + (vtype.geometry.turret() != null ? turretYaw : 0);
+		if (lastAttacker != null) {
+			yaw = (float) Math.toDegrees(Math.atan2(-(lastAttacker.getX() - getX()), lastAttacker.getZ() - getZ()));
+		}
+		for (int i = 0; i < 6; i++) {
+			float a = (yaw + (i - 2.5f) * 14f) * Mth.DEG_TO_RAD;
+			double d = 14 + (i % 2) * 5;
+			Vec3 at = position().add(-Mth.sin(a) * d, 1.5, Mth.cos(a) * d);
+			int top = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, Mth.floor(at.x), Mth.floor(at.z));
+			com.stasdoto.airdefense.fx.Smoke.lay(level, new Vec3(at.x, Math.max(at.y, top + 1.5), at.z), 5.5, 400);
+		}
+		com.stasdoto.airdefense.fx.Fx.send(level, com.stasdoto.airdefense.fx.FxPayload.LAUNCH, position().add(0, vtype.geometry.height(), 0), 0.4f,
+				new Vec3(com.stasdoto.airdefense.fx.FxPayload.LAUNCH_SOUND_LIGHT, 0, 0));
+		aiSmokes++;
 	}
 
 	@Override
@@ -3392,6 +3441,16 @@ public class VehicleEntity extends LivingEntity {
 			return false;
 		}
 		setHealth(getHealth() - dmg);
+		// 1.47: an AI vehicle remembers who hit it, and badly hit behind a smoke screen.
+		if (country >= 0 && !(getControllingPassenger() instanceof Player)) {
+			if (source.getEntity() != null && source.getEntity() != this) {
+				lastAttacker = source.getEntity();
+				lastAttackedAt = level.getGameTime();
+			}
+			if (getHealth() < getMaxHealth() * 0.6f && getHealth() > 0 && hasSmoke() && level.getGameTime() >= smokeReady && !smallArms) {
+				aiSmoke(level);
+			}
+		}
 		if (getHealth() <= 0) {
 			die(source);
 		}

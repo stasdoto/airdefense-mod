@@ -125,6 +125,8 @@ public class SoldierEntity extends PathfinderMob {
 		goalSelector.addGoal(0, new FloatGoal(this));
 		// 1.29: a medic runs to a wounded comrade even in a fight; a soldier told to follow keeps near his commander.
 		goalSelector.addGoal(0, new MedicGoal(this));
+		// 1.47: away from where a shell is about to land (the whistle gives two seconds).
+		goalSelector.addGoal(0, new ScatterGoal(this));
 		goalSelector.addGoal(1, new ShootGoal(this));
 		goalSelector.addGoal(2, new FollowGoal(this));
 		goalSelector.addGoal(3, new OrderGoal(this));
@@ -434,6 +436,159 @@ public class SoldierEntity extends PathfinderMob {
 	}
 
 	// ------------------------------------------------------------------------------------------------
+	// 1.47: the smarter enemy - spotting for each other, the most dangerous enemy first, losing heart, scattering
+
+	/** For the tests: enemies passed on to comrades, targets changed for a more dangerous one, men who broke, men who scattered from a shell, suppressing bursts, bounds. */
+	public static int spotted;
+	public static int retargets;
+	public static int routed;
+	public static int scattered;
+	public static int suppressed;
+	public static int bounds;
+	/** Where men fell lately: {country, x, z, game time}. */
+	private static final java.util.ArrayDeque<double[]> FALLEN = new java.util.ArrayDeque<>();
+	/** Running from a shell about to land here (ticks left), and from where. */
+	int scatterTicks;
+	@Nullable
+	Vec3 scatterFrom;
+	/** Broken: falling back for this many ticks. */
+	int routTicks;
+
+	private void tactics(ServerLevel level) {
+		LivingEntity t = getTarget();
+		if (routTicks > 0) {
+			routTicks = Math.max(0, routTicks - 20);
+			return;
+		}
+		if (t != null && t.isAlive() && getSensing().hasLineOfSight(t)) {
+			// He tells the others where the enemy is: free comrades within 32 blocks take him on too.
+			for (SoldierEntity o : level.getEntitiesOfClass(SoldierEntity.class, getBoundingBox().inflate(32, 8, 32),
+					o -> o != this && o.isAlive() && o.getTarget() == null && o.follow == null && o.isFriend(this) && o.routTicks == 0)) {
+				if (o.distanceToSqr(t) < 60 * 60) {
+					o.setTarget(t);
+					spotted++;
+				}
+			}
+		}
+		if (t != null && (tickCount + getId()) % 40 == 0) {
+			// The most dangerous enemy in sight: the one shooting at him, a player, a man with a launcher, the nearest.
+			LivingEntity best = null;
+			double bestScore = threat(t) + 6;
+			for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(40, 12, 40), e -> e != t && isEnemy(e))) {
+				double sc = threat(e);
+				if (sc < bestScore && getSensing().hasLineOfSight(e)) {
+					bestScore = sc;
+					best = e;
+				}
+			}
+			if (best != null) {
+				setTarget(best);
+				retargets++;
+			}
+		}
+		// Losing heart: three or more of his side fell near him in the last half minute and hardly anyone is left at
+		// his side - he falls back home (bandits and guards hold their ground: bandits run anyway, guards are at home).
+		if (t != null && role() == SOLDIER && getHealth() < getMaxHealth() * 0.8f && (tickCount + getId()) % 60 == 0) {
+			long now = level.getGameTime();
+			int fallen = 0;
+			synchronized (FALLEN) {
+				for (double[] f : FALLEN) {
+					if ((int) f[0] == country && now - (long) f[3] < 600 && Mth.square(f[1] - getX()) + Mth.square(f[2] - getZ()) < 24 * 24) {
+						fallen++;
+					}
+				}
+			}
+			if (fallen >= 3) {
+				int left = level.getEntitiesOfClass(SoldierEntity.class, getBoundingBox().inflate(16), o -> o != this && o.isAlive() && o.isFriend(this)).size();
+				if (left < 2) {
+					routTicks = 240;
+					routed++;
+					setTarget(null);
+					Vec3 away = position().subtract(t.position()).multiply(1, 0, 1);
+					away = away.lengthSqr() < 1e-4 ? new Vec3(1, 0, 0) : away.normalize();
+					Vec3 to = position().add(away.scale(28));
+					int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mth.floor(to.x), Mth.floor(to.z));
+					getNavigation().moveTo(to.x, y, to.z, 1.3);
+				}
+			}
+		}
+	}
+
+	/** How dangerous an enemy is to him (lower: deal with first). */
+	private double threat(LivingEntity e) {
+		double sc = distanceTo(e);
+		if (e instanceof net.minecraft.world.entity.Mob m && m.getTarget() == this) {
+			sc -= 14;
+		}
+		if (e == getLastHurtByMob()) {
+			sc -= 12;
+		}
+		if (e instanceof Player) {
+			sc -= 8;
+		}
+		if (e instanceof SoldierEntity o && o.gun() != null && o.gun().rocket()) {
+			sc -= 10;
+		}
+		if (e.getHealth() < e.getMaxHealth() * 0.4f) {
+			sc -= 4;
+		}
+		return sc;
+	}
+
+	/**
+	 * 1.47: a shell (or rocket) is coming down at this point (its whistle is heard): the men round it run out of the
+	 * way and drop the fight for a moment. Called by the round itself.
+	 */
+	public static void incoming(ServerLevel level, Vec3 point, double radius) {
+		for (SoldierEntity s : level.getEntitiesOfClass(SoldierEntity.class, new net.minecraft.world.phys.AABB(point, point).inflate(radius + 4, 10, radius + 4),
+				s -> s.isAlive() && s.scatterTicks == 0)) {
+			s.scatterTicks = 50;
+			s.scatterFrom = point;
+			scattered++;
+		}
+	}
+
+	/** 1.47: running from a shell about to land. */
+	static final class ScatterGoal extends Goal {
+		private final SoldierEntity s;
+
+		ScatterGoal(SoldierEntity s) {
+			this.s = s;
+			setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
+		}
+
+		@Override
+		public boolean canUse() {
+			return s.scatterTicks > 0 && s.scatterFrom != null;
+		}
+
+		@Override
+		public void start() {
+			Vec3 away = s.position().subtract(s.scatterFrom).multiply(1, 0, 1);
+			away = away.lengthSqr() < 1e-3 ? new Vec3(s.random.nextDouble() - 0.5, 0, s.random.nextDouble() - 0.5).normalize() : away.normalize();
+			Vec3 to = s.scatterFrom.add(away.scale(16));
+			int y = s.level().getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mth.floor(to.x), Mth.floor(to.z));
+			s.getNavigation().moveTo(to.x, y, to.z, 1.45);
+		}
+
+		@Override
+		public boolean canContinueToUse() {
+			return s.scatterTicks > 0;
+		}
+
+		@Override
+		public void tick() {
+			s.scatterTicks--;
+		}
+
+		@Override
+		public void stop() {
+			s.scatterTicks = 0;
+			s.scatterFrom = null;
+		}
+	}
+
+	// ------------------------------------------------------------------------------------------------
 	// Shooting
 
 	/** 1.32.2: when an attacker set off (game time; 0 = not one), how long they stay; for the tests: attackers gone. */
@@ -486,6 +641,9 @@ public class SoldierEntity extends PathfinderMob {
 			sl.getChunkSource().addTicketWithRadius(com.stasdoto.airdefense.registry.ModTickets.VEHICLE,
 					net.minecraft.world.level.ChunkPos.containing(blockPosition()), 2);
 		}
+		if (level() instanceof ServerLevel sl && (tickCount + getId()) % 20 == 0) {
+			tactics(sl);
+		}
 		GunType gun = gun();
 		if (gun == null) {
 			return;
@@ -501,29 +659,33 @@ public class SoldierEntity extends PathfinderMob {
 
 	/** One shot (or nothing, if not ready or a friend is in the way). */
 	void tryShoot(LivingEntity target) {
+		shootAt(target.position().add(0, target.getBbHeight() * 0.62, 0), target, 0);
+	}
+
+	/** Fires at a point (the target, or where he was: {@code extra} degrees wider then); true if a round went. */
+	boolean shootAt(Vec3 aim, LivingEntity target, float extra) {
 		GunType gun = gun();
 		if (gun == null || gun.rocket() || cooldown > 0 || reload > 0 || !(level() instanceof ServerLevel level)) {
-			return;
+			return false;
 		}
 		if (ammo <= 0) {
 			reload = gun.reload + 10;
 			level.playSound(null, getX(), getEyeY(), getZ(), ModSounds.GUN_MAG_OUT, SoundSource.HOSTILE, 0.7f, 1f);
-			return;
+			return false;
 		}
 		Vec3 eye = getEyePosition();
-		Vec3 aim = target.position().add(0, target.getBbHeight() * 0.62, 0);
 		Vec3 straight = aim.subtract(eye).normalize();
 		GunServer.Trace clear = GunServer.trace(level, this, eye, straight, gun.range);
 		if (clear.entity() instanceof LivingEntity in && in != target && isFriend(in)) {
 			cooldown = 6;
-			return;
+			return false;
 		}
 		float spread = role() == BANDIT ? 3.0f : role() == REBEL ? 2.5f : 1.4f;
 		// 1.29: under fire (pinned down) he shoots wide.
 		if (hurtTime > 0 || tickCount - getLastHurtByMobTimestamp() < 40) {
 			spread *= 1.7f;
 		}
-		Vec3 dir = cone(straight, spread + gun.aimSpread);
+		Vec3 dir = cone(straight, spread + gun.aimSpread + extra);
 		GunServer.shoot(level, this, gun, eye, dir, GunServer.muzzle(this, straight), ++round);
 		ammo--;
 		if (gun.auto) {
@@ -536,6 +698,7 @@ public class SoldierEntity extends PathfinderMob {
 		} else {
 			cooldown = (int) Math.ceil(gun.interval) + 10 + random.nextInt(14);
 		}
+		return true;
 	}
 
 	private Vec3 cone(Vec3 look, float degrees) {
@@ -599,6 +762,13 @@ public class SoldierEntity extends PathfinderMob {
 		super.die(source);
 		if (level() instanceof ServerLevel level) {
 			Nations.soldierDied(level, this);
+			// 1.47: the comrades who see their squad fall lose heart.
+			synchronized (FALLEN) {
+				FALLEN.addLast(new double[]{country, getX(), getZ(), level.getGameTime()});
+				while (FALLEN.size() > 256) {
+					FALLEN.removeFirst();
+				}
+			}
 		}
 	}
 
@@ -691,10 +861,15 @@ public class SoldierEntity extends PathfinderMob {
 			setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
 		}
 
+		/** 1.47: where the enemy was last seen, and when (suppressing fire goes there once he ducks out of sight). */
+		@Nullable
+		private Vec3 lastSeen;
+		private long lastSeenAt;
+
 		@Override
 		public boolean canUse() {
 			LivingEntity t = s.getTarget();
-			return t != null && t.isAlive() && s.gun() != null;
+			return t != null && t.isAlive() && s.gun() != null && s.routTicks == 0;
 		}
 
 		@Override
@@ -725,6 +900,11 @@ public class SoldierEntity extends PathfinderMob {
 			double d = s.distanceTo(t);
 			boolean see = s.getSensing().hasLineOfSight(t) && !com.stasdoto.airdefense.fx.Smoke.blocks(level, s.getEyePosition(), t.getEyePosition());
 			s.getLookControl().setLookAt(t, 40f, 40f);
+			long now = level.getGameTime();
+			if (see) {
+				lastSeen = t.position().add(0, t.getBbHeight() * 0.62, 0);
+				lastSeenAt = now;
+			}
 			double good = gun.pistol || gun.pellets > 1 ? 12 : gun.scoped() ? 45 : gun.range < 90 ? 18 : 26;
 			boolean underFire = s.hurtTime > 0 || s.tickCount - s.getLastHurtByMobTimestamp() < 60;
 			if (s.grenadeCooldown > 0) {
@@ -782,6 +962,8 @@ public class SoldierEntity extends PathfinderMob {
 				}
 				if (see && d <= gun.range * 0.8) {
 					s.tryShoot(t);
+				} else {
+					suppress(t, gun, now);
 				}
 				return;
 			}
@@ -815,9 +997,26 @@ public class SoldierEntity extends PathfinderMob {
 				}
 			}
 			if (!see || d > good) {
+				// 1.47: bounding - in a squad, half the men move while the other half stand and cover them, by turns.
+				boolean squad = see && !level.getEntitiesOfClass(SoldierEntity.class, s.getBoundingBox().inflate(12), o -> o != s && o.isAlive()
+						&& o.isFriend(s) && o.getTarget() == t).isEmpty();
+				boolean hold = squad && ((now / 60 + s.getId()) & 1) == 0;
+				if (hold) {
+					s.getNavigation().stop();
+					if (d <= gun.range * 0.8) {
+						s.tryShoot(t);
+					}
+					if (now % 60 == 0) {
+						bounds++;
+					}
+					return;
+				}
 				if (--repath <= 0) {
 					repath = 10;
 					s.getNavigation().moveTo(t, 1.0);
+				}
+				if (!see) {
+					suppress(t, gun, now);
 				}
 			} else {
 				// A few steps apart from the next man.
@@ -839,6 +1038,16 @@ public class SoldierEntity extends PathfinderMob {
 			}
 			if (see && d <= gun.range * 0.8) {
 				s.tryShoot(t);
+			}
+		}
+
+		/** 1.47: the enemy just ducked out of sight: a few bursts at where he was keep his head down. */
+		private void suppress(LivingEntity t, GunType gun, long now) {
+			if (lastSeen != null && now - lastSeenAt < 70 && now - lastSeenAt > 5 && s.distanceToSqr(lastSeen) < Mth.square(gun.range * 0.7)
+					&& !gun.scoped()) {
+				if (s.shootAt(lastSeen, t, 2.6f)) {
+					suppressed++;
+				}
 			}
 		}
 

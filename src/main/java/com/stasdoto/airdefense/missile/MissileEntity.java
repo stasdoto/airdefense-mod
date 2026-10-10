@@ -819,6 +819,8 @@ public class MissileEntity extends Entity {
 			return;
 		}
 		whistled = true;
+		// 1.47: the men where it will land hear it too, and run.
+		com.stasdoto.airdefense.nation.SoldierEntity.incoming(level, target, 12);
 		long now = level.getGameTime();
 		if (now - lastWhistleTime < 10 && lastWhistleAt.distanceToSqr(target) < 40 * 40) {
 			return;
