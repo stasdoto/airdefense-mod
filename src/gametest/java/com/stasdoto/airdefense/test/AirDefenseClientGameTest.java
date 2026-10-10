@@ -273,13 +273,20 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				var t = com.stasdoto.airdefense.nation.Cities.terrain(l);
 				long t0 = System.nanoTime();
 				java.util.List<com.stasdoto.airdefense.nation.Railways.Line> lines = new java.util.ArrayList<>();
-				for (int cx = -1; cx <= 1 && lines.isEmpty(); cx++) {
-					for (int cz = -1; cz <= 1 && lines.isEmpty(); cz++) {
-						lines.addAll(com.stasdoto.airdefense.nation.Railways.lines(l.getSeed(), t, cx, cz));
+				for (int r = 0; r <= 2 && lines.isEmpty(); r++) {
+					for (int cx = -r; cx <= r && lines.isEmpty(); cx++) {
+						for (int cz = -r; cz <= r && lines.isEmpty(); cz++) {
+							if (Math.max(Math.abs(cx), Math.abs(cz)) == r) {
+								lines.addAll(com.stasdoto.airdefense.nation.Railways.lines(l.getSeed(), t, cx, cz));
+							}
+						}
 					}
 				}
-				AirDefense.LOGGER.info("[airdefense-test] RESULT rail_plan: {} lines planned, {} given up, in {} ms",
-						com.stasdoto.airdefense.nation.Railways.planned, com.stasdoto.airdefense.nation.Railways.refused, (System.nanoTime() - t0) / 1_000_000);
+				AirDefense.LOGGER.info("[airdefense-test] RESULT rail_plan: {} lines planned, {} given up, in {} ms (the test's own call); planning took {} ms "
+						+ "in all, {} ms of it the roads near; ways given up: {}", com.stasdoto.airdefense.nation.Railways.planned,
+						com.stasdoto.airdefense.nation.Railways.refused, (System.nanoTime() - t0) / 1_000_000,
+						com.stasdoto.airdefense.nation.Railways.planNanos / 1_000_000, com.stasdoto.airdefense.nation.Railways.roadNanos / 1_000_000,
+						com.stasdoto.airdefense.nation.Railways.WHY);
 				if (lines.isEmpty()) {
 					return null;
 				}

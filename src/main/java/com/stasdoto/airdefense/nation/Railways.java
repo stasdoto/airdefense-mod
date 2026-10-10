@@ -142,6 +142,32 @@ public final class Railways {
 	/** For the tests: lines planned, and those given up (through a town, along a road, too much sea). */
 	public static volatile int planned;
 	public static volatile int refused;
+	/** For the tests: why ways were given up (by reason), and the time spent planning (all, and on the roads near). */
+	public static final java.util.concurrent.ConcurrentHashMap<String, Integer> WHY = new java.util.concurrent.ConcurrentHashMap<>();
+	public static volatile long planNanos;
+	public static volatile long roadNanos;
+
+	private static Line no(String why) {
+		WHY.merge(why, 1, Integer::sum);
+		return null;
+	}
+
+	/** Lines already planned near (x, z) (never plans: for checks on the server's own thread). */
+	public static List<Line> cachedNear(long seed, int x, int z) {
+		if (!Cities.railways || seed != cacheSeed) {
+			return List.of();
+		}
+		int cx = Math.floorDiv(x, Cities.CELL);
+		int cz = Math.floorDiv(z, Cities.CELL);
+		List<Line> out = new ArrayList<>();
+		for (int[] d : new int[][]{{0, 0}, {-1, 0}, {0, -1}}) {
+			List<Line> ls = LINES.get(((long) (cx + d[0]) << 32) ^ ((cz + d[1]) & 0xffffffffL));
+			if (ls != null) {
+				out.addAll(ls);
+			}
+		}
+		return out;
+	}
 
 	private Railways() {
 	}
@@ -182,6 +208,15 @@ public final class Railways {
 	}
 
 	private static List<Line> plan(long seed, Cities.Terrain t, int cx, int cz) {
+		long t0 = System.nanoTime();
+		try {
+			return planCell(seed, t, cx, cz);
+		} finally {
+			planNanos += System.nanoTime() - t0;
+		}
+	}
+
+	private static List<Line> planCell(long seed, Cities.Terrain t, int cx, int cz) {
 		List<Line> out = new ArrayList<>();
 		List<Cities.City> here = Cities.cities(seed, t, cx, cz);
 		if (here.isEmpty() || here.getFirst().index != 0) {
@@ -243,7 +278,7 @@ public final class Railways {
 		int ix = dx - mx * RUN * 2;
 		int iz = dz - mz * RUN * 2;
 		if (alongX ? Integer.signum(ix) != mx : Integer.signum(iz) != mz) {
-			return null;
+			return no("short");
 		}
 		int diag = Math.min(Math.abs(ix), Math.abs(iz));
 		int straight = Math.max(Math.abs(ix), Math.abs(iz)) - diag;
@@ -264,7 +299,7 @@ public final class Railways {
 		step(blocks, mx, mz, RUN);
 		int n = blocks.size();
 		if (n < RUN * 2 + 40) {
-			return null;
+			return no("short");
 		}
 		// Not through another town, a hamlet, a depot or a port.
 		for (int i = 0; i < n; i += 12) {
@@ -272,32 +307,45 @@ public final class Railways {
 			int bz = blocks.get(i)[1];
 			for (Cities.City c : Cities.citiesAround(seed, t, bx, bz)) {
 				if (c.outside(bx, bz) < (c == a || c == b ? 16 : 40)) {
-					return null;
+					return no(c == a || c == b ? "own town" : "other town");
 				}
 				for (Hamlets.Hamlet h : c.hamlets(seed, t)) {
 					if (h.near(bx, bz, 20)) {
-						return null;
+						return no("hamlet");
 					}
 				}
 				Depots.Depot dp = c.depot(seed, t);
 				if (dp != null && dp.near(bx, bz, 24)) {
-					return null;
+					return no("depot");
 				}
 				Ports.Port pt = c.port(seed, t);
 				if (pt != null && pt.near(bx, bz, 24)) {
-					return null;
+					return no("port");
 				}
 			}
+		}
+		// Not across the sea (sampled first: cheaper than the roads).
+		int sea = t.sea();
+		int wet = 0;
+		for (int i = 0; i < n; i += 8) {
+			if (t.floor(blocks.get(i)[0], blocks.get(i)[1]) < sea - 1) {
+				wet++;
+			}
+		}
+		if (wet * 8 > 400) {
+			return no("sea");
 		}
 		// The roads it crosses: over them on a bridge (never along one, never at its level).
 		double[] over = new double[n];
 		java.util.Arrays.fill(over, -1e9);
 		boolean[] crossing = new boolean[n];
+		long r0 = System.nanoTime();
 		Set<Cities.Road> roads = new HashSet<>();
 		for (int i = 0; i < n; i += 256) {
 			roads.addAll(Cities.roadsNear(seed, t, blocks.get(i)[0], blocks.get(i)[1]));
 		}
 		roads.addAll(Cities.roadsNear(seed, t, blocks.getLast()[0], blocks.getLast()[1]));
+		roadNanos += System.nanoTime() - r0;
 		Cities.Road.Spot spot = new Cities.Road.Spot();
 		int run = 0;
 		for (int i = 0; i < n; i++) {
@@ -317,25 +365,21 @@ public final class Railways {
 			}
 			crossing[i] = on;
 			run = on ? run + 1 : 0;
-			if (run > 40 || on && (i < RUN || i >= n - RUN)) {
-				// Along a road, or a road through the station: not this way.
-				return null;
+			if (run > 40) {
+				return no("along a road");
+			}
+			if (on && (i < RUN || i >= n - RUN)) {
+				return no("road at the station");
 			}
 		}
 		// The ground along it (every 8 blocks), the water as a floor a little above the sea.
-		int sea = t.sea();
 		int samples = (n + 7) / 8 + 1;
 		double[] ground = new double[samples];
 		double[] lb = new double[samples];
 		java.util.Arrays.fill(lb, -1e9);
-		int wet = 0;
 		for (int k = 0; k < samples; k++) {
 			int[] p = blocks.get(Math.min(n - 1, k * 8));
-			int top = t.top(p[0], p[1]);
-			if (t.floor(p[0], p[1]) < sea - 1) {
-				wet++;
-			}
-			ground[k] = Math.max(top + 1, sea + 3);
+			ground[k] = Math.max(t.top(p[0], p[1]) + 1, sea + 3);
 		}
 		for (int i = 0; i < n; i++) {
 			if (over[i] > -1e8) {
@@ -343,9 +387,6 @@ public final class Railways {
 				lb[k] = Math.max(lb[k], over[i]);
 				lb[Math.min(samples - 1, k + 1)] = Math.max(lb[Math.min(samples - 1, k + 1)], over[i]);
 			}
-		}
-		if (wet * 8 > 400) {
-			return null;
 		}
 		// Smoothed (a running mean over ~100 blocks), the ends on their towns' ground, the grade kept gentle.
 		double[] h = new double[samples];
@@ -384,8 +425,7 @@ public final class Railways {
 			h[k] = Math.max(h[k], h[k + 1] - g);
 		}
 		if (h[0] > a.base + 1.5 || h[samples - 1] > b.base + 1.5) {
-			// A road too near a station to climb over it.
-			return null;
+			return no("road too near the station to climb over");
 		}
 		int[] xs = new int[n];
 		int[] zs = new int[n];
@@ -393,6 +433,8 @@ public final class Railways {
 		byte[] kind = new byte[n];
 		byte[] dir = new byte[n];
 		int tunnels = 0;
+		int top = 0;
+		int floor = 0;
 		for (int i = 0; i < n; i++) {
 			xs[i] = blocks.get(i)[0];
 			zs[i] = blocks.get(i)[1];
@@ -413,8 +455,11 @@ public final class Railways {
 				dir[i] = (byte) (ddx == ddz ? 3 : 1);
 			}
 			int y = (int) Math.floor(hs[i]);
-			int top = t.top(xs[i], zs[i]);
-			if (crossing[i] || t.floor(xs[i], zs[i]) < sea - 1 || top < y - 5) {
+			if ((i & 1) == 0 || i == n - 1) {
+				top = t.top(xs[i], zs[i]);
+				floor = t.floor(xs[i], zs[i]);
+			}
+			if (crossing[i] || floor < sea - 1 || top < y - 5) {
 				kind[i] = 1;
 			} else if (top > y + 12 && !(i < STATION || i >= n - STATION)) {
 				kind[i] = 2;
@@ -430,7 +475,7 @@ public final class Railways {
 			}
 		}
 		if (tunnels > 900) {
-			return null;
+			return no("tunnels");
 		}
 		return new Line(a.key() * 31 + b.key(), xs, zs, hs, kind, dir, side);
 	}

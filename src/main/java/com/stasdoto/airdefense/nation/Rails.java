@@ -47,7 +47,7 @@ public final class Rails {
 	private Rails() {
 	}
 
-	static void build(CityGen.Writer w, Railways.Line l, List<Cities.Road> roads, ChunkPos cp) {
+	static void build(CityGen.Writer w, Railways.Line l, List<Cities.Road> roads, List<Cities.City> cities, ChunkPos cp) {
 		int x0 = cp.getMinBlockX();
 		int z0 = cp.getMinBlockZ();
 		int reach = Railways.SIDE + 2;
@@ -69,7 +69,7 @@ public final class Rails {
 		Cities.Road.Spot rs = new Cities.Road.Spot();
 		for (int x = x0; x < x0 + 16; x++) {
 			for (int z = z0; z < z0 + 16; z++) {
-				if (!l.locate(x + 0.5, z + 0.5, from - 1, to + 2, Railways.SIDE + 0.5, spot)) {
+				if (!l.locate(x + 0.5, z + 0.5, from - 1, to + 2, Railways.SIDE + 0.5, spot) || town(cities, x, z)) {
 					continue;
 				}
 				column(w, l, roads, spot, rs, x, z, pos);
@@ -82,6 +82,9 @@ public final class Rails {
 				continue;
 			}
 			int y = l.y(i);
+			if (town(cities, x, z)) {
+				continue;
+			}
 			if (i == 0 || i == l.length() - 1) {
 				int j = i == 0 ? 1 : i - 1;
 				Direction d = Direction.getApproximateNearest(l.xs[j] - x, 0, l.zs[j] - z);
@@ -94,6 +97,16 @@ public final class Rails {
 				station(w, l, i, cp, pos);
 			}
 		}
+	}
+
+	/** Never into a town or its margin (the planner keeps out of them; this is in case). */
+	private static boolean town(List<Cities.City> cities, int x, int z) {
+		for (Cities.City c : cities) {
+			if (c.outside(x, z) <= Cities.MARGIN) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Is any road's carriageway on this column? Its surface height, or MIN_VALUE. */

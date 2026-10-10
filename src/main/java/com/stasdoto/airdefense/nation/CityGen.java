@@ -309,7 +309,7 @@ public final class CityGen {
 			}
 		}
 		for (Railways.Line l : lines) {
-			Rails.build(w, l, roads, cp);
+			Rails.build(w, l, roads, cities, cp);
 		}
 		for (Cities.City c : cities) {
 			buildings(w, c, cp);
@@ -389,7 +389,7 @@ public final class CityGen {
 				return true;
 			}
 		}
-		for (Railways.Line l : Railways.near(seed, t, mx, mz)) {
+		for (Railways.Line l : Railways.cachedNear(seed, mx, mz)) {
 			if (l.near(mx, mz, 30) && l.locate(mx + 0.5, mz + 0.5, 0, l.length(), 30, new Railways.Spot())) {
 				return true;
 			}
