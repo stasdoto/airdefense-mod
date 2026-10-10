@@ -1,0 +1,490 @@
+{
+ "parent": "minecraft:block/block",
+ "ambientocclusion": false,
+ "textures": {
+  "hedgehog_steel": "airdefense:block/street/hedgehog_steel",
+  "particle": "airdefense:block/street/hedgehog_steel"
+ },
+ "elements": [
+  {
+   "from": [
+    -1,
+    7,
+    7
+   ],
+   "to": [
+    17,
+    9,
+    9
+   ],
+   "faces": {
+    "north": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    },
+    "south": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    },
+    "east": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ]
+    },
+    "west": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ]
+    },
+    "up": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    },
+    "down": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    }
+   },
+   "rotation": {
+    "origin": [
+     8,
+     8,
+     8
+    ],
+    "axis": "z",
+    "angle": 45
+   }
+  },
+  {
+   "from": [
+    7,
+    7,
+    -1
+   ],
+   "to": [
+    9,
+    9,
+    17
+   ],
+   "faces": {
+    "north": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ]
+    },
+    "south": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ]
+    },
+    "east": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    },
+    "west": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    },
+    "up": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      2,
+      16
+     ]
+    },
+    "down": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      2,
+      16
+     ]
+    }
+   },
+   "rotation": {
+    "origin": [
+     8,
+     8,
+     8
+    ],
+    "axis": "x",
+    "angle": 45
+   }
+  },
+  {
+   "from": [
+    -1,
+    7,
+    7
+   ],
+   "to": [
+    17,
+    9,
+    9
+   ],
+   "faces": {
+    "north": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    },
+    "south": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    },
+    "east": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ]
+    },
+    "west": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ]
+    },
+    "up": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    },
+    "down": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      16,
+      2
+     ]
+    }
+   },
+   "rotation": {
+    "origin": [
+     8,
+     8,
+     8
+    ],
+    "axis": "y",
+    "angle": 45
+   }
+  },
+  {
+   "from": [
+    7,
+    0,
+    7
+   ],
+   "to": [
+    9,
+    15,
+    9
+   ],
+   "faces": {
+    "north": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      2,
+      15
+     ]
+    },
+    "south": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      2,
+      15
+     ]
+    },
+    "east": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      2,
+      15
+     ]
+    },
+    "west": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      2,
+      15
+     ]
+    },
+    "up": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ]
+    },
+    "down": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ]
+    }
+   },
+   "rotation": {
+    "origin": [
+     8,
+     8,
+     8
+    ],
+    "axis": "z",
+    "angle": -45
+   }
+  },
+  {
+   "from": [
+    7.5,
+    6,
+    6.5
+   ],
+   "to": [
+    8.5,
+    10,
+    9.5
+   ],
+   "faces": {
+    "north": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      1.0,
+      4
+     ]
+    },
+    "south": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      1.0,
+      4
+     ]
+    },
+    "east": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      3.0,
+      4
+     ]
+    },
+    "west": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      3.0,
+      4
+     ]
+    },
+    "up": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      1.0,
+      3.0
+     ]
+    },
+    "down": {
+     "texture": "#hedgehog_steel",
+     "uv": [
+      0,
+      0,
+      1.0,
+      3.0
+     ]
+    }
+   }
+  }
+ ],
+ "display": {
+  "gui": {
+   "rotation": [
+    30,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0.0,
+    0
+   ],
+   "scale": [
+    0.6,
+    0.6,
+    0.6
+   ]
+  },
+  "ground": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    3,
+    0
+   ],
+   "scale": [
+    0.25,
+    0.25,
+    0.25
+   ]
+  },
+  "fixed": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.48,
+    0.48,
+    0.48
+   ]
+  },
+  "thirdperson_righthand": {
+   "rotation": [
+    75,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    2.5,
+    0
+   ],
+   "scale": [
+    0.36,
+    0.36,
+    0.36
+   ]
+  },
+  "firstperson_righthand": {
+   "rotation": [
+    0,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.384,
+    0.384,
+    0.384
+   ]
+  },
+  "firstperson_lefthand": {
+   "rotation": [
+    0,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.384,
+    0.384,
+    0.384
+   ]
+  }
+ }
+}

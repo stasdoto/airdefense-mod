@@ -1427,5 +1427,19 @@
   "nation.airdefense.choice.friend_joined": "%s тепер грає за «%s» разом із вами",
   "nation.airdefense.choice.friend_left": "%s більше не грає за «%s»",
   "screen.airdefense.country.capital": "Столиця: %s · стиль: %s",
-  "screen.airdefense.village.chip_people": "%s жит."
+  "screen.airdefense.village.chip_people": "%s жит.",
+  "itemGroup.airdefense.fort": "Позиції",
+  "block.airdefense.sandbags": "Мішки з піском",
+  "block.airdefense.sandbags_low": "Бруствер з мішків",
+  "block.airdefense.hedgehog": "Протитанковий їжак",
+  "block.airdefense.barbed_wire": "Колючий дріт",
+  "block.airdefense.camo_net": "Маскувальна сітка",
+  "item.airdefense.trench_kit": "Окоп",
+  "item.airdefense.position_kit": "Вогнева точка",
+  "item.airdefense.dugout_kit": "Бліндаж",
+  "item.airdefense.pillbox_kit": "ДОТ",
+  "item.airdefense.revetment_kit": "Капонір для техніки",
+  "item.airdefense.fort_kit.hint": "Правий клік по землі — буде викопано й збудовано там, передом туди, куди ви дивитесь.",
+  "message.airdefense.fort.built": "%s готовий(а)",
+  "message.airdefense.fort.no_room": "Тут не збудувати (вода або немає місця)"
 }

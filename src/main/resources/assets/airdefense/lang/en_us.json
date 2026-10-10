@@ -1427,5 +1427,19 @@
   "nation.airdefense.choice.friend_joined": "%s now plays for %s with you",
   "nation.airdefense.choice.friend_left": "%s no longer plays for %s",
   "screen.airdefense.country.capital": "Capital: %s - style: %s",
-  "screen.airdefense.village.chip_people": "%s people"
+  "screen.airdefense.village.chip_people": "%s people",
+  "itemGroup.airdefense.fort": "Positions",
+  "block.airdefense.sandbags": "Sandbags",
+  "block.airdefense.sandbags_low": "Sandbag parapet",
+  "block.airdefense.hedgehog": "Czech hedgehog",
+  "block.airdefense.barbed_wire": "Barbed wire",
+  "block.airdefense.camo_net": "Camouflage net",
+  "item.airdefense.trench_kit": "Trench",
+  "item.airdefense.position_kit": "Firing position",
+  "item.airdefense.dugout_kit": "Dugout",
+  "item.airdefense.pillbox_kit": "Pillbox",
+  "item.airdefense.revetment_kit": "Vehicle revetment",
+  "item.airdefense.fort_kit.hint": "Right-click the ground: it is dug and built there, its front the way you look.",
+  "message.airdefense.fort.built": "%s is ready",
+  "message.airdefense.fort.no_room": "It will not go here (water or no room)"
 }

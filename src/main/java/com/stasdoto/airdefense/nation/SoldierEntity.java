@@ -1054,6 +1054,15 @@ public class SoldierEntity extends PathfinderMob {
 		/** A spot within a few blocks to stand behind something solid, towards the enemy, still in range of him. */
 		@Nullable
 		private BlockPos findCover(ServerLevel level, LivingEntity t, double good) {
+			// 1.48: a post of a field work near by (a trench's firing step, a position, a pillbox's slit) comes first.
+			BlockPos post = com.stasdoto.airdefense.fort.Fortify.postNear(level, s.blockPosition(), 20, p -> {
+				double dt = Math.sqrt(p.distToCenterSqr(t.position()));
+				return dt >= 6 && dt <= good * 2 && level.getEntitiesOfClass(SoldierEntity.class, new net.minecraft.world.phys.AABB(p).inflate(0.8), o -> o != s).isEmpty();
+			});
+			if (post != null) {
+				com.stasdoto.airdefense.fort.Fortify.manned++;
+				return post;
+			}
 			Vec3 to = t.position().subtract(s.position());
 			BlockPos best = null;
 			double bestScore = Double.MAX_VALUE;
@@ -1275,8 +1284,11 @@ public class SoldierEntity extends PathfinderMob {
 		@Override
 		public void stop() {
 			if (s.order != null && s.distanceToSqr(Vec3.atBottomCenterOf(s.order)) <= 16) {
-				// Arrived: hold the position.
+				// Arrived: hold the position (1.48: and dig in - one man in four puts up a foxhole of sandbags).
 				s.setHomeTo(s.order, 8);
+				if (s.role() == SOLDIER && (s.getId() & 3) == 0 && s.level() instanceof ServerLevel sl) {
+					com.stasdoto.airdefense.fort.Fortify.digIn(sl, s.blockPosition(), s.getDirection());
+				}
 			}
 		}
 

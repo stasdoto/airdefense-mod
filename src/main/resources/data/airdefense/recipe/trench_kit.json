@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "BBB",
+    "PSP"
+  ],
+  "key": {
+    "B": "airdefense:sandbags_low",
+    "P": "minecraft:spruce_planks",
+    "S": "minecraft:iron_shovel"
+  },
+  "result": {
+    "id": "airdefense:trench_kit",
+    "count": 1
+  }
+}

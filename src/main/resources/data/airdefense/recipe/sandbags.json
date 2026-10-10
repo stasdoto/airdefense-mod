@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "SWS",
+    "WSW",
+    "SWS"
+  ],
+  "key": {
+    "S": "minecraft:sand",
+    "W": "minecraft:string"
+  },
+  "result": {
+    "id": "airdefense:sandbags",
+    "count": 4
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "NNN",
+    "BFB",
+    "BBB"
+  ],
+  "key": {
+    "N": "airdefense:camo_net",
+    "B": "airdefense:sandbags",
+    "F": "minecraft:spruce_fence"
+  },
+  "result": {
+    "id": "airdefense:position_kit",
+    "count": 1
+  }
+}

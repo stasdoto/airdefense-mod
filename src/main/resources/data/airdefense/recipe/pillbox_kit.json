@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "CCC",
+    "CIC",
+    "CBC"
+  ],
+  "key": {
+    "C": "minecraft:gray_concrete",
+    "I": "minecraft:iron_bars",
+    "B": "airdefense:sandbags"
+  },
+  "result": {
+    "id": "airdefense:pillbox_kit",
+    "count": 1
+  }
+}
