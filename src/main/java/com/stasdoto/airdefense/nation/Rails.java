@@ -204,16 +204,16 @@ public final class Rails {
 		w.levelled(y - 1, y + 5);
 	}
 
-	/** Inside a tunnel: the floor, the clear way (the train is four blocks and a bit high), the lining, a lamp now and then. */
+	/** Inside a tunnel: the floor, the clear way (the train with its pantograph is over five blocks high), the lining, a lamp now and then. */
 	private static void tunnel(CityGen.Writer w, int nb, int x, int z, int y, double d, BlockPos.MutableBlockPos pos) {
 		if (d <= Railways.BED) {
 			w.set(pos.set(x, y - 1, z), GRAVEL);
-			for (int yy = y; yy <= y + 5; yy++) {
+			for (int yy = y; yy <= y + 6; yy++) {
 				w.set(pos.set(x, yy, z), AIR);
 			}
-			w.set(pos.set(x, y + 6, z), nb % 12 == 0 && d < 0.8 ? LIGHT : LINING);
+			w.set(pos.set(x, y + 7, z), nb % 12 == 0 && d < 0.8 ? LIGHT : LINING);
 		} else if (d <= Railways.BED + 1.2) {
-			for (int yy = y - 1; yy <= y + 6; yy++) {
+			for (int yy = y - 1; yy <= y + 7; yy++) {
 				w.set(pos.set(x, yy, z), LINING);
 			}
 		}
