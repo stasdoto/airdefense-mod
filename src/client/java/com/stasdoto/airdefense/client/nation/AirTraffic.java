@@ -172,7 +172,7 @@ public final class AirTraffic {
 				STATES.computeIfAbsent(f.key(), k -> {
 					State n = new State(f);
 					populate(level, n);
-					n.nextEvent = level.getGameTime() + 300 + RANDOM.nextInt(600);
+					n.nextEvent = level.getGameTime() + 1200 + RANDOM.nextInt(1200);
 					return n;
 				});
 			}
@@ -282,10 +282,10 @@ public final class AirTraffic {
 			add(w, f, su, Airports.STAND_V - p.nose, 0, 0, false, 0);
 			// Pushed back to the taxiway, the engines started.
 			add(w, f, su, Airports.TAXI_V, 0, 0.1, true, 80);
-			add(w, f, su - 12, Airports.TAXI_V, 0, 0.35, false, 0);
-			add(w, f, a + 6, Airports.TAXI_V, 0, 0.35, false, 0);
-			add(w, f, a, Airports.TAXI_V - 6, 0, 0.3, false, 0);
-			add(w, f, a, 6, 0, 0.3, false, 0);
+			add(w, f, su - 12, Airports.TAXI_V, 0, 0.5, false, 0);
+			add(w, f, a + 6, Airports.TAXI_V, 0, 0.5, false, 0);
+			add(w, f, a, Airports.TAXI_V - 6, 0, 0.42, false, 0);
+			add(w, f, a, 6, 0, 0.42, false, 0);
 			add(w, f, a + 8, 0, 0, 0.25, false, 0);
 			// Lined up, waiting for the take-off clearance; the run, lifting off, climbing away.
 			add(w, f, a + 24, 0, 0, 0.2, false, 100);
@@ -308,13 +308,13 @@ public final class AirTraffic {
 		add(w, f, -1500, 0, (80 + 1500) * 0.0524, 3.2, false, 0);
 		add(w, f, -300, 0, (80 + 300) * 0.0524, 3.0, false, 0);
 		add(w, f, 80, 0, 0, 2.6, false, 0);
-		add(w, f, 380, 0, 0, 0.45, false, 0);
-		add(w, f, b - 6, 0, 0, 0.35, false, 0);
-		add(w, f, b, 6, 0, 0.3, false, 0);
-		add(w, f, b, Airports.TAXI_V - 6, 0, 0.35, false, 0);
-		add(w, f, b - 6, Airports.TAXI_V, 0, 0.35, false, 0);
-		add(w, f, su + 8, Airports.TAXI_V, 0, 0.35, false, 0);
-		add(w, f, su, Airports.TAXI_V + 8, 0, 0.25, false, 0);
+		add(w, f, 380, 0, 0, 0.6, false, 0);
+		add(w, f, b - 6, 0, 0, 0.5, false, 0);
+		add(w, f, b, 6, 0, 0.42, false, 0);
+		add(w, f, b, Airports.TAXI_V - 6, 0, 0.5, false, 0);
+		add(w, f, b - 6, Airports.TAXI_V, 0, 0.5, false, 0);
+		add(w, f, su + 8, Airports.TAXI_V, 0, 0.5, false, 0);
+		add(w, f, su, Airports.TAXI_V + 8, 0, 0.3, false, 0);
 		add(w, f, su, Airports.STAND_V - p.nose, 0, 0.12, false, 0);
 		p.go(w);
 		p.stand = k;
