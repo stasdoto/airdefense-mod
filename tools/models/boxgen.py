@@ -56,6 +56,8 @@ STYLES = {
     'steel': dict(kind='plain', base=0x8A8F94),
     'rust': dict(kind='plain', base=0x6E4A2E),
     'canvas': dict(kind='plain', base=0x6E6B4C),
+    # 1.44: the unditching log.
+    'wood': dict(kind='camo', base=0x6B4E32, c2=0x5A4029, c3=0x7C5C3C, blob=2),
     # Window glass: see-through (drawn translucent near the vehicle, when its inside is drawn too).
     'glass': dict(kind='glass', base=0x2A3946, alpha=118),
     'light': dict(kind='plain', base=0xF2E7B0, flat=True),

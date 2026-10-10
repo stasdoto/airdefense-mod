@@ -1529,10 +1529,10 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			VehicleType t = show[i];
 			int x = x0 + i * 40;
 			int id = spawnVehicle(server, t, x, 0, 0);
-			look(server, x + 6.5, ground + 3.2, 8.5, x + 0.5, ground + 1.2, 0.5);
+			look(server, x + 5.0, ground + 2.6, 6.2, x + 0.5, ground + 1.3, 0.8);
 			ctx.waitTicks(i == 0 ? 120 : 50);
 			ctx.takeScreenshot("sr_" + t.name().toLowerCase(java.util.Locale.ROOT) + "_front");
-			look(server, x - 6.5, ground + 4.0, -7.5, x + 0.5, ground + 1.0, 0.5);
+			look(server, x - 5.0, ground + 3.4, -5.8, x + 0.5, ground + 1.3, 0.0);
 			ctx.waitTicks(12);
 			ctx.takeScreenshot("sr_" + t.name().toLowerCase(java.util.Locale.ROOT) + "_back");
 			server.runOnServer(s -> {
