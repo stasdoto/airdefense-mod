@@ -824,7 +824,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (Double.isNaN(m[i])) {
 				continue;
 			}
-			look(server, m[i] + 30, m[i + 1] + 28, m[i + 2] + 30, m[i] - 30, m[i + 1] + 4, m[i + 2] - 30);
+			look(server, m[i] + 45, m[i + 1] + 58, m[i + 2] + 45, m[i] - 40, m[i + 1] + 4, m[i + 2] - 40);
 			ctx.waitTicks(320);
 			ctx.takeScreenshot(names[k]);
 		}

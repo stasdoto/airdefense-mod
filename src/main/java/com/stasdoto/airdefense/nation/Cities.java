@@ -803,11 +803,10 @@ public final class Cities {
 				int kind = works ? KIND_INDUSTRY : ring == 1 ? KIND_ESTATES : ring == 2 ? (r.nextInt(100) < 60 ? KIND_ESTATES : KIND_SUBURB) : KIND_SUBURB;
 				Size size = ring == 3 && kind == KIND_SUBURB && r.nextBoolean() ? Size.MEDIUM : Size.LARGE;
 				int[] site = quickSite(t, r, size, tx, tz, 36);
-				if (site == null || clashes(out, site[0], site[1], size, 30)) {
+				if (site == null || near(out, site[0], site[1], size)) {
 					districtsRefused++;
 					continue;
 				}
-				districtsPlanned++;
 				// The ground of a district: near its neighbour's (towards the centre), so the avenues between them are not steep.
 				int base = site[2];
 				City inner = nearest(out, site[0], site[1]);
@@ -817,10 +816,17 @@ public final class Cities {
 					base = Math.max(inner.base - most, Math.min(inner.base + most, base));
 				}
 				int people = size.popMin + r.nextInt(size.popMax - size.popMin + 1);
-				City c = new City(cx, cz, index++, site[0], site[1], Math.max(t.sea(), base), size, kind == KIND_ESTATES ? people * 2 : people, color,
+				City c = new City(cx, cz, index, site[0], site[1], Math.max(t.sea(), base), size, kind == KIND_ESTATES ? people * 2 : people, color,
 						r.nextLong(), style);
 				c.kind = kind;
 				c.metroCentre = centre;
+				// Its real outline must keep clear of its neighbours' (an avenue runs between them).
+				if (overlaps(out, c, 22)) {
+					districtsRefused++;
+					continue;
+				}
+				index++;
+				districtsPlanned++;
 				out.add(c);
 			}
 		}
@@ -847,6 +853,45 @@ public final class Cities {
 		// The towns first after the centre (the code that looks for "the capital and its towns" sees them in order).
 		out.sort((p, q) -> Integer.compare(p.index == 0 ? -1 : p.district() ? 1 : 0, q.index == 0 ? -1 : q.district() ? 1 : 0));
 		return out;
+	}
+
+	/** 1.46: is (x, z) clearly too near a part already planned (closer than their sizes allow, roughly, as circles)? */
+	private static boolean near(List<City> out, int x, int z, Size size) {
+		for (City c : out) {
+			if (Math.hypot(c.x - x, c.z - z) < (c.size.half() + size.half()) * 0.62) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** 1.46: does this district's outline (with {@code gap} round it) touch the outline of one already planned? */
+	private static boolean overlaps(List<City> out, City c, int gap) {
+		CityShape a = c.shape();
+		for (City o : out) {
+			CityShape b = o.shape();
+			if (a.minX - gap < b.maxX && b.minX < a.maxX + gap && a.minZ - gap < b.maxZ && b.minZ < a.maxZ + gap) {
+				// The boxes touch: look closer, block by block of the coarser grid.
+				if (touches(c, o, gap)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/** Two outlines closer than {@code gap} anywhere (checked on a 12-block grid along the first one's lots). */
+	private static boolean touches(City a, City b, int gap) {
+		for (CityShape.Lot l : a.shape().lots) {
+			for (int x = l.x0 - 6; x <= l.x1 + 6; x += 12) {
+				for (int z = l.z0 - 6; z <= l.z1 + 6; z += 12) {
+					if (b.outside(x, z) < gap) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
 	}
 
 	/** Does a town of this size at (x, z) come closer than {@code gap} to one already planned? */
