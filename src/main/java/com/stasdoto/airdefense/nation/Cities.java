@@ -796,9 +796,13 @@ public final class Cities {
 		int[] eb = edge(b, a.x, a.z);
 		double[] da = outward(a, ea);
 		double[] db = outward(b, eb);
+		// 1.40: the airports it must go round (looked up once: the planner asks at every step).
+		java.util.Set<Airports.Airport> found = new java.util.HashSet<>(Airports.near(seed, t, a.x, a.z, CELL * 2));
+		found.addAll(Airports.near(seed, t, b.x, b.z, CELL * 2));
+		List<Airports.Airport> airports = new ArrayList<>(found);
 		long rs = seed ^ a.key() * 31 ^ b.key() * 17;
 		float[][] line = RoadPlanner.route(t, rs, ea[0], ea[1], da[0], da[1], eb[0], eb[1], db[0], db[1], 32, 28,
-				(x, z) -> avoidTowns(seed, t, a, b, x, z));
+				(x, z) -> avoidTowns(seed, t, a, b, airports, x, z));
 		float[] hs = RoadPlanner.heights(t, line[0], line[1], a.base, b.base, 0.065);
 		Road r = new Road(line[0], line[1], hs, HIGHWAY_HALF, false, true, STREET_HALF);
 		// 1.39: over the railways it crosses on a bridge.
@@ -817,10 +821,12 @@ public final class Cities {
 	}
 
 	/** Other cities on the way cost a lot to pass through (roads go round them). */
-	private static double avoidTowns(long seed, Terrain t, City a, City b, int x, int z) {
-		if (Airports.inside(seed, t, x, z, 24)) {
-			// 1.40: round the airports.
-			return 1;
+	private static double avoidTowns(long seed, Terrain t, City a, City b, List<Airports.Airport> airports, int x, int z) {
+		for (Airports.Airport ap : airports) {
+			if (ap.near(x, z, 24)) {
+				// 1.40: round the airports.
+				return 1;
+			}
 		}
 		for (City c : citiesAround(seed, t, x, z)) {
 			if (c == a || c == b) {

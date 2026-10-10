@@ -160,6 +160,33 @@ public final class Airports {
 		return a == NONE ? null : a;
 	}
 
+	/** For the tests: why the capital of cell (cx, cz) has no airport (each candidate site's verdict). */
+	public static String explain(long seed, Cities.Terrain t, int cx, int cz) {
+		List<Cities.City> list = Cities.cities(seed, t, cx, cz);
+		if (list.isEmpty()) {
+			return "no towns";
+		}
+		Cities.City c = list.getFirst();
+		StringBuilder sb = new StringBuilder("capital at " + c.x + " " + c.z + " half " + c.half() + ":");
+		for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
+			int[] e = Cities.edge(c, c.x + d[0] * 2000, c.z + d[1] * 2000);
+			int vx = -d[0];
+			int vz = -d[1];
+			int ux = -d[1];
+			int uz = d[0];
+			for (int gap : new int[]{50, 110}) {
+				for (int shift : new int[]{0, -(MID + 60), MID + 60}) {
+					int sx = e[0] + d[0] * (gap + V1) - ux * (MID + shift);
+					int sz = e[1] + d[1] * (gap + V1) - uz * (MID + shift);
+					WHY.clear();
+					double score = sample(seed, t, c, sx, sz, ux, uz, vx, vz, 1, 1, null);
+					sb.append(String.format(" [%d,%d g%d s%d: %s]", d[0], d[1], gap, shift, score < Double.MAX_VALUE ? String.format("%.1f", score) : WHY.keySet()));
+				}
+			}
+		}
+		return sb.toString();
+	}
+
 	/** For the tests: the airport already planned nearest (x, z), or null. */
 	@Nullable
 	public static Airport nearestPlanned(int x, int z) {

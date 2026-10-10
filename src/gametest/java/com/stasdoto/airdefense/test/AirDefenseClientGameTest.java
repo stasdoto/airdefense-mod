@@ -500,6 +500,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					+ "flag {}", com.stasdoto.airdefense.nation.Airports.planned, com.stasdoto.airdefense.nation.Airports.refused,
 					(System.nanoTime() - t0) / 1_000_000, com.stasdoto.airdefense.nation.Airports.WHY, com.stasdoto.airdefense.nation.Cities.airports);
 			if (found == null) {
+				AirDefense.LOGGER.info("[airdefense-test] RESULT airport_why: {}", com.stasdoto.airdefense.nation.Airports.explain(l.getSeed(), t, 0, 0));
+				AirDefense.LOGGER.info("[airdefense-test] RESULT airport_why: {}", com.stasdoto.airdefense.nation.Airports.explain(l.getSeed(), t, 1, 0));
 				found = com.stasdoto.airdefense.nation.Airports.nearestPlanned(0, 0);
 			}
 			if (found == null) {
