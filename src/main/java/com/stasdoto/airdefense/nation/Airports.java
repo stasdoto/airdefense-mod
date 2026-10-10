@@ -206,15 +206,14 @@ public final class Airports {
 		// Every candidate site first roughly (six samples), then the three likeliest carefully (thirty-six).
 		List<double[]> rough = new ArrayList<>();
 		for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
+			// A highway leaves this way (to the next capital, to a satellite): the airport only off to one side of it, clear
+			// of the way straight out.
 			boolean blocked = false;
 			for (double[] w : ways) {
 				double cos = (w[0] * d[0] + w[1] * d[1]) / Math.max(1, Math.hypot(w[0], w[1]));
 				if (cos > Math.cos(Math.toRadians(50))) {
 					blocked = true;
 				}
-			}
-			if (blocked) {
-				continue;
 			}
 			int[] e = Cities.edge(c, c.x + d[0] * 2000, c.z + d[1] * 2000);
 			// v points back towards the town; u along the town's side.
@@ -223,7 +222,7 @@ public final class Airports {
 			int ux = -d[1];
 			int uz = d[0];
 			for (int gap : new int[]{50, 110}) {
-				for (int shift : new int[]{0, -120, 120}) {
+				for (int shift : blocked ? new int[]{-(MID + 60), MID + 60} : new int[]{0, -120, 120, -(MID + 60), MID + 60}) {
 					// The fence on the town side is gap blocks out from the edge; the threshold is MID (+ shift) along.
 					int sx = e[0] + d[0] * (gap + V1) - ux * (MID + shift);
 					int sz = e[1] + d[1] * (gap + V1) - uz * (MID + shift);
