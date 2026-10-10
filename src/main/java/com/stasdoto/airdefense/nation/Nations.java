@@ -921,6 +921,10 @@ public final class Nations {
 	/** The village changes hands: new flag, new guards in time; the old country loses it. */
 	public static void transfer(ServerLevel level, Politics p, Settlement s, Country to) {
 		Country from = p.country(s.country);
+		// 1.47: who lost it (they will want it back).
+		if (from != null && to != null && from.id != to.id) {
+			War.LOST.put((long) s.id, from.id);
+		}
 		if (s.riot) {
 			for (SoldierEntity r : Unrest.rebels(level, s)) {
 				r.demobilize(level);
