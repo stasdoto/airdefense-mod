@@ -1823,20 +1823,20 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			float[] g = near.apply(VehicleType.FIRE_TRUCK);
 			return g != null && g[3] < 26 * 26;
 		}, 1200);
-		ctx.waitTicks(120);
-		look(server, bx - 14.5, base + 10, bz - 14.5, bx, base + 2, bz);
+		ctx.waitTicks(40);
+		look(server, bx - 12.5, base + 16, bz - 12.5, bx, base + 1, bz);
 		ctx.waitTicks(20);
 		ctx.takeScreenshot("sv2_at_the_blast");
 		float[] a = near.apply(VehicleType.AMBULANCE);
 		if (a != null) {
-			look(server, a[0] - 7, a[1] + 4, a[2] - 7, a[0], a[1] + 1.5, a[2]);
+			look(server, a[0] - 4, a[1] + 9, a[2] - 4, a[0], a[1] + 1.5, a[2]);
 			ctx.waitTicks(3);
 			ctx.takeScreenshot("sv3_ambulance");
 		}
 		ctx.waitTicks(300);
 		float[] pc = near.apply(VehicleType.POLICE_CAR);
 		if (pc != null) {
-			look(server, pc[0] - 6, pc[1] + 3, pc[2] - 6, pc[0], pc[1] + 1, pc[2]);
+			look(server, pc[0] - 4, pc[1] + 8, pc[2] - 4, pc[0], pc[1] + 1, pc[2]);
 			ctx.waitTicks(3);
 			ctx.takeScreenshot("sv4_police");
 		}
@@ -1846,7 +1846,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		if (pc != null) {
 			float[] pn = near.apply(VehicleType.POLICE_CAR);
 			if (pn != null) {
-				look(server, pn[0] - 6, pn[1] + 3, pn[2] - 6, pn[0], pn[1] + 1, pn[2]);
+				look(server, pn[0] - 4, pn[1] + 8, pn[2] - 4, pn[0], pn[1] + 1, pn[2]);
 				ctx.waitTicks(3);
 				ctx.takeScreenshot("sv5_lights_at_night");
 			}
@@ -1860,7 +1860,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(260);
 		float[] p2 = near.apply(VehicleType.POLICE_CAR);
 		if (p2 != null) {
-			look(server, p2[0] - 7, p2[1] + 4, p2[2] - 7, p2[0], p2[1] + 1, p2[2]);
+			look(server, p2[0] - 4, p2[1] + 9, p2[2] - 4, p2[0], p2[1] + 1, p2[2]);
 			ctx.waitTicks(3);
 			ctx.takeScreenshot("sv6_patrol");
 		}
