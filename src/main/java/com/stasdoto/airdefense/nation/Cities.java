@@ -764,7 +764,7 @@ public final class Cities {
 	/**
 	 * 1.46: a cell of a world with the great cities. The capital is a city of districts: its centre (the city hall,
 	 * the towers and offices), a ring of six high-rise estates round it, a ring of mixed districts (estates, private
-	 * houses, two industrial ones) and, in four capitals of ten, an outer ring of private houses and dachas with a
+	 * houses, two industrial ones) and, an outer ring of private houses and dachas with a
 	 * works or two: 2-2.6 km across. Each district has its own ground level (the city climbs the hills instead of
 	 * lying on one flat plate), its own streets and its own town hall; avenues join them. The country's two other
 	 * towns stand farther out, beyond the great city.
@@ -775,7 +775,7 @@ public final class Cities {
 		int x0 = cx * CELL;
 		int z0 = cz * CELL;
 		List<City> out = new ArrayList<>();
-		int rings = r.nextInt(100) < 40 ? 3 : 2;
+		int rings = 3;
 		int margin = RING_R[rings] + Size.LARGE.half() + 60;
 		int[] cap = bestSite(t, r, Size.LARGE, x0 + margin, z0 + margin, x0 + CELL - margin, z0 + CELL - margin, 8);
 		if (cap == null) {
