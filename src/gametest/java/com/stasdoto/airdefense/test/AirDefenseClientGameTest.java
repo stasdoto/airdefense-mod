@@ -496,8 +496,18 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					}
 				}
 			}
-			AirDefense.LOGGER.info("[airdefense-test] RESULT airport_plan: {} planned, {} capitals without room for one, in {} ms",
-					com.stasdoto.airdefense.nation.Airports.planned, com.stasdoto.airdefense.nation.Airports.refused, (System.nanoTime() - t0) / 1_000_000);
+			AirDefense.LOGGER.info("[airdefense-test] RESULT airport_plan: {} planned, {} capitals without room for one, in {} ms; sites turned down: {}; "
+					+ "flag {}", com.stasdoto.airdefense.nation.Airports.planned, com.stasdoto.airdefense.nation.Airports.refused,
+					(System.nanoTime() - t0) / 1_000_000, com.stasdoto.airdefense.nation.Airports.WHY, com.stasdoto.airdefense.nation.Cities.airports);
+			StringBuilder cells = new StringBuilder();
+			for (int cx = -2; cx <= 2; cx++) {
+				for (int cz = -2; cz <= 2; cz++) {
+					var list = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), t, cx, cz);
+					cells.append(String.format(" [%d,%d: %s %s]", cx, cz, list.isEmpty() ? "-" : list.getFirst().index + "@" + list.getFirst().x + "," + list.getFirst().z,
+							com.stasdoto.airdefense.nation.Airports.of(l.getSeed(), t, cx, cz) != null ? "AIRPORT" : "none"));
+				}
+			}
+			AirDefense.LOGGER.info("[airdefense-test] RESULT airport_cells:{}", cells);
 			if (found == null) {
 				return null;
 			}

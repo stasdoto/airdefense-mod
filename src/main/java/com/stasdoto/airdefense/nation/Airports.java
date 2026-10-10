@@ -131,6 +131,13 @@ public final class Airports {
 	/** For the tests: airports planned, capitals that found no room for one. */
 	public static volatile int planned;
 	public static volatile int refused;
+	/** For the tests: why sites were turned down. */
+	public static final ConcurrentHashMap<String, Integer> WHY = new ConcurrentHashMap<>();
+
+	private static double no(String why) {
+		WHY.merge(why, 1, Integer::sum);
+		return Double.MAX_VALUE;
+	}
 
 	private Airports() {
 	}
@@ -268,11 +275,11 @@ public final class Airports {
 				int[] w = world(sx, sz, ux, uz, vx, vz, U0 + (U1 - U0) * i / nu, V0 + (V1 - V0) * j / nv);
 				int y = t.top(w[0], w[1]);
 				if (y <= sea && ++wet > Math.max(0, hs.length / 12)) {
-					return Double.MAX_VALUE;
+					return no("water");
 				}
 				for (Cities.City o : Cities.citiesAround(seed, t, w[0], w[1])) {
 					if (o.outside(w[0], w[1]) < (o == c ? 30 : 60)) {
-						return Double.MAX_VALUE;
+						return no(o == c ? "own town" : "other town");
 					}
 				}
 				hs[k++] = y;
@@ -282,7 +289,7 @@ public final class Airports {
 		java.util.Arrays.sort(sorted);
 		int median = sorted[k / 2];
 		if (sorted[k - 1] - sorted[0] > 18) {
-			return Double.MAX_VALUE;
+			return no("steep");
 		}
 		double score = wet * 40;
 		for (int y : hs) {
