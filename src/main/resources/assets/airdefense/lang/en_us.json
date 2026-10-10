@@ -1311,5 +1311,7 @@
   "block.airdefense.airport_sign": "Airport sign",
   "block.airdefense.threshold": "Runway threshold mark",
   "block.airdefense.stand": "Aircraft stand mark",
-  "entity.airdefense.airliner": "Airliner"
+  "entity.airdefense.airliner": "Airliner",
+  "block.airdefense.crane_base": "Tower crane footing",
+  "entity.airdefense.prop": "Working machine"
 }

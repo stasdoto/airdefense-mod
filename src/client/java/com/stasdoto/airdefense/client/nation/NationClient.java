@@ -30,6 +30,15 @@ public final class NationClient {
 		Trains.init();
 		EntityRenderers.register(ModEntities.PLANE, PlaneRenderer::new);
 		AirTraffic.init();
+		// 1.41: the working country - lorries on the highways, tractors in the fields, cranes over the building sites.
+		EntityRenderers.register(ModEntities.PROP, PropRenderer::new);
+		Cranes.init();
+		Farms.init();
+		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(mc -> {
+			Traffic.tick(mc);
+			Cranes.tick(mc);
+			Farms.tick(mc);
+		});
 		// Villagers as people of every look (only the drawing changes).
 		EntityRenderers.register(EntityTypes.VILLAGER, HumanVillagerRenderer::new);
 		ClientPlayNetworking.registerGlobalReceiver(NationMapPayload.TYPE, (payload, context) -> map = payload);

@@ -1311,5 +1311,7 @@
   "block.airdefense.airport_sign": "Вывеска аэропорта",
   "block.airdefense.threshold": "Метка торца ВПП",
   "block.airdefense.stand": "Метка стоянки самолёта",
-  "entity.airdefense.airliner": "Авиалайнер"
+  "entity.airdefense.airliner": "Авиалайнер",
+  "block.airdefense.crane_base": "Основание башенного крана",
+  "entity.airdefense.prop": "Рабочая машина"
 }

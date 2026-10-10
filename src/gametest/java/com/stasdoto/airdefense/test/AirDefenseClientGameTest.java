@@ -252,7 +252,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		if (scene("realcity")) {
 			realCity(ctx);
 		}
-		if (scene("rail") || scene("airport")) {
+		if (scene("rail") || scene("airport") || scene("country")) {
 			rail(ctx);
 		}
 	}
@@ -285,6 +285,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			server.runCommand("weather clear");
 			server.runCommand("gamerule advance_time false");
 			server.runCommand("gamerule advance_weather false");
+			if (scene("country")) {
+				country(ctx, server);
+			}
 			if (scene("airport")) {
 				airport(ctx, server);
 			}
@@ -476,6 +479,97 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			ctx.waitTicks(20);
 			ctx.takeScreenshot("rl8_at_the_station");
 			AirDefense.LOGGER.info("[airdefense-test] RESULT rail_station: an electric train stopped at the station after {} ticks", stopped);
+		}
+	}
+
+	/** 1.41: the working country in a normal world - lorries on a highway, a building site with its crane, a tractor in a field. */
+	private void country(ClientGameTestContext ctx, TestServerContext server) {
+		// {highway x, y, z, dir x, dir z; site x, y, z; field x, y, z}
+		double[] w = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var t = com.stasdoto.airdefense.nation.Cities.terrain(l);
+			var list = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), t, 0, 0);
+			if (list.isEmpty()) {
+				return null;
+			}
+			var c = list.getFirst();
+			double[] out = new double[11];
+			java.util.Arrays.fill(out, Double.NaN);
+			for (var r : com.stasdoto.airdefense.nation.Cities.roads(l.getSeed(), t, 0, 0)) {
+				if (r.highway && r.length > 400) {
+					double[] p = r.pointAt(200);
+					double[] q = r.pointAt(210);
+					out[0] = p[0];
+					out[1] = r.height(200);
+					out[2] = p[1];
+					out[3] = q[0] - p[0];
+					out[4] = q[1] - p[1];
+					break;
+				}
+			}
+			for (var b : c.buildings()) {
+				if (com.stasdoto.airdefense.nation.Construction.site(c, b)) {
+					out[5] = b.origin.getX();
+					out[6] = b.origin.getY();
+					out[7] = b.origin.getZ();
+					break;
+				}
+			}
+			for (var h : c.hamlets(l.getSeed(), t)) {
+				if (!h.fields.isEmpty()) {
+					var f = h.fields.getFirst().pad();
+					out[8] = (f.x0() + f.x1()) / 2.0;
+					out[9] = f.y();
+					out[10] = (f.z0() + f.z1()) / 2.0;
+					break;
+				}
+			}
+			AirDefense.LOGGER.info("[airdefense-test] RESULT country_plan: highway at {} {}, building site at {} {} {}, field at {} {}", out[0], out[2], out[5],
+					out[6], out[7], out[8], out[10]);
+			return out;
+		});
+		if (w == null) {
+			return;
+		}
+		if (!Double.isNaN(w[0])) {
+			double len = Math.hypot(w[3], w[4]);
+			double ax = -w[4] / len;
+			double az = w[3] / len;
+			look(server, w[0] + ax * 22, w[1] + 7, w[2] + az * 22, w[0], w[1] + 1, w[2]);
+			ctx.waitTicks(100);
+			ctx.runOnClient(mc -> com.stasdoto.airdefense.client.nation.Traffic.force = 5);
+			int got = waitUntil(ctx, () -> ctx.computeOnClient(mc -> {
+				for (double[] p : com.stasdoto.airdefense.client.nation.Traffic.where()) {
+					if (Math.hypot(p[0] - w[0], p[2] - w[2]) < 30) {
+						return true;
+					}
+				}
+				return false;
+			}), 900);
+			ctx.runOnClient(mc -> mc.gui.hud.getChat().clearMessages(false));
+			ctx.takeScreenshot("cn1_lorries");
+			AirDefense.LOGGER.info("[airdefense-test] RESULT country_lorries: one came by after {} ticks; made {}, about now {}", got,
+					ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.Traffic.made),
+					ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.Traffic.count()));
+			ctx.runOnClient(mc -> com.stasdoto.airdefense.client.nation.Traffic.force = 0);
+		}
+		if (!Double.isNaN(w[5])) {
+			look(server, w[5] + 40, w[6] + 30, w[7] + 40, w[5], w[6] + 20, w[7]);
+			ctx.waitTicks(160);
+			int crane = waitUntil(ctx, () -> ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.Cranes.count()) > 0, 200);
+			ctx.waitTicks(20);
+			ctx.takeScreenshot("cn2_building_site");
+			AirDefense.LOGGER.info("[airdefense-test] RESULT country_site: crane up after {} ticks, {} cranes about", crane,
+					ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.Cranes.count()));
+		}
+		if (!Double.isNaN(w[8])) {
+			look(server, w[8] + 40, w[9] + 14, w[10] + 40, w[8], w[9] + 1, w[10]);
+			ctx.waitTicks(120);
+			ctx.runOnClient(mc -> com.stasdoto.airdefense.client.nation.Farms.force = true);
+			int tractor = waitUntil(ctx, () -> ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.Farms.count()) > 0, 400);
+			ctx.waitTicks(100);
+			ctx.takeScreenshot("cn3_tractor");
+			AirDefense.LOGGER.info("[airdefense-test] RESULT country_tractor: at work after {} ticks", tractor);
 		}
 	}
 
