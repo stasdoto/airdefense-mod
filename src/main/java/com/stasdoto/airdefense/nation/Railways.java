@@ -267,8 +267,9 @@ public final class Railways {
 	}
 
 	/** The station's end of the line: a little way out of the town, to one side of the highway that leaves it that way. */
-	private static int[] end(Cities.City c, Cities.City other, int side) {
-		int[] e = Cities.edge(c, other.x, other.z);
+	private static int[] end(long seed, Cities.Terrain t, Cities.City c, Cities.City other, int side) {
+		// 1.46: a great city's station stands beyond its outermost district that way.
+		int[] e = Cities.metroEdge(seed, t, c, other.x, other.z);
 		double dx = other.x - c.x;
 		double dz = other.z - c.z;
 		double len = Math.hypot(dx, dz);
@@ -290,8 +291,8 @@ public final class Railways {
 
 	private static Line line(long seed, Cities.Terrain t, Cities.City a, Cities.City b, int variant) {
 		int side = variant % 2 == 0 ? 1 : -1;
-		int[] s = end(a, b, side);
-		int[] e = end(b, a, -side);
+		int[] s = end(seed, t, a, b, side);
+		int[] e = end(seed, t, b, a, -side);
 		int dx = e[0] - s[0];
 		int dz = e[1] - s[1];
 		boolean alongX = Math.abs(dx) >= Math.abs(dz);
@@ -330,8 +331,9 @@ public final class Railways {
 			int bx = blocks.get(i)[0];
 			int bz = blocks.get(i)[1];
 			for (Cities.City c : Cities.citiesAround(seed, t, bx, bz)) {
-				if (c.outside(bx, bz) < (c == a || c == b ? 16 : 40)) {
-					return no(c == a || c == b ? "own town" : "other town");
+				boolean own = c == a || c == b || c.metroCentre == a || c.metroCentre == b;
+				if (c.outside(bx, bz) < (own ? 16 : 40)) {
+					return no(own ? "own town" : "other town");
 				}
 			}
 			if (Airports.inside(seed, t, bx, bz, 30)) {

@@ -257,7 +257,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		if (scene("realcity")) {
 			realCity(ctx);
 		}
-		if (scene("rail") || scene("airport") || scene("country") || scene("world") || scene("choice")) {
+		if (scene("rail") || scene("airport") || scene("country") || scene("world") || scene("choice") || scene("metro")) {
 			rail(ctx);
 		}
 	}
@@ -298,6 +298,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 			if (scene("airport")) {
 				airport(ctx, server);
+			}
+			if (scene("metro")) {
+				metro(ctx, server);
 			}
 			if (scene("choice")) {
 				choice(ctx, server);
@@ -631,13 +634,17 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					break;
 				}
 			}
-			for (var h : c.hamlets(l.getSeed(), t)) {
-				if (!h.fields.isEmpty()) {
-					var f = h.fields.getFirst().pad();
-					out[8] = (f.x0() + f.x1()) / 2.0;
-					out[9] = f.y();
-					out[10] = (f.z0() + f.z1()) / 2.0;
-					break;
+			// (1.46: a great city has no hamlets of its own - the country's other towns have.)
+			outer:
+			for (var town : list) {
+				for (var h : town.hamlets(l.getSeed(), t)) {
+					if (!h.fields.isEmpty()) {
+						var f = h.fields.getFirst().pad();
+						out[8] = (f.x0() + f.x1()) / 2.0;
+						out[9] = f.y();
+						out[10] = (f.z0() + f.z1()) / 2.0;
+						break outer;
+					}
 				}
 			}
 			AirDefense.LOGGER.info("[airdefense-test] RESULT country_plan: highway at {} {}, building site at {} {} {}, field at {} {}", out[0], out[2], out[5],
@@ -742,6 +749,91 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	}
 
 	/** 1.40: a capital's airport in a normal world - from above, the terminal, the runway; planes parked, landing, leaving. */
+	/** 1.46: the great city - its districts, how far it reaches, what planning it costs; its skyline and streets. */
+	private void metro(ClientGameTestContext ctx, TestServerContext server) {
+		// {centre x, base, z, diameter; estate x, base, z; suburb x, base, z; industry x, base, z}
+		double[] m = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var t = com.stasdoto.airdefense.nation.Cities.terrain(l);
+			long t0 = System.nanoTime();
+			var far = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), t, 40, 40);
+			long planMs = (System.nanoTime() - t0) / 1_000_000;
+			long r0 = System.nanoTime();
+			var farRoads = com.stasdoto.airdefense.nation.Cities.roads(l.getSeed(), t, 40, 40);
+			long roadMs = (System.nanoTime() - r0) / 1_000_000;
+			var list = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), t, 0, 0);
+			if (list.isEmpty()) {
+				return null;
+			}
+			var c = list.getFirst();
+			int x0 = Integer.MAX_VALUE;
+			int x1 = Integer.MIN_VALUE;
+			int z0 = Integer.MAX_VALUE;
+			int z1 = Integer.MIN_VALUE;
+			int[] kinds = new int[5];
+			int buildings = 0;
+			double[] out = new double[13];
+			java.util.Arrays.fill(out, Double.NaN);
+			for (var d : list) {
+				if (d != c && d.metroCentre != c) {
+					continue;
+				}
+				var sh = d.shape();
+				x0 = Math.min(x0, sh.minX);
+				x1 = Math.max(x1, sh.maxX);
+				z0 = Math.min(z0, sh.minZ);
+				z1 = Math.max(z1, sh.maxZ);
+				kinds[d.kind]++;
+				buildings += d.buildings().size();
+				int slot = d.kind == com.stasdoto.airdefense.nation.Cities.KIND_ESTATES ? 4 : d.kind == com.stasdoto.airdefense.nation.Cities.KIND_SUBURB ? 7
+						: d.kind == com.stasdoto.airdefense.nation.Cities.KIND_INDUSTRY ? 10 : -1;
+				if (slot > 0 && Double.isNaN(out[slot])) {
+					out[slot] = d.x;
+					out[slot + 1] = d.base;
+					out[slot + 2] = d.z;
+				}
+			}
+			out[0] = c.x;
+			out[1] = c.base;
+			out[2] = c.z;
+			out[3] = Math.max(x1 - x0, z1 - z0);
+			AirDefense.LOGGER.info("[airdefense-test] RESULT metro_plan: {} parts (centre {}, estates {}, suburbs {}, works {}), {} m across ({} x {}), {} buildings; "
+					+ "a far cell planned in {} ms ({} towns), its roads in {} ms ({} roads); towns of the country beyond: {}; districts in all {} planned, {} given up",
+					kinds[1] + kinds[2] + kinds[3] + kinds[4], kinds[1], kinds[2], kinds[3], kinds[4], (int) out[3], x1 - x0, z1 - z0, buildings, planMs,
+					far.size(), roadMs, farRoads.size(), list.stream().filter(k -> k.index == 1 || k.index == 2).count(),
+					com.stasdoto.airdefense.nation.Cities.districtsPlanned, com.stasdoto.airdefense.nation.Cities.districtsRefused);
+			return out;
+		});
+		if (m == null) {
+			AirDefense.LOGGER.info("[airdefense-test] RESULT metro_plan: no capital in cell 0 0");
+			return;
+		}
+		ctx.runOnClient(mc -> mc.options.renderDistance().set(16));
+		ctx.runOnClient(mc -> mc.gui.hud.toggle());
+		// The skyline from beyond its edge, then from above the centre.
+		double r = m[3] / 2;
+		look(server, m[0] - 150, m[1] + 70, m[2] - 150, m[0] + 60, m[1] + 20, m[2] + 60);
+		ctx.waitTicks(500);
+		ctx.takeScreenshot("mt1_skyline");
+		look(server, m[0] + 60, m[1] + 160, m[2] + 60, m[0] - 200, m[1], m[2] - 200);
+		ctx.waitTicks(400);
+		ctx.takeScreenshot("mt2_above_centre");
+		String[] names = {"mt3_estates", "mt4_suburb", "mt5_works"};
+		for (int k = 0; k < 3; k++) {
+			int i = 4 + k * 3;
+			if (Double.isNaN(m[i])) {
+				continue;
+			}
+			look(server, m[i] + 45, m[i + 1] + 58, m[i + 2] + 45, m[i] - 40, m[i + 1] + 4, m[i + 2] - 40);
+			ctx.waitTicks(320);
+			ctx.takeScreenshot(names[k]);
+		}
+		ctx.runOnClient(mc -> mc.gui.hud.toggle());
+		ctx.runOnClient(mc -> mc.options.renderDistance().set(12));
+		AirDefense.LOGGER.info("[airdefense-test] RESULT metro_chunks: {} town chunks made, avg {} us each", com.stasdoto.airdefense.nation.CityGen.chunks,
+				com.stasdoto.airdefense.nation.CityGen.chunks == 0 ? 0 : com.stasdoto.airdefense.nation.CityGen.nanos / 1000 / com.stasdoto.airdefense.nation.CityGen.chunks);
+	}
+
 	/** 1.43: the country screen on coming into the world, playing for a country (and its capital), a friend in it too. */
 	private void choice(ClientGameTestContext ctx, TestServerContext server) {
 		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.nation.CountryClient.last = null);

@@ -191,6 +191,10 @@ public final class Ports {
 	/** The town's port, or null if no water is near (or the world has the classic towns). */
 	@Nullable
 	static Port plan(long seed, Cities.Terrain t, Cities.City c) {
+		if (c.district() || Cities.metro && c.capital()) {
+			// 1.46: a great city's districts and centre have none of their own (the towns round it do).
+			return null;
+		}
 		if (c.style == CityStyle.CLASSIC) {
 			return null;
 		}

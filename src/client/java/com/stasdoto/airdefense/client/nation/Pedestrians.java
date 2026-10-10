@@ -65,25 +65,26 @@ public final class Pedestrians {
 
 	/** How many passers-by about the player at this hour (0 = midnight). */
 	static int wanted(long hour) {
+		// 1.46: busier streets - the great cities are crowded.
 		if (hour < 5) {
-			return 2;
+			return 3;
 		}
 		if (hour < 7) {
-			return 7;
-		}
-		if (hour < 9) {
-			return 30;
-		}
-		if (hour < 17) {
-			return 20;
-		}
-		if (hour < 19) {
-			return 30;
-		}
-		if (hour < 22) {
 			return 12;
 		}
-		return 4;
+		if (hour < 9) {
+			return 50;
+		}
+		if (hour < 17) {
+			return 34;
+		}
+		if (hour < 19) {
+			return 50;
+		}
+		if (hour < 22) {
+			return 20;
+		}
+		return 6;
 	}
 
 	private static void tick(Minecraft mc) {

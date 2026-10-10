@@ -46,12 +46,12 @@ public final class Politics extends SavedData {
 	public final int styles;
 	/**
 	 * 1.35: 1 in worlds started with the town outlines (round, square...); older worlds read 0 and keep the blobs. 1.36: 2 in
-	 * worlds started with the playgrounds and stadiums in the parks; 3 with the shelters; 4 (1.39) with the railways; 5 (1.40) with the airports; 6 (1.41) with the building sites.
+	 * worlds started with the playgrounds and stadiums in the parks; 3 with the shelters; 4 (1.39) with the railways; 5 (1.40) with the airports; 6 (1.41) with the building sites; 7 (1.46) with the great cities.
 	 */
 	public final int shapes;
 
 	public Politics() {
-		this(List.of(), List.of(), 1, List.of(), 1, 6, List.of());
+		this(List.of(), List.of(), 1, List.of(), 1, 7, List.of());
 	}
 
 	private Politics(List<Country> countries, List<Settlement> settlements, int nextId, List<Integer> pending, int styles, int shapes,

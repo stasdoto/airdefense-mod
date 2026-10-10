@@ -169,7 +169,7 @@ public final class Airports {
 		Cities.City c = list.getFirst();
 		StringBuilder sb = new StringBuilder("capital at " + c.x + " " + c.z + " half " + c.half() + ":");
 		for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
-			int[] e = Cities.edge(c, c.x + d[0] * 2000, c.z + d[1] * 2000);
+			int[] e = Cities.metroEdge(seed, t, c, c.x + d[0] * 2000, c.z + d[1] * 2000);
 			int vx = -d[0];
 			int vz = -d[1];
 			int ux = -d[1];
@@ -247,7 +247,7 @@ public final class Airports {
 		for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
 			// A highway leaves the town each way (to the next capitals east, west, north and south): the airport off to one
 			// side of it, clear of the way straight out.
-			int[] e = Cities.edge(c, c.x + d[0] * 2000, c.z + d[1] * 2000);
+			int[] e = Cities.metroEdge(seed, t, c, c.x + d[0] * 2000, c.z + d[1] * 2000);
 			// v points back towards the town; u along the town's side.
 			int vx = -d[0];
 			int vz = -d[1];

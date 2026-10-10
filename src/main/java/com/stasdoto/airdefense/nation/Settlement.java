@@ -131,6 +131,11 @@ public final class Settlement {
 		return pos.distSqr(center) <= (double) radius * radius;
 	}
 
+	/** 1.46: a district of a great city (not its centre): a town of its own, but a lighter garrison. */
+	public boolean isDistrict() {
+		return isCity() && Cities.metro && Math.floorMod(city, 64L) >= Cities.FIRST_DISTRICT;
+	}
+
 	public boolean isCity() {
 		return city != NONE;
 	}

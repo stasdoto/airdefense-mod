@@ -369,16 +369,30 @@ public final class CityShape {
 			}
 			double a = Math.atan2(l.cz() - c.z, l.cx() - c.x);
 			double diff = Math.abs(Math.atan2(Math.sin(a - sector), Math.cos(a - sector)));
-			if (diff < Math.toRadians(55) && norm >= 0.5) {
+			// 1.46: a district of a great city is mostly one thing: the centre's towers, estates of panel blocks,
+			// private houses, or works.
+			int kind = c.kind;
+			if (kind == Cities.KIND_INDUSTRY ? norm >= 0.25 : kind == Cities.KIND_TOWN && diff < Math.toRadians(55) && norm >= 0.5) {
 				l.district = INDUSTRY;
 				industry.add(l);
 				continue;
 			}
-			double downtown = c.size == Cities.Size.LARGE ? 0.34 : c.size == Cities.Size.MEDIUM ? 0.25 : 0;
-			l.district = norm <= downtown ? DOWNTOWN : norm <= 0.67 ? MID : OUTER;
+			double downtown = switch (kind) {
+				case Cities.KIND_CENTRE -> 0.72;
+				case Cities.KIND_ESTATES -> 0.1;
+				case Cities.KIND_SUBURB, Cities.KIND_INDUSTRY -> 0;
+				default -> c.size == Cities.Size.LARGE ? 0.34 : c.size == Cities.Size.MEDIUM ? 0.25 : 0;
+			};
+			double mid = switch (kind) {
+				case Cities.KIND_CENTRE, Cities.KIND_ESTATES, Cities.KIND_INDUSTRY -> 0.97;
+				case Cities.KIND_SUBURB -> 0.2;
+				default -> 0.67;
+			};
+			l.district = norm <= downtown ? DOWNTOWN : norm <= mid ? MID : OUTER;
 		}
-		// Every town has some industry: the outermost lot on that side, if the sector caught none.
-		int minIndustry = c.size == Cities.Size.LARGE ? 3 : c.size == Cities.Size.MEDIUM ? 2 : 1;
+		// Every town has some industry: the outermost lot on that side, if the sector caught none (not the great city's
+		// centre, estates and suburbs: it has districts of works).
+		int minIndustry = c.kind != Cities.KIND_TOWN ? 0 : c.size == Cities.Size.LARGE ? 3 : c.size == Cities.Size.MEDIUM ? 2 : 1;
 		while (industry.size() < Math.min(minIndustry, lots.size() / 3 + 1)) {
 			Lot best = null;
 			double bestScore = -1e9;

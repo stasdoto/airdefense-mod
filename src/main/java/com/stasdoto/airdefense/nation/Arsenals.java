@@ -217,6 +217,11 @@ public final class Arsenals extends SavedData {
 				if (east) {
 					kit.add(VehicleType.TOS1);
 				}
+			} else if (s.isDistrict()) {
+				// 1.46: a district of a great city: the city's batteries cover it; every third keeps a short-range system.
+				if (s.id % 3 == 0) {
+					kit.add(east ? VehicleType.PANTSIR : VehicleType.GEPARD);
+				}
 			} else if (s.isCity()) {
 				kit.add(east ? (r.nextBoolean() ? VehicleType.BUK : VehicleType.TOR) : (r.nextBoolean() ? VehicleType.NASAMS : VehicleType.IRIS_T));
 				kit.add(east ? VehicleType.PANTSIR : VehicleType.GEPARD);

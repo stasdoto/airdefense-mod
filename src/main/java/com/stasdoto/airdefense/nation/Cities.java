@@ -26,7 +26,10 @@ import net.minecraft.world.level.levelgen.Heightmap;
  * own while the world generates.
  */
 public final class Cities {
-	public static final int CELL = 2048;
+	/** The country cells: 2048 blocks across; 1.46: 3072 in worlds with the great cities ({@link #metro}). */
+	public static final int CELL_CLASSIC = 2048;
+	public static final int CELL_METRO = 3072;
+	public static volatile int CELL = CELL_METRO;
 	public static final int PITCH = 36;
 	/** Streets (1.25): 7 blocks of asphalt centred on each grid line - a lane each way - then a pavement two blocks wide. */
 	public static final int STREET_HALF = 3;
@@ -132,6 +135,26 @@ public final class Cities {
 	public static volatile boolean airports = true;
 	/** 1.41: building sites in the towns, with their cranes (worlds started since). */
 	public static volatile boolean growth = true;
+	/**
+	 * 1.46: the great cities (worlds started since): each capital is a city of districts 2-2.6 km across - the centre,
+	 * a ring of high-rise housing estates, a ring of mixed districts with industry, the private houses at the edge - and
+	 * the country cells are wider to hold them.
+	 */
+	public static volatile boolean metro = true;
+
+	public static void setMetro(boolean on) {
+		metro = on;
+		CELL = on ? CELL_METRO : CELL_CLASSIC;
+	}
+
+	/** 1.46: what a district of a great city is mostly made of. */
+	public static final int KIND_TOWN = 0;
+	public static final int KIND_CENTRE = 1;
+	public static final int KIND_ESTATES = 2;
+	public static final int KIND_SUBURB = 3;
+	public static final int KIND_INDUSTRY = 4;
+	/** Districts of a great city have these indices (0 is its centre, 1 and 2 the country's other towns). */
+	public static final int FIRST_DISTRICT = 3;
 	@Nullable
 	public static volatile CityForm FORCE_FORM;
 
@@ -152,6 +175,11 @@ public final class Cities {
 		public final long seed;
 		/** 1.28: how the town looks. */
 		public final CityStyle style;
+		/** 1.46: what this district of a great city is mostly made of ({@link #KIND_TOWN} for a town of its own). */
+		public int kind = KIND_TOWN;
+		/** 1.46: the great city's centre this district belongs to (null: not a district). */
+		@Nullable
+		public City metroCentre;
 		private volatile List<Building> buildings;
 
 		City(int cx, int cz, int index, int x, int z, int base, Size size, int citizens, int color, long seed, CityStyle style) {
@@ -172,6 +200,11 @@ public final class Cities {
 			return index == 0;
 		}
 
+		/** 1.46: a district of a great city (not its centre). */
+		public boolean district() {
+			return index >= FIRST_DISTRICT;
+		}
+
 		/** What the city has none of (1.23): one of {@link #LACKS}, different for each city of a country. */
 		public BuildingType lack() {
 			int base = (int) Math.floorMod(mix(cellKey(cx, cz) ^ 0x1AC4L), (long) LACKS.length);
@@ -179,7 +212,8 @@ public final class Cities {
 		}
 
 		public long key() {
-			return cellKey(cx, cz) * 4 + index;
+			// 1.46: a great city has dozens of districts - their keys need more room (old worlds keep theirs).
+			return cellKey(cx, cz) * (metro ? 64 : 4) + index;
 		}
 
 		private volatile CityForm form;
@@ -530,9 +564,14 @@ public final class Cities {
 		return ((long) cx << 32) ^ (cz & 0xFFFFFFFFL);
 	}
 
+	/** The plan's key: the seed and the world's flags (the plan depends on them). */
+	private static long keyOf(long seed) {
+		return (styles ? seed : ~seed) ^ (shapes ? 0L : 0x5EED_F04DL) ^ (metro ? 0x4D45_5452_4FL : 0L);
+	}
+
 	private static void checkSeed(long seed) {
 		// The plan also depends on whether the world has the 1.28 styles.
-		long key = (styles ? seed : ~seed) ^ (shapes ? 0L : 0x5EED_F04DL);
+		long key = keyOf(seed);
 		if (cacheSeed != key) {
 			synchronized (Cities.class) {
 				if (cacheSeed != key) {
@@ -568,7 +607,7 @@ public final class Cities {
 	/** Like {@link #cityAt}, but only from cells already planned (never plans one: for checks on the server's own tick). */
 	@Nullable
 	public static City plannedCityAt(long seed, int x, int z, int margin) {
-		if (cacheSeed != seed) {
+		if (cacheSeed != keyOf(seed)) {
 			return null;
 		}
 		List<City> list = CITIES.get(cellKey(Math.floorDiv(x, CELL), Math.floorDiv(z, CELL)));
@@ -592,7 +631,7 @@ public final class Cities {
 	/** A hamlet already planned whose square is within {@code reach} of (x, z), or null (never plans anything). */
 	@Nullable
 	public static Hamlets.Hamlet plannedHamletAt(long seed, int x, int z, int reach) {
-		if (cacheSeed != seed) {
+		if (cacheSeed != keyOf(seed)) {
 			return null;
 		}
 		List<City> list = CITIES.get(cellKey(Math.floorDiv(x, CELL), Math.floorDiv(z, CELL)));
@@ -662,6 +701,9 @@ public final class Cities {
 
 	private static List<City> planCell(long seed, Terrain t, int cx, int cz) {
 		long cellSeed = mix(seed ^ 0x43495459L ^ cx * 0x9E3779B97F4A7C15L ^ cz * 0xC2B2AE3D27D4EB4FL);
+		if (metro) {
+			return planMetro(seed, t, cx, cz, cellSeed);
+		}
 		Random r = new Random(cellSeed);
 		int color = 1 + r.nextInt(15);
 		int x0 = cx * CELL;
@@ -708,6 +750,214 @@ public final class Cities {
 			}
 		}
 		return out;
+	}
+
+	/** For the tests: districts planned, and those given up (water, too steep, no room). */
+	public static int districtsPlanned;
+	public static int districtsRefused;
+
+	/** 1.46: how far the rings of a great city's districts lie from its centre. */
+	static final int[] RING_R = {0, 390, 790, 1180};
+	/** How many districts each ring has. */
+	static final int[] RING_N = {1, 6, 10, 13};
+
+	/**
+	 * 1.46: a cell of a world with the great cities. The capital is a city of districts: its centre (the city hall,
+	 * the towers and offices), a ring of six high-rise estates round it, a ring of mixed districts (estates, private
+	 * houses, two industrial ones) and, an outer ring of private houses and dachas with a
+	 * works or two: 2-2.6 km across. Each district has its own ground level (the city climbs the hills instead of
+	 * lying on one flat plate), its own streets and its own town hall; avenues join them. The country's two other
+	 * towns stand farther out, beyond the great city.
+	 */
+	private static List<City> planMetro(long seed, Terrain t, int cx, int cz, long cellSeed) {
+		Random r = new Random(cellSeed);
+		int color = 1 + r.nextInt(15);
+		int x0 = cx * CELL;
+		int z0 = cz * CELL;
+		List<City> out = new ArrayList<>();
+		int rings = 3;
+		int margin = RING_R[rings] + Size.LARGE.half() + 60;
+		int[] cap = bestSite(t, r, Size.LARGE, x0 + margin, z0 + margin, x0 + CELL - margin, z0 + CELL - margin, 8);
+		if (cap == null) {
+			return out;
+		}
+		int styleRoll = (int) Math.floorMod(mix(seed ^ cellKey(cx, cz) ^ 0x5759_4C45L), 100L);
+		CityStyle forced = FORCE_STYLE;
+		CityStyle style = styleOf(t, cap[0], cap[1], styleRoll, forced);
+		City centre = new City(cx, cz, 0, cap[0], cap[1], cap[2], Size.LARGE, Size.LARGE.popMax + 200 + r.nextInt(400), color, r.nextLong(), style);
+		centre.kind = KIND_CENTRE;
+		out.add(centre);
+		int index = FIRST_DISTRICT;
+		for (int ring = 1; ring <= rings; ring++) {
+			int n = RING_N[ring];
+			double a0 = r.nextDouble() * Math.PI * 2;
+			int industries = ring == 1 ? 1 : ring == 2 ? 2 : 1;
+			int industryAt = r.nextInt(n);
+			for (int k = 0; k < n; k++) {
+				double a = a0 + Math.PI * 2 * k / n + (r.nextDouble() - 0.5) * 0.18;
+				double d = RING_R[ring] + (r.nextDouble() - 0.5) * 50;
+				int tx = cap[0] + (int) Math.round(Math.cos(a) * d);
+				int tz = cap[1] + (int) Math.round(Math.sin(a) * d);
+				// What the district is: estates near the centre, then a mix, private houses at the edge; works in between.
+				boolean works = k == industryAt || industries == 2 && k == (industryAt + n / 2) % n;
+				int kind = works ? KIND_INDUSTRY : ring == 1 ? KIND_ESTATES : ring == 2 ? (r.nextInt(100) < 60 ? KIND_ESTATES : KIND_SUBURB) : KIND_SUBURB;
+				Size size = ring == 3 && kind == KIND_SUBURB && r.nextBoolean() ? Size.MEDIUM : Size.LARGE;
+				int[] site = quickSite(t, r, size, tx, tz, 36);
+				if (site == null || near(out, site[0], site[1], size)) {
+					districtsRefused++;
+					continue;
+				}
+				// The ground of a district: near its neighbour's (towards the centre), so the avenues between them are not steep.
+				int base = site[2];
+				City inner = nearest(out, site[0], site[1]);
+				if (inner != null) {
+					int dist = (int) Math.hypot(inner.x - site[0], inner.z - site[1]);
+					int most = Math.max(3, dist / 30);
+					base = Math.max(inner.base - most, Math.min(inner.base + most, base));
+				}
+				int people = size.popMin + r.nextInt(size.popMax - size.popMin + 1);
+				City c = new City(cx, cz, index, site[0], site[1], Math.max(t.sea(), base), size, kind == KIND_ESTATES ? people * 2 : people, color,
+						r.nextLong(), style);
+				c.kind = kind;
+				c.metroCentre = centre;
+				// Its real outline must keep clear of its neighbours' (an avenue runs between them).
+				if (overlaps(out, c, 22)) {
+					districtsRefused++;
+					continue;
+				}
+				index++;
+				districtsPlanned++;
+				out.add(c);
+			}
+		}
+		// The country's other towns, out beyond the great city.
+		int reach = RING_R[rings] + Size.LARGE.half();
+		double a0 = r.nextDouble() * Math.PI * 2;
+		int townIndex = 1;
+		for (int k = 1; k <= 2; k++) {
+			Size size = r.nextInt(100) < 55 ? Size.MEDIUM : Size.SMALL;
+			for (int tries = 0; tries < 4; tries++) {
+				double a = a0 + (k == 1 ? 0 : Math.PI * (0.65 + r.nextDouble() * 0.7)) + (r.nextDouble() - 0.5) * 0.6;
+				double d = reach + size.half() + 220 + r.nextDouble() * 180;
+				int lim = size.half() + 200;
+				int tx = Math.max(x0 + lim, Math.min(x0 + CELL - lim, cap[0] + (int) (Math.cos(a) * d)));
+				int tz = Math.max(z0 + lim, Math.min(z0 + CELL - lim, cap[1] + (int) (Math.sin(a) * d)));
+				int[] best = bestSite(t, r, size, tx - 60, tz - 60, tx + 60, tz + 60, 4);
+				if (best != null && !clashes(out, best[0], best[1], size, 140)) {
+					out.add(new City(cx, cz, townIndex++, best[0], best[1], best[2], size, size.popMin + r.nextInt(size.popMax - size.popMin + 1), color,
+							r.nextLong(), style));
+					break;
+				}
+			}
+		}
+		// The towns first after the centre (the code that looks for "the capital and its towns" sees them in order).
+		out.sort((p, q) -> Integer.compare(p.index == 0 ? -1 : p.district() ? 1 : 0, q.index == 0 ? -1 : q.district() ? 1 : 0));
+		return out;
+	}
+
+	/** 1.46: is (x, z) clearly too near a part already planned (closer than their sizes allow, roughly, as circles)? */
+	private static boolean near(List<City> out, int x, int z, Size size) {
+		for (City c : out) {
+			if (Math.hypot(c.x - x, c.z - z) < (c.size.half() + size.half()) * 0.62) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** 1.46: does this district's outline (with {@code gap} round it) touch the outline of one already planned? */
+	private static boolean overlaps(List<City> out, City c, int gap) {
+		CityShape a = c.shape();
+		for (City o : out) {
+			CityShape b = o.shape();
+			if (a.minX - gap < b.maxX && b.minX < a.maxX + gap && a.minZ - gap < b.maxZ && b.minZ < a.maxZ + gap) {
+				// The boxes touch: look closer, block by block of the coarser grid.
+				if (touches(c, o, gap)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/** Two outlines closer than {@code gap} anywhere (checked on a 12-block grid along the first one's lots). */
+	private static boolean touches(City a, City b, int gap) {
+		for (CityShape.Lot l : a.shape().lots) {
+			for (int x = l.x0 - 6; x <= l.x1 + 6; x += 12) {
+				for (int z = l.z0 - 6; z <= l.z1 + 6; z += 12) {
+					if (b.outside(x, z) < gap) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	/** Does a town of this size at (x, z) come closer than {@code gap} to one already planned? */
+	private static boolean clashes(List<City> out, int x, int z, Size size, int gap) {
+		for (City c : out) {
+			if (Math.max(Math.abs(c.x - x), Math.abs(c.z - z)) < c.size.half() + size.half() + gap) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Nullable
+	private static City nearest(List<City> out, int x, int z) {
+		City best = null;
+		double bd = Double.MAX_VALUE;
+		for (City c : out) {
+			double d = Math.hypot(c.x - x, c.z - z);
+			if (d < bd) {
+				bd = d;
+				best = c;
+			}
+		}
+		return best;
+	}
+
+	/** 1.46: a district's spot: two tries round (x, z), nine samples each (cheap - a great city has dozens). */
+	@Nullable
+	private static int[] quickSite(Terrain t, Random r, Size size, int x, int z, int jitter) {
+		int h = size.half();
+		int[] best = null;
+		double bestScore = Double.MAX_VALUE;
+		for (int i = 0; i < 3; i++) {
+			int sx = x + (i == 0 ? 0 : r.nextInt(2 * jitter + 1) - jitter);
+			int sz = z + (i == 0 ? 0 : r.nextInt(2 * jitter + 1) - jitter);
+			int[] hs = new int[9];
+			int wet = 0;
+			for (int a = 0; a < 3; a++) {
+				for (int b = 0; b < 3; b++) {
+					int y = t.top(sx - h + a * h, sz - h + b * h);
+					hs[a * 3 + b] = y;
+					if (y < t.sea()) {
+						wet++;
+					}
+				}
+			}
+			if (wet > 3) {
+				continue;
+			}
+			int[] sorted = hs.clone();
+			Arrays.sort(sorted);
+			int median = sorted[4];
+			double spread = 0;
+			for (int y : hs) {
+				spread += Math.abs(y - median);
+			}
+			spread += wet * 20;
+			if (spread / 9 > 22) {
+				continue;
+			}
+			if (spread < bestScore) {
+				bestScore = spread;
+				best = new int[]{sx, sz, Math.max(t.sea(), median)};
+			}
+		}
+		return best;
 	}
 
 	/** The flattest dry spot among a few tries in the rectangle: {x, z, ground level}, or null if all are under water. */
@@ -757,17 +1007,96 @@ public final class Cities {
 		}
 		City cap = here.getFirst();
 		for (City c : here) {
-			if (c != cap) {
-				out.add(road(seed, t, cap, c));
+			if (c == cap) {
+				continue;
+			}
+			if (c.district()) {
+				// 1.46: an avenue to the nearest district nearer the centre (or the centre itself).
+				out.add(road(seed, t, inward(here, c), c));
+			} else {
+				// A town: from the district of the great city that faces it.
+				out.add(road(seed, t, facing(here, c.x, c.z), c));
 			}
 		}
 		for (int[] d : new int[][]{{1, 0}, {0, 1}}) {
 			List<City> next = cities(seed, t, cx + d[0], cz + d[1]);
 			if (!next.isEmpty() && next.getFirst().index == 0) {
-				out.add(road(seed, t, cap, next.getFirst()));
+				City other = next.getFirst();
+				out.add(road(seed, t, facing(here, other.x, other.z), facing(next, cap.x, cap.z)));
 			}
 		}
 		return out;
+	}
+
+	/**
+	 * 1.46: where a way out of a great city towards (tx, tz) leaves its outermost district (for a town of its own,
+	 * just {@link #edge}).
+	 */
+	static int[] metroEdge(long seed, Terrain t, City c, double tx, double tz) {
+		if (!metro || !c.capital()) {
+			return edge(c, tx, tz);
+		}
+		double dx = tx - c.x;
+		double dz = tz - c.z;
+		double len = Math.max(1e-6, Math.hypot(dx, dz));
+		int[] best = edge(c, tx, tz);
+		double far = ((best[0] - c.x) * dx + (best[1] - c.z) * dz) / len;
+		for (City o : cities(seed, t, c.cx, c.cz)) {
+			if (o.metroCentre != c) {
+				continue;
+			}
+			// Only the districts lying that way.
+			double along = ((o.x - c.x) * dx + (o.z - c.z) * dz) / len;
+			double side = Math.abs((o.x - c.x) * dz - (o.z - c.z) * dx) / len;
+			if (along <= 0 || side > o.half() + 40) {
+				continue;
+			}
+			int[] e = edge(o, o.x + dx, o.z + dz);
+			double p = ((e[0] - c.x) * dx + (e[1] - c.z) * dz) / len;
+			if (p > far) {
+				far = p;
+				best = e;
+			}
+		}
+		return best;
+	}
+
+	/** 1.46: the district (or the centre) a district's avenue goes to: the nearest that is nearer the centre. */
+	static City inward(List<City> cell, City c) {
+		City cap = cell.getFirst();
+		double own = Math.hypot(c.x - cap.x, c.z - cap.z);
+		City best = cap;
+		double bd = own;
+		for (City o : cell) {
+			if (o == c || o != cap && !o.district()) {
+				continue;
+			}
+			double dc = Math.hypot(o.x - cap.x, o.z - cap.z);
+			double d = Math.hypot(o.x - c.x, o.z - c.z);
+			if (dc < own - 150 && d < bd) {
+				bd = d;
+				best = o;
+			}
+		}
+		return best;
+	}
+
+	/** 1.46: the part of a great city (a district, or the centre) facing (x, z): where its roads out that way start. */
+	static City facing(List<City> cell, int x, int z) {
+		City cap = cell.getFirst();
+		City best = cap;
+		double bd = Math.hypot(cap.x - x, cap.z - z);
+		for (City o : cell) {
+			if (!o.district()) {
+				continue;
+			}
+			double d = Math.hypot(o.x - x, o.z - z);
+			if (d < bd) {
+				bd = d;
+				best = o;
+			}
+		}
+		return best;
 	}
 
 	/** The last point of the city on the way from its centre towards (tx, tz): where a road out of it starts. */
@@ -873,6 +1202,33 @@ public final class Cities {
 	private static final Object[] DESERT_DOWNTOWN = {BuildingType.OFFICE, 3, BuildingType.TOWER, 2, BuildingType.PANEL9, 2, BuildingType.SHOP, 4};
 	private static final Object[] DESERT_MID = {BuildingType.APARTMENTS, 4, BuildingType.PANEL5, 3, BuildingType.SHOP, 3};
 	private static final Object[] DESERT_OUTER = {BuildingType.HOUSE, 4, BuildingType.SMALL_HOUSE, 4, BuildingType.COTTAGE, 2, BuildingType.SHOP, 1};
+
+	// 1.46: a great city's housing estates (tall panel blocks and residential towers) and its centre (towers and offices).
+	private static final Object[] SOVIET_ESTATES = {BuildingType.PANEL9, 6, BuildingType.PANEL5, 3, BuildingType.TOWER, 1, BuildingType.SHOP, 1};
+	private static final Object[] EURO_ESTATES = {BuildingType.PANEL9, 4, BuildingType.PANEL5, 3, BuildingType.APARTMENTS, 2, BuildingType.TOWER, 1,
+			BuildingType.SHOP, 1};
+	private static final Object[] US_ESTATES = {BuildingType.TOWER, 3, BuildingType.PANEL9, 3, BuildingType.APARTMENTS, 3, BuildingType.SHOP, 1};
+	private static final Object[] DESERT_ESTATES = {BuildingType.PANEL9, 3, BuildingType.APARTMENTS, 4, BuildingType.TOWER, 1, BuildingType.SHOP, 1};
+	private static final Object[] ESTATES = {BuildingType.PANEL9, 5, BuildingType.TOWER, 2, BuildingType.PANEL5, 2, BuildingType.SHOP, 1};
+	private static final Object[] METRO_CENTRE = {BuildingType.TOWER, 5, BuildingType.OFFICE, 4, BuildingType.PANEL9, 2, BuildingType.SHOP, 2};
+	private static final Object[] DESERT_CENTRE = {BuildingType.OFFICE, 4, BuildingType.TOWER, 3, BuildingType.PANEL9, 2, BuildingType.SHOP, 3};
+
+	/** 1.46: the mix for a lot of this district, minding what the great city's district is mostly made of. */
+	private static Object[] mix(City c, int district) {
+		if (c.kind == KIND_ESTATES && district != CityShape.OUTER) {
+			return switch (c.style) {
+				case SOVIET -> SOVIET_ESTATES;
+				case EUROPEAN -> EURO_ESTATES;
+				case AMERICAN -> US_ESTATES;
+				case DESERT -> DESERT_ESTATES;
+				default -> ESTATES;
+			};
+		}
+		if (c.kind == KIND_CENTRE && district == CityShape.DOWNTOWN) {
+			return c.style == CityStyle.DESERT ? DESERT_CENTRE : METRO_CENTRE;
+		}
+		return mix(c.style, district);
+	}
 
 	private static Object[] mix(CityStyle style, int district) {
 		return switch (style) {
@@ -1088,8 +1444,8 @@ public final class Cities {
 						out.add(park);
 					}
 				}
-				case CityShape.DOWNTOWN -> rows(f, r, mix(c.style, CityShape.DOWNTOWN), y, out);
-				case CityShape.MID -> rows(f, r, mix(c.style, CityShape.MID), y, out);
+				case CityShape.DOWNTOWN -> rows(f, r, mix(c, CityShape.DOWNTOWN), y, out);
+				case CityShape.MID -> rows(f, r, mix(c, CityShape.MID), y, out);
 				case CityShape.INDUSTRY -> rows(f, r, INDUSTRY, y, out);
 				default -> rows(f, r, mix(c.style, CityShape.OUTER), y, out);
 			}
