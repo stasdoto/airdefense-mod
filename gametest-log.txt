@@ -1,0 +1,400 @@
+[14:03:18] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 7318ms or 146 ticks behind
+[14:03:26] [Test thread/INFO] (airdefense) [airdefense-test] RESULT world_season 0: snow on 0 columns of 9216, ice on 0
+[14:03:26] [Server thread/INFO] (Minecraft) System chat: Установлена ясная погода
+[14:03:26] [Server thread/INFO] (Minecraft) System chat: Установлено значение игрового правила random_tick_speed: 3
+[14:03:26] [Server thread/INFO] (Minecraft) System chat: Режим игры игрока Player0 изменён на Творческий режим
+[14:03:26] [Test thread/INFO] (airdefense) [airdefense-test] RESULT world_rulers: Император Филипп II rules Королевство Полесия (title 5, trait 1); trade at first false, after four gifts standing 64, trade true, alliance true; a month later: 23 rulers gave way, 5 alliances made
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Ваш режим игры изменён на Творческий режим
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Деревня Ракитное теперь ваша
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Император Филипп II (Королевство Полесия) отказывается торговать: отношения 0, нужно 15
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Император Филипп II (Королевство Полесия) принимает ваш подарок. Отношения: 12
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Император Филипп II (Королевство Полесия) принимает ваш подарок. Отношения: 26
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Император Филипп II (Королевство Полесия) принимает ваш подарок. Отношения: 40
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Император Филипп II (Королевство Полесия) принимает ваш подарок. Отношения: 54
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Император Филипп II (Королевство Полесия) подписывает торговый договор: каждый день он будет приносить вам изумруды
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Император Филипп II (Королевство Полесия) заключает с вами союз: его армия выступит против ваших врагов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 5 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 5 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 5 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Королевство Полесия новый правитель: Императрица Хельга III (миролюбивый)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 5 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Федерация Гардания новый правитель: Князь Стефан V (воинственный)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Княжество Шуравия новый правитель: Князь Карл IV (осторожный)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Княжество Ильмения новый правитель: Великий герцог Фридрих IV (воинственный)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Княжество Златогория новый правитель: Княгиня Хельга II (жадный)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Королевство Арвения новый правитель: Великий герцог Карл III (осторожный)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Земля Яргения новый правитель: Канцлер Хельга III (миролюбивый)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Княжество Ильмения новый правитель: Великий герцог Людовик V (миролюбивый)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Королевство Червония новый правитель: Премьер-министр Максимилиан II (жадный)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Королевство Тавелия новый правитель: Князь Карл II (миролюбивый)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Союз Маревия и Союз Беловодье заключили союз
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Королевство Полесия и Королевство Корвения заключили союз
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Земля Яргения новый правитель: Канцлер Артур IV (осторожный)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Королевство Корвения новый правитель: Канцлер Эрик IV (воинственный)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Союз Маревия новый правитель: Король Ярослав IV (миролюбивый)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Республика Угория новый правитель: Императрица Ингрид IV (жадный)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Княжество Холмия и Союз Беловодье заключили союз
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Королевство Червония новый правитель: Премьер-министр Игорь III (воинственный)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Союз Фалькония новый правитель: Премьер-министр Леопольд V (осторожный)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Федерация Гардания новый правитель: Князь Филипп VI (воинственный)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Княжество Ильмения новый правитель: Великий герцог Дмитрий VI (жадный)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Союз Доравия новый правитель: Князь Фридрих III (миролюбивый)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Федерация Приречье новый правитель: Президент Артур V (осторожный)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Федерация Лиравия новый правитель: Король Дмитрий IV (воинственный)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Княжество Ильмения и Союз Маревия заключили союз
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Союз Беловодье новый правитель: Премьер-министр Екатерина III (осторожный)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Республика Угория и Королевство Тавелия заключили союз
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] В стране Республика Залесье новый правитель: Великий герцог Олаф II (жадный)
+[14:03:26] [Render thread/INFO] (Minecraft) [System] [CHAT] Торговля со страной Королевство Полесия принесла 6 изумрудов
+[14:03:26] [Render thread/INFO] (Minecraft) Loaded 3 advancements
+[14:03:29] [Server thread/INFO] (Minecraft) System chat: Режим игры игрока Player0 изменён на Режим наблюдателя
+[14:03:29] [Server thread/INFO] (airdefense) [airdefense-test] RESULT country_plan: highway at 1443.803660488501 1368.3925841878536, building site at 1354.0 78.0 1060.0, field at 1500.0 1298.0
+[14:03:29] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1424.100000, 89.800000, 1358.600000
+[14:03:29] [Render thread/INFO] (Minecraft) [System] [CHAT] Ваш режим игры изменён на Режим наблюдателя
+[14:03:30] [Server thread/INFO] (airdefense) [airdefense] slow tick 558 ms:; the rest (the game) 558 ms
+[14:03:31] [Server thread/INFO] (airdefense) [airdefense] slow tick 85 ms:; the rest (the game) 85 ms
+[14:03:31] [Server thread/INFO] (airdefense) [airdefense] slow tick 239 ms:; the rest (the game) 239 ms
+[14:03:31] [Server thread/INFO] (airdefense) [airdefense] slow tick 232 ms:; the rest (the game) 232 ms
+[14:03:32] [Server thread/INFO] (airdefense) [airdefense] slow tick 491 ms:; the rest (the game) 491 ms
+[14:03:32] [Server thread/INFO] (airdefense) [airdefense] slow tick 78 ms:; the rest (the game) 77 ms
+[14:03:33] [Server thread/INFO] (airdefense) [airdefense] slow tick 84 ms:; the rest (the game) 84 ms
+[14:03:33] [Server thread/INFO] (airdefense) [airdefense] slow tick 391 ms:; the rest (the game) 391 ms
+[14:03:33] [Server thread/INFO] (airdefense) [airdefense] slow tick 67 ms:; the rest (the game) 67 ms
+[14:03:34] [Server thread/INFO] (airdefense) [airdefense] slow tick 147 ms:; the rest (the game) 146 ms
+[14:03:34] [Server thread/INFO] (airdefense) [airdefense] slow tick 179 ms:; the rest (the game) 179 ms
+[14:03:37] [Server thread/INFO] (airdefense) [airdefense] slow tick 410 ms:; the rest (the game) 410 ms
+[14:03:37] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1536, 87, 1298
+[14:03:38] [Server thread/INFO] (airdefense) [airdefense] slow tick 381 ms:; the rest (the game) 381 ms
+[14:03:39] [Server thread/INFO] (airdefense) [airdefense] slow tick 248 ms: nations 0 ms (1); the rest (the game) 247 ms
+[14:03:41] [Server thread/INFO] (airdefense) [airdefense] slow tick 268 ms:; the rest (the game) 267 ms
+[14:03:42] [Server thread/INFO] (airdefense) [airdefense] slow step 170 ms: arsenal of Малая Полянка comes out
+[14:03:42] [Server thread/INFO] (airdefense) [airdefense] slow tick 176 ms: nations 171 ms (1) arsenals 171 ms (1); the rest (the game) 0 ms
+[14:03:42] [Server thread/INFO] (airdefense) [airdefense] slow tick 178 ms:; the rest (the game) 178 ms
+[14:03:42] [Server thread/INFO] (airdefense) [airdefense] slow tick 149 ms:; the rest (the game) 149 ms
+[14:03:43] [Server thread/INFO] (airdefense) [airdefense] slow tick 93 ms:; the rest (the game) 93 ms
+[14:03:44] [Server thread/INFO] (airdefense) [airdefense] slow tick 103 ms:; the rest (the game) 103 ms
+[14:03:47] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=39 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:03:47] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 14411ms or 288 ticks behind
+[14:03:48] [Server thread/INFO] (airdefense) [airdefense] slow tick 60 ms:; the rest (the game) 59 ms
+[14:03:48] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1381, 84, 1189
+[14:03:49] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1446.800000, 111.000000, 1406.200000
+[14:03:50] [Test thread/INFO] (airdefense) [airdefense-test] RESULT country_lorries: one came by after 64 ticks; made 483, about now 5
+[14:03:50] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1394.000000, 108.000000, 1100.000000
+[14:03:52] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=79 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:03:53] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1418, 84, 1081
+[14:03:56] [Server thread/INFO] (airdefense) [airdefense] slow tick 275 ms:; the rest (the game) 274 ms
+[14:03:57] [Server thread/INFO] (airdefense) [airdefense] slow step 422 ms: arsenal of Луговое comes out
+[14:03:57] [Server thread/INFO] (airdefense) [airdefense] slow tick 427 ms: nations 423 ms (1) arsenals 423 ms (1); the rest (the game) 0 ms
+[14:03:57] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=119 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:03:57] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1294, 84, 1106
+[14:03:59] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=39 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:03:59] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1381, 84, 945
+[14:04:00] [Server thread/INFO] (airdefense) [airdefense] slow tick 120 ms:; the rest (the game) 119 ms
+[14:04:01] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=39 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:04:01] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=159 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:04:02] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=39 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:04:03] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=39 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:04:03] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=79 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:04:05] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=79 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:04:05] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=199 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:04:06] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=79 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:04:07] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=79 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:04:07] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=119 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:04:09] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=119 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:04:10] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=119 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:04:10] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1380.000000, 84.000000, 1078.000000
+[14:04:10] [Server thread/INFO] (airdefense) [airdefense] slow tick 209 ms:; the rest (the game) 209 ms
+[14:04:11] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=119 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:04:12] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=159 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:04:13] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=159 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:04:14] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=159 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:04:15] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=159 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:04:16] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=199 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:04:16] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1380.000000, 84.000000, 1078.000000
+[14:04:17] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=199 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:04:18] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=199 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:04:18] [Test thread/INFO] (airdefense) [airdefense-test] RESULT country_site: crane up after 0 ticks, 2 cranes about
+[14:04:18] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1540.000000, 100.000000, 1338.000000
+[14:04:19] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=199 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:04:20] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=239 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:04:20] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 17567ms or 351 ticks behind
+[14:04:22] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=239 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:04:22] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=39 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:04:27] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=79 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:04:31] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=119 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:04:33] [Server thread/INFO] (airdefense) [airdefense] slow tick 64 ms:; the rest (the game) 64 ms
+[14:04:33] [Server thread/INFO] (airdefense) [airdefense] slow tick 96 ms:; the rest (the game) 96 ms
+[14:04:35] [Server thread/INFO] (airdefense) [airdefense] a lorry brings M48N6 x1 to Луговое (20 points from 1146, 1317)
+[14:04:36] [Server thread/INFO] (airdefense) [airdefense] slow tick 406 ms:; the rest (the game) 406 ms
+[14:04:36] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=159 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:04:40] [Server thread/INFO] (airdefense) [airdefense] slow tick 202 ms:; the rest (the game) 201 ms
+[14:04:41] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=199 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:04:44] [Server thread/INFO] (airdefense) [airdefense] slow tick 121 ms:; the rest (the game) 121 ms
+[14:04:45] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=239 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:04:45] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1579.900000, 80.900000, 1324.900000
+[14:04:46] [Test thread/INFO] (airdefense) [airdefense-test] RESULT country_tractor: at work after 24 ticks
+[14:04:46] [Server thread/INFO] (airdefense) [airdefense-test] RESULT airport_plan: 1083 planned, 56 capitals without room for one, in 0 ms; sites turned down: {steep=139, other town=4401, own town=406, water=557}; flag true
+[14:04:46] [Server thread/INFO] (airdefense) [airdefense-test] RESULT airport_at: threshold 1469 3456 level 69, runway along -1 0, apron towards 0 -1, town LARGE at 929 3080
+[14:04:46] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1229.500000, 99.000000, 3281.500000
+[14:04:48] [Server thread/INFO] (airdefense) [airdefense] slow tick 384 ms:; the rest (the game) 383 ms
+[14:04:48] [Server thread/INFO] (airdefense) [airdefense] slow tick 329 ms:; the rest (the game) 328 ms
+[14:04:50] [Server thread/INFO] (airdefense) [airdefense] slow tick 94 ms:; the rest (the game) 94 ms
+[14:04:51] [Server thread/INFO] (airdefense) [airdefense] slow tick 137 ms:; the rest (the game) 136 ms
+[14:04:52] [Server thread/INFO] (airdefense) [airdefense] slow tick 144 ms:; the rest (the game) 143 ms
+[14:04:52] [Server thread/INFO] (airdefense) [airdefense] slow tick 268 ms:; the rest (the game) 268 ms
+[14:04:54] [Server thread/INFO] (airdefense) [airdefense] slow tick 445 ms:; the rest (the game) 444 ms
+[14:04:54] [Server thread/INFO] (airdefense) [airdefense] slow tick 178 ms:; the rest (the game) 178 ms
+[14:04:54] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 19685ms or 393 ticks behind
+[14:04:55] [Server thread/INFO] (airdefense) [airdefense] slow tick 91 ms:; the rest (the game) 90 ms
+[14:04:56] [Server thread/INFO] (airdefense) [airdefense] slow tick 166 ms:; the rest (the game) 165 ms
+[14:04:57] [Server thread/INFO] (airdefense) [airdefense] slow tick 276 ms:; the rest (the game) 276 ms
+[14:04:58] [Server thread/INFO] (airdefense) [airdefense] slow tick 75 ms:; the rest (the game) 75 ms
+[14:04:59] [Server thread/INFO] (airdefense) [airdefense] slow tick 577 ms:; the rest (the game) 576 ms
+[14:05:02] [Server thread/INFO] (airdefense) [airdefense] slow tick 64 ms:; the rest (the game) 64 ms
+[14:05:20] [Server thread/INFO] (airdefense) [airdefense] a lorry brings M48N6 x1 to Боровое (19 points from 830, 2879)
+[14:05:22] [Server thread/INFO] (airdefense) [airdefense] slow tick 421 ms:; the rest (the game) 421 ms
+[14:05:23] [Test thread/INFO] (airdefense) [airdefense-test] RESULT airport_parked: 3 planes at the stands after 0 ticks, 1 airports seen
+[14:05:23] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1111.500000, 79.000000, 3397.300000
+[14:05:24] [Server thread/INFO] (airdefense) [airdefense] slow tick 400 ms:; the rest (the game) 400 ms
+[14:05:25] [Server thread/INFO] (airdefense) [airdefense] Гончарово by the sea keeps [BUYAN_M]
+[14:05:25] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 16161ms or 323 ticks behind
+[14:05:26] [Server thread/INFO] (airdefense) [airdefense] slow tick 238 ms:; the rest (the game) 237 ms
+[14:05:26] [Server thread/INFO] (airdefense) [airdefense] slow tick 106 ms:; the rest (the game) 105 ms
+[14:05:27] [Server thread/INFO] (airdefense) [airdefense] slow tick 168 ms:; the rest (the game) 167 ms
+[14:05:27] [Server thread/INFO] (airdefense) [airdefense] slow tick 198 ms:; the rest (the game) 197 ms
+[14:05:28] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1169.500000, 144.000000, 3566.500000
+[14:05:28] [Server thread/INFO] (airdefense) [airdefense] slow tick 270 ms:; the rest (the game) 270 ms
+[14:05:31] [Server thread/INFO] (airdefense) [airdefense] slow tick 204 ms:; the rest (the game) 204 ms
+[14:05:31] [Server thread/INFO] (airdefense) [airdefense] slow tick 114 ms:; the rest (the game) 113 ms
+[14:05:32] [Server thread/INFO] (airdefense) [airdefense] siren put up at 915, 76, 2957
+[14:05:34] [Server thread/INFO] (airdefense) [airdefense] slow tick 152 ms:; the rest (the game) 151 ms
+[14:05:35] [Server thread/INFO] (airdefense) [airdefense] the lorry unloaded M48N6 x1 at Луговое
+[14:05:36] [Server thread/INFO] (airdefense) [airdefense] slow tick 160 ms: vehicles 5 ms (3); the rest (the game) 155 ms
+[14:05:36] [Server thread/INFO] (airdefense) [airdefense] slow tick 83 ms:; the rest (the game) 83 ms
+[14:05:38] [Server thread/INFO] (airdefense) [airdefense] slow tick 132 ms:; the rest (the game) 131 ms
+[14:05:39] [Server thread/INFO] (airdefense) [airdefense] slow tick 222 ms:; the rest (the game) 222 ms
+[14:05:43] [Server thread/INFO] (airdefense) [airdefense] slow tick 357 ms:; the rest (the game) 357 ms
+[14:05:48] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1299.500000, 79.000000, 3478.500000
+[14:05:54] [Server thread/INFO] (airdefense) [airdefense] slow tick 171 ms:; the rest (the game) 170 ms
+[14:05:54] [Server thread/INFO] (airdefense) [airdefense] slow tick 79 ms:; the rest (the game) 79 ms
+[14:05:56] [Server thread/INFO] (airdefense) [airdefense] slow tick 159 ms:; the rest (the game) 159 ms
+[14:05:56] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15826ms or 316 ticks behind
+[14:05:58] [Server thread/INFO] (airdefense) [airdefense] slow tick 61 ms:; the rest (the game) 60 ms
+[14:06:01] [Test thread/INFO] (airdefense) [airdefense-test] RESULT airport_track 0: [1134 70 3367 ph1 v0.00] [1278 70 3367 ph1 v0.00] [1230 70 3362 ph1 v0.00] [2811 144 3457 ph0 v3.00]
+[14:06:07] [Test thread/INFO] (airdefense) [airdefense-test] RESULT airport_track 1: [1134 70 3367 ph1 v0.00] [1278 70 3367 ph1 v0.00] [1230 70 3362 ph1 v0.00] [2631 135 3457 ph0 v3.00]
+[14:06:12] [Server thread/INFO] (airdefense) [airdefense] a lorry brings M48N6 x1 to Боровое (19 points from 830, 2879)
+[14:06:13] [Test thread/INFO] (airdefense) [airdefense-test] RESULT airport_track 2: [1134 70 3367 ph1 v0.00] [1278 70 3367 ph1 v0.00] [1230 70 3362 ph1 v0.00] [2451 126 3457 ph0 v3.00]
+[14:06:19] [Test thread/INFO] (airdefense) [airdefense-test] RESULT airport_track 3: [1134 70 3367 ph1 v0.00] [1278 70 3367 ph1 v0.00] [1230 70 3362 ph1 v0.00] [2271 116 3457 ph0 v3.00]
+[14:06:26] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15066ms or 301 ticks behind
+[14:06:31] [Server thread/INFO] (airdefense) [airdefense] slow tick 66 ms:; the rest (the game) 65 ms
+[14:06:35] [Server thread/INFO] (airdefense) [airdefense] slow tick 88 ms:; the rest (the game) 88 ms
+[14:06:45] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1493.900000, 86.800000, 3501.500000
+[14:06:47] [Server thread/INFO] (airdefense) [airdefense] slow tick 128 ms:; the rest (the game) 128 ms
+[14:06:56] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15017ms or 300 ticks behind
+[14:07:04] [Server thread/INFO] (airdefense) [airdefense] the lorry unloaded M48N6 x1 at Боровое
+[14:07:26] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15021ms or 300 ticks behind
+[14:07:53] [Server thread/INFO] (airdefense) [airdefense] the lorry unloaded M48N6 x1 at Боровое
+[14:07:56] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15021ms or 300 ticks behind
+[14:07:56] [Server thread/INFO] (airdefense) [airdefense] slow tick 61 ms:; the rest (the game) 61 ms
+[14:08:11] [Server thread/INFO] (airdefense) [airdefense] slow tick 81 ms:; the rest (the game) 81 ms
+[14:08:26] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15043ms or 300 ticks behind
+[14:08:56] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15043ms or 300 ticks behind
+[14:09:14] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1229.500000, 99.000000, 3281.500000
+[14:09:20] [Test thread/INFO] (airdefense) [airdefense-test] RESULT airport_landing: on the approach after 264 ticks, at the stand 1483 ticks later
+[14:09:20] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1169.500000, 81.000000, 3516.500000
+[14:09:26] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15043ms or 300 ticks behind
+[14:09:56] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15042ms or 300 ticks behind
+[14:10:16] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1255.300000, 80.000000, 3451.500000
+[14:10:22] [Server thread/INFO] (airdefense) [airdefense] a lorry brings M48N6 x1 to Боровое (19 points from 830, 2879)
+[14:10:26] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15045ms or 300 ticks behind
+[14:10:56] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15045ms or 300 ticks behind
+[14:11:12] [Server thread/INFO] (airdefense) [airdefense] a lorry brings M48N6 x1 to Боровое (19 points from 830, 2879)
+[14:11:26] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15045ms or 300 ticks behind
+[14:11:45] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1120.700000, 80.000000, 3501.500000
+[14:11:49] [Server thread/INFO] (airdefense) [airdefense] slow tick 79 ms:; the rest (the game) 78 ms
+[14:11:49] [Server thread/INFO] (airdefense) [airdefense] slow tick 120 ms:; the rest (the game) 120 ms
+[14:11:56] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15045ms or 300 ticks behind
+[14:12:26] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15048ms or 300 ticks behind
+[14:12:32] [Server thread/INFO] (airdefense) [airdefense] the lorry unloaded M48N6 x1 at Боровое
+[14:12:53] [Server thread/INFO] (airdefense) [airdefense] the lorry unloaded M48N6 x1 at Боровое
+[14:12:56] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15048ms or 300 ticks behind
+[14:13:02] [Test thread/INFO] (airdefense) [airdefense-test] RESULT airport_take_off: taxiing after 513 ticks, on the run 891 ticks later, gone 761 ticks later; parked 3, landed 1, left 1
+[14:13:02] [Server thread/INFO] (Minecraft) System chat: Установлено minecraft:overworld на 18000 тактов
+[14:13:02] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1229.500000, 99.000000, 3281.500000
+[14:13:13] [Server thread/INFO] (Minecraft) System chat: Установлено minecraft:overworld на 6000 тактов
+[14:13:19] [Test thread/INFO] (airdefense) [airdefense-test] RESULT choice_list: after 8 ticks, screen open true, 24 countries: [Княжество Златогория (11 towns, 1541), Королевство Корвения (11 towns, 1162), Союз Фалькония (4 towns, 803), Княжество Ратония (9 towns, 1220), Королевство Дубравия (5 towns, 1308), Республика Угория (8 towns, 1128)]
+[14:13:24] [Server thread/INFO] (airdefense) [airdefense] Player0 plays for Королевство Корвения (its ruler)
+[14:13:24] [Render thread/INFO] (Minecraft) [System] [CHAT] Теперь вы правитель страны «Королевство Корвения». Её города, армия и войны — ваши.
+[14:13:24] [Server thread/INFO] (airdefense) [airdefense] Мостки by the sea keeps [BUYAN_M, BASTION]
+[14:13:24] [Server thread/INFO] (airdefense) [airdefense] Нижние Овражки by the sea keeps [BUYAN_M]
+[14:13:24] [Render thread/INFO] (Minecraft) [System] [CHAT] Добро пожаловать в Мостки — вашу столицу. После гибели вы будете возрождаться здесь.
+[14:13:25] [Server thread/INFO] (airdefense) [airdefense] slow tick 854 ms:; the rest (the game) 854 ms
+[14:13:26] [Server thread/INFO] (airdefense) [airdefense] siren put up at 731, 75, -1146
+[14:13:26] [Server thread/INFO] (airdefense) [airdefense] slow tick 128 ms:; the rest (the game) 128 ms
+[14:13:26] [Server thread/INFO] (airdefense) [airdefense] slow tick 493 ms:; the rest (the game) 493 ms
+[14:13:27] [Server thread/INFO] (airdefense) [airdefense] slow tick 88 ms:; the rest (the game) 88 ms
+[14:13:27] [Server thread/INFO] (airdefense) [airdefense] slow tick 477 ms:; the rest (the game) 476 ms
+[14:13:28] [Server thread/INFO] (airdefense) [airdefense] slow tick 229 ms:; the rest (the game) 229 ms
+[14:13:28] [Server thread/INFO] (airdefense) [airdefense] slow tick 75 ms:; the rest (the game) 75 ms
+[14:13:28] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 16947ms or 338 ticks behind
+[14:13:29] [Server thread/INFO] (airdefense) [airdefense] slow tick 265 ms:; the rest (the game) 264 ms
+[14:13:30] [Server thread/INFO] (airdefense) [airdefense] slow tick 491 ms:; the rest (the game) 491 ms
+[14:13:30] [Server thread/INFO] (airdefense) [airdefense] slow tick 64 ms:; the rest (the game) 64 ms
+[14:13:31] [Server thread/INFO] (airdefense) [airdefense] slow tick 194 ms:; the rest (the game) 194 ms
+[14:13:31] [Server thread/INFO] (airdefense) [airdefense] siren put up at 731, 75, -1030
+[14:13:33] [Server thread/INFO] (airdefense) [airdefense] slow tick 161 ms:; the rest (the game) 161 ms
+[14:13:33] [Server thread/INFO] (airdefense) [airdefense] slow tick 354 ms:; the rest (the game) 354 ms
+[14:13:34] [Server thread/INFO] (airdefense) [airdefense] siren put up at 849, 75, -1094
+[14:13:34] [Server thread/INFO] (airdefense) [airdefense] siren put up at 849, 75, -1217
+[14:13:34] [Server thread/INFO] (airdefense) [airdefense] slow tick 72 ms:; the rest (the game) 72 ms
+[14:13:35] [Server thread/INFO] (airdefense) [airdefense] slow tick 117 ms:; the rest (the game) 117 ms
+[14:13:37] [Server thread/INFO] (airdefense) [airdefense] slow tick 214 ms:; the rest (the game) 214 ms
+[14:13:38] [Server thread/INFO] (airdefense) [airdefense] siren put up at 595, 75, -1174
+[14:13:38] [Server thread/INFO] (airdefense) [airdefense] siren put up at 715, 75, -1281
+[14:13:38] [Server thread/INFO] (airdefense) [airdefense] slow tick 109 ms:; the rest (the game) 109 ms
+[14:13:38] [Server thread/INFO] (airdefense) [airdefense] slow tick 68 ms:; the rest (the game) 68 ms
+[14:13:38] [Server thread/INFO] (airdefense) [airdefense] slow tick 81 ms:; the rest (the game) 80 ms
+[14:13:42] [Server thread/INFO] (airdefense) [airdefense] slow tick 133 ms: vehicles 0 ms (3); the rest (the game) 132 ms
+[14:13:42] [Server thread/INFO] (airdefense) [airdefense] slow tick 70 ms:; the rest (the game) 70 ms
+[14:13:42] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=39 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:13:42] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=39 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:13:44] [Server thread/INFO] (airdefense) [airdefense] slow tick 621 ms:; the rest (the game) 620 ms
+[14:13:47] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=79 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:13:47] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=79 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:13:48] [Test thread/INFO] (airdefense) [airdefense-test] RESULT choice_join: Королевство Корвения ruler true, 5 blocks from Мостки, chosen true
+[14:13:48] [Test thread/INFO] (airdefense) [airdefense-test] RESULT choice_friend: [Player0, Друг], friend's country Королевство Корвения
+[14:13:48] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=39 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:13:48] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=39 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:13:51] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=119 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:13:51] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=119 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:13:52] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=79 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:13:52] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=79 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:13:54] [Server thread/INFO] (airdefense) [airdefense-test] RESULT rail_plan: 844 lines planned, 280 given up, in 0 ms (the test's own call); planning took 34113 ms in all; roads raised over a line 308; ways given up: {other town=533, own town=636, sea=90, airport=839}
+[14:13:55] [Server thread/INFO] (airdefense) [airdefense-test] RESULT rail_line: 1182 blocks from -1276 -687 to -1100 494, 942 on bridges, 0 in tunnels, platform side 1
+[14:13:55] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку -1279.500000, 122.000000, -696.500000
+[14:13:56] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=159 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:13:56] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=159 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:13:57] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=119 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:13:57] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=119 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:13:58] [Server thread/INFO] (airdefense) [airdefense] siren put up at -1281, 91, -765
+[14:14:00] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=199 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:14:00] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=199 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:14:01] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=159 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:14:01] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=159 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:14:02] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 18634ms or 372 ticks behind
+[14:14:03] [Server thread/INFO] (airdefense) [airdefense] slow tick 131 ms:; the rest (the game) 131 ms
+[14:14:05] [Server thread/INFO] (airdefense) [airdefense] slow tick 463 ms:; the rest (the game) 462 ms
+[14:14:06] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=199 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:14:06] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=199 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:14:09] [Server thread/INFO] (airdefense) [airdefense] slow tick 334 ms:; the rest (the game) 334 ms
+[14:14:10] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку -1279.500000, 122.000000, -696.500000
+[14:14:11] [Server thread/INFO] (airdefense) [airdefense] slow tick 124 ms:; the rest (the game) 123 ms
+[14:14:11] [Server thread/INFO] (airdefense) [airdefense] slow tick 196 ms:; the rest (the game) 196 ms
+[14:14:11] [Server thread/INFO] (airdefense) [airdefense] slow tick 134 ms:; the rest (the game) 133 ms
+[14:14:12] [Server thread/INFO] (airdefense) [airdefense] slow tick 281 ms:; the rest (the game) 281 ms
+[14:14:12] [Server thread/INFO] (airdefense) [airdefense] slow tick 104 ms:; the rest (the game) 104 ms
+[14:14:13] [Server thread/INFO] (airdefense) [airdefense] siren put up at -1154, 91, -833
+[14:14:14] [Server thread/INFO] (airdefense) [airdefense] slow tick 136 ms:; the rest (the game) 136 ms
+[14:14:14] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку -1176.800000, 96.000000, -29.200000
+[14:14:15] [Server thread/INFO] (airdefense) [airdefense] slow tick 676 ms:; the rest (the game) 675 ms
+[14:14:17] [Server thread/INFO] (airdefense) [airdefense] slow tick 371 ms:; the rest (the game) 371 ms
+[14:14:17] [Server thread/INFO] (airdefense) [airdefense] slow tick 147 ms:; the rest (the game) 147 ms
+[14:14:17] [Server thread/INFO] (airdefense) [airdefense] slow tick 68 ms:; the rest (the game) 68 ms
+[14:14:18] [Server thread/INFO] (airdefense) [airdefense] slow tick 211 ms:; the rest (the game) 211 ms
+[14:14:18] [Server thread/INFO] (airdefense) [airdefense] slow tick 192 ms:; the rest (the game) 192 ms
+[14:14:18] [Server thread/INFO] (airdefense) [airdefense] slow tick 123 ms:; the rest (the game) 123 ms
+[14:14:18] [Server thread/INFO] (airdefense) [airdefense] slow tick 72 ms:; the rest (the game) 72 ms
+[14:14:19] [Server thread/INFO] (airdefense) [airdefense] slow tick 134 ms:; the rest (the game) 134 ms
+[14:14:19] [Server thread/INFO] (airdefense) [airdefense] slow tick 204 ms:; the rest (the game) 204 ms
+[14:14:20] [Server thread/INFO] (airdefense) [airdefense] slow tick 101 ms:; the rest (the game) 101 ms
+[14:14:21] [Server thread/INFO] (airdefense) [airdefense] slow tick 269 ms:; the rest (the game) 268 ms
+[14:14:23] [Server thread/INFO] (airdefense) [airdefense] slow tick 358 ms:; the rest (the game) 358 ms
+[14:14:28] [Server thread/INFO] (airdefense) [airdefense] slow tick 293 ms:; the rest (the game) 292 ms
+[14:14:28] [Server thread/INFO] (airdefense) [airdefense] slow tick 123 ms:; the rest (the game) 123 ms
+[14:14:30] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку -1176.800000, 96.000000, -29.200000
+[14:14:31] [Server thread/INFO] (airdefense) [airdefense] slow tick 302 ms: nations 0 ms (1) economy 0 ms (1); the rest (the game) 300 ms
+[14:14:32] [Server thread/INFO] (airdefense) [airdefense] slow tick 223 ms:; the rest (the game) 222 ms
+[14:14:34] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку -1299.100000, 101.000000, -176.900000
+[14:14:34] [Server thread/INFO] (airdefense) [airdefense] slow tick 172 ms: vehicles 4 ms (1); the rest (the game) 167 ms
+[14:14:35] [Server thread/INFO] (airdefense) [airdefense] slow tick 112 ms:; the rest (the game) 112 ms
+[14:14:35] [Server thread/INFO] (airdefense) [airdefense] slow tick 61 ms:; the rest (the game) 61 ms
+[14:14:36] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 18733ms or 374 ticks behind
+[14:14:36] [Server thread/INFO] (airdefense) [airdefense] slow tick 408 ms:; the rest (the game) 407 ms
+[14:14:36] [Server thread/INFO] (airdefense) [airdefense] slow tick 71 ms:; the rest (the game) 71 ms
+[14:14:37] [Server thread/INFO] (airdefense) [airdefense] slow tick 276 ms:; the rest (the game) 276 ms
+[14:14:37] [Server thread/INFO] (airdefense) [airdefense] slow tick 122 ms:; the rest (the game) 122 ms
+[14:14:39] [Server thread/INFO] (airdefense) [airdefense] slow tick 149 ms:; the rest (the game) 148 ms
+[14:14:39] [Server thread/INFO] (airdefense) [airdefense] slow tick 166 ms:; the rest (the game) 166 ms
+[14:14:39] [Server thread/INFO] (airdefense) [airdefense] slow tick 133 ms:; the rest (the game) 133 ms
+[14:14:40] [Server thread/INFO] (airdefense) [airdefense] slow tick 263 ms:; the rest (the game) 263 ms
+[14:14:42] [Server thread/INFO] (airdefense) [airdefense] slow tick 346 ms:; the rest (the game) 346 ms
+[14:14:45] [Server thread/INFO] (airdefense) [airdefense] slow tick 563 ms:; the rest (the game) 563 ms
+[14:14:46] [Server thread/INFO] (airdefense) [airdefense] slow tick 80 ms:; the rest (the game) 80 ms
+[14:14:49] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку -1299.100000, 101.000000, -176.900000
+[14:14:53] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку -1297.500000, 105.000000, -310.500000
+[14:14:53] [Server thread/INFO] (airdefense) [airdefense] slow tick 317 ms:; the rest (the game) 317 ms
+[14:14:54] [Server thread/INFO] (airdefense) [airdefense] slow tick 213 ms:; the rest (the game) 213 ms
+[14:14:55] [Server thread/INFO] (airdefense) [airdefense] slow tick 233 ms:; the rest (the game) 232 ms
+[14:14:56] [Server thread/INFO] (airdefense) [airdefense] slow tick 206 ms:; the rest (the game) 206 ms
+[14:14:57] [Server thread/INFO] (airdefense) [airdefense] slow tick 241 ms:; the rest (the game) 240 ms
+[14:14:58] [Server thread/INFO] (airdefense) [airdefense] slow tick 187 ms:; the rest (the game) 186 ms
+[14:14:59] [Server thread/INFO] (airdefense) [airdefense] slow tick 227 ms:; the rest (the game) 227 ms
+[14:15:08] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку -1297.500000, 105.000000, -310.500000
+[14:15:08] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 17407ms or 348 ticks behind
+[14:15:11] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку -1240.500000, 120.000000, -703.500000
+[14:15:22] [Server thread/INFO] (airdefense) [airdefense] slow tick 246 ms:; the rest (the game) 246 ms
+[14:15:27] [Test thread/INFO] (airdefense) [airdefense-test] RESULT rail_built: 1725 track blocks laid, 17937 chunks made, avg 3294 us per chunk; client saw 188 track blocks
+[14:15:27] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку -1293.500000, 100.000000, -292.500000
+[14:15:38] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15232ms or 304 ticks behind
+[14:15:41] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку -1293.500000, 100.000000, -292.500000
+[14:16:04] [Test thread/INFO] (airdefense) [airdefense-test] RESULT rail_train_electric: came by after 196 ticks; trains made 3, taken away 2, hoots 3
+[14:16:04] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку -1293.500000, 100.000000, -292.500000
+[14:16:08] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15128ms or 302 ticks behind
+[14:16:18] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку -1293.500000, 100.000000, -292.500000
+[14:16:31] [Test thread/INFO] (airdefense) [airdefense-test] RESULT rail_train_goods: came by after 102 ticks; trains made 4, taken away 3, hoots 4
+[14:16:31] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку -1281.500000, 120.000000, -700.500000
+[14:16:38] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15095ms or 301 ticks behind
+[14:16:43] [Server thread/INFO] (airdefense) [airdefense] slow tick 164 ms:; the rest (the game) 163 ms
+[14:16:44] [Server thread/INFO] (airdefense) [airdefense] slow tick 172 ms:; the rest (the game) 171 ms
+[14:16:46] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку -1281.500000, 120.000000, -700.500000
+[14:17:08] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 15179ms or 303 ticks behind
+[14:17:12] [Test thread/INFO] (airdefense) [airdefense-test] RESULT rail_station: an electric train stopped at the station after 214 ticks
+[14:17:12] [Server thread/INFO] (Minecraft) Player0 lost connection: Отключение
+[14:17:12] [Server thread/INFO] (Minecraft) System chat: Player0 покинул игру
+[14:17:12] [Server thread/INFO] (Minecraft) Stopping singleplayer server as player logged out
+[14:17:12] [Server thread/INFO] (Minecraft) Stopping server
+[14:17:12] [Server thread/INFO] (Minecraft) Saving players
+[14:17:12] [Server thread/INFO] (Minecraft) Saving worlds
+[14:17:13] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[New World]'/minecraft:overworld
+[14:17:15] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[New World]'/minecraft:the_nether
+[14:17:15] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[New World]'/minecraft:the_end
+[14:17:15] [Render thread/INFO] (Minecraft) Stopping!
+
+BUILD SUCCESSFUL in 1h 43m 14s
+12 actionable tasks: 6 executed, 6 up-to-date
+Configuration cache entry stored.
