@@ -317,7 +317,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				int tunnel = -1;
 				int run = 0;
 				for (int i = 0; i < n; i++) {
-					if (line.kind[i] == 1) {
+					int kd = line.kind(t, i);
+					if (kd == 1) {
 						bridges++;
 						run++;
 						if (run > bestBridge) {
@@ -327,7 +328,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					} else {
 						run = 0;
 					}
-					if (line.kind[i] == 2) {
+					if (kd == 2) {
 						tunnels++;
 						if (tunnel < 0 && i > 8) {
 							tunnel = i - 8;

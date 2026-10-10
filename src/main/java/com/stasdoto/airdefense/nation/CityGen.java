@@ -309,7 +309,7 @@ public final class CityGen {
 			}
 		}
 		for (Railways.Line l : lines) {
-			Rails.build(w, l, roads, cities, cp);
+			Rails.build(w, t, l, roads, cities, cp);
 		}
 		for (Cities.City c : cities) {
 			buildings(w, c, cp);

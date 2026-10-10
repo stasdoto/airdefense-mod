@@ -85,6 +85,30 @@ public final class Railways {
 			return Math.min(7, (int) Math.floor((hs[i] - Math.floor(hs[i])) * 8));
 		}
 
+		/**
+		 * What block i is: 0 on the ground (an embankment, a cutting), 1 on a bridge (water, a deep valley), 2 in a tunnel.
+		 * From the terrain's estimate at every fourth block, worked out as the land is made (the samples are dear) and kept.
+		 */
+		public int kind(Cities.Terrain t, int i) {
+			byte k = kind[i];
+			if (k >= 0) {
+				return k;
+			}
+			int e = Math.min(xs.length - 1, i & ~3);
+			int top = t.top(xs[e], zs[e]);
+			int sea = t.sea();
+			int y = (int) Math.floor(hs[i]);
+			if (top <= sea && t.floor(xs[e], zs[e]) < sea - 1 || top < y - 5) {
+				k = 1;
+			} else if (top > y + 12 && !station(i)) {
+				k = 2;
+			} else {
+				k = 0;
+			}
+			kind[i] = k;
+			return k;
+		}
+
 		/** Is block i in a station (the last stretch at either end)? */
 		public boolean station(int i) {
 			return i < STATION || i >= xs.length - STATION;
@@ -311,41 +335,42 @@ public final class Railways {
 				}
 			}
 		}
-		// Not across the sea.
+		// The ground along it every 16 blocks (the terrain's estimate is dear: as few samples as will do), the water as a
+		// floor a little above the sea; not across the sea.
 		int sea = t.sea();
-		int wet = 0;
-		for (int i = 0; i < n; i += 8) {
-			if (t.floor(blocks.get(i)[0], blocks.get(i)[1]) < sea - 1) {
-				wet++;
-			}
-		}
-		if (wet * 8 > 400) {
-			return no("sea");
-		}
-		int samples = (n + 7) / 8 + 1;
+		int samples = (n + 15) / 16 + 1;
 		double[] ground = new double[samples];
+		int wet = 0;
+		int high = 0;
 		for (int k = 0; k < samples; k++) {
-			int[] p = blocks.get(Math.min(n - 1, k * 8));
-			ground[k] = Math.max(t.top(p[0], p[1]) + 1, sea + 3);
+			int[] p = blocks.get(Math.min(n - 1, k * 16));
+			int top = t.top(p[0], p[1]);
+			if (top <= sea && t.floor(p[0], p[1]) < sea - 1) {
+				wet++;
+				if (wet * 16 > 400) {
+					return no("sea");
+				}
+			}
+			ground[k] = Math.max(top + 1, sea + 3);
 		}
 		// Smoothed (a running mean over ~100 blocks), the ends on their towns' ground, the grade kept gentle.
 		double[] h = new double[samples];
 		for (int k = 0; k < samples; k++) {
 			double sum = 0;
 			int cnt = 0;
-			for (int j = Math.max(0, k - 6); j <= Math.min(samples - 1, k + 6); j++) {
+			for (int j = Math.max(0, k - 3); j <= Math.min(samples - 1, k + 3); j++) {
 				sum += ground[j];
 				cnt++;
 			}
 			h[k] = sum / cnt;
 		}
 		// The stations level, on their towns' ground.
-		int st = RUN / 8 + 1;
+		int st = RUN / 16 + 1;
 		for (int k = 0; k <= st && k < samples; k++) {
 			h[k] = a.base + 1;
 			h[samples - 1 - k] = b.base + 1;
 		}
-		double g = 8 * GRADE;
+		double g = 16 * GRADE;
 		for (int pass = 0; pass < 2; pass++) {
 			for (int k = 1; k < samples; k++) {
 				h[k] = Math.min(Math.max(h[k], h[k - 1] - g), h[k - 1] + g);
@@ -354,18 +379,25 @@ public final class Railways {
 				h[k] = Math.min(Math.max(h[k], h[k + 1] - g), h[k + 1] + g);
 			}
 		}
+		// Through the hills: how much of it would be in tunnels (too much, and it goes another way).
+		for (int k = 0; k < samples; k++) {
+			if (ground[k] > h[k] + 13) {
+				high++;
+			}
+		}
+		if (high * 16 > 900) {
+			return no("tunnels");
+		}
 		int[] xs = new int[n];
 		int[] zs = new int[n];
 		double[] hs = new double[n];
 		byte[] kind = new byte[n];
+		java.util.Arrays.fill(kind, (byte) -1);
 		byte[] dir = new byte[n];
-		int tunnels = 0;
-		int top = 0;
-		int floor = 0;
 		for (int i = 0; i < n; i++) {
 			xs[i] = blocks.get(i)[0];
 			zs[i] = blocks.get(i)[1];
-			double f = i / 8.0;
+			double f = i / 16.0;
 			int k = Math.min(samples - 2, (int) f);
 			hs[i] = h[k] + (h[k + 1] - h[k]) * (f - k);
 		}
@@ -381,20 +413,6 @@ public final class Railways {
 			} else {
 				dir[i] = (byte) (ddx == ddz ? 3 : 1);
 			}
-			int y = (int) Math.floor(hs[i]);
-			if ((i & 1) == 0 || i == n - 1) {
-				top = t.top(xs[i], zs[i]);
-				floor = t.floor(xs[i], zs[i]);
-			}
-			if (floor < sea - 1 || top < y - 5) {
-				kind[i] = 1;
-			} else if (top > y + 12 && !(i < STATION || i >= n - STATION)) {
-				kind[i] = 2;
-				tunnels++;
-			}
-		}
-		if (tunnels > 900) {
-			return no("tunnels");
 		}
 		return new Line(a.key() * 31 + b.key(), xs, zs, hs, kind, dir, side);
 	}

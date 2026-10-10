@@ -47,7 +47,7 @@ public final class Rails {
 	private Rails() {
 	}
 
-	static void build(CityGen.Writer w, Railways.Line l, List<Cities.Road> roads, List<Cities.City> cities, ChunkPos cp) {
+	static void build(CityGen.Writer w, Cities.Terrain t, Railways.Line l, List<Cities.Road> roads, List<Cities.City> cities, ChunkPos cp) {
 		int x0 = cp.getMinBlockX();
 		int z0 = cp.getMinBlockZ();
 		int reach = Railways.SIDE + 2;
@@ -72,7 +72,7 @@ public final class Rails {
 				if (!l.locate(x + 0.5, z + 0.5, from - 1, to + 2, Railways.SIDE + 0.5, spot) || town(cities, x, z)) {
 					continue;
 				}
-				column(w, l, roads, spot, rs, x, z, pos);
+				column(w, t, l, roads, spot, rs, x, z, pos);
 			}
 		}
 		for (int i = from; i <= to; i++) {
@@ -123,12 +123,12 @@ public final class Rails {
 		return top;
 	}
 
-	private static void column(CityGen.Writer w, Railways.Line l, List<Cities.Road> roads, Railways.Spot spot, Cities.Road.Spot rs, int x, int z,
+	private static void column(CityGen.Writer w, Cities.Terrain t, Railways.Line l, List<Cities.Road> roads, Railways.Spot spot, Cities.Road.Spot rs, int x, int z,
 			BlockPos.MutableBlockPos pos) {
 		int nb = spot.u < 0.5 ? spot.i : Math.min(l.length() - 1, spot.i + 1);
 		int y = (int) Math.floor(l.height(spot));
 		double d = spot.dist;
-		int kind = l.kind[nb];
+		int kind = l.kind(t, nb);
 		boolean platform = l.station(nb) && spot.across * l.platform > 0 && kind == 0;
 		int road = roadTop(roads, rs, x, z);
 		if (road != Integer.MIN_VALUE && road >= y + 6) {
