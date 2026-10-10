@@ -1285,5 +1285,16 @@
   "subtitles.airdefense.city_owl": "Ухает сова",
   "subtitles.airdefense.town_bell": "Бьют часы на ратуше",
   "block.airdefense.shelter_entrance": "Вход в укрытие",
-  "block.airdefense.shelter_sign": "Знак «Укрытие»"
+  "block.airdefense.shelter_sign": "Знак «Укрытие»",
+  "entity.airdefense.fire_truck": "Пожарная машина",
+  "entity.airdefense.ambulance": "Скорая помощь",
+  "entity.airdefense.police_car": "Полицейская машина",
+  "item.airdefense.fire_truck": "Пожарная машина",
+  "item.airdefense.ambulance": "Скорая помощь",
+  "item.airdefense.police_car": "Полицейская машина",
+  "map.airdefense.short.fire_truck": "ПОЖАРН",
+  "map.airdefense.short.ambulance": "СКОРАЯ",
+  "map.airdefense.short.police_car": "ПОЛИЦИЯ",
+  "item.airdefense.vehicle.hint_service": "Города сами высылают такие машины: пожарная тушит пожары, скорая и полиция едут на место взрыва. Можно сесть и поехать самому",
+  "subtitles.airdefense.service_siren": "Воет сирена"
 }

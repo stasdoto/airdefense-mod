@@ -36,6 +36,52 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 	/** Within this distance (blocks) the cab's inside is drawn and the glass is see-through. */
 	private static final double INSIDE_RANGE = 18;
 
+	private static final net.minecraft.client.renderer.rendertype.RenderType GLOW = RenderTypes.entityTranslucentEmissive(
+			AirDefense.id("textures/misc/glow_dot.png"));
+
+	/**
+	 * 1.38: the roof lights of a fire engine, an ambulance, a police car - red on one side, blue on the other, flashing in
+	 * turn (glowing dots, bright by night and day).
+	 */
+	private void beacons(VehicleRenderState s, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
+		float[] b = type.beacons();
+		if (b == null) {
+			return;
+		}
+		float yaw = s.yaw * Mth.DEG_TO_RAD;
+		double fx = -Mth.sin(yaw);
+		double fz = Mth.cos(yaw);
+		double rx = -fz;
+		double rz = fx;
+		boolean redTurn = (s.flash / 4) % 2 == 0;
+		float size = (float) (0.32 + Math.sqrt(s.distanceToCameraSq) * 0.006);
+		for (int side = -1; side <= 1; side += 2) {
+			boolean red = side < 0;
+			if (red != redTurn) {
+				continue;
+			}
+			double x = rx * b[0] * side + fx * b[2];
+			double z = rz * b[0] * side + fz * b[2];
+			poseStack.pushPose();
+			poseStack.translate(x, s.lift + b[1], z);
+			poseStack.mulPose(new Matrix4f().rotation(camera.orientation));
+			int cr = red ? 255 : 40;
+			int cg = red ? 40 : 90;
+			int cb = red ? 30 : 255;
+			collector.submitCustomGeometry(poseStack, GLOW, (pose, vc) -> {
+				float[][] corners = {{size, -size, 1, 1}, {size, size, 1, 0}, {-size, size, 0, 0}, {-size, -size, 0, 1}};
+				for (int pass = 0; pass < 2; pass++) {
+					for (int i = 0; i < 4; i++) {
+						float[] c = corners[pass == 0 ? i : 3 - i];
+						vc.addVertex(pose, c[0], c[1], 0).setColor(cr, cg, cb, 230).setUv(c[2], c[3]).setOverlay(OverlayTexture.NO_OVERLAY)
+								.setLight(0xF000F0).setNormal(pose, 0, 0, 1);
+					}
+				}
+			});
+			poseStack.popPose();
+		}
+	}
+
 	public VehicleRenderer(EntityRendererProvider.Context context, VehicleType type) {
 		super(context);
 		this.type = type;
@@ -106,6 +152,8 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		s.loaded = v.getLoadedMask();
 		s.wreck = !v.isAlive();
 		s.hidden = GunnerSight.hides(v);
+		s.beacons = type.isService() && v.beaconsOn();
+		s.flash = v.tickCount;
 	}
 
 	@Override
@@ -148,6 +196,9 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 					s.outlineColor);
 		}
 		poseStack.popPose();
+		if (s.beacons && !s.wreck) {
+			beacons(s, poseStack, collector, camera);
+		}
 		super.submit(s, poseStack, collector, camera);
 	}
 }

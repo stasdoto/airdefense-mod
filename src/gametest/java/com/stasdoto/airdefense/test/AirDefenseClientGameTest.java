@@ -243,6 +243,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("people")) {
 				people(ctx, server);
 			}
+			if (scene("services")) {
+				services(ctx, server);
+			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
@@ -1754,6 +1757,117 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		}
 		ctx.runOnClient(mc -> mc.options.renderDistance().set(8));
 		AirDefense.LOGGER.info("[airdefense-test] RESULT city_forms: {}", report);
+		language(ctx, "en_us");
+	}
+
+	/** 1.38: the fire engine, the ambulance and the police come to a blast in town; a police car on patrol. */
+	private void services(ClientGameTestContext ctx, TestServerContext server) {
+		language(ctx, "ru_ru");
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 6000");
+		int cellX = 98;
+		int cellZ = 70;
+		int[] cap = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = com.stasdoto.airdefense.nation.CityStyle.EUROPEAN;
+			com.stasdoto.airdefense.nation.Cities.FORCE_FORM = com.stasdoto.airdefense.nation.CityForm.SQUARE;
+			var list = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), com.stasdoto.airdefense.nation.Cities.terrain(l), cellX, cellZ);
+			com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = null;
+			com.stasdoto.airdefense.nation.Cities.FORCE_FORM = null;
+			if (list.isEmpty()) {
+				return null;
+			}
+			var c = list.getFirst();
+			c.shape();
+			return new int[]{c.x, c.z, c.half(), c.base};
+		});
+		if (cap == null) {
+			return;
+		}
+		int cx = cap[0];
+		int cz = cap[1];
+		int half = cap[2];
+		int base = cap[3];
+		camera(server, cx + 0.5, base + 60, cz + 0.5, 0, 90);
+		ctx.waitTicks(40);
+		generateCity(server, cx - half - 14, cz - half - 14, cx + half + 14, cz + half + 14);
+		int town = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var c = com.stasdoto.airdefense.nation.Cities.plannedCityAt(l.getSeed(), cx, cz, 40);
+			var st = com.stasdoto.airdefense.nation.Nations.foundCity(l, com.stasdoto.airdefense.nation.Politics.get(s), c);
+			return st == null ? -1 : st.id;
+		});
+		// A blast by a house a little way from the middle: fires start.
+		int bx = cx + 30;
+		int bz = cz + 24;
+		camera(server, bx - 25.5, base + 18, bz - 25.5, -45, 25);
+		ctx.waitTicks(60);
+		server.runOnServer(s -> s.overworld().explode(null, bx + 0.5, base + 2, bz + 0.5, 3.5f, true, net.minecraft.world.level.Level.ExplosionInteraction.TNT));
+		int sent = waitUntil(ctx, () -> com.stasdoto.airdefense.nation.Services.SENT[0] > 0, 100);
+		java.util.function.Function<VehicleType, float[]> near = t -> server.computeOnServer(s -> {
+			for (Entity e : s.overworld().getEntities(net.minecraft.world.level.entity.EntityTypeTest.forClass(VehicleEntity.class),
+					v -> v.isAlive() && v.getVehicleType() == t)) {
+				return new float[]{(float) e.getX(), (float) e.getY(), (float) e.getZ(), (float) e.distanceToSqr(bx, base + 1, bz)};
+			}
+			return null;
+		});
+		// The fire engine on its way: the camera follows it.
+		ctx.waitTicks(120);
+		float[] f = near.apply(VehicleType.FIRE_TRUCK);
+		if (f != null) {
+			look(server, f[0] - 9, f[1] + 5, f[2] - 9, f[0], f[1] + 1.5, f[2]);
+			ctx.waitTicks(3);
+			ctx.takeScreenshot("sv1_fire_engine_coming");
+		}
+		int there = waitUntil(ctx, () -> {
+			float[] g = near.apply(VehicleType.FIRE_TRUCK);
+			return g != null && g[3] < 26 * 26;
+		}, 1200);
+		ctx.waitTicks(120);
+		look(server, bx - 14.5, base + 10, bz - 14.5, bx, base + 2, bz);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("sv2_at_the_blast");
+		float[] a = near.apply(VehicleType.AMBULANCE);
+		if (a != null) {
+			look(server, a[0] - 7, a[1] + 4, a[2] - 7, a[0], a[1] + 1.5, a[2]);
+			ctx.waitTicks(3);
+			ctx.takeScreenshot("sv3_ambulance");
+		}
+		ctx.waitTicks(300);
+		float[] pc = near.apply(VehicleType.POLICE_CAR);
+		if (pc != null) {
+			look(server, pc[0] - 6, pc[1] + 3, pc[2] - 6, pc[0], pc[1] + 1, pc[2]);
+			ctx.waitTicks(3);
+			ctx.takeScreenshot("sv4_police");
+		}
+		// Night: the lights flash.
+		server.runCommand("time set 18000");
+		ctx.waitTicks(20);
+		if (pc != null) {
+			float[] pn = near.apply(VehicleType.POLICE_CAR);
+			if (pn != null) {
+				look(server, pn[0] - 6, pn[1] + 3, pn[2] - 6, pn[0], pn[1] + 1, pn[2]);
+				ctx.waitTicks(3);
+				ctx.takeScreenshot("sv5_lights_at_night");
+			}
+		}
+		server.runCommand("time set 6000");
+		int callsBefore = VehicleEntity.callsDone;
+		ctx.waitTicks(900);
+		// A patrol: the player stands in the town.
+		camera(server, cx + 0.5, base + 2.5, cz + 0.5, 0, 10);
+		com.stasdoto.airdefense.nation.Services.patrolNow = true;
+		ctx.waitTicks(260);
+		float[] p2 = near.apply(VehicleType.POLICE_CAR);
+		if (p2 != null) {
+			look(server, p2[0] - 7, p2[1] + 4, p2[2] - 7, p2[0], p2[1] + 1, p2[2]);
+			ctx.waitTicks(3);
+			ctx.takeScreenshot("sv6_patrol");
+		}
+		AirDefense.LOGGER.info("[airdefense-test] RESULT services: town {}, sent fire {} ambulance {} police {} patrols {} (first after {} ticks), "
+				+ "the engine there after {} ticks, fires put out {}, calls done {}", town, com.stasdoto.airdefense.nation.Services.SENT[0],
+				com.stasdoto.airdefense.nation.Services.SENT[1], com.stasdoto.airdefense.nation.Services.SENT[2],
+				com.stasdoto.airdefense.nation.Services.SENT[3], sent, there, VehicleEntity.firesOut, VehicleEntity.callsDone - callsBefore);
 		language(ctx, "en_us");
 	}
 

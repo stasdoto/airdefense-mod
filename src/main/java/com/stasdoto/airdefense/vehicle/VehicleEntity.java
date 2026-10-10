@@ -76,6 +76,8 @@ public class VehicleEntity extends LivingEntity {
 	private static final EntityDataAccessor<Integer> DATA_RESERVE = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
 	/** Litres in the tank; -1 = never runs dry (put down in creative mode). */
 	private static final EntityDataAccessor<Float> DATA_FUEL = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
+	/** 1.38: an emergency vehicle's flashing lights. */
+	private static final EntityDataAccessor<Boolean> DATA_BEACONS = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
 
 	public static final int STOWED = 0;
 	public static final int DEPLOYED = 1;
@@ -244,7 +246,85 @@ public class VehicleEntity extends LivingEntity {
 		builder.define(DATA_ORDNANCE, 0);
 		builder.define(DATA_CARGO, 0);
 		builder.define(DATA_CARGO_KIND, -1);
+		builder.define(DATA_BEACONS, false);
 	}
+
+	public boolean beaconsOn() {
+		return entityData.get(DATA_BEACONS);
+	}
+
+	public void setBeacons(boolean on) {
+		entityData.set(DATA_BEACONS, on);
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// 1.38: the towns' emergency services on a call (see nation.Services)
+
+	/** The call: 1 a fire, 2 the injured, 3 the police (to a blast, or a patrol when {@link #serviceAt} is null). */
+	public int service;
+	@Nullable
+	public Vec3 serviceAt;
+	@Nullable
+	public List<Vec3> serviceBack;
+	private int serviceWork = -1;
+	private boolean serviceReturning;
+	/** For the tests: fires put out by the fire engines, calls finished. */
+	public static int firesOut;
+	public static int callsDone;
+
+	/** At the end of its way: there at the call (work), or back where it came from (gone). */
+	private void serviceArrived(ServerLevel level) {
+		if (serviceReturning || serviceAt == null) {
+			callsDone++;
+			discard();
+			return;
+		}
+		serviceWork = 0;
+	}
+
+	private void serviceTick(ServerLevel level) {
+		if (serviceWork >= 0) {
+			serviceWork++;
+			if (service == 1 && serviceWork % 10 == 0 && serviceAt != null) {
+				// The hose: water arcs from the engine onto the fire, the flames round the place go out.
+				Vec3 from = position().add(0, 3.2, 0);
+				for (int i = 1; i <= 8; i++) {
+					double f = i / 8.0;
+					Vec3 p = from.lerp(serviceAt.add(0, 1, 0), f).add(0, Math.sin(f * Math.PI) * 3, 0);
+					level.sendParticles(net.minecraft.core.particles.ParticleTypes.SPLASH, p.x, p.y, p.z, 6, 0.2, 0.2, 0.2, 0.1);
+				}
+				level.sendParticles(net.minecraft.core.particles.ParticleTypes.CLOUD, serviceAt.x, serviceAt.y + 1, serviceAt.z, 4, 1.5, 0.5, 1.5, 0.02);
+				BlockPos c = BlockPos.containing(serviceAt);
+				for (BlockPos q : BlockPos.betweenClosed(c.offset(-10, -4, -10), c.offset(10, 8, 10))) {
+					if (level.getBlockState(q).getBlock() instanceof net.minecraft.world.level.block.BaseFireBlock) {
+						level.removeBlock(q, false);
+						firesOut++;
+					}
+				}
+			}
+			int len = service == 1 ? 400 : service == 2 ? 240 : 300;
+			if (serviceWork >= len) {
+				serviceWork = -1;
+				serviceReturning = true;
+				setBeacons(false);
+				if (serviceBack != null && !serviceBack.isEmpty()) {
+					drive(serviceBack, 0.55f);
+				} else {
+					discard();
+				}
+			}
+		}
+		if (beaconsOn() && route != null && (tickCount + getId()) % 60 == 0) {
+			level.playSound(null, getX(), getY(), getZ(), com.stasdoto.airdefense.registry.ModSounds.SERVICE_SIREN, SoundSource.NEUTRAL, 3.0f,
+					service == 3 ? 1.08f : service == 2 ? 1.0f : 0.92f);
+		}
+		// Never left standing for good: gone after ten minutes once nobody is near.
+		if (tickCount > 12000 && (tickCount + getId()) % 100 == 0 && level.getNearestPlayer(this, 64) == null) {
+			discard();
+		}
+	}
+
+
 
 	// ------------------------------------------------------------------------------------------------
 	// Accessors
@@ -476,7 +556,7 @@ public class VehicleEntity extends LivingEntity {
 	/** Gepard can shoot on the move; launchers and missile batteries must fold up first. */
 	public boolean canDrive() {
 		// Lorries have nothing to fold (their "deployed" is only the load bed being open).
-		return isAlive() && (vtype.gunOnly() || vtype.isArmed() || vtype.isTruck() || isFolded());
+		return isAlive() && (vtype.gunOnly() || vtype.isArmed() || vtype.isTruck() || vtype.isService() || isFolded());
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -900,6 +980,10 @@ public class VehicleEntity extends LivingEntity {
 
 	/** At the end of the road: the troops get out and go on on foot. */
 	private void arrived(ServerLevel level) {
+		if (service != 0) {
+			serviceArrived(level);
+			return;
+		}
 		if (cargoDelivery != 0) {
 			com.stasdoto.airdefense.nation.Arsenals.lorryArrived(level, this);
 			unloadedTicks = 0;
@@ -1469,6 +1553,12 @@ public class VehicleEntity extends LivingEntity {
 			// Keeps its own ground loaded and running: visible and controllable on the tablet map from anywhere,
 			// air defence keeps guarding while the player is far away.
 			level.getChunkSource().addTicketWithRadius(ModTickets.VEHICLE, ChunkPos.containing(blockPosition()), 2);
+		}
+		if (service != 0) {
+			serviceTick(level);
+			if (isRemoved()) {
+				return;
+			}
 		}
 		if (route != null) {
 			// On the road by itself: its ground keeps running (only while it drives).
@@ -3734,8 +3824,8 @@ public class VehicleEntity extends LivingEntity {
 
 	@Override
 	public boolean shouldBeSaved() {
-		// An enemy sortie (or naval raid) does not outlive the game it was flown in.
-		return !onSortie() && !onRaid() && super.shouldBeSaved();
+		// An enemy sortie (or naval raid) does not outlive the game it was flown in; nor does an emergency call (1.38).
+		return !onSortie() && !onRaid() && service == 0 && super.shouldBeSaved();
 	}
 
 	private static double flat(Vec3 a, Vec3 b) {

@@ -18,4 +18,7 @@ public class VehicleRenderState extends EntityRenderState {
 	public boolean wreck;
 	/** The local player looks out of this vehicle's sight: it is not drawn (1.26). */
 	public boolean hidden;
+	/** 1.38: an emergency vehicle's flashing lights (on or off), and the tick they flash by. */
+	public boolean beacons;
+	public int flash;
 }

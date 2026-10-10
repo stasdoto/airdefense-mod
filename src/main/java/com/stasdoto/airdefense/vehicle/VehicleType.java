@@ -63,6 +63,10 @@ public enum VehicleType {
 	// Logistics (stage R7): what they carry, and how much.
 	FUEL_TRUCK("fuel_truck", GenGeometry.FUEL_TRUCK, 1, 5000, 160, 0.85f, 0.013f, 30, 2.5f, 3.2f),
 	SUPPLY_TRUCK("supply_truck", GenGeometry.SUPPLY_TRUCK, 2, 400, 160, 0.85f, 0.013f, 30, 2.5f, 3.2f),
+	// 1.38: the towns' emergency services (sent by the towns themselves; the player can drive them too).
+	FIRE_TRUCK("fire_truck", GenGeometry.FIRE_TRUCK, 3, 0, 180, 1.0f, 0.016f, 30, 2.5f, 3.2f),
+	AMBULANCE("ambulance", GenGeometry.AMBULANCE, 3, 0, 140, 1.3f, 0.02f, 32, 2.1f, 2.8f),
+	POLICE_CAR("police_car", GenGeometry.POLICE_CAR, 3, 0, 120, 1.7f, 0.026f, 34, 1.9f, 1.7f),
 	// 1.24: Israel's Iron Dome - the launcher of twenty Tamirs and its EL/M-2084 radar.
 	IRON_DOME("iron_dome", GenGeometry.IRON_DOME, null, DefenseType.IRON_DOME, 220, 0.9f, 0.014f, 32, 0, 1.6f, 0, 2.55f, 3.3f),
 	ELM2084("elm2084", GenGeometry.ELM2084, RadarType.ELM2084, 200, 0.82f, 0.012f, 30, 0, 0, 2.55f, 3.3f),
@@ -366,7 +370,22 @@ public enum VehicleType {
 	}
 
 	public boolean isTruck() {
-		return cargo != 0;
+		return cargo == 1 || cargo == 2;
+	}
+
+	/** 1.38: a fire engine, an ambulance, a police car. */
+	public boolean isService() {
+		return cargo == 3;
+	}
+
+	/** 1.38: where the flashing lights are on the roof (metres: across, up, forward), red one side, blue the other. */
+	public float[] beacons() {
+		return switch (this) {
+			case FIRE_TRUCK -> new float[]{0.78f, 3.18f, 2.4f};
+			case AMBULANCE -> new float[]{0.63f, 2.42f, 1.3f};
+			case POLICE_CAR -> new float[]{0.48f, 1.62f, -0.1f};
+			default -> null;
+		};
 	}
 
 	public boolean isAir() {

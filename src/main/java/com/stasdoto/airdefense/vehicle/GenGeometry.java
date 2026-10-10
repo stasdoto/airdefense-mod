@@ -298,6 +298,27 @@ public final class GenGeometry {
 			0F, 0F, new Rail[]{}, null, new String[]{}, 12F,
 			1024, 176);
 
+	public static final Geometry FIRE_TRUCK = new Geometry("fire_truck", 7.62F, 2.5F, 3.26F, 4.2F, false,
+			new Seat[]{new Seat("driver", -0.5F, 1.55F, 2.6F), new Seat("gunner", 0.5F, 1.55F, 2.6F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.55F, true), new Wheel("wheel_1_r", 0.55F, true), new Wheel("wheel_2_l", 0.55F, false), new Wheel("wheel_2_r", 0.55F, false), new Wheel("wheel_3_l", 0.55F, false), new Wheel("wheel_3_r", 0.55F, false)},
+			null, new float[]{0F, 0F, 0F}, null, new float[]{0F, 0F, 0F},
+			0F, 0F, new Rail[]{}, null, new String[]{}, 12F,
+			1024, 160);
+
+	public static final Geometry AMBULANCE = new Geometry("ambulance", 6.08F, 2.1F, 2.75F, 3.6F, false,
+			new Seat[]{new Seat("driver", -0.5F, 0.783F, 1.4F), new Seat("gunner", 0.5F, 0.783F, 1.4F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.42F, true), new Wheel("wheel_1_r", 0.42F, true), new Wheel("wheel_2_l", 0.42F, false), new Wheel("wheel_2_r", 0.42F, false)},
+			null, new float[]{0F, 0F, 0F}, null, new float[]{0F, 0F, 0F},
+			0F, 0F, new Rail[]{}, null, new String[]{}, 9F,
+			1024, 112);
+
+	public static final Geometry POLICE_CAR = new Geometry("police_car", 4.75F, 1.85F, 1.71F, 2.8F, false,
+			new Seat[]{new Seat("driver", -0.4F, 0.57F, 0.1F), new Seat("gunner", 0.4F, 0.57F, 0.1F)},
+			new Wheel[]{new Wheel("wheel_1_l", 0.33F, true), new Wheel("wheel_1_r", 0.33F, true), new Wheel("wheel_2_l", 0.33F, false), new Wheel("wheel_2_r", 0.33F, false)},
+			null, new float[]{0F, 0F, 0F}, null, new float[]{0F, 0F, 0F},
+			0F, 0F, new Rail[]{}, null, new String[]{}, 8F,
+			1024, 96);
+
 	public static final Geometry MSTA_S = new Geometry("msta_s", 13.05F, 3.58F, 3.25F, 0F, true,
 			new Seat[]{new Seat("driver", 0F, 1F, 2.3F), new Seat("gunner", 0.8F, 2.75F, -1.25F)},
 			new Wheel[]{new Wheel("road_0_l", 0.36F, false), new Wheel("road_1_l", 0.36F, false), new Wheel("road_2_l", 0.36F, false), new Wheel("road_3_l", 0.36F, false), new Wheel("road_4_l", 0.36F, false), new Wheel("road_5_l", 0.36F, false), new Wheel("sprocket_l", 0.3F, false), new Wheel("idler_l", 0.28F, false), new Wheel("road_0_r", 0.36F, false), new Wheel("road_1_r", 0.36F, false), new Wheel("road_2_r", 0.36F, false), new Wheel("road_3_r", 0.36F, false), new Wheel("road_4_r", 0.36F, false), new Wheel("road_5_r", 0.36F, false), new Wheel("sprocket_r", 0.3F, false), new Wheel("idler_r", 0.28F, false)},
