@@ -110,6 +110,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("ad")) {
 				newAirDefense(ctx, server);
 			}
+			if (scene("showroom")) {
+				showroom(ctx, server);
+			}
 			if (scene("armor")) {
 				armor(ctx, server);
 			}
@@ -1512,6 +1515,35 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.takeScreenshot("96_mfg_fight");
 		ctx.waitTicks(260);
 		report("mfg_zu23_vs_5_shahed", before);
+	}
+
+	/** 1.44: the vehicles close up in daylight, from the front quarter and the back quarter (to judge their looks). */
+	private void showroom(ClientGameTestContext ctx, TestServerContext server) {
+		VehicleType[] show = {VehicleType.T72, VehicleType.T90, VehicleType.T80BVM, VehicleType.LEOPARD2, VehicleType.ABRAMS, VehicleType.CHALLENGER2,
+				VehicleType.BMP2, VehicleType.BMP3, VehicleType.BRADLEY, VehicleType.CV90, VehicleType.BTR82, VehicleType.HMMWV};
+		server.runCommand("time set 6000");
+		server.runCommand("gamerule advance_time false");
+		ctx.runOnClient(mc -> mc.gui.hud.toggle());
+		int x0 = 61000;
+		for (int i = 0; i < show.length; i++) {
+			VehicleType t = show[i];
+			int x = x0 + i * 40;
+			int id = spawnVehicle(server, t, x, 0, 0);
+			look(server, x + 6.5, ground + 3.2, 8.5, x + 0.5, ground + 1.2, 0.5);
+			ctx.waitTicks(i == 0 ? 120 : 50);
+			ctx.takeScreenshot("sr_" + t.name().toLowerCase(java.util.Locale.ROOT) + "_front");
+			look(server, x - 6.5, ground + 4.0, -7.5, x + 0.5, ground + 1.0, 0.5);
+			ctx.waitTicks(12);
+			ctx.takeScreenshot("sr_" + t.name().toLowerCase(java.util.Locale.ROOT) + "_back");
+			server.runOnServer(s -> {
+				Entity e = s.overworld().getEntity(id);
+				if (e != null) {
+					e.discard();
+				}
+			});
+		}
+		ctx.runOnClient(mc -> mc.gui.hud.toggle());
+		server.runCommand("gamerule advance_time true");
 	}
 
 	/** Stage R5: tanks, fighting vehicles and boats; a T-72 driven (burning petrol) and firing at a BTR. */
