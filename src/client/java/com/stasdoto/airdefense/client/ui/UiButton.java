@@ -3,8 +3,7 @@ package com.stasdoto.airdefense.client.ui;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.AbstractButton;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.network.chat.Component;
 
@@ -13,7 +12,7 @@ import net.minecraft.network.chat.Component;
  * screen is for (the accent colour), SECONDARY the other choices, GHOST the quiet ones (cancel, later), DANGER the
  * ones that cannot be taken back. A TOGGLE shows a switch and stays on or off.
  */
-public class UiButton extends AbstractButton {
+public class UiButton extends Button {
 	public enum Style {
 		PRIMARY, SECONDARY, GHOST, DANGER, TOGGLE, TAB
 	}
@@ -70,7 +69,9 @@ public class UiButton extends AbstractButton {
 	public boolean on;
 
 	public UiButton(int x, int y, int w, int h, Component label, Style style, Runnable action) {
-		super(x, y, w, h, label);
+		// A Button (not just a pressable widget): the game's own helpers, the tests' among them, find it as one.
+		super(x, y, w, h, label, b -> {
+		}, DEFAULT_NARRATION);
 		this.style = style;
 		this.action = action;
 	}
@@ -154,8 +155,4 @@ public class UiButton extends AbstractButton {
 		}
 	}
 
-	@Override
-	protected void updateWidgetNarration(NarrationElementOutput out) {
-		defaultButtonNarrationText(out);
-	}
 }
