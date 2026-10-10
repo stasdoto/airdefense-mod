@@ -161,6 +161,18 @@ public final class Diplomacy extends SavedData {
 		return v == null ? 0 : v[1];
 	}
 
+	/** How many allies a country has. */
+	public int allies(int a) {
+		int n = 0;
+		for (var e : relations.entrySet()) {
+			long k = e.getKey();
+			if ((e.getValue()[1] & ALLY) != 0 && ((int) (k >>> 32) == a || (int) k == a)) {
+				n++;
+			}
+		}
+		return n;
+	}
+
 	public boolean allied(int a, int b) {
 		return (treaties(a, b) & ALLY) != 0;
 	}
@@ -184,7 +196,7 @@ public final class Diplomacy extends SavedData {
 	/** What the standing between them drifts back to: their rulers' characters, their treaties, a war between them. */
 	private int base(Politics p, ServerLevel level, Country a, Country b) {
 		// The world's own countries like or dislike each other of old (the same for every two, from the seed).
-		int s = a.owner == null && b.owner == null ? (int) Math.floorMod(level.getSeed() ^ pair(a.id, b.id) * 0x9E3779B97F4A7C15L, 101L) - 40 : 0;
+		int s = a.owner == null && b.owner == null ? (int) Math.floorMod(level.getSeed() ^ pair(a.id, b.id) * 0x9E3779B97F4A7C15L, 101L) - 50 : 0;
 		for (Country c : new Country[]{a, b}) {
 			Ruler r = ruler(level, c);
 			if (r != null) {
@@ -299,7 +311,8 @@ public final class Diplomacy extends SavedData {
 				}
 				s = d.standing(a.id, b.id);
 				boolean ally = d.allied(a.id, b.id);
-				if (a.owner == null && b.owner == null && !ally && s >= 55 && !a.atWarWith(b.id) && r.nextInt(100) < 15) {
+				if (a.owner == null && b.owner == null && !ally && s >= 65 && !a.atWarWith(b.id) && d.allies(a.id) < 2 && d.allies(b.id) < 2
+						&& r.nextInt(100) < 6) {
 					d.treaty(a.id, b.id, ALLY, true);
 					alliances++;
 					news(level, Component.translatable("nation.airdefense.diplomacy.alliance", a.name, b.name));
