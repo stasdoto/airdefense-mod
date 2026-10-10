@@ -791,6 +791,41 @@ def play():
     model('sport_net', e, gui=0.3)
 
 
+# --- 1.37: shelters (the civil defence sign: a blue triangle on orange) ---
+
+def shelter_textures():
+    img = Image.new('RGBA', (32, 32), (236, 120, 24, 255))
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, 0, 31, 31], outline=(240, 240, 236, 255), width=2)
+    d.polygon([(16, 6), (27, 25), (5, 25)], fill=(24, 74, 170, 255))
+    a = np.array(img).astype(float)
+    save('civil_defence', a)
+    door = np.zeros((32, 32, 4))
+    door[..., 3] = 255
+    for y in range(32):
+        shade = 70 - y * 2.0
+        door[y, :, :3] = max(8, shade)
+        if y % 5 == 0 and y < 26:
+            door[y, :, :3] = max(14, shade + 25)
+    door[:, :2, :3] = door[:, 30:, :3] = (120, 120, 116)
+    save('shelter_door', door)
+
+
+def shelters():
+    shelter_textures()
+    ct = {'concrete': 'minecraft:block/light_gray_concrete', 'roof': 'minecraft:block/gray_concrete'}
+    e = [box((-16, 0, 0), (-8, 28, 32), 'concrete'), box((24, 0, 0), (32, 28, 32), 'concrete'),
+         box((-8, 0, 28), (24, 28, 32), 'concrete'),
+         box((-8, 0.5, 6), (24, 26, 7), {'north': 'shelter_door'}, uv={'north': FULL}),
+         box((-8, 22, 0), (24, 28, 6), 'concrete'),
+         box((-16, 28, -1), (32, 31, 32), 'roof'),
+         box((-2, 22.5, -0.3), (18, 27.5, 0), {'north': 'civil_defence'}, uv={'north': FULL}, emit=6)]
+    model('shelter_entrance', e, gui=0.3, extra_tex=ct)
+    e = [box((1, 0, 7.5), (15, 14, 8.5), {'north': 'civil_defence', 'south': 'steel', 'east': 'steel', 'west': 'steel', 'up': 'steel', 'down': 'steel'},
+             uv={'north': FULL}), box((7, 0, 8.5), (9, 16, 10), 'steel')]
+    model('shelter_sign', e, gui=0.8)
+
+
 # ----------------------------------------------------------------------------------------------------------------
 # Blockstates and items
 
@@ -812,6 +847,7 @@ BLOCKS = {
     'manhole': 'plain',
     'swing': 'facing', 'slide': 'facing', 'sandbox': 'facing', 'roundabout': 'facing', 'seesaw': 'facing', 'climbing_frame': 'facing',
     'football_goal': 'facing', 'basket_hoop': 'facing', 'bleachers': 'facing', 'floodlight': 'facing', 'sport_net': 'facing',
+    'shelter_entrance': 'facing', 'shelter_sign': 'facing',
 }
 
 
@@ -843,5 +879,6 @@ if __name__ == '__main__':
     bus_stops()
     small()
     play()
+    shelters()
     blockstates()
     print('ok', len(BLOCKS), 'blocks')

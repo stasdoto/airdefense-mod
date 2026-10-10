@@ -61,6 +61,13 @@ public final class ModEntities {
 					.clientTrackingRange(10)
 					.build(WORKER_KEY));
 
+	private static final ResourceKey<EntityType<?>> PEDESTRIAN_KEY = ResourceKey.create(Registries.ENTITY_TYPE, AirDefense.id("pedestrian"));
+
+	/** 1.37: passers-by in the towns (made only on the client, round the player). */
+	public static final EntityType<com.stasdoto.airdefense.nation.PedestrianEntity> PEDESTRIAN = Registry.register(BuiltInRegistries.ENTITY_TYPE,
+			PEDESTRIAN_KEY, EntityType.Builder.<com.stasdoto.airdefense.nation.PedestrianEntity>of(com.stasdoto.airdefense.nation.PedestrianEntity::new,
+					MobCategory.MISC).sized(0.6f, 1.8f).eyeHeight(1.62f).clientTrackingRange(4).noSave().noSummon().build(PEDESTRIAN_KEY));
+
 	private static final Map<VehicleType, EntityType<VehicleEntity>> VEHICLES = new EnumMap<>(VehicleType.class);
 
 	static {
@@ -89,6 +96,7 @@ public final class ModEntities {
 	public static void init() {
 		FabricDefaultAttributeRegistry.register(SOLDIER, SoldierEntity.createAttributes());
 		FabricDefaultAttributeRegistry.register(WORKER, WorkerEntity.createAttributes());
+		FabricDefaultAttributeRegistry.register(PEDESTRIAN, com.stasdoto.airdefense.nation.PedestrianEntity.createAttributes());
 		for (VehicleType type : VehicleType.values()) {
 			FabricDefaultAttributeRegistry.register(vehicle(type), VehicleEntity.createAttributes(type));
 		}

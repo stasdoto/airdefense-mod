@@ -1283,5 +1283,7 @@
   "subtitles.airdefense.city_birds": "Birds sing",
   "subtitles.airdefense.city_crickets": "Crickets chirp",
   "subtitles.airdefense.city_owl": "Owl hoots",
-  "subtitles.airdefense.town_bell": "Town hall bell"
+  "subtitles.airdefense.town_bell": "Town hall bell",
+  "block.airdefense.shelter_entrance": "Shelter entrance",
+  "block.airdefense.shelter_sign": "Shelter sign"
 }

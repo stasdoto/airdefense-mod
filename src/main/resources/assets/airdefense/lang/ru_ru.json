@@ -1283,5 +1283,7 @@
   "subtitles.airdefense.city_birds": "Поют птицы",
   "subtitles.airdefense.city_crickets": "Стрекочут сверчки",
   "subtitles.airdefense.city_owl": "Ухает сова",
-  "subtitles.airdefense.town_bell": "Бьют часы на ратуше"
+  "subtitles.airdefense.town_bell": "Бьют часы на ратуше",
+  "block.airdefense.shelter_entrance": "Вход в укрытие",
+  "block.airdefense.shelter_sign": "Знак «Укрытие»"
 }

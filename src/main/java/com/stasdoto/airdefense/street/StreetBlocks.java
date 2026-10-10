@@ -92,6 +92,9 @@ public final class StreetBlocks {
 	public static final Block BASKET_HOOP = thing("basket_hoop", 0, MapColor.SNOW, SoundType.METAL, 0, 0, 0, 16, 16, 14);
 	public static final Block BLEACHERS = thing("bleachers", 0, MapColor.STONE, SoundType.STONE, 0, 0, 0, 16, 16, 16);
 	public static final Block FLOODLIGHT = thing("floodlight", 15, MapColor.METAL, SoundType.METAL, 0, 0, 5, 16, 16, 11);
+	// 1.37: the way down to a shelter (a pavilion over the stairs) and the sign pointing to it.
+	public static final Block SHELTER_ENTRANCE = thing("shelter_entrance", 6, MapColor.STONE, SoundType.STONE, 0, 0, 0, 16, 16, 16);
+	public static final Block SHELTER_SIGN = sign("shelter_sign");
 	public static final Block SPORT_NET = thing("sport_net", 0, MapColor.SNOW, SoundType.WOOL, 0, 0, 7, 16, 16, 9);
 
 	/** A manhole cover set in the asphalt: a whole block (it is the road surface). */

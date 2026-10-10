@@ -124,6 +124,8 @@ public final class Cities {
 	public static volatile boolean shapes = true;
 	/** 1.36: parks may be playgrounds, sports grounds or a stadium (worlds started since; older parks are half built). */
 	public static volatile boolean parks = true;
+	/** 1.37: shelter entrances and signs in the towns (worlds started since). */
+	public static volatile boolean shelters = true;
 	@Nullable
 	public static volatile CityForm FORCE_FORM;
 
