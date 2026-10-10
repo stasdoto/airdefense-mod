@@ -635,7 +635,7 @@ public final class CityGen {
 					if (ap.out(x, z) <= 2) {
 						// 1.40: nothing grows on an airport (the trees the neighbours put up over it).
 						from = ap.y + 1;
-						span = 40;
+						span = 64;
 					}
 				}
 				for (Cities.City c : cities) {

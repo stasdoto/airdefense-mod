@@ -562,6 +562,14 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		look(server, side[0], a[6] + 10, side[1], touch[0], a[6] + 8, touch[1]);
 		ctx.waitTicks(60);
 		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.force = 1);
+		for (int k = 0; k < 4; k++) {
+			ctx.waitTicks(60);
+			StringBuilder sb = new StringBuilder();
+			for (double[] p : ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.planes())) {
+				sb.append(String.format(" [%.0f %.0f %.0f ph%.0f v%.2f]", p[0], p[1], p[2], p[3], p[4]));
+			}
+			AirDefense.LOGGER.info("[airdefense-test] RESULT airport_track {}:{}", k, sb);
+		}
 		int landing = waitUntil(ctx, () -> ctx.computeOnClient(mc -> {
 			for (double[] p : com.stasdoto.airdefense.client.nation.AirTraffic.planes()) {
 				if (p[3] == 0 && Math.hypot(p[0] - touch[0], p[2] - touch[1]) < 90) {
