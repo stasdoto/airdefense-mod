@@ -15,11 +15,56 @@ import net.minecraft.network.chat.Component;
  */
 public class UiButton extends AbstractButton {
 	public enum Style {
-		PRIMARY, SECONDARY, GHOST, DANGER, TOGGLE
+		PRIMARY, SECONDARY, GHOST, DANGER, TOGGLE, TAB
+	}
+
+	/** What a button does when pressed (it is given the button: to change its own label, say). */
+	@FunctionalInterface
+	public interface OnPress {
+		void onPress(UiButton button);
+	}
+
+	/** Like the game's own Button.builder: label and action, then bounds (and a style), then build. */
+	public static Builder builder(Component label, OnPress action) {
+		return new Builder(label, action);
+	}
+
+	public static final class Builder {
+		private final Component label;
+		private final OnPress action;
+		private int x;
+		private int y;
+		private int w = 150;
+		private int h = 20;
+		private Style style = Style.SECONDARY;
+
+		private Builder(Component label, OnPress action) {
+			this.label = label;
+			this.action = action;
+		}
+
+		public Builder bounds(int x, int y, int w, int h) {
+			this.x = x;
+			this.y = y;
+			this.w = w;
+			this.h = h;
+			return this;
+		}
+
+		public Builder style(Style s) {
+			style = s;
+			return this;
+		}
+
+		public UiButton build() {
+			UiButton[] self = new UiButton[1];
+			self[0] = new UiButton(x, y, w, h, label, style, () -> action.onPress(self[0]));
+			return self[0];
+		}
 	}
 
 	private final Runnable action;
-	private final Style style;
+	private Style style;
 	private float hover;
 	/** For TOGGLE: on or off. */
 	public boolean on;
@@ -28,6 +73,10 @@ public class UiButton extends AbstractButton {
 		super(x, y, w, h, label);
 		this.style = style;
 		this.action = action;
+	}
+
+	public void setStyle(Style s) {
+		style = s;
 	}
 
 	@Override
@@ -66,6 +115,17 @@ public class UiButton extends AbstractButton {
 					Ui.round(g, x0, y0, x1, y1, 2, Ui.mix(0x00FFFFFF, 0x18FFFFFF, hover));
 				}
 				fg = active ? Ui.mix(Ui.DIM, Ui.TEXT, hover) : Ui.FAINT;
+			}
+			case TAB -> {
+				// A tab: the chosen one (inactive: it is open already) underlined in the accent colour.
+				boolean chosen = !active;
+				if (!chosen && hover > 0.02f) {
+					Ui.round(g, x0, y0, x1, y1, 2, Ui.mix(0x00FFFFFF, 0x14FFFFFF, hover));
+				}
+				if (chosen) {
+					g.fill(x0 + 2, y1 - 2, x1 - 2, y1, Ui.ACCENT);
+				}
+				fg = chosen ? Ui.TEXT : Ui.mix(Ui.DIM, Ui.TEXT, hover);
 			}
 			case TOGGLE -> {
 				// A switch, then the label.

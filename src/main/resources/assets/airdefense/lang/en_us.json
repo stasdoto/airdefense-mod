@@ -1426,5 +1426,6 @@
   "nation.airdefense.choice.arrived": "Welcome to %s, your capital. You will come back here after death.",
   "nation.airdefense.choice.friend_joined": "%s now plays for %s with you",
   "nation.airdefense.choice.friend_left": "%s no longer plays for %s",
-  "screen.airdefense.country.capital": "Capital: %s - style: %s"
+  "screen.airdefense.country.capital": "Capital: %s - style: %s",
+  "screen.airdefense.village.chip_people": "%s people"
 }

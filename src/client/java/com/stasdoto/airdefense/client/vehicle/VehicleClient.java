@@ -185,10 +185,11 @@ public final class VehicleClient {
 		int x = 6;
 		int y = 6;
 		int w = Math.max(font.width(l1), Math.max(font.width(l2), font.width(l3))) + 8;
-		g.fill(x - 3, y - 3, x + w, y + 32, 0x88000000);
-		g.text(font, l1, x, y, 0xFFFFE08A);
-		g.text(font, l2, x, y + 10, 0xFFE0E0E0);
-		g.text(font, l3, x, y + 20, 0xFFA0A0A0);
+		com.stasdoto.airdefense.client.ui.Ui.round(g, x - 4, y - 4, x + w + 1, y + 33, 3, 0xA0101114);
+		g.fill(x - 4, y - 4, x - 2, y + 33, com.stasdoto.airdefense.client.ui.Ui.ACCENT);
+		g.text(font, l1, x + 1, y, com.stasdoto.airdefense.client.ui.Ui.TEXT, false);
+		g.text(font, l2, x + 1, y + 10, com.stasdoto.airdefense.client.ui.Ui.DIM, false);
+		g.text(font, l3, x + 1, y + 20, com.stasdoto.airdefense.client.ui.Ui.FAINT, false);
 		GunnerHud.draw(g, delta, v, player);
 		if (type.isAir() && driver) {
 			// 1.26: the pilot's head-up display (gun cross, flight path, ladder, tapes, bomb sight, warnings).

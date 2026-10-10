@@ -2,7 +2,7 @@ package com.stasdoto.airdefense.client.nation;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
+import com.stasdoto.airdefense.client.ui.UiButton;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -16,8 +16,8 @@ import com.stasdoto.airdefense.nation.DialoguePayload;
  */
 public class DialogueScreen extends Screen {
 	private static final int C_NAME = 0xFFFFD24A;
-	private static final int C_DIM = 0xFF9AA4AE;
-	private static final int C_TEXT = 0xFFE6E9EC;
+	private static final int C_DIM = com.stasdoto.airdefense.client.ui.Ui.DIM;
+	private static final int C_TEXT = com.stasdoto.airdefense.client.ui.Ui.TEXT;
 
 	private DialoguePayload talk;
 	private int x0;
@@ -55,7 +55,7 @@ public class DialogueScreen extends Screen {
 		for (int option : talk.options()) {
 			int col = k % 2;
 			int row = k / 2;
-			addRenderableWidget(Button.builder(Component.translatable("dialogue.airdefense.option." + option), b -> choose(option))
+			addRenderableWidget(UiButton.builder(Component.translatable("dialogue.airdefense.option." + option), b -> choose(option))
 					.bounds(x0 + 6 + col * (bw + 6), y0 + 78 + row * 22, bw, 20).build());
 			k++;
 		}
@@ -81,17 +81,16 @@ public class DialogueScreen extends Screen {
 
 	@Override
 	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-		g.fill(0, 0, width, height, 0x60000000);
+		g.fill(0, 0, width, height, 0x70000000);
 	}
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-		g.fill(x0 - 1, y0 - 1, x0 + w + 1, y0 + h + 1, 0xFF5A6570);
-		g.fill(x0, y0, x0 + w, y0 + h, 0xF0161C22);
+		com.stasdoto.airdefense.client.ui.Ui.panel(g, x0, y0, x0 + w, y0 + h);
 		int x = x0 + 8;
-		g.text(font, Component.literal(talk.name()), x, y0 + 7, C_NAME);
+		com.stasdoto.airdefense.client.ui.Ui.big(g, font, Component.literal(talk.name()), x, y0 + 6, 1.2f, com.stasdoto.airdefense.client.ui.Ui.TEXT);
 		g.text(font, talk.title(), x, y0 + 19, C_DIM);
-		g.fill(x, y0 + 30, x0 + w - 8, y0 + 31, 0xFF3A444E);
+		com.stasdoto.airdefense.client.ui.Ui.divider(g, x, x0 + w - 8, y0 + 30);
 		g.textWithWordWrap(font, Component.literal("«").append(talk.speech()).append("»"), x, y0 + 36, w - 16, C_TEXT);
 		super.extractRenderState(g, mouseX, mouseY, partialTick);
 	}

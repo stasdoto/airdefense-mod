@@ -5,7 +5,7 @@ import java.util.List;
 import com.mojang.blaze3d.platform.InputConstants;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
+import com.stasdoto.airdefense.client.ui.UiButton;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.core.BlockPos;
@@ -44,7 +44,7 @@ public class SirenScreen extends Screen {
 		int total = colW * 2 + 10;
 		Component[] labels = {Component.translatable("screen.airdefense.siren.all_alert"), Component.translatable("screen.airdefense.siren.all_clear"),
 				Component.translatable("screen.airdefense.siren.silence"), Component.translatable("screen.airdefense.siren.back")};
-		Button.OnPress[] actions = {b -> SirenClient.send(SirenNet.Action.ALL, 1, 0), b -> SirenClient.send(SirenNet.Action.ALL, 0, 0),
+		UiButton.OnPress[] actions = {b -> SirenClient.send(SirenNet.Action.ALL, 1, 0), b -> SirenClient.send(SirenNet.Action.ALL, 0, 0),
 				b -> SirenClient.send(SirenNet.Action.SILENCE, 0, 0), b -> minecraft.gui.setScreen(new TacticalMapScreen())};
 		int need = 0;
 		for (Component c : labels) {
@@ -56,7 +56,7 @@ public class SirenScreen extends Screen {
 		for (int i = 0; i < 4; i++) {
 			int col = oneRow ? i : i % 2;
 			int row = oneRow ? 0 : i / 2;
-			addRenderableWidget(Button.builder(labels[i], actions[i]).bounds(x0 + col * (bw + 4), 22 + row * 22, bw, 20).build());
+			addRenderableWidget(UiButton.builder(labels[i], actions[i]).bounds(x0 + col * (bw + 4), 22 + row * 22, bw, 20).build());
 		}
 		top = oneRow ? 50 : 72;
 		alertW = font.width(Component.translatable("screen.airdefense.siren.alert")) + 10;
@@ -162,7 +162,7 @@ public class SirenScreen extends Screen {
 
 	@Override
 	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-		g.fill(0, 0, width, height, 0xC0101418);
+		g.fill(0, 0, width, height, com.stasdoto.airdefense.client.ui.Ui.SCRIM);
 	}
 
 	@Override

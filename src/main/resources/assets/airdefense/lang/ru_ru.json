@@ -1426,5 +1426,6 @@
   "nation.airdefense.choice.arrived": "Добро пожаловать в %s — вашу столицу. После гибели вы будете возрождаться здесь.",
   "nation.airdefense.choice.friend_joined": "%s теперь играет за «%s» вместе с вами",
   "nation.airdefense.choice.friend_left": "%s больше не играет за «%s»",
-  "screen.airdefense.country.capital": "Столица: %s · стиль: %s"
+  "screen.airdefense.country.capital": "Столица: %s · стиль: %s",
+  "screen.airdefense.village.chip_people": "%s жит."
 }

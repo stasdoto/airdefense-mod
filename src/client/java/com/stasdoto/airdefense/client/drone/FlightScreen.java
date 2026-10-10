@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
+import com.stasdoto.airdefense.client.ui.UiButton;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
@@ -31,10 +31,10 @@ import com.stasdoto.airdefense.vehicle.VehicleType;
  * Shows the distance and the time in flight before you press "Launch".
  */
 public class FlightScreen extends Screen {
-	private static final int C_TEXT = 0xFFE6E9EC;
-	private static final int C_DIM = 0xFF9AA4AE;
-	private static final int C_OK = 0xFF8AE07A;
-	private static final int C_BAD = 0xFFFF7A6A;
+	private static final int C_TEXT = com.stasdoto.airdefense.client.ui.Ui.TEXT;
+	private static final int C_DIM = com.stasdoto.airdefense.client.ui.Ui.DIM;
+	private static final int C_OK = com.stasdoto.airdefense.client.ui.Ui.OK;
+	private static final int C_BAD = com.stasdoto.airdefense.client.ui.Ui.BAD;
 	private static final int C_HEAD = 0xFFFFD24A;
 
 	private final MapStatusPayload.Entry vehicle;
@@ -46,9 +46,9 @@ public class FlightScreen extends Screen {
 	private int maneuver = FlightPlan.WEAVE;
 	private int count;
 	private boolean camera;
-	private Button maneuverButton;
-	private Button cameraButton;
-	private Button launchButton;
+	private UiButton maneuverButton;
+	private UiButton cameraButton;
+	private UiButton launchButton;
 	private int x0;
 	private int y0;
 	private static final int W = 300;
@@ -87,11 +87,11 @@ public class FlightScreen extends Screen {
 			xBox.setValue(String.valueOf(pendingX));
 			zBox.setValue(String.valueOf(pendingZ));
 		}
-		addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.flight.mark"), b -> fromMark())
+		addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.flight.mark"), b -> fromMark())
 				.bounds(x0 + 178, y - 1, 38, 18).build());
-		addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.flight.me"), b -> fromMe())
+		addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.flight.me"), b -> fromMe())
 				.bounds(x0 + 218, y - 1, 34, 18).build());
-		addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.flight.look"), b -> fromLook())
+		addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.flight.look"), b -> fromLook())
 				.bounds(x0 + 254, y - 1, 40, 18).build());
 		y += 26;
 		stepper(y, () -> altitude = Mth.clamp(altitude - 5, FlightPlan.MIN_ALT, FlightPlan.MAX_ALT),
@@ -99,25 +99,25 @@ public class FlightScreen extends Screen {
 		y += 22;
 		stepper(y, () -> speed = Mth.clamp(speed - 10, 50, 100), () -> speed = Mth.clamp(speed + 10, 50, 100));
 		y += 22;
-		maneuverButton = addRenderableWidget(Button.builder(Component.empty(), b -> maneuver = (maneuver + 1) % FlightPlan.MANEUVERS)
+		maneuverButton = addRenderableWidget(UiButton.builder(Component.empty(), b -> maneuver = (maneuver + 1) % FlightPlan.MANEUVERS)
 				.bounds(x0 + 150, y - 2, 144, 18).build());
 		y += 22;
 		stepper(y, () -> count = Math.max(1, count - 1), () -> count = Math.min(Math.max(1, Integer.bitCount(vehicle.loaded())), count + 1));
 		y += 22;
-		cameraButton = addRenderableWidget(Button.builder(Component.empty(), b -> camera = !camera).bounds(x0 + 150, y - 2, 144, 18).build());
-		launchButton = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.flight.launch"), b -> launch())
+		cameraButton = addRenderableWidget(UiButton.builder(Component.empty(), b -> camera = !camera).bounds(x0 + 150, y - 2, 144, 18).build());
+		launchButton = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.flight.launch"), b -> launch())
 				.bounds(x0 + 6, y0 + H - 26, 140, 20).build());
-		addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.flight.back"), b -> back())
+		addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.flight.back"), b -> back())
 				.bounds(x0 + W - 146, y0 + H - 26, 140, 20).build());
 		update();
 	}
 
 	private void stepper(int y, Runnable minus, Runnable plus) {
-		addRenderableWidget(Button.builder(Component.literal("-"), b -> {
+		addRenderableWidget(UiButton.builder(Component.literal("-"), b -> {
 			minus.run();
 			update();
 		}).bounds(x0 + 150, y - 2, 20, 18).build());
-		addRenderableWidget(Button.builder(Component.literal("+"), b -> {
+		addRenderableWidget(UiButton.builder(Component.literal("+"), b -> {
 			plus.run();
 			update();
 		}).bounds(x0 + 274, y - 2, 20, 18).build());
@@ -246,16 +246,15 @@ public class FlightScreen extends Screen {
 
 	@Override
 	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-		g.fill(0, 0, width, height, 0xC00C1014);
-		g.fill(x0 - 2, y0 - 2, x0 + W + 2, y0 + H + 2, 0xFF3A4652);
-		g.fill(x0, y0, x0 + W, y0 + H, 0xFF161B21);
+		g.fill(0, 0, width, height, com.stasdoto.airdefense.client.ui.Ui.SCRIM);
+		com.stasdoto.airdefense.client.ui.Ui.panel(g, x0 - 2, y0 - 2, x0 + W + 2, y0 + H + 2);
 	}
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
 		super.extractRenderState(g, mouseX, mouseY, partialTick);
 		Component head = Component.translatable("screen.airdefense.flight.head", Component.translatable("entity.airdefense." + type.id));
-		g.text(font, head, x0 + 6, y0 + 7, C_HEAD);
+		com.stasdoto.airdefense.client.ui.Ui.big(g, font, head, x0 + 6, y0 + 5, 1.2f, com.stasdoto.airdefense.client.ui.Ui.TEXT);
 		int y = y0 + 22;
 		g.text(font, "X", x0 + 14, y + 4, C_TEXT);
 		g.text(font, "Z", x0 + 98, y + 4, C_TEXT);
