@@ -54,6 +54,15 @@ public final class Farms {
 		return ALL.size();
 	}
 
+	/** For the tests: where the tractors are. */
+	public static List<double[]> where() {
+		List<double[]> out = new ArrayList<>();
+		for (PropEntity p : ALL) {
+			out.add(new double[]{p.getX(), p.getY(), p.getZ()});
+		}
+		return out;
+	}
+
 	public static void tick(Minecraft mc) {
 		ClientLevel level = mc.level;
 		if (level != lastLevel) {

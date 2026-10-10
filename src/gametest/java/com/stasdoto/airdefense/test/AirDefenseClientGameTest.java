@@ -546,7 +546,15 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				}
 				return false;
 			}), 900);
-			ctx.runOnClient(mc -> mc.gui.hud.getChat().clearMessages(false));
+			propCam(ctx, server, ctx.computeOnClient(mc -> {
+				double[] best = null;
+				for (double[] p : com.stasdoto.airdefense.client.nation.Traffic.where()) {
+					if (best == null || Math.hypot(p[0] - w[0], p[2] - w[2]) < Math.hypot(best[0] - w[0], best[2] - w[2])) {
+						best = p;
+					}
+				}
+				return best;
+			}), 16, 6);
 			ctx.takeScreenshot("cn1_lorries");
 			AirDefense.LOGGER.info("[airdefense-test] RESULT country_lorries: one came by after {} ticks; made {}, about now {}", got,
 					ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.Traffic.made),
@@ -559,6 +567,12 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			int crane = waitUntil(ctx, () -> ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.Cranes.count()) > 0, 200);
 			ctx.waitTicks(20);
 			ctx.takeScreenshot("cn2_building_site");
+			look(server, w[5] + 26, w[6] + 6, w[7] + 18, w[5], w[6] + 14, w[7]);
+			ctx.waitTicks(60);
+			int g = server.computeOnServer(s -> s.overworld().getHeight(Heightmap.Types.MOTION_BLOCKING, (int) w[5] + 26, (int) w[7] + 18));
+			look(server, w[5] + 26, Math.max(w[6] + 6, g + 2), w[7] + 18, w[5], w[6] + 14, w[7]);
+			ctx.waitTicks(20);
+			ctx.takeScreenshot("cn2b_site_close");
 			AirDefense.LOGGER.info("[airdefense-test] RESULT country_site: crane up after {} ticks, {} cranes about", crane,
 					ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.Cranes.count()));
 		}
@@ -568,9 +582,25 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			ctx.runOnClient(mc -> com.stasdoto.airdefense.client.nation.Farms.force = true);
 			int tractor = waitUntil(ctx, () -> ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.Farms.count()) > 0, 400);
 			ctx.waitTicks(100);
+			propCam(ctx, server, ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.Farms.where().isEmpty() ? null
+					: com.stasdoto.airdefense.client.nation.Farms.where().getFirst()), 9, 4);
 			ctx.takeScreenshot("cn3_tractor");
 			AirDefense.LOGGER.info("[airdefense-test] RESULT country_tractor: at work after {} ticks", tractor);
 		}
+	}
+
+	/** Looks at a prop {x, y, z} from {@code dist} blocks off (south-east of it), {@code up} above it and the ground. */
+	private static void propCam(ClientGameTestContext ctx, TestServerContext server, double[] p, double dist, double up) {
+		if (p == null) {
+			return;
+		}
+		double fx = p[0] + dist * 0.8;
+		double fz = p[2] + dist * 0.6;
+		int g = server.computeOnServer(s -> s.overworld().getHeight(Heightmap.Types.MOTION_BLOCKING, (int) Math.floor(fx), (int) Math.floor(fz)));
+		look(server, fx, Math.max(p[1] + up, g + 2), fz, p[0], p[1] + 1.5, p[2]);
+		ctx.waitTicks(3);
+		ctx.runOnClient(mc -> mc.gui.hud.getChat().clearMessages(false));
+		ctx.waitTicks(2);
 	}
 
 	/** Looks at the moving plane (phase 0 landing, 2 leaving) from beside it, on the far side of the runway from the apron. */
