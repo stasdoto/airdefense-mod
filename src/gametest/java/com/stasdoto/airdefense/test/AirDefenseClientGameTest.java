@@ -1646,13 +1646,16 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			ctx.takeScreenshot(shots[k]);
 			AirDefense.LOGGER.info("[airdefense-test] RESULT fort_{}: built {}", kind.name().toLowerCase(java.util.Locale.ROOT), ok);
 		}
-		// Inside the dugout and the pillbox.
-		look(server, x + 48.5, ground - 1.4, -1.5, x + 48.5, ground - 1.6, -4);
+		// Inside the dugout (from the steps), the pillbox's slit, the trench from behind.
+		look(server, x + 48.5, ground - 1.0, 0.8, x + 48.5, ground - 2.6, -3.5);
 		ctx.waitTicks(20);
 		ctx.takeScreenshot("ft7_in_dugout");
-		look(server, x + 72.5, ground + 0.7, -2.5, x + 72.5, ground + 0.8, -12);
+		look(server, x + 72.5, ground + 0.9, -1.5, x + 72.5, ground + 0.9, -12);
 		ctx.waitTicks(20);
 		ctx.takeScreenshot("ft8_in_pillbox");
+		look(server, x - 3.5, ground + 1.2, 2.5, x + 2.5, ground - 0.5, -2.5);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("ft8b_trench_close");
 		// A town at war digs in towards its enemy.
 		int tx = x + 300;
 		int[] made = server.computeOnServer(s -> {
