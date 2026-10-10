@@ -271,6 +271,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.waitTicks(140);
 		int ground = server.computeOnServer(s -> s.overworld().getHeight(Heightmap.Types.MOTION_BLOCKING, (int) Math.floor(fx), (int) Math.floor(fz)));
 		look(server, fx, Math.max(p[1] + up, ground + 3), fz, p[0] + 0.5 + p[3] * 4, p[1] + 1.5, p[2] + 0.5 + p[4] * 4);
+		ctx.runOnClient(mc -> mc.gui.hud.getChat().clearMessages(false));
 		ctx.waitTicks(30);
 	}
 
@@ -374,8 +375,10 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					continue;
 				}
 				// From the side (the platform side at the station), back along the line a little, above the trees.
+				// The station and the tunnel mouth from above the line, looking along it (they lie in cuttings).
 				int side = k == 0 ? p[5] : 1;
-				railCam(ctx, server, p, side, k == 1 ? 40 : k == 0 ? 14 : 22, k == 0 ? 6 : 12, k == 0 ? 10 : 18);
+				boolean along = k == 0 || k == 2;
+				railCam(ctx, server, p, side, along ? 4 : k == 1 ? 40 : 22, along ? 16 : 12, along ? 22 : 18);
 				ctx.takeScreenshot(names[k]);
 			}
 			AirDefense.LOGGER.info("[airdefense-test] RESULT rail_built: {} track blocks laid, {} chunks made, avg {} us per chunk; client saw {} track blocks",
@@ -421,7 +424,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			double sx = -st[4];
 			double sz = st[3];
 			double sl = Math.hypot(sx, sz);
-			railCam(ctx, server, st, st[5], 14, 6, 10);
+			railCam(ctx, server, st, st[5], 6, 14, 26);
 			ctx.runOnClient(mc -> {
 				for (var tr : new java.util.ArrayList<>(com.stasdoto.airdefense.client.nation.Trains.ALL)) {
 					tr.done = true;
