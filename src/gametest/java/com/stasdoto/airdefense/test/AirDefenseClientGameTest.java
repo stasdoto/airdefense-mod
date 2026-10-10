@@ -591,6 +591,10 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		look(server, side2[0], a[6] + 12, side2[1], run[0], a[6] + 8, run[1]);
 		ctx.waitTicks(40);
 		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.force = 2);
+		for (int k = 0; k < 4; k++) {
+			ctx.waitTicks(80);
+			AirDefense.LOGGER.info("[airdefense-test] RESULT airport_debug {}:{}", k, ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.debug()));
+		}
 		int taxi = waitUntil(ctx, () -> ctx.computeOnClient(mc -> {
 			for (double[] p : com.stasdoto.airdefense.client.nation.AirTraffic.planes()) {
 				if (p[3] == 2 && p[4] > 0.25) {

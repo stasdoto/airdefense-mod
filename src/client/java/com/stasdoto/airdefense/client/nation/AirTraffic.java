@@ -347,6 +347,21 @@ public final class AirTraffic {
 		}
 	}
 
+	/** For the tests: every airport seen and its planes (phase, stand, speed, way point, waiting). */
+	public static String debug() {
+		StringBuilder sb = new StringBuilder();
+		for (State st : STATES.values()) {
+			sb.append(String.format(" {%d,%d u%d,%d v%d,%d next %d:", st.field.ox, st.field.oz, st.field.ux, st.field.uz, st.field.vx, st.field.vz,
+					st.nextEvent));
+			for (PlaneEntity p : st.planes) {
+				sb.append(String.format(" [%s ph%d st%d v%.2f n%d/%d h%d %s]", p.model, p.phase, p.stand, p.speed, p.next, p.way.size(), p.holding,
+						p.arrived ? "arrived" : "going"));
+			}
+			sb.append('}');
+		}
+		return sb.toString();
+	}
+
 	/** For the tests: the planes about (x, y, z, phase) of the nearest airport. */
 	public static List<double[]> planes() {
 		List<double[]> out = new ArrayList<>();
