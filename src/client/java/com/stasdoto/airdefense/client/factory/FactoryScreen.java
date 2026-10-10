@@ -6,7 +6,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
+import com.stasdoto.airdefense.client.ui.UiButton;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
@@ -21,10 +21,10 @@ import com.stasdoto.airdefense.factory.Product;
 /** The factory's production menu: what can be made and what it costs, the queue, the stock. */
 public class FactoryScreen extends Screen {
 	private static final int ROW_H = 20;
-	private static final int C_TEXT = 0xFFE6E9EC;
-	private static final int C_DIM = 0xFF9AA4AE;
-	private static final int C_OK = 0xFF8AE07A;
-	private static final int C_BAD = 0xFFFF7A6A;
+	private static final int C_TEXT = com.stasdoto.airdefense.client.ui.Ui.TEXT;
+	private static final int C_DIM = com.stasdoto.airdefense.client.ui.Ui.DIM;
+	private static final int C_OK = com.stasdoto.airdefense.client.ui.Ui.OK;
+	private static final int C_BAD = com.stasdoto.airdefense.client.ui.Ui.BAD;
 
 	private FactoryStatusPayload status;
 	private int selected;
@@ -34,10 +34,10 @@ public class FactoryScreen extends Screen {
 	private int y0;
 	private int w;
 	private int h;
-	private Button order1;
-	private Button order5;
-	private Button cancel;
-	private Button take;
+	private UiButton order1;
+	private UiButton order5;
+	private UiButton cancel;
+	private UiButton take;
 
 	public FactoryScreen(FactoryStatusPayload status) {
 		super(Component.translatable("screen.airdefense.factory.title"));
@@ -62,13 +62,13 @@ public class FactoryScreen extends Screen {
 		y0 = (height - h) / 2;
 		int rx = x0 + 168;
 		int rw = w - 176;
-		order1 = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.factory.order1"), b -> send(FactoryActionPayload.ORDER, 1))
+		order1 = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.factory.order1"), b -> send(FactoryActionPayload.ORDER, 1))
 				.bounds(rx, y0 + 112, rw / 2 - 2, 18).build());
-		order5 = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.factory.order5"), b -> send(FactoryActionPayload.ORDER, 5))
+		order5 = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.factory.order5"), b -> send(FactoryActionPayload.ORDER, 5))
 				.bounds(rx + rw / 2 + 2, y0 + 112, rw - rw / 2 - 2, 18).build());
-		cancel = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.factory.cancel"), b -> send(FactoryActionPayload.CANCEL, 0))
+		cancel = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.factory.cancel"), b -> send(FactoryActionPayload.CANCEL, 0))
 				.bounds(rx, y0 + 160, rw, 16).build());
-		take = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.factory.take"), b -> send(FactoryActionPayload.TAKE, 0))
+		take = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.factory.take"), b -> send(FactoryActionPayload.TAKE, 0))
 				.bounds(rx, y0 + h - 20, rw, 18).build());
 	}
 
@@ -136,14 +136,13 @@ public class FactoryScreen extends Screen {
 
 	@Override
 	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-		g.fill(0, 0, width, height, 0xA0000000);
+		g.fill(0, 0, width, height, com.stasdoto.airdefense.client.ui.Ui.SCRIM);
 	}
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-		g.fill(x0 - 1, y0 - 1, x0 + w + 1, y0 + h + 1, 0xFF4A5560);
-		g.fill(x0, y0, x0 + w, y0 + h, 0xF0182028);
-		g.text(font, title, x0 + 6, y0 + 6, 0xFFFFD24A);
+		com.stasdoto.airdefense.client.ui.Ui.panel(g, x0, y0, x0 + w, y0 + h);
+		com.stasdoto.airdefense.client.ui.Ui.big(g, font, title, x0 + 7, y0 + 5, 1.2f, com.stasdoto.airdefense.client.ui.Ui.TEXT);
 		Component state = status.buildPercent() < 100 ? Component.translatable("screen.airdefense.factory.building", status.buildPercent())
 				: status.queue().isEmpty() ? Component.translatable("screen.airdefense.factory.idle")
 				: Component.translatable("screen.airdefense.factory.working");

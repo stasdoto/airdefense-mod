@@ -39,12 +39,12 @@ public final class GridHud {
 		int x = w - bw - 4;
 		// Below the vehicle panel when driving.
 		int y = p.getVehicle() instanceof VehicleEntity ? 42 : 4;
-		g.fill(x, y, x + bw, y + 32, 0x88000000);
+		com.stasdoto.airdefense.client.ui.Ui.round(g, x, y, x + bw, y + 32, 3, 0xA0101114);
 		g.pose().pushMatrix();
 		g.pose().translate(x + 5, y + 4);
 		g.pose().scale(2f, 2f);
-		g.text(font, square, 0, 0, 0xFFFFD24A);
+		g.text(font, square, 0, 0, com.stasdoto.airdefense.client.ui.Ui.TEXT, false);
 		g.pose().popMatrix();
-		g.text(font, coords, x + 5, y + 22, 0xFFE0E0E0);
+		g.text(font, coords, x + 5, y + 22, com.stasdoto.airdefense.client.ui.Ui.DIM, false);
 	}
 }

@@ -6,7 +6,7 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
+import com.stasdoto.airdefense.client.ui.UiButton;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -38,11 +38,11 @@ public class SettlementScreen extends Screen {
 			new ItemStack(Items.COAL), new ItemStack(com.stasdoto.airdefense.registry.ModItems.JERRYCAN), new ItemStack(Items.IRON_NUGGET),
 			new ItemStack(Items.BREAD), new ItemStack(Items.CROSSBOW)};
 
-	private static final int C_TEXT = 0xFFE6E9EC;
-	private static final int C_DIM = 0xFF9AA4AE;
-	private static final int C_OK = 0xFF8AE07A;
-	private static final int C_BAD = 0xFFFF7A6A;
-	private static final int C_GOLD = 0xFFFFD24A;
+	private static final int C_TEXT = com.stasdoto.airdefense.client.ui.Ui.TEXT;
+	private static final int C_DIM = com.stasdoto.airdefense.client.ui.Ui.DIM;
+	private static final int C_OK = com.stasdoto.airdefense.client.ui.Ui.OK;
+	private static final int C_BAD = com.stasdoto.airdefense.client.ui.Ui.BAD;
+	private static final int C_GOLD = com.stasdoto.airdefense.client.ui.Ui.GOLD;
 	private static final int ROW = 15;
 
 	private static final ItemStack[] RESOURCE_ICONS = {new ItemStack(Items.OAK_LOG), new ItemStack(Items.COBBLESTONE), new ItemStack(Items.IRON_INGOT)};
@@ -74,26 +74,26 @@ public class SettlementScreen extends Screen {
 	private int h;
 	private int refresh;
 
-	private Button buy;
-	private Button take;
-	private Button callOne;
-	private Button callAll;
-	private Button recall;
-	private Button dismiss;
-	private final Button[] tabs = new Button[TABS];
-	private final List<Button> marketButtons = new ArrayList<>();
-	private final List<Button> workButtons = new ArrayList<>();
-	private final List<Button> buildButtons = new ArrayList<>();
-	private final List<Button> hangarButtons = new ArrayList<>();
-	private Button cancel;
-	private Button calm;
-	private Button declareWar;
+	private UiButton buy;
+	private UiButton take;
+	private UiButton callOne;
+	private UiButton callAll;
+	private UiButton recall;
+	private UiButton dismiss;
+	private final UiButton[] tabs = new UiButton[TABS];
+	private final List<UiButton> marketButtons = new ArrayList<>();
+	private final List<UiButton> workButtons = new ArrayList<>();
+	private final List<UiButton> buildButtons = new ArrayList<>();
+	private final List<UiButton> hangarButtons = new ArrayList<>();
+	private UiButton cancel;
+	private UiButton calm;
+	private UiButton declareWar;
 	/** 1.42: a gift to the ruler, a trade treaty, an alliance. */
-	private Button gift;
-	private Button trade;
-	private Button alliance;
-	private Button peace;
-	private Button tribute;
+	private UiButton gift;
+	private UiButton trade;
+	private UiButton alliance;
+	private UiButton peace;
+	private UiButton tribute;
 
 	public SettlementScreen(SettlementInfoPayload info) {
 		this(info, null);
@@ -143,8 +143,8 @@ public class SettlementScreen extends Screen {
 
 	@Override
 	protected void init() {
-		w = Math.min(width - 12, 340);
-		h = Math.min(height - 12, 236);
+		w = Math.min(width - 12, 360);
+		h = Math.min(height - 12, 244);
 		x0 = (width - w) / 2;
 		y0 = (height - h) / 2;
 		workButtons.clear();
@@ -153,67 +153,67 @@ public class SettlementScreen extends Screen {
 		marketButtons.clear();
 		int bw = (w - 18) / 2;
 		int by = y0 + h - 48;
-		buy = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.buy", info.price()),
-				b -> send(NationActionPayload.BUY, 0, 0)).bounds(x0 + 6, by + 24, bw, 20).build());
-		take = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.take"),
+		buy = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.buy", info.price()),
+				b -> send(NationActionPayload.BUY, 0, 0)).bounds(x0 + 6, by + 24, bw, 20).style(UiButton.Style.PRIMARY).build());
+		take = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.take"),
 				b -> send(NationActionPayload.TAKE, 0, 0)).bounds(x0 + 12 + bw, by + 24, bw, 20).build());
-		callOne = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.call_one"),
+		callOne = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.call_one"),
 				b -> send(NationActionPayload.MOBILIZE, 1, 0)).bounds(x0 + 6, by, bw, 20).build());
-		callAll = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.call_all"),
-				b -> send(NationActionPayload.MOBILIZE, 99, 0)).bounds(x0 + 12 + bw, by, bw, 20).build());
-		recall = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.recall"),
+		callAll = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.call_all"),
+				b -> send(NationActionPayload.MOBILIZE, 99, 0)).bounds(x0 + 12 + bw, by, bw, 20).style(UiButton.Style.PRIMARY).build());
+		recall = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.recall"),
 				b -> send(NationActionPayload.RECALL, 0, 0)).bounds(x0 + 6, by + 24, bw, 20).build());
-		dismiss = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.dismiss"),
-				b -> send(NationActionPayload.DEMOBILIZE, 0, 0)).bounds(x0 + 12 + bw, by + 24, bw, 20).build());
-		declareWar = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.declare_war"),
-				b -> send(NationActionPayload.DECLARE_WAR, 0, 0)).bounds(x0 + 6, by, bw, 20).build());
-		peace = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.peace"),
-				b -> send(NationActionPayload.PEACE, 0, 0)).bounds(x0 + 6, by, bw, 20).build());
-		tribute = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.tribute", 0),
+		dismiss = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.dismiss"),
+				b -> send(NationActionPayload.DEMOBILIZE, 0, 0)).bounds(x0 + 12 + bw, by + 24, bw, 20).style(UiButton.Style.GHOST).build());
+		declareWar = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.declare_war"),
+				b -> send(NationActionPayload.DECLARE_WAR, 0, 0)).bounds(x0 + 6, by, bw, 20).style(UiButton.Style.DANGER).build());
+		peace = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.peace"),
+				b -> send(NationActionPayload.PEACE, 0, 0)).bounds(x0 + 6, by, bw, 20).style(UiButton.Style.PRIMARY).build());
+		tribute = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.tribute", 0),
 				b -> send(NationActionPayload.TRIBUTE, 0, 0)).bounds(x0 + 12 + bw, by, bw, 20).build());
 		int dw = (w - 24) / 3;
-		gift = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.gift", com.stasdoto.airdefense.nation.Diplomacy.GIFT_PRICE),
+		gift = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.gift", com.stasdoto.airdefense.nation.Diplomacy.GIFT_PRICE),
 				b -> send(NationActionPayload.GIFT, 0, 0)).bounds(x0 + 6, by - 24, dw, 20).build());
-		trade = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.trade"),
+		trade = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.trade"),
 				b -> send(NationActionPayload.TRADE, 0, 0)).bounds(x0 + 12 + dw, by - 24, dw, 20).build());
-		alliance = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.alliance"),
+		alliance = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.alliance"),
 				b -> send(NationActionPayload.ALLIANCE, 0, 0)).bounds(x0 + 18 + 2 * dw, by - 24, dw, 20).build());
-		calm = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.calm", 0),
+		calm = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.calm", 0),
 				b -> send(NationActionPayload.CALM, 0, 0)).bounds(x0 + w - 136, y0 + 54, 128, 14).build());
 		// Tabs.
 		int tw = (w - 16 - 3 * (TABS - 1)) / TABS;
 		String[] names = {"overview", "work", "build", "hangar", "market"};
 		for (int i = 0; i < TABS; i++) {
 			int t = i;
-			tabs[i] = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.tab." + names[i]), b -> setTab(t))
-					.bounds(x0 + 8 + i * (tw + 3), y0 + 32, tw, 16).build());
+			tabs[i] = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.tab." + names[i]), b -> setTab(t))
+					.bounds(x0 + 8 + i * (tw + 3), y0 + 33, tw, 16).style(UiButton.Style.TAB).build());
 		}
 		int top = contentTop();
 		// Work: minus and plus for every job; hand over resources; everybody home.
 		for (int j = 0; j < WorkerEntity.JOBS; j++) {
 			int job = j;
 			int y = top + j * 20;
-			workButtons.add(addRenderableWidget(Button.builder(Component.literal("-"), b -> send(NationActionPayload.JOB, job, -1))
+			workButtons.add(addRenderableWidget(UiButton.create(Component.literal("-"), b -> send(NationActionPayload.JOB, job, -1))
 					.bounds(x0 + 150, y, 18, 16).build()));
-			workButtons.add(addRenderableWidget(Button.builder(Component.literal("+"), b -> send(NationActionPayload.JOB, job, 1))
+			workButtons.add(addRenderableWidget(UiButton.create(Component.literal("+"), b -> send(NationActionPayload.JOB, job, 1))
 					.bounds(x0 + 171, y, 18, 16).build()));
 		}
-		workButtons.add(addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.donate"),
+		workButtons.add(addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.donate"),
 				b -> send(NationActionPayload.DONATE, 0, 0)).bounds(x0 + 6, y0 + h - 24, bw, 18).build()));
-		workButtons.add(addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.workers_home"),
+		workButtons.add(addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.workers_home"),
 				b -> send(NationActionPayload.WORKERS_HOME, 0, 0)).bounds(x0 + 12 + bw, y0 + h - 24, bw, 18).build()));
 		// Building: a button per kind of building, cancel the last one ordered.
 		int rows = top + 24;
 		for (int i = 0; i < hangarRows(); i++) {
 			int slot = i;
-			buildButtons.add(addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.build_it"), b -> {
+			buildButtons.add(addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.build_it"), b -> {
 				int k = slot + buildScroll;
 				if (k < BUILD_ORDER.length) {
 					send(NationActionPayload.BUILD, BUILD_ORDER[k].ordinal(), 0);
 				}
 			}).bounds(x0 + w - 74, rows + i * ROW, 66, 14).build()));
 		}
-		cancel = addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.cancel"), b -> {
+		cancel = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.cancel"), b -> {
 			if (eco != null && !eco.queue().isEmpty()) {
 				send(NationActionPayload.CANCEL, eco.queue().size() - 1, 0);
 			}
@@ -222,7 +222,7 @@ public class SettlementScreen extends Screen {
 		// Hangar: a button per visible row of the (scrolling) list.
 		for (int i = 0; i < hangarRows(); i++) {
 			int slot = i;
-			hangarButtons.add(addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.order_it"), b -> {
+			hangarButtons.add(addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.order_it"), b -> {
 				int k = slot + hangarScroll;
 				if (k < HANGAR_ORDER.length) {
 					send(NationActionPayload.VEHICLE, HANGAR_ORDER[k].ordinal(), 0);
@@ -233,9 +233,9 @@ public class SettlementScreen extends Screen {
 		for (int k = 0; k < 8; k++) {
 			int kind = k;
 			int y = top + 29 + k * ROW;
-			marketButtons.add(addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.market.buy"),
+			marketButtons.add(addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.market.buy"),
 					b -> send(NationActionPayload.MARKET, kind, 1)).bounds(x0 + w - 112, y, 52, 14).build()));
-			marketButtons.add(addRenderableWidget(Button.builder(Component.translatable("screen.airdefense.village.market.sell"),
+			marketButtons.add(addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.village.market.sell"),
 					b -> send(NationActionPayload.MARKET, kind, 0)).bounds(x0 + w - 58, y, 52, 14).build()));
 		}
 		updateButtons();
@@ -318,18 +318,18 @@ public class SettlementScreen extends Screen {
 		if (eco != null) {
 			calm.setMessage(Component.translatable("screen.airdefense.village.calm", eco.calmPrice()));
 		}
-		for (Button b : workButtons) {
+		for (UiButton b : workButtons) {
 			b.visible = mine && tab == WORK;
 		}
-		for (Button b : buildButtons) {
+		for (UiButton b : buildButtons) {
 			b.visible = mine && tab == BUILD;
 		}
-		for (Button b : hangarButtons) {
+		for (UiButton b : hangarButtons) {
 			b.visible = mine && tab == HANGAR && eco != null && eco.hangar();
 		}
 		boolean market = eco != null && eco.builtCount(BuildingType.MARKET) > 0 && eco.extra().size() >= 28;
 		for (int i = 0; i < marketButtons.size(); i++) {
-			Button b = marketButtons.get(i);
+			UiButton b = marketButtons.get(i);
 			b.visible = mine && tab == MARKET;
 			b.active = market;
 			if (market) {
@@ -385,31 +385,34 @@ public class SettlementScreen extends Screen {
 
 	@Override
 	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-		g.fill(0, 0, width, height, 0xA0000000);
+		g.fill(0, 0, width, height, com.stasdoto.airdefense.client.ui.Ui.SCRIM);
 	}
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-		g.fill(x0 - 1, y0 - 1, x0 + w + 1, y0 + h + 1, 0xFF4A5560);
-		g.fill(x0, y0, x0 + w, y0 + h, 0xF0182028);
+		com.stasdoto.airdefense.client.ui.Ui.panel(g, x0, y0, x0 + w, y0 + h);
 		int x = x0 + 8;
 		int y = y0 + 7;
-		g.text(font, Component.literal(info.name()), x, y, C_GOLD);
-		y += 13;
+		// The header: the flag, the town's name in large letters, its country; the people on the right.
+		boolean flag = !info.country().isEmpty();
+		if (flag) {
+			com.stasdoto.airdefense.client.ui.Ui.flag(g, x, y + 1, 14, 10, info.color());
+		}
+		com.stasdoto.airdefense.client.ui.Ui.big(g, font, Component.literal(info.name()), flag ? x + 20 : x, y, 1.35f, C_TEXT);
+		Component people = Component.translatable("screen.airdefense.village.chip_people",
+				com.stasdoto.airdefense.client.ui.Ui.count(info.population()));
+		com.stasdoto.airdefense.client.ui.Ui.chip(g, font, people, x0 + w - 12 - font.width(people), y + 1, C_TEXT, 0xFF34363C);
+		y += 15;
 		if (info.country().isEmpty()) {
-			g.text(font, Component.translatable("screen.airdefense.village.independent"), x, y, C_DIM);
+			g.text(font, Component.translatable("screen.airdefense.village.independent"), x, y, C_DIM, false);
 		} else {
-			g.fill(x, y, x + 9, y + 8, info.color());
 			Component c = Component.literal(info.country());
 			if (info.cityState()) {
 				c = Component.translatable("screen.airdefense.village.city_state", info.country());
 			}
-			g.text(font, c, x + 13, y, info.mine() ? C_OK : C_TEXT);
+			g.text(font, c, x, y, info.mine() ? C_OK : C_DIM, false);
 		}
-		if (info.mine()) {
-			int tw = (w - 16 - 3 * (TABS - 1)) / TABS;
-			g.fill(x0 + 8 + tab * (tw + 3), y0 + 49, x0 + 8 + tab * (tw + 3) + tw, y0 + 51, C_GOLD);
-		}
+		com.stasdoto.airdefense.client.ui.Ui.divider(g, x0 + 1, x0 + w - 1, info.mine() ? y0 + 50 : y0 + 30);
 		switch (info.mine() ? tab : OVERVIEW) {
 			case WORK -> work(g);
 			case BUILD -> build(g);
@@ -513,7 +516,7 @@ public class SettlementScreen extends Screen {
 		g.text(font, Component.translatable("screen.airdefense.village.respect", rep), x, y, rep >= 25 ? C_OK : rep < 0 ? C_BAD : C_TEXT);
 		y += 11;
 		int bw = w - 16;
-		g.fill(x, y, x + bw, y + 4, 0xFF303A44);
+		com.stasdoto.airdefense.client.ui.Ui.round(g, x, y, x + bw, y + 4, 1, 0xFF34363C);
 		int mid = x + bw / 2;
 		int pos = mid + Math.max(-bw / 2, Math.min(bw / 2, rep * bw / 200));
 		g.fill(Math.min(mid, pos), y, Math.max(mid, pos), y + 4, rep >= 0 ? C_OK : C_BAD);
@@ -616,6 +619,7 @@ public class SettlementScreen extends Screen {
 		for (int i = 0; i < shown && i + buildScroll < BUILD_ORDER.length; i++) {
 			BuildingType t = BUILD_ORDER[i + buildScroll];
 			int y = rows + i * ROW;
+			row(g, y, i);
 			int n = eco.builtCount(t);
 			Component name = Component.translatable(t.key());
 			if (n > 0) {
@@ -656,6 +660,7 @@ public class SettlementScreen extends Screen {
 		int[] lot = com.stasdoto.airdefense.nation.Market.LOT;
 		for (int k = 0; k < 8; k++) {
 			int y = top + 29 + k * ROW;
+			row(g, y, k);
 			g.item(GOODS_ICONS[k], x0 + 8, y - 1);
 			g.text(font, Component.translatable("nation.airdefense.goods." + k), x0 + 28, y + 3, C_TEXT);
 			String amount = eco.free() ? "∞" : have[k] + " / " + cap[k];
@@ -695,6 +700,7 @@ public class SettlementScreen extends Screen {
 		for (int i = 0; i < shown && i + hangarScroll < HANGAR_ORDER.length; i++) {
 			VehicleType v = HANGAR_ORDER[i + hangarScroll];
 			int y = rows + i * ROW;
+			row(g, y, i);
 			g.text(font, Component.translatable("entity.airdefense." + v.id), x, y + 3, C_TEXT);
 			int[] c = Economy.vehicleCost(v);
 			cost(g, x0 + 128, y + 1, c[0], c[1], c[2]);
@@ -725,6 +731,11 @@ public class SettlementScreen extends Screen {
 			g.text(font, s, cx + 11, y + 2, enough ? C_TEXT : C_BAD);
 			cx += 13 + font.width(s) + 4;
 		}
+	}
+
+	/** A list row's soft background (every other row a shade lighter). */
+	private void row(GuiGraphicsExtractor g, int y, int i) {
+		com.stasdoto.airdefense.client.ui.Ui.round(g, x0 + 5, y - 1, x0 + w - 5, y + ROW - 1, 2, i % 2 == 0 ? 0x14FFFFFF : 0x08FFFFFF);
 	}
 
 	private void small(GuiGraphicsExtractor g, String text, int x, int y, int color) {
