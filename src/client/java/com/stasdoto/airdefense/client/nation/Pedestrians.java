@@ -72,16 +72,16 @@ public final class Pedestrians {
 			return 7;
 		}
 		if (hour < 9) {
-			return 22;
+			return 30;
 		}
 		if (hour < 17) {
-			return 14;
+			return 20;
 		}
 		if (hour < 19) {
-			return 22;
+			return 30;
 		}
 		if (hour < 22) {
-			return 10;
+			return 12;
 		}
 		return 4;
 	}
@@ -105,7 +105,7 @@ public final class Pedestrians {
 		int target = !CityAmbience.inTown || alert ? 0 : wanted(hour);
 		for (PedestrianEntity p : ALL) {
 			double d = p.position().distanceTo(me);
-			if (d > 64 || Math.abs(p.getY() - me.y) > 40) {
+			if (d > 48 || Math.abs(p.getY() - me.y) > 40) {
 				remove(level, p);
 			} else if (alert && !p.hurry) {
 				p.hurry = true;
@@ -113,7 +113,7 @@ public final class Pedestrians {
 			}
 		}
 		ALL.removeIf(Entity::isRemoved);
-		for (int k = 0; k < 2 && ALL.size() < target; k++) {
+		for (int k = 0; k < 3 && ALL.size() < target; k++) {
 			trySpawn(mc, level, me);
 		}
 		if (ALL.size() > target + 2) {
@@ -143,7 +143,7 @@ public final class Pedestrians {
 			// Not right in front of the player's eyes (nobody pops up out of thin air in view).
 			double dirYaw = Math.toDegrees(Math.atan2(-Math.sin(a), Math.cos(a)));
 			boolean ahead = Math.abs(Mth.wrapDegrees((float) dirYaw - look)) < 50;
-			double r = (ahead ? 34 : 14) + RANDOM.nextDouble() * 12;
+			double r = (ahead ? 26 : 8) + RANDOM.nextDouble() * (ahead ? 10 : 20);
 			int x = Mth.floor(me.x + Math.cos(a) * r);
 			int z = Mth.floor(me.z + Math.sin(a) * r);
 			int top = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
