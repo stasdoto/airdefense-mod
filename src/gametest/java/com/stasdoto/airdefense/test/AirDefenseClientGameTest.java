@@ -252,7 +252,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		if (scene("realcity")) {
 			realCity(ctx);
 		}
-		if (scene("rail") || scene("airport") || scene("country")) {
+		if (scene("rail") || scene("airport") || scene("country") || scene("world")) {
 			rail(ctx);
 		}
 	}
@@ -285,6 +285,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			server.runCommand("weather clear");
 			server.runCommand("gamerule advance_time false");
 			server.runCommand("gamerule advance_weather false");
+			if (scene("world")) {
+				world(ctx, server);
+			}
 			if (scene("country")) {
 				country(ctx, server);
 			}
@@ -480,6 +483,109 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			ctx.takeScreenshot("rl8_at_the_station");
 			AirDefense.LOGGER.info("[airdefense-test] RESULT rail_station: an electric train stopped at the station after {} ticks", stopped);
 		}
+	}
+
+	/** 1.42: the seasons (autumn colours, winter snow, the thaw) and the rulers and their dealings, in a normal world. */
+	private void world(ClientGameTestContext ctx, TestServerContext server) {
+		int[] cap = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var t = com.stasdoto.airdefense.nation.Cities.terrain(l);
+			var list = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), t, 0, 0);
+			return list.isEmpty() ? null : new int[]{list.getFirst().x, list.getFirst().base, list.getFirst().z, list.getFirst().half()};
+		});
+		if (cap == null) {
+			return;
+		}
+		// Looking over the edge of the capital into the country round it (trees, fields, grass).
+		double ex = cap[0] + cap[3] + 30;
+		double ez = cap[2] + 10;
+		look(server, ex, cap[1] + 30, ez, ex + 80, cap[1], ez + 40);
+		ctx.waitTicks(200);
+		ctx.runOnClient(mc -> mc.gui.hud.getChat().clearMessages(false));
+		ctx.takeScreenshot("ws0_summer");
+		for (int[] sc : new int[][]{{2, 0}, {3, 1}, {0, 2}}) {
+			int season = sc[0];
+			server.runOnServer(s -> com.stasdoto.airdefense.nation.Seasons.force = season);
+			if (season == 3) {
+				server.runCommand("weather rain 6000");
+			} else {
+				server.runCommand("weather clear");
+			}
+			server.runCommand("gamerule random_tick_speed " + (season == 0 ? 400 : 3));
+			// Snow builds up on the land under the rain of winter; it thaws (fast, for the test) in spring.
+			ctx.waitTicks(season == 3 ? 1600 : season == 0 ? 600 : 300);
+			int[] snow = server.computeOnServer(s -> {
+				ServerLevel l = s.overworld();
+				int n = 0;
+				int ice = 0;
+				for (int x = (int) ex; x < ex + 96; x++) {
+					for (int z = (int) ez; z < ez + 96; z++) {
+						int y = l.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
+						var st = l.getBlockState(new BlockPos(x, y, z));
+						var below = l.getBlockState(new BlockPos(x, y - 1, z));
+						if (st.is(net.minecraft.world.level.block.Blocks.SNOW) || below.is(net.minecraft.world.level.block.Blocks.SNOW)) {
+							n++;
+						}
+						if (below.is(net.minecraft.world.level.block.Blocks.ICE)) {
+							ice++;
+						}
+					}
+				}
+				return new int[]{n, ice};
+			});
+			ctx.runOnClient(mc -> mc.gui.hud.getChat().clearMessages(false));
+			ctx.takeScreenshot("ws" + sc[1] + "_" + new String[]{"spring", "summer", "autumn", "winter"}[season]);
+			AirDefense.LOGGER.info("[airdefense-test] RESULT world_season {}: snow on {} columns of 9216, ice on {}", season, snow[0], snow[1]);
+		}
+		server.runOnServer(s -> com.stasdoto.airdefense.nation.Seasons.force = -1);
+		server.runCommand("weather clear");
+		server.runCommand("gamerule random_tick_speed 3");
+		// The rulers: the player takes a village, sends gifts, offers trade and an alliance; a month of the world goes by.
+		String report = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			com.stasdoto.airdefense.nation.Settlement mine = null;
+			com.stasdoto.airdefense.nation.Settlement theirs = null;
+			for (var st : p.settlements.values()) {
+				var c = p.country(st.country);
+				if (c == null || c.owner != null || c.cityState) {
+					continue;
+				}
+				if (mine == null && st.isHamlet()) {
+					mine = st;
+				} else if (theirs == null && st.isCity() && (mine == null || st.country != mine.country)) {
+					theirs = st;
+				}
+			}
+			if (mine == null || theirs == null) {
+				return "no towns: " + p.settlements.size();
+			}
+			com.stasdoto.airdefense.nation.Nations.takeOver(l, pl, mine);
+			var d = com.stasdoto.airdefense.nation.Diplomacy.get(s);
+			var them = p.country(theirs.country);
+			var ruler = d.ruler(l, them);
+			boolean trade0 = com.stasdoto.airdefense.nation.Diplomacy.offerTrade(l, pl, theirs);
+			for (int k = 0; k < 4; k++) {
+				com.stasdoto.airdefense.nation.Diplomacy.gift(l, pl, theirs);
+			}
+			boolean trade = com.stasdoto.airdefense.nation.Diplomacy.offerTrade(l, pl, theirs);
+			boolean ally = com.stasdoto.airdefense.nation.Diplomacy.offerAlliance(l, pl, theirs);
+			var own = p.countryOwnedBy(pl.getUUID());
+			int standing = d.standing(own.id, them.id);
+			for (int k = 0; k < 30; k++) {
+				com.stasdoto.airdefense.nation.Diplomacy.daily(l, p);
+			}
+			com.stasdoto.airdefense.nation.NationNet.sendInfo(l, pl, theirs, true);
+			return String.format("%s rules %s (title %d, trait %d); trade at first %s, after four gifts standing %d, trade %s, alliance %s; "
+					+ "a month later: %d rulers gave way, %d alliances made", com.stasdoto.airdefense.nation.Diplomacy.name(ruler).getString(), them.name,
+					ruler.title(), ruler.trait(), trade0, standing, trade, ally, com.stasdoto.airdefense.nation.Diplomacy.successions,
+					com.stasdoto.airdefense.nation.Diplomacy.alliances);
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT world_rulers: {}", report);
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("ws4_diplomacy");
+		ctx.runOnClient(mc -> mc.gui.setScreen(null));
 	}
 
 	/** 1.41: the working country in a normal world - lorries on a highway, a building site with its crane, a tractor in a field. */

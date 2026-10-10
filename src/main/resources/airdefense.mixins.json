@@ -4,7 +4,10 @@
   "package": "com.stasdoto.airdefense.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "ServerExplosionMixin"
+    "ServerExplosionMixin",
+    "BiomeMixin",
+    "SnowLayerBlockMixin",
+    "IceBlockMixin"
   ],
   "injectors": {
     "defaultRequire": 1

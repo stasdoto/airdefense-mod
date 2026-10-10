@@ -11,7 +11,8 @@ import com.stasdoto.airdefense.AirDefense;
 /** Server to client: everything the village screen shows. {@code problem} is why the charter cannot be bought ("" = it can). */
 public record SettlementInfoPayload(boolean open, int id, String name, String country, int color, boolean cityState, boolean mine,
 		int population, int guards, int soldiers, int mobilizable, int reputation, int price, String problem, boolean creative,
-		String elder, int war, int tribute) implements CustomPacketPayload {
+		String elder, int war, int tribute, int rulerTitle, int rulerName, int rulerNumber, int rulerTrait, int standing, int treaties,
+		boolean hasCountry) implements CustomPacketPayload {
 	public static final Type<SettlementInfoPayload> TYPE = new Type<>(AirDefense.id("settlement_info"));
 	public static final StreamCodec<ByteBuf, SettlementInfoPayload> CODEC = new StreamCodec<>() {
 		@Override
@@ -20,7 +21,8 @@ public record SettlementInfoPayload(boolean open, int id, String name, String co
 					ByteBufCodecs.STRING_UTF8.decode(b), b.readInt(), b.readBoolean(), b.readBoolean(), ByteBufCodecs.VAR_INT.decode(b),
 					ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b), b.readInt(),
 					ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.STRING_UTF8.decode(b), b.readBoolean(), ByteBufCodecs.STRING_UTF8.decode(b),
-					ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b));
+					ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b), b.readInt(), ByteBufCodecs.VAR_INT.decode(b),
+					ByteBufCodecs.VAR_INT.decode(b), ByteBufCodecs.VAR_INT.decode(b), b.readInt(), ByteBufCodecs.VAR_INT.decode(b), b.readBoolean());
 		}
 
 		@Override
@@ -43,6 +45,13 @@ public record SettlementInfoPayload(boolean open, int id, String name, String co
 			ByteBufCodecs.STRING_UTF8.encode(b, p.elder);
 			ByteBufCodecs.VAR_INT.encode(b, p.war);
 			ByteBufCodecs.VAR_INT.encode(b, p.tribute);
+			b.writeInt(p.rulerTitle);
+			ByteBufCodecs.VAR_INT.encode(b, p.rulerName);
+			ByteBufCodecs.VAR_INT.encode(b, p.rulerNumber);
+			ByteBufCodecs.VAR_INT.encode(b, p.rulerTrait);
+			b.writeInt(p.standing);
+			ByteBufCodecs.VAR_INT.encode(b, p.treaties);
+			b.writeBoolean(p.hasCountry);
 		}
 	};
 

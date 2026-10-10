@@ -132,6 +132,24 @@ public final class NationNet {
 					War.playerDeclares(level, player, s);
 				}
 			}
+			case NationActionPayload.GIFT -> {
+				if (near || tablet) {
+					Diplomacy.gift(level, player, s);
+				}
+				sendInfo(level, player, s, false);
+			}
+			case NationActionPayload.TRADE -> {
+				if (near || tablet) {
+					Diplomacy.offerTrade(level, player, s);
+				}
+				sendInfo(level, player, s, false);
+			}
+			case NationActionPayload.ALLIANCE -> {
+				if (near || tablet) {
+					Diplomacy.offerAlliance(level, player, s);
+				}
+				sendInfo(level, player, s, false);
+			}
 			case NationActionPayload.PEACE -> {
 				if (near || tablet) {
 					War.proposePeace(level, player, s);
@@ -191,10 +209,17 @@ public final class NationNet {
 			war = own != null && own.atWarWith(c.id) ? 2 : 1;
 			tribute = own != null ? War.tribute(own, c) : 0;
 		}
+		// 1.42: the ruler of the country and how it stands with the player's own.
+		Diplomacy d = Diplomacy.get(level.getServer());
+		Diplomacy.Ruler ruler = c != null && c.owner == null && !c.cityState ? d.ruler(level, c) : null;
+		int standing = c != null && own != null && c.id != own.id ? d.standing(own.id, c.id) : 0;
+		int treaties = c != null && own != null && c.id != own.id ? d.treaties(own.id, c.id) : 0;
 		ServerPlayNetworking.send(player, new SettlementInfoPayload(open, s.id, s.name, c == null ? "" : c.name, c == null ? 0 : c.argb(),
 				c != null && c.cityState, mine, s.isCity() ? s.citizens : Nations.villagers(level, s).size(), Nations.guards(level, s).size(), Nations.soldiers(level, s).size(),
 				mine ? Nations.mobilizable(level, s) : 0, Nations.reputation(level, s, player), Nations.charterPrice(p, s),
-				problem == null ? "" : problem.getString(), player.getAbilities().instabuild, elder, war, tribute));
+				problem == null ? "" : problem.getString(), player.getAbilities().instabuild, elder, war, tribute,
+				ruler == null ? -1 : ruler.title(), ruler == null ? 0 : ruler.name(), ruler == null ? 0 : ruler.number(), ruler == null ? 0 : ruler.trait(),
+				standing, treaties, own != null));
 		if (mine) {
 			sendEconomy(level, player, s);
 		}
