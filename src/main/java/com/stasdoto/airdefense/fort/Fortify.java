@@ -105,7 +105,7 @@ public final class Fortify {
 		int z = clicked.getZ();
 		int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
 		BlockPos ground = new BlockPos(x, Math.min(top, clicked.getY()), z);
-		if (ground.getY() < level.getMinY() + 6 || ground.getY() + 8 > level.getMaxY()) {
+		if (ground.getY() - 3 < level.getMinY() || ground.getY() + 8 > level.getMaxY()) {
 			return false;
 		}
 		if (!level.getFluidState(ground).isEmpty() || !level.getFluidState(ground.above()).isEmpty()) {

@@ -1774,7 +1774,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			a.country = sides[0];
 			VehicleEntity b = VehicleEntity.spawn(l, VehicleType.LEOPARD2, new Vec3(x + 30.5, ground, -50.5), 0);
 			b.country = sides[1];
-			b.hurtServer(l, l.damageSources().explosion(null, a), 260f);
+			b.hurtServer(l, l.damageSources().explosion(null, a), 1400f);
 			return new int[]{a.getId(), b.getId()};
 		});
 		ctx.waitTicks(200);
