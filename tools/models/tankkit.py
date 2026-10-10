@@ -27,6 +27,41 @@ def slope(part, x0, x1, y_top, z_top, y_bot, z_bot, paint, t=0.06, sides=None):
     return p
 
 
+# Which way a turn about z leans a plate (checked in the game: a side plate must lean outwards and down).
+ZSIGN = 1
+
+
+def side_slope(part, z0, z1, x_top, y_top, x_bot, y_bot, paint, t=0.06):
+    """A side plate leaning from (x_top, y_top) out and down to (x_bot, y_bot), along z0..z1 (turret cheeks)."""
+    m = part.model
+    m.slope_n = getattr(m, 'slope_n', 0) + 1
+    length = math.hypot(x_bot - x_top, y_top - y_bot)
+    angle = math.degrees(math.atan2(y_top - y_bot, abs(x_bot - x_top)))
+    d = 1 if x_bot >= x_top else -1
+    p = part.part('slope%d' % m.slope_n, (x_top, y_top, 0), rot=(0, 0, ZSIGN * d * angle))
+    xa, xb = (x_top, x_top + length) if d > 0 else (x_top - length, x_top)
+    p.box((xa, y_top - t / 2, z0), (xb, y_top + t / 2, z1), paint)
+    return p
+
+
+def cast_turret(part, cx, cz, y0, w, l, h, paint, front=0.45, back=0.4, side=0.32):
+    """A cast turret: a core and sloped plates round it - front, back and both cheeks - over a rounded filler."""
+    top = y0 + h
+    hw = w / 2 - side
+    zf = cz + l / 2 - front
+    zb = cz - l / 2 + back
+    part.box((cx - hw, y0, zb), (cx + hw, top, zf), paint)
+    # The filler under the plates' corners.
+    for i in range(3):
+        k = 1 - i * 0.18
+        part.box((cx - w / 2 * k * 0.92, y0, cz - l / 2 * k * 0.92), (cx + w / 2 * k * 0.92, y0 + h * (i + 1) / 3.5, cz + l / 2 * k * 0.92), paint)
+    slope(part, cx - hw, cx + hw, top, zf, y0 + 0.05, cz + l / 2, paint)
+    slope(part, cx - hw, cx + hw, top, zb, y0 + 0.05, cz - l / 2, paint)
+    side_slope(part, zb, zf, cx + hw, top, cx + w / 2, y0 + 0.05, paint)
+    side_slope(part, zb, zf, cx - hw, top, cx - w / 2, y0 + 0.05, paint)
+    return top
+
+
 def plate_bricks(p, n, rows=1, paint=None, inset=0.08, h=0.1, start=0.1, end=0.95):
     """ERA bricks in rows on a sloped plate made by slope()."""
     x0, x1, y, z0, length, d = p.plate

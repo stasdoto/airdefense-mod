@@ -2,7 +2,7 @@
 from boxgen import Model
 from kit import axles, tracks, lights, cabover
 from airdefense import barrel, missile, canister
-from tankkit import (slope, plate_bricks, bin_box, smoke_launchers, cupola, hatch, periscope, antenna, cables, track_links, log, grille,
+from tankkit import (slope, side_slope, cast_turret, plate_bricks, bin_box, smoke_launchers, cupola, hatch, periscope, antenna, cables, track_links, log, grille,
                      skirt_panels, roof_era, tarp, basket, headlights, fuel_tanks, mantlet_cover, sight_box)
 
 
@@ -95,7 +95,7 @@ def t72():
     tz = -0.3
     tur = m.part('turret', (0, 1.55, tz))
     m.set_turret(tur)
-    turret_dome(tur, 0, tz, 1.55, 2.3, 2.6, 0.8, 'rgreen')
+    cast_turret(tur, 0, tz, 1.55, 2.3, 2.6, 0.8, 'rgreen')
     # Kontakt-5 wedges on the turret's front, bricks on its roof.
     for s in (-1, 1):
         tur.box((s * 0.65 - 0.45, 1.6, tz + 1.1), (s * 0.65 + 0.45, 2.15, tz + 1.55), 'rgreen')
@@ -113,7 +113,7 @@ def t72():
     bin_box(tur, 0.4, 1.25, 1.7, 2.1, tz - 1.45, tz - 1.05, 'rgreen', straps=2)
     tur.box((-0.12, 1.75, tz - 1.5), (0.12, 2.0, tz - 1.0), 'dgrey')
     tarp(tur, -0.9, 0.9, 2.1, tz - 1.25)
-    antenna(tur, -0.95, 2.35, tz - 0.9, 3.4)
+    antenna(tur, -0.95, 2.35, tz - 0.9, 2.5)
     el = gun(m, tur, (0, 1.95, tz + 1.4), 5.2, 0.16)
     mantlet_cover(el, 0, 1.95, tz + 1.4, 0.62, 0.42)
     m.seat('driver', 0.0, 1.0, 2.3)
@@ -161,7 +161,7 @@ def t90():
     cupola(tur, -0.6, 2.3, tz - 0.4, 'rgreen')
     smoke_launchers(tur, 1.2, 2.05, tz + 0.5, 4, 1)
     smoke_launchers(tur, -1.2, 2.05, tz + 0.5, 4, -1)
-    antenna(tur, -1.0, 2.3, tz - 1.2, 3.2)
+    antenna(tur, -1.0, 2.3, tz - 1.2, 2.4)
     el = gun(m, tur, (0, 1.95, tz + 1.5), 5.2, 0.16)
     mantlet_cover(el, 0, 1.95, tz + 1.5, 0.62, 0.42)
     m.seat('driver', 0.0, 1.0, 2.3)
@@ -207,8 +207,8 @@ def leopard2():
     # The bustle with its baskets.
     tur.box((-1.6, 1.9, tz - 2.6), (1.6, 2.4, tz - 2.2), 'camo')
     basket(tur, -1.6, 1.6, 1.95, 2.45, tz - 3.1, tz - 2.6)
-    antenna(tur, -1.4, 2.55, tz - 1.9, 3.0)
-    antenna(tur, 1.4, 2.55, tz - 1.9, 2.4)
+    antenna(tur, -1.4, 2.55, tz - 1.9, 2.2)
+    antenna(tur, 1.4, 2.55, tz - 1.9, 1.8)
     gun(m, tur, (0, 2.15, tz + 1.8), 6.0, 0.15)
     m.seat('driver', -0.6, 1.05, 2.6)
     m.seat('gunner', 0.6, 2.4, tz - 0.4)
@@ -247,8 +247,8 @@ def abrams():
     tur.box((-0.15, 2.45, tz - 0.9), (0.2, 2.85, tz - 0.55), 'nato', sides={'front': 'glass'})
     cupola(tur, -0.65, 2.45, tz - 0.1, 'nato', r=0.3, h=0.08)
     sight_box(tur, 0.6, 1.1, 2.45, 2.68, tz + 0.6, tz + 1.05, 'nato')
-    antenna(tur, -1.5, 2.45, tz - 2.3, 3.2)
-    antenna(tur, 1.5, 2.45, tz - 2.3, 2.6)
+    antenna(tur, -1.5, 2.45, tz - 2.3, 2.4)
+    antenna(tur, 1.5, 2.45, tz - 2.3, 2.0)
     gun(m, tur, (0, 2.0, tz + 2.0), 5.0, 0.15)
     m.seat('driver', 0.0, 1.0, 2.9)
     m.seat('gunner', 0.6, 2.3, tz - 0.4)
@@ -301,7 +301,7 @@ def bmp2():
     cupola(tur, -0.4, 2.3, tz - 0.2, 'ugreen', mg=False, r=0.28, h=0.1)
     smoke_launchers(tur, 0.8, 2.05, tz + 0.35, 3, 1, step=0.1, tube=0.08)
     smoke_launchers(tur, -0.8, 2.05, tz + 0.35, 3, -1, step=0.1, tube=0.08)
-    antenna(tur, -0.65, 2.3, tz - 0.7, 2.6)
+    antenna(tur, -0.65, 2.3, tz - 0.7, 2.0)
     el = gun(m, tur, (0, 2.05, tz + 0.85), 2.9, 0.08, mantlet=0.4)
     # Konkurs ATGM tube on the roof.
     canister(el, 0.0, 2.55, tz + 0.2, 1.2, 0.16, 'ugreen')
@@ -348,7 +348,7 @@ def bradley():
     cupola(tur, 0.0, 2.85, tz - 0.5, 'tan', mg=False, r=0.3, h=0.08)
     basket(tur, -0.55, 1.25, 2.25, 2.7, tz - 1.55, tz - 1.1)
     smoke_launchers(tur, 1.3, 2.6, tz + 0.5, 4, 1)
-    antenna(tur, -0.4, 2.85, tz - 0.9, 2.6)
+    antenna(tur, -0.4, 2.85, tz - 0.9, 2.0)
     gun(m, tur, (0.35, 2.45, tz + 1.0), 2.4, 0.07, mantlet=0.4)
     m.seat('driver', -0.9, 1.4, 2.0)
     m.seat('gunner', 0.35, 2.5, tz - 0.4)

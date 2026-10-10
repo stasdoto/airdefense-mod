@@ -6,7 +6,7 @@ from boxgen import Model
 from kit import axles, tracks, lights, hood_cab
 from armor import glacis, tank_hull, turret_dome, era, gun
 from airdefense import barrel, canister
-from tankkit import (periscope, bin_box, smoke_launchers, cupola, hatch, antenna, cables, track_links, log, grille, skirt_panels, roof_era,
+from tankkit import (cast_turret, periscope, bin_box, smoke_launchers, cupola, hatch, antenna, cables, track_links, log, grille, skirt_panels, roof_era,
                      tarp, basket, headlights, fuel_tanks, mantlet_cover, sight_box)
 
 
@@ -51,7 +51,7 @@ def t80bvm():
     tz = -0.2
     tur = m.part('turret', (0, 1.5, tz))
     m.set_turret(tur)
-    turret_dome(tur, 0, tz, 1.5, 2.25, 2.5, 0.72, 'rgreen')
+    cast_turret(tur, 0, tz, 1.5, 2.25, 2.5, 0.72, 'rgreen')
     for s in (-1, 1):
         tur.box((s * 0.68 - 0.5, 1.55, tz + 1.05), (s * 0.68 + 0.5, 2.1, tz + 1.55), 'rgreen')
         tur.box((s * 1.05 - 0.15, 1.6, tz - 0.9), (s * 1.05 + 0.15, 2.05, tz + 0.9), 'rgreen')
@@ -66,7 +66,7 @@ def t80bvm():
         for z in (tz - 1.5, tz + 0.8):
             tur.box((x - 0.04, 2.2, z - 0.04), (x + 0.04, 2.95, z + 0.04), 'dgrey')
     tur.box((-1.25, 2.95, tz - 1.6), (1.25, 3.0, tz + 0.9), 'mesh_dark')
-    antenna(tur, -0.95, 2.2, tz - 1.0, 3.2)
+    antenna(tur, -0.95, 2.2, tz - 1.0, 2.4)
     el = gun(m, tur, (0, 1.9, tz + 1.5), 5.3, 0.16)
     mantlet_cover(el, 0, 1.9, tz + 1.5, 0.6, 0.4)
     m.seat('driver', 0.0, 0.95, 2.4)
@@ -108,7 +108,7 @@ def challenger2():
     hatch(tur, -0.7, 2.45, tz - 0.3, 0.6, 0.6, 'nato')
     cupola(tur, -0.7, 2.45, tz - 1.1, 'nato', r=0.28, h=0.08)
     sight_box(tur, 0.6, 1.05, 2.45, 2.65, tz + 0.4, tz + 0.85, 'nato')
-    antenna(tur, -1.3, 2.45, tz - 1.9, 3.0)
+    antenna(tur, -1.3, 2.45, tz - 1.9, 2.2)
     el = gun(m, tur, (0, 2.05, tz + 1.85), 5.3, 0.16, paint='nato')
     m.seat('driver', 0.0, 1.05, 3.0)
     m.seat('gunner', 0.65, 2.35, tz - 0.3)
@@ -151,7 +151,7 @@ def bmp3():
     cupola(tur, -0.6, 2.3, tz - 0.2, 'rgreen', mg=False, r=0.28, h=0.1)
     smoke_launchers(tur, 0.95, 2.05, tz + 0.4, 3, 1)
     smoke_launchers(tur, -0.95, 2.05, tz + 0.4, 3, -1)
-    antenna(tur, -0.8, 2.3, tz - 0.8, 2.6)
+    antenna(tur, -0.8, 2.3, tz - 0.8, 2.0)
     bin_box(tur, -0.8, 0.8, 1.85, 2.15, tz - 1.35, tz - 1.0, 'rgreen', straps=2)
     # The 100 mm 2A70 on the centre line and the 30 mm 2A72 to its right, elevating together.
     el = gun(m, tur, (0, 2.1, tz + 1.0), 2.6, 0.13, mantlet=0.55)
@@ -188,7 +188,7 @@ def cv90():
     for s in (-1, 1):
         smoke_launchers(tur, s * 1.3, 2.4, tz + 0.2, 4, s)
     basket(tur, -1.2, 1.2, 2.1, 2.55, tz - 2.3, tz - 1.9)
-    antenna(tur, -1.0, 2.65, tz - 1.2, 2.8)
+    antenna(tur, -1.0, 2.65, tz - 1.2, 2.1)
     grille(body, 0.3, 1.4, 1.95, z1 - 2.4, z1 - 1.4)
     headlights(body, z1 - 0.15, 1.15, 1.25)
     gun(m, tur, (0, 2.35, tz + 1.4), 2.9, 0.08, mantlet=0.5)

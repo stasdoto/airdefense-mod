@@ -31,7 +31,7 @@ STYLES = {
     # Woodland camouflage (NATO / Ukrainian vehicles).
     'camo': dict(kind='camo', base=0x4A5A32, c2=0x5E4A30, c3=0x22281C),
     # Russian / Soviet protective green.
-    'rgreen': dict(kind='plain', base=0x56633A),
+    'rgreen': dict(kind='plain', base=0x515C37),
     # Ukrainian digital-ish green (Soviet vehicles in Ukrainian service).
     'ugreen': dict(kind='camo', base=0x55613A, c2=0x3C4A2A, c3=0x6B6C47, blob=3),
     # Bundeswehr / NATO plain dark green.
@@ -405,7 +405,10 @@ class Painter:
         # Faded patches, large and small.
         m1 = self.noise_field(w, h, 9) - 0.5
         m2 = self.noise_field(w, h, 3) - 0.5
-        c *= (1 + wear * (0.13 * m1 + 0.06 * m2))[..., None]
+        c *= (1 + wear * (0.17 * m1 + 0.07 * m2))[..., None]
+        # Sun-bleached patches go warmer (yellowish), the shaded ones cooler.
+        c[..., 0] += wear * 10 * m1
+        c[..., 2] -= wear * 6 * m1
         dust = np.array(mul(DUST, k))
         side = face in ('front', 'back', 'left', 'right')
         if side and h >= 5:
