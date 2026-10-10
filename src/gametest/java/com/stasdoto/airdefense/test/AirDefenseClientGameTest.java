@@ -509,6 +509,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 			AirDefense.LOGGER.info("[airdefense-test] RESULT airport_cells:{}", cells);
 			if (found == null) {
+				found = com.stasdoto.airdefense.nation.Airports.nearestPlanned(0, 0);
+			}
+			if (found == null) {
 				return null;
 			}
 			AirDefense.LOGGER.info("[airdefense-test] RESULT airport_at: threshold {} {} level {}, runway along {} {}, apron towards {} {}, town {} at {} {}",

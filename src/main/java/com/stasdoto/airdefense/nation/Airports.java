@@ -160,6 +160,24 @@ public final class Airports {
 		return a == NONE ? null : a;
 	}
 
+	/** For the tests: the airport already planned nearest (x, z), or null. */
+	@Nullable
+	public static Airport nearestPlanned(int x, int z) {
+		Airport best = null;
+		double bd = Double.MAX_VALUE;
+		for (Airport a : AIRPORTS.values()) {
+			if (a == NONE) {
+				continue;
+			}
+			double d = Math.hypot(a.sx - x, a.sz - z);
+			if (d < bd) {
+				bd = d;
+				best = a;
+			}
+		}
+		return best;
+	}
+
 	/** The airports that may reach (x, z): those of the capitals of its cell and the eight round it. */
 	public static List<Airport> near(long seed, Cities.Terrain t, int x, int z, int margin) {
 		List<Airport> out = new ArrayList<>(1);
