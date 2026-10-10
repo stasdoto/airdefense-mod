@@ -364,11 +364,19 @@ public final class Railways {
 			}
 			h[k] = sum / cnt;
 		}
-		// The stations level, on their towns' ground.
+		// The stations level, on the ground where they stand (not down in a cutting, not up on a bank).
 		int st = RUN / 16 + 1;
+		double s0 = 0;
+		double s1 = 0;
+		int cnt = 0;
 		for (int k = 0; k <= st && k < samples; k++) {
-			h[k] = a.base + 1;
-			h[samples - 1 - k] = b.base + 1;
+			s0 += ground[k];
+			s1 += ground[samples - 1 - k];
+			cnt++;
+		}
+		for (int k = 0; k <= st && k < samples; k++) {
+			h[k] = Math.round(s0 / cnt);
+			h[samples - 1 - k] = Math.round(s1 / cnt);
 		}
 		double g = 16 * GRADE;
 		for (int pass = 0; pass < 2; pass++) {

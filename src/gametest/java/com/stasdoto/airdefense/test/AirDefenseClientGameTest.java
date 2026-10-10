@@ -397,7 +397,11 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				int side = k == 0 ? p[5] : 1;
 				boolean along = k == 0 || k == 2;
 				if (k == 6) {
-					railCam(ctx, server, p, 1, 14, 22, 14);
+					// The roundabout from straight above.
+					camera(server, p[0] + 0.5, p[1] + 34, p[2] + 0.5, 0, 90);
+					ctx.waitTicks(140);
+					ctx.runOnClient(mc -> mc.gui.hud.getChat().clearMessages(false));
+					ctx.waitTicks(20);
 				} else {
 					railCam(ctx, server, p, side, along ? 4 : k == 1 ? 40 : 22, along ? 16 : 12, along ? 22 : 18);
 				}
