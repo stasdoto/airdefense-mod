@@ -1277,6 +1277,16 @@ public final class CityGen {
 	// Buildings and details
 
 	private static Packed plan(Cities.City c, Building b) {
+		if (Construction.site(c, b)) {
+			// 1.41: still going up.
+			long key = c.key() * 4096 + b.id;
+			Packed p = PLANS.get(key);
+			if (p == null) {
+				p = new Packed(Construction.shell(b, Blueprints.placements(b, DyeColor.byId(c.color))));
+				PLANS.put(key, p);
+			}
+			return p;
+		}
 		return packed(c.key() * 4096 + b.id, b, c.color);
 	}
 

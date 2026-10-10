@@ -69,6 +69,7 @@ public final class Nations {
 					Cities.shelters = Politics.get(server).shapes >= 3;
 					Cities.railways = Politics.get(server).shapes >= 4;
 					Cities.airports = Politics.get(server).shapes >= 5;
+					Cities.growth = Politics.get(server).shapes >= 6;
 				} catch (RuntimeException e) {
 					Cities.styles = true;
 					Cities.shapes = true;
@@ -76,6 +77,7 @@ public final class Nations {
 					Cities.shelters = true;
 					Cities.railways = true;
 					Cities.airports = true;
+					Cities.growth = true;
 				}
 				com.stasdoto.airdefense.AirDefense.LOGGER.info("[airdefense] town styles {}", Cities.styles ? "on" : "off (an older world)");
 			}

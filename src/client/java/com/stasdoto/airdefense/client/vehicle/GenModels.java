@@ -19,7 +19,7 @@ public final class GenModels {
 	/** Is there a layer of this id (a vehicle, its window glass "<id>_glass", its inside "<id>_int")? */
 	public static boolean has(String id) {
 		return switch (id) {
-			case "p18", "p18_glass", "st68", "st68_glass", "trml4d", "trml4d_glass", "sentinel", "sentinel_glass", "mpq65", "mpq65_glass", "kupol", "kupol_glass", "elm2084", "elm2084_glass", "pantsir", "pantsir_glass", "tor", "buk", "buk_glass", "s300", "s300_glass", "osa", "osa_glass", "strela10", "strela10_glass", "shilka", "tunguska", "sampt", "sampt_glass", "avenger", "avenger_glass", "mfg", "mfg_glass", "zu23", "zu23_glass", "iron_dome", "iron_dome_glass", "t72", "t90", "leopard2", "abrams", "bmp2", "bradley", "btr82", "btr82_glass", "btr4", "btr4_glass", "m113", "maxxpro", "maxxpro_glass", "kozak", "kozak_glass", "gyurza", "gyurza_glass", "raptor", "raptor_glass", "rhib", "rhib_glass", "mi8", "mi8_glass", "mi24", "mi24_glass", "ka52", "ka52_glass", "su25", "su25_glass", "f16", "f16_glass", "fuel_truck", "fuel_truck_glass", "supply_truck", "supply_truck_glass", "fire_truck", "fire_truck_glass", "ambulance", "ambulance_glass", "police_car", "police_car_glass", "emu_head", "emu_car", "loco", "boxcar", "tank_car", "gondola", "airliner", "turboprop", "msta_s", "m109", "bm21", "bm21_glass", "zoopark", "zoopark_glass", "tpq36", "tpq36_glass", "t80bvm", "challenger2", "bmp3", "cv90", "stryker", "tigr", "tigr_glass", "hmmwv", "hmmwv_glass", "brem1", "m88", "m88_glass", "tos1", "ah64", "ah64_glass", "a10", "a10_glass", "buyan_m", "buyan_m_glass", "visby", "visby_glass", "bastion", "bastion_glass", "nmesis", "nmesis_glass", "orlan", "orlan_glass", "tb2_gcs", "tb2_gcs_glass", "lancet", "lancet_glass", "switchblade", "switchblade_glass", "borisoglebsk", "borisoglebsk_glass", "bukovel", "bukovel_glass", "p18_int", "st68_int", "trml4d_int", "sentinel_int", "mpq65_int", "elm2084_int", "pantsir_int", "s300_int", "sampt_int", "avenger_int", "mfg_int", "zu23_int", "iron_dome_int", "btr82_int", "btr4_int", "maxxpro_int", "kozak_int", "gyurza_int", "raptor_int", "mi8_int", "mi24_int", "ka52_int", "su25_int", "f16_int", "fuel_truck_int", "supply_truck_int", "fire_truck_int", "ambulance_int", "police_car_int", "iskander_int", "kalibr_int", "shahed_int", "himars_int", "patriot_int", "iris_t_int", "nasams_int", "bm21_int", "tpq36_int", "stryker_int", "tigr_int", "hmmwv_int", "ah64_int", "a10_int", "buyan_m_int", "visby_int", "bastion_int", "nmesis_int", "orlan_int", "tb2_gcs_int", "lancet_int", "switchblade_int", "borisoglebsk_int", "bukovel_int" -> true;
+			case "p18", "p18_glass", "st68", "st68_glass", "trml4d", "trml4d_glass", "sentinel", "sentinel_glass", "mpq65", "mpq65_glass", "kupol", "kupol_glass", "elm2084", "elm2084_glass", "pantsir", "pantsir_glass", "tor", "buk", "buk_glass", "s300", "s300_glass", "osa", "osa_glass", "strela10", "strela10_glass", "shilka", "tunguska", "sampt", "sampt_glass", "avenger", "avenger_glass", "mfg", "mfg_glass", "zu23", "zu23_glass", "iron_dome", "iron_dome_glass", "t72", "t90", "leopard2", "abrams", "bmp2", "bradley", "btr82", "btr82_glass", "btr4", "btr4_glass", "m113", "maxxpro", "maxxpro_glass", "kozak", "kozak_glass", "gyurza", "gyurza_glass", "raptor", "raptor_glass", "rhib", "rhib_glass", "mi8", "mi8_glass", "mi24", "mi24_glass", "ka52", "ka52_glass", "su25", "su25_glass", "f16", "f16_glass", "fuel_truck", "fuel_truck_glass", "supply_truck", "supply_truck_glass", "fire_truck", "fire_truck_glass", "ambulance", "ambulance_glass", "police_car", "police_car_glass", "emu_head", "emu_car", "loco", "boxcar", "tank_car", "gondola", "airliner", "turboprop", "lorry_box", "lorry_tank", "tipper", "tractor", "tower_crane", "msta_s", "m109", "bm21", "bm21_glass", "zoopark", "zoopark_glass", "tpq36", "tpq36_glass", "t80bvm", "challenger2", "bmp3", "cv90", "stryker", "tigr", "tigr_glass", "hmmwv", "hmmwv_glass", "brem1", "m88", "m88_glass", "tos1", "ah64", "ah64_glass", "a10", "a10_glass", "buyan_m", "buyan_m_glass", "visby", "visby_glass", "bastion", "bastion_glass", "nmesis", "nmesis_glass", "orlan", "orlan_glass", "tb2_gcs", "tb2_gcs_glass", "lancet", "lancet_glass", "switchblade", "switchblade_glass", "borisoglebsk", "borisoglebsk_glass", "bukovel", "bukovel_glass", "p18_int", "st68_int", "trml4d_int", "sentinel_int", "mpq65_int", "elm2084_int", "pantsir_int", "s300_int", "sampt_int", "avenger_int", "mfg_int", "zu23_int", "iron_dome_int", "btr82_int", "btr4_int", "maxxpro_int", "kozak_int", "gyurza_int", "raptor_int", "mi8_int", "mi24_int", "ka52_int", "su25_int", "f16_int", "fuel_truck_int", "supply_truck_int", "fire_truck_int", "ambulance_int", "police_car_int", "iskander_int", "kalibr_int", "shahed_int", "himars_int", "patriot_int", "iris_t_int", "nasams_int", "bm21_int", "tpq36_int", "stryker_int", "tigr_int", "hmmwv_int", "ah64_int", "a10_int", "buyan_m_int", "visby_int", "bastion_int", "nmesis_int", "orlan_int", "tb2_gcs_int", "lancet_int", "switchblade_int", "borisoglebsk_int", "bukovel_int" -> true;
 			default -> false;
 		};
 	}
@@ -112,6 +112,11 @@ public final class GenModels {
 			case "gondola" -> gondola();
 			case "airliner" -> airliner();
 			case "turboprop" -> turboprop();
+			case "lorry_box" -> lorry_box();
+			case "lorry_tank" -> lorry_tank();
+			case "tipper" -> tipper();
+			case "tractor" -> tractor();
+			case "tower_crane" -> tower_crane();
 			case "msta_s" -> msta_s();
 			case "m109" -> m109();
 			case "bm21" -> bm21();
@@ -302,6 +307,11 @@ public final class GenModels {
 			case "gondola" -> gondolaPaths();
 			case "airliner" -> airlinerPaths();
 			case "turboprop" -> turbopropPaths();
+			case "lorry_box" -> lorry_boxPaths();
+			case "lorry_tank" -> lorry_tankPaths();
+			case "tipper" -> tipperPaths();
+			case "tractor" -> tractorPaths();
+			case "tower_crane" -> tower_cranePaths();
 			case "msta_s" -> msta_sPaths();
 			case "m109" -> m109Paths();
 			case "bm21" -> bm21Paths();
@@ -12354,6 +12364,280 @@ public final class GenModels {
 	public static Map<String, String> turbopropPaths() {
 		return Map.ofEntries(
 				Map.entry("body", "body")
+		);
+	}
+
+	public static LayerDefinition lorry_box() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(332, 0).addBox(-8F, -17.6F, -80F, 16F, 6F, 154F)
+				.texOffs(0, 169).addBox(-20F, -54.4F, 44.8F, 40F, 37F, 35F)
+				.texOffs(412, 169).addBox(-18.4F, -48.8F, 80F, 37F, 14F, 1F)
+				.texOffs(384, 169).addBox(-20.48F, -48F, 64F, 1F, 12F, 13F)
+				.texOffs(550, 169).addBox(-24.8F, -44.8F, 75.2F, 2F, 10F, 2F)
+				.texOffs(384, 169).addBox(20F, -48F, 64F, 1F, 12F, 13F)
+				.texOffs(550, 169).addBox(23.2F, -44.8F, 75.2F, 2F, 10F, 2F)
+				.texOffs(488, 169).addBox(-15.2F, -32F, 80F, 30F, 11F, 1F)
+				.texOffs(558, 169).addBox(-20F, -19.2F, 76.8F, 40F, 6F, 5F)
+				.texOffs(648, 169).addBox(-17.12F, -22.24F, 80.64F, 4F, 2F, 1F)
+				.texOffs(648, 169).addBox(13.28F, -22.24F, 80.64F, 4F, 2F, 1F)
+				.texOffs(274, 169).addBox(-16.8F, -61.6F, 49.6F, 34F, 7F, 21F)
+				.texOffs(0, 0).addBox(-20.32F, -62.4F, -83.2F, 41F, 44F, 125F)
+				.texOffs(672, 0).addBox(-20.64F, -32F, -80F, 1F, 6F, 118F)
+				.texOffs(672, 0).addBox(20.32F, -32F, -80F, 1F, 6F, 118F)
+				.texOffs(150, 169).addBox(-19.2F, -60.8F, -83.68F, 38F, 40F, 1F)
+				.texOffs(658, 169).addBox(-17.6F, -17.6F, -84.32F, 3F, 2F, 1F)
+				.texOffs(658, 169).addBox(14.4F, -17.6F, -84.32F, 3F, 2F, 1F)
+				.texOffs(228, 169).addBox(-19.04F, -16.64F, 49.28F, 6F, 17F, 17F)
+				.texOffs(228, 169).addBox(12.96F, -16.64F, 49.28F, 6F, 17F, 17F)
+				.texOffs(228, 169).addBox(-19.04F, -16.64F, -49.92F, 6F, 17F, 17F)
+				.texOffs(228, 169).addBox(-12.96F, -16.64F, -49.92F, 6F, 17F, 17F)
+				.texOffs(228, 169).addBox(12.96F, -16.64F, -49.92F, 6F, 17F, 17F)
+				.texOffs(228, 169).addBox(6.88F, -16.64F, -49.92F, 6F, 17F, 17F)
+				.texOffs(228, 169).addBox(-19.04F, -16.64F, -70.72F, 6F, 17F, 17F)
+				.texOffs(228, 169).addBox(-12.96F, -16.64F, -70.72F, 6F, 17F, 17F)
+				.texOffs(228, 169).addBox(12.96F, -16.64F, -70.72F, 6F, 17F, 17F)
+				.texOffs(228, 169).addBox(6.88F, -16.64F, -70.72F, 6F, 17F, 17F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 256);
+	}
+
+	public static Map<String, String> lorry_boxPaths() {
+		return Map.ofEntries(
+				Map.entry("body", "body")
+		);
+	}
+
+	public static LayerDefinition lorry_tank() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(0, 0).addBox(-8F, -17.6F, -83.2F, 16F, 6F, 157F)
+				.texOffs(578, 163).addBox(-20F, -54.4F, 44.8F, 40F, 37F, 35F)
+				.texOffs(138, 311).addBox(-18.4F, -48.8F, 80F, 37F, 14F, 1F)
+				.texOffs(110, 311).addBox(-20.48F, -48F, 64F, 1F, 12F, 13F)
+				.texOffs(276, 311).addBox(-24.8F, -44.8F, 75.2F, 2F, 10F, 2F)
+				.texOffs(110, 311).addBox(20F, -48F, 64F, 1F, 12F, 13F)
+				.texOffs(276, 311).addBox(23.2F, -44.8F, 75.2F, 2F, 10F, 2F)
+				.texOffs(214, 311).addBox(-15.2F, -32F, 80F, 30F, 11F, 1F)
+				.texOffs(284, 311).addBox(-20F, -19.2F, 76.8F, 40F, 6F, 5F)
+				.texOffs(374, 311).addBox(-17.12F, -22.24F, 80.64F, 4F, 2F, 1F)
+				.texOffs(374, 311).addBox(13.28F, -22.24F, 80.64F, 4F, 2F, 1F)
+				.texOffs(0, 311).addBox(-16.8F, -61.6F, 49.6F, 34F, 7F, 21F)
+				.texOffs(0, 163).addBox(-19.2F, -46.4F, -86.4F, 38F, 22F, 126F)
+				.texOffs(630, 0).addBox(-15.2F, -50.4F, -86.4F, 30F, 30F, 126F)
+				.texOffs(346, 0).addBox(-9.6F, -52F, -84.8F, 19F, 34F, 123F)
+				.texOffs(328, 163).addBox(-4.8F, -53.12F, -80F, 10F, 1F, 115F)
+				.texOffs(728, 163).addBox(-19.36F, -36.8F, -48F, 39F, 5F, 64F)
+				.texOffs(384, 311).addBox(-17.6F, -17.6F, -87.36F, 3F, 2F, 1F)
+				.texOffs(384, 311).addBox(14.4F, -17.6F, -87.36F, 3F, 2F, 1F)
+				.texOffs(934, 163).addBox(-19.04F, -16.64F, 49.28F, 6F, 17F, 17F)
+				.texOffs(934, 163).addBox(12.96F, -16.64F, 49.28F, 6F, 17F, 17F)
+				.texOffs(934, 163).addBox(-19.04F, -16.64F, -53.12F, 6F, 17F, 17F)
+				.texOffs(934, 163).addBox(-12.96F, -16.64F, -53.12F, 6F, 17F, 17F)
+				.texOffs(934, 163).addBox(12.96F, -16.64F, -53.12F, 6F, 17F, 17F)
+				.texOffs(934, 163).addBox(6.88F, -16.64F, -53.12F, 6F, 17F, 17F)
+				.texOffs(934, 163).addBox(-19.04F, -16.64F, -73.92F, 6F, 17F, 17F)
+				.texOffs(934, 163).addBox(-12.96F, -16.64F, -73.92F, 6F, 17F, 17F)
+				.texOffs(934, 163).addBox(12.96F, -16.64F, -73.92F, 6F, 17F, 17F)
+				.texOffs(934, 163).addBox(6.88F, -16.64F, -73.92F, 6F, 17F, 17F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 352);
+	}
+
+	public static Map<String, String> lorry_tankPaths() {
+		return Map.ofEntries(
+				Map.entry("body", "body")
+		);
+	}
+
+	public static LayerDefinition tipper() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(0, 0).addBox(-8F, -17.6F, -64F, 16F, 6F, 128F)
+				.texOffs(186, 134).addBox(-20F, -54.4F, 35.2F, 40F, 37F, 35F)
+				.texOffs(690, 134).addBox(-18.4F, -48.8F, 70.4F, 37F, 14F, 1F)
+				.texOffs(578, 134).addBox(-20.48F, -48F, 54.4F, 1F, 12F, 13F)
+				.texOffs(828, 134).addBox(-24.8F, -44.8F, 65.6F, 2F, 10F, 2F)
+				.texOffs(578, 134).addBox(20F, -48F, 54.4F, 1F, 12F, 13F)
+				.texOffs(828, 134).addBox(23.2F, -44.8F, 65.6F, 2F, 10F, 2F)
+				.texOffs(766, 134).addBox(-15.2F, -32F, 70.4F, 30F, 11F, 1F)
+				.texOffs(836, 134).addBox(-20F, -19.2F, 67.2F, 40F, 6F, 5F)
+				.texOffs(926, 134).addBox(-17.12F, -22.24F, 71.04F, 4F, 2F, 1F)
+				.texOffs(926, 134).addBox(13.28F, -22.24F, 71.04F, 4F, 2F, 1F)
+				.texOffs(384, 134).addBox(-16.8F, -61.6F, 40F, 34F, 7F, 21F)
+				.texOffs(744, 0).addBox(-20F, -21.6F, -65.6F, 40F, 2F, 96F)
+				.texOffs(288, 0).addBox(-20F, -41.6F, -65.6F, 2F, 20F, 96F)
+				.texOffs(288, 0).addBox(18.4F, -41.6F, -65.6F, 2F, 20F, 96F)
+				.texOffs(494, 134).addBox(-20F, -48F, 28.8F, 40F, 26F, 2F)
+				.texOffs(606, 134).addBox(-20F, -41.6F, -65.6F, 40F, 20F, 2F)
+				.texOffs(484, 0).addBox(-18.4F, -40F, -64F, 37F, 18F, 93F)
+				.texOffs(0, 134).addBox(-12.8F, -46.4F, -51.2F, 26F, 6F, 67F)
+				.texOffs(336, 134).addBox(-19.04F, -17.6F, 39.2F, 6F, 18F, 18F)
+				.texOffs(336, 134).addBox(12.96F, -17.6F, 39.2F, 6F, 18F, 18F)
+				.texOffs(336, 134).addBox(-19.04F, -17.6F, -44F, 6F, 18F, 18F)
+				.texOffs(336, 134).addBox(-12.96F, -17.6F, -44F, 6F, 18F, 18F)
+				.texOffs(336, 134).addBox(12.96F, -17.6F, -44F, 6F, 18F, 18F)
+				.texOffs(336, 134).addBox(6.88F, -17.6F, -44F, 6F, 18F, 18F)
+				.texOffs(336, 134).addBox(-19.04F, -17.6F, -64.8F, 6F, 18F, 18F)
+				.texOffs(336, 134).addBox(-12.96F, -17.6F, -64.8F, 6F, 18F, 18F)
+				.texOffs(336, 134).addBox(12.96F, -17.6F, -64.8F, 6F, 18F, 18F)
+				.texOffs(336, 134).addBox(6.88F, -17.6F, -64.8F, 6F, 18F, 18F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 208);
+	}
+
+	public static Map<String, String> tipperPaths() {
+		return Map.ofEntries(
+				Map.entry("body", "body")
+		);
+	}
+
+	public static LayerDefinition tractor() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(0, 0).addBox(-8.8F, -28F, 6.4F, 18F, 16F, 32F)
+				.texOffs(938, 0).addBox(-7.2F, -26.4F, 38.4F, 14F, 14F, 1F)
+				.texOffs(780, 0).addBox(5.6F, -46.4F, 25.6F, 2F, 18F, 2F)
+				.texOffs(972, 0).addBox(-6.72F, -23.04F, 39.68F, 4F, 2F, 1F)
+				.texOffs(972, 0).addBox(2.88F, -23.04F, 39.68F, 4F, 2F, 1F)
+				.texOffs(332, 0).addBox(-12F, -20.8F, -20.8F, 24F, 3F, 27F)
+				.texOffs(546, 0).addBox(-12F, -44.8F, -20.8F, 1F, 24F, 1F)
+				.texOffs(546, 0).addBox(-12F, -44.8F, 5.6F, 1F, 24F, 1F)
+				.texOffs(546, 0).addBox(11.2F, -44.8F, -20.8F, 1F, 24F, 1F)
+				.texOffs(546, 0).addBox(11.2F, -44.8F, 5.6F, 1F, 24F, 1F)
+				.texOffs(692, 0).addBox(-11.52F, -43.2F, 5.76F, 23F, 21F, 1F)
+				.texOffs(692, 0).addBox(-11.52F, -43.2F, -20.48F, 23F, 21F, 1F)
+				.texOffs(164, 0).addBox(-11.92F, -43.2F, -20F, 1F, 21F, 26F)
+				.texOffs(164, 0).addBox(11.44F, -43.2F, -20F, 1F, 21F, 26F)
+				.texOffs(218, 0).addBox(-13.6F, -46.72F, -22.4F, 27F, 2F, 30F)
+				.texOffs(100, 0).addBox(-19.68F, -24F, -21.6F, 8F, 24F, 24F)
+				.texOffs(434, 0).addBox(-20.48F, -25.6F, -23.2F, 10F, 2F, 27F)
+				.texOffs(508, 0).addBox(-15.04F, -14.4F, 23.2F, 5F, 14F, 14F)
+				.texOffs(100, 0).addBox(11.68F, -24F, -21.6F, 8F, 24F, 24F)
+				.texOffs(434, 0).addBox(10.88F, -25.6F, -23.2F, 10F, 2F, 27F)
+				.texOffs(508, 0).addBox(9.92F, -14.4F, 23.2F, 5F, 14F, 14F)
+				.texOffs(740, 0).addBox(-1.6F, -12.8F, -38.4F, 3F, 3F, 17F)
+				.texOffs(550, 0).addBox(-28.8F, -20F, -51.2F, 58F, 11F, 13F)
+				.texOffs(810, 0).addBox(-27.2F, -25.6F, -49.6F, 54F, 6F, 10F)
+				.texOffs(788, 0).addBox(-27.2F, -8.8F, -48.8F, 3F, 9F, 8F)
+				.texOffs(788, 0).addBox(24F, -8.8F, -48.8F, 3F, 9F, 8F)
+				.texOffs(968, 0).addBox(-24.64F, -8.8F, -49.6F, 1F, 8F, 1F)
+				.texOffs(968, 0).addBox(-15.04F, -8.8F, -49.6F, 1F, 8F, 1F)
+				.texOffs(968, 0).addBox(-5.44F, -8.8F, -49.6F, 1F, 8F, 1F)
+				.texOffs(968, 0).addBox(4.16F, -8.8F, -49.6F, 1F, 8F, 1F)
+				.texOffs(968, 0).addBox(13.76F, -8.8F, -49.6F, 1F, 8F, 1F)
+				.texOffs(968, 0).addBox(23.36F, -8.8F, -49.6F, 1F, 8F, 1F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 48);
+	}
+
+	public static Map<String, String> tractorPaths() {
+		return Map.ofEntries(
+				Map.entry("body", "body")
+		);
+	}
+
+	public static LayerDefinition tower_crane() {
+		MeshDefinition mesh = new MeshDefinition();
+		PartDefinition root = mesh.getRoot();
+		PartDefinition p0 = root.addOrReplaceChild("body", CubeListBuilder.create()
+				.texOffs(344, 183).addBox(-35.2F, -16F, -35.2F, 70F, 16F, 70F)
+				.texOffs(56, 0).addBox(-15.52F, -172F, -15.52F, 4F, 156F, 4F)
+				.texOffs(56, 0).addBox(-15.52F, -328F, -15.52F, 4F, 156F, 4F)
+				.texOffs(56, 0).addBox(-15.52F, -484F, -15.52F, 4F, 156F, 4F)
+				.texOffs(56, 0).addBox(-15.52F, -640F, -15.52F, 4F, 156F, 4F)
+				.texOffs(56, 0).addBox(-15.52F, -172F, 11.68F, 4F, 156F, 4F)
+				.texOffs(56, 0).addBox(-15.52F, -328F, 11.68F, 4F, 156F, 4F)
+				.texOffs(56, 0).addBox(-15.52F, -484F, 11.68F, 4F, 156F, 4F)
+				.texOffs(56, 0).addBox(-15.52F, -640F, 11.68F, 4F, 156F, 4F)
+				.texOffs(56, 0).addBox(11.68F, -172F, -15.52F, 4F, 156F, 4F)
+				.texOffs(56, 0).addBox(11.68F, -328F, -15.52F, 4F, 156F, 4F)
+				.texOffs(56, 0).addBox(11.68F, -484F, -15.52F, 4F, 156F, 4F)
+				.texOffs(56, 0).addBox(11.68F, -640F, -15.52F, 4F, 156F, 4F)
+				.texOffs(56, 0).addBox(11.68F, -172F, 11.68F, 4F, 156F, 4F)
+				.texOffs(56, 0).addBox(11.68F, -328F, 11.68F, 4F, 156F, 4F)
+				.texOffs(56, 0).addBox(11.68F, -484F, 11.68F, 4F, 156F, 4F)
+				.texOffs(56, 0).addBox(11.68F, -640F, 11.68F, 4F, 156F, 4F)
+				.texOffs(0, 0).addBox(-13.92F, -172F, -13.6F, 1F, 156F, 27F)
+				.texOffs(0, 0).addBox(-13.92F, -328F, -13.6F, 1F, 156F, 27F)
+				.texOffs(0, 0).addBox(-13.92F, -484F, -13.6F, 1F, 156F, 27F)
+				.texOffs(0, 0).addBox(-13.92F, -640F, -13.6F, 1F, 156F, 27F)
+				.texOffs(348, 0).addBox(-13.6F, -172F, -13.92F, 27F, 156F, 1F)
+				.texOffs(348, 0).addBox(-13.6F, -328F, -13.92F, 27F, 156F, 1F)
+				.texOffs(348, 0).addBox(-13.6F, -484F, -13.92F, 27F, 156F, 1F)
+				.texOffs(348, 0).addBox(-13.6F, -640F, -13.92F, 27F, 156F, 1F)
+				.texOffs(0, 0).addBox(13.28F, -172F, -13.6F, 1F, 156F, 27F)
+				.texOffs(0, 0).addBox(13.28F, -328F, -13.6F, 1F, 156F, 27F)
+				.texOffs(0, 0).addBox(13.28F, -484F, -13.6F, 1F, 156F, 27F)
+				.texOffs(0, 0).addBox(13.28F, -640F, -13.6F, 1F, 156F, 27F)
+				.texOffs(348, 0).addBox(-13.6F, -172F, 13.28F, 27F, 156F, 1F)
+				.texOffs(348, 0).addBox(-13.6F, -328F, 13.28F, 27F, 156F, 1F)
+				.texOffs(348, 0).addBox(-13.6F, -484F, 13.28F, 27F, 156F, 1F)
+				.texOffs(348, 0).addBox(-13.6F, -640F, 13.28F, 27F, 156F, 1F)
+				, PartPose.offsetAndRotation(0F, 0F, 0F, 0F, 0F, 0F));
+		PartDefinition p1 = root.addOrReplaceChild("spin", CubeListBuilder.create()
+				.texOffs(0, 306).addBox(-20.8F, -16F, -20.8F, 42F, 16F, 42F)
+				.texOffs(168, 306).addBox(15.2F, -48F, 0F, 20F, 32F, 26F)
+				.texOffs(260, 306).addBox(35.2F, -44.8F, 0.8F, 1F, 19F, 24F)
+				.texOffs(528, 306).addBox(16F, -44.8F, 25.6F, 18F, 19F, 1F)
+				.texOffs(404, 0).addBox(-12.8F, -19.2F, 20.8F, 26F, 3F, 140F)
+				.texOffs(404, 0).addBox(-12.8F, -19.2F, 160.64F, 26F, 3F, 140F)
+				.texOffs(404, 0).addBox(-12.8F, -19.2F, 300.48F, 26F, 3F, 140F)
+				.texOffs(404, 0).addBox(-12.8F, -19.2F, 440.32F, 26F, 3F, 140F)
+				.texOffs(404, 0).addBox(-12.8F, -19.2F, 580.16F, 26F, 3F, 140F)
+				.texOffs(742, 0).addBox(-1.28F, -44F, 20.8F, 3F, 2F, 137F)
+				.texOffs(742, 0).addBox(-1.28F, -44F, 157.44F, 3F, 2F, 137F)
+				.texOffs(742, 0).addBox(-1.28F, -44F, 294.08F, 3F, 2F, 137F)
+				.texOffs(742, 0).addBox(-1.28F, -44F, 430.72F, 3F, 2F, 137F)
+				.texOffs(742, 0).addBox(-1.28F, -44F, 567.36F, 3F, 2F, 137F)
+				.texOffs(72, 0).addBox(-6.72F, -41.6F, 20.8F, 1F, 22F, 137F)
+				.texOffs(72, 0).addBox(-6.72F, -41.6F, 157.44F, 1F, 22F, 137F)
+				.texOffs(72, 0).addBox(-6.72F, -41.6F, 294.08F, 1F, 22F, 137F)
+				.texOffs(72, 0).addBox(-6.72F, -41.6F, 430.72F, 1F, 22F, 137F)
+				.texOffs(72, 0).addBox(-6.72F, -41.6F, 567.36F, 1F, 22F, 137F)
+				.texOffs(72, 0).addBox(6.08F, -41.6F, 20.8F, 1F, 22F, 137F)
+				.texOffs(72, 0).addBox(6.08F, -41.6F, 157.44F, 1F, 22F, 137F)
+				.texOffs(72, 0).addBox(6.08F, -41.6F, 294.08F, 1F, 22F, 137F)
+				.texOffs(72, 0).addBox(6.08F, -41.6F, 430.72F, 1F, 22F, 137F)
+				.texOffs(72, 0).addBox(6.08F, -41.6F, 567.36F, 1F, 22F, 137F)
+				.texOffs(310, 306).addBox(-14.4F, -16F, 384F, 29F, 10F, 32F)
+				.texOffs(736, 0).addBox(-0.48F, 132.8F, 399.2F, 1F, 139F, 2F)
+				.texOffs(736, 0).addBox(-0.48F, -6.4F, 399.2F, 1F, 139F, 2F)
+				.texOffs(432, 306).addBox(-5.6F, 272F, 394.4F, 11F, 16F, 11F)
+				.texOffs(76, 183).addBox(-16F, -20.8F, -224F, 32F, 5F, 102F)
+				.texOffs(76, 183).addBox(-16F, -20.8F, -122.4F, 32F, 5F, 102F)
+				.texOffs(624, 183).addBox(-17.6F, -16F, -216F, 35F, 35F, 48F)
+				.texOffs(0, 183).addBox(-9.6F, -120F, -9.6F, 19F, 104F, 19F)
+				.texOffs(790, 183).addBox(-0.8F, -113F, 9.6F, 2F, 2F, 59F)
+				.texOffs(790, 183).addBox(-0.8F, -103.8F, 68.4F, 2F, 2F, 59F)
+				.texOffs(790, 183).addBox(-0.8F, -94.6F, 127.2F, 2F, 2F, 59F)
+				.texOffs(790, 183).addBox(-0.8F, -85.4F, 186F, 2F, 2F, 59F)
+				.texOffs(790, 183).addBox(-0.8F, -76.2F, 244.8F, 2F, 2F, 59F)
+				.texOffs(790, 183).addBox(-0.8F, -67F, 303.6F, 2F, 2F, 59F)
+				.texOffs(790, 183).addBox(-0.8F, -57.8F, 362.4F, 2F, 2F, 59F)
+				.texOffs(790, 183).addBox(-0.8F, -48.6F, 421.2F, 2F, 2F, 59F)
+				.texOffs(476, 306).addBox(-0.8F, -27.6F, -200F, 2F, 2F, 24F)
+				.texOffs(476, 306).addBox(-0.8F, -39.6F, -176.2F, 2F, 2F, 24F)
+				.texOffs(476, 306).addBox(-0.8F, -51.6F, -152.4F, 2F, 2F, 24F)
+				.texOffs(476, 306).addBox(-0.8F, -63.6F, -128.6F, 2F, 2F, 24F)
+				.texOffs(476, 306).addBox(-0.8F, -75.6F, -104.8F, 2F, 2F, 24F)
+				.texOffs(476, 306).addBox(-0.8F, -87.6F, -81F, 2F, 2F, 24F)
+				.texOffs(476, 306).addBox(-0.8F, -99.6F, -57.2F, 2F, 2F, 24F)
+				.texOffs(476, 306).addBox(-0.8F, -111.6F, -33.4F, 2F, 2F, 24F)
+				.texOffs(566, 306).addBox(-3.2F, -124.8F, -3.2F, 6F, 5F, 6F)
+				.texOffs(566, 306).addBox(-3.2F, -25.6F, 710.4F, 6F, 5F, 6F)
+				, PartPose.offsetAndRotation(0F, -640F, 0F, 0F, 0F, 0F));
+		return LayerDefinition.create(mesh, 1024, 368);
+	}
+
+	public static Map<String, String> tower_cranePaths() {
+		return Map.ofEntries(
+				Map.entry("body", "body"),
+				Map.entry("spin", "spin")
 		);
 	}
 

@@ -115,6 +115,12 @@ STYLES = {
     'liner_blue': dict(kind='plain', base=0x1F3F8C),
     'liner_red': dict(kind='plain', base=0xB0262A),
     'green_light': dict(kind='plain', base=0x2EC24A, flat=True),
+    # 1.41: the working country - a tractor's red, a crane's yellow (and its lattice), concrete, a load of gravel.
+    'tractor_red': dict(kind='plain', base=0xB3261E),
+    'crane_yellow': dict(kind='plain', base=0xE3B21C),
+    'mesh_yellow': dict(kind='mesh', base=0xD9A818, step=3),
+    'concrete': dict(kind='plain', base=0x9C9A94),
+    'gravel': dict(kind='camo', base=0x7E7A74, c2=0x95918A, c3=0x5E5B57, blob=1),
     'chrome': dict(kind='plain', base=0xB9BEC2),
     # The head-up display's combiner glass (the inside is drawn solid: a dark green tinted pane).
     'hud': dict(kind='plain', base=0x2F5240, flat=True),

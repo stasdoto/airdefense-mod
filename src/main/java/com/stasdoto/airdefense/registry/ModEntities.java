@@ -82,6 +82,13 @@ public final class ModEntities {
 			PLANE_KEY, EntityType.Builder.<com.stasdoto.airdefense.nation.PlaneEntity>of(com.stasdoto.airdefense.nation.PlaneEntity::new,
 					MobCategory.MISC).sized(4f, 4f).clientTrackingRange(16).noSave().noSummon().build(PLANE_KEY));
 
+	private static final ResourceKey<EntityType<?>> PROP_KEY = ResourceKey.create(Registries.ENTITY_TYPE, AirDefense.id("prop"));
+
+	/** 1.41: lorries, tractors, tower cranes (made only on the client, round the player). */
+	public static final EntityType<com.stasdoto.airdefense.nation.PropEntity> PROP = Registry.register(BuiltInRegistries.ENTITY_TYPE,
+			PROP_KEY, EntityType.Builder.<com.stasdoto.airdefense.nation.PropEntity>of(com.stasdoto.airdefense.nation.PropEntity::new,
+					MobCategory.MISC).sized(3f, 3f).clientTrackingRange(16).noSave().noSummon().build(PROP_KEY));
+
 	private static final Map<VehicleType, EntityType<VehicleEntity>> VEHICLES = new EnumMap<>(VehicleType.class);
 
 	static {

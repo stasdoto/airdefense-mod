@@ -130,6 +130,8 @@ public final class Cities {
 	public static volatile boolean railways = true;
 	/** 1.40: the capitals' airports (worlds started since). */
 	public static volatile boolean airports = true;
+	/** 1.41: building sites in the towns, with their cranes (worlds started since). */
+	public static volatile boolean growth = true;
 	@Nullable
 	public static volatile CityForm FORCE_FORM;
 

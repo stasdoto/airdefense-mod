@@ -113,6 +113,9 @@ public final class StreetBlocks {
 	public static final Block STAND = register("stand", StandBlock::new,
 			BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_YELLOW).strength(1.8f, 6f).sound(SoundType.STONE));
 
+	// 1.41: where a tower crane stands on a building site (its foot: the crane itself is drawn by the client).
+	public static final Block CRANE_BASE = thing("crane_base", 0, MapColor.STONE, SoundType.STONE, 0, 0, 0, 16, 8, 16);
+
 	/** A manhole cover set in the asphalt: a whole block (it is the road surface). */
 	public static final Block MANHOLE = register("manhole", Block::new, BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY).strength(1.8f, 6f)
 			.sound(SoundType.STONE));
