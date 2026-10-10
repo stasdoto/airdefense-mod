@@ -123,7 +123,7 @@ public class CountryScreen extends Screen {
 		bodyY0 = y0 + 40;
 		bodyY1 = y1 - 32;
 		listX0 = x0 + 8;
-		listX1 = listX0 + Mth.clamp((int) ((x1 - x0) * 0.33), 128, 200);
+		listX1 = listX0 + Mth.clamp((int) ((x1 - x0) * 0.4), 150, 230);
 		mapX0 = listX1 + 8;
 		mapX1 = x1 - 8;
 		mapY1 = bodyY1 - detailsHeight() - 6;
@@ -144,7 +144,7 @@ public class CountryScreen extends Screen {
 	}
 
 	private int detailsHeight() {
-		return 62;
+		return 70;
 	}
 
 	private void updateButtons() {
@@ -155,7 +155,7 @@ public class CountryScreen extends Screen {
 		play.active = e != null && e.id() != data.current();
 		play.setMessage(e == null ? Component.translatable("screen.airdefense.country.none")
 				: e.id() == data.current() ? Component.translatable("screen.airdefense.country.yours")
-				: Component.translatable("screen.airdefense.country.play", e.name()));
+				: Component.translatable("screen.airdefense.country.play"));
 	}
 
 	private void join() {
@@ -371,7 +371,9 @@ public class CountryScreen extends Screen {
 		Ui.clipped(g, font, who, x, y, w, e.rulerTitle() >= 0 ? Ui.DIM : Ui.BLUE);
 		y += 11;
 		Component style = Component.translatable("style.airdefense." + CityStyle.of(e.style()).name().toLowerCase(java.util.Locale.ROOT));
-		Ui.clipped(g, font, Component.translatable("screen.airdefense.country.facts", e.capital(), e.towns(), Ui.count(e.people()), style), x, y, w, Ui.DIM);
+		Ui.clipped(g, font, Component.translatable("screen.airdefense.country.capital", e.capital(), style), x, y, w, Ui.DIM);
+		y += 11;
+		Ui.clipped(g, font, Component.translatable("screen.airdefense.country.facts", e.towns(), Ui.count(e.people())), x, y, w, Ui.DIM);
 		y += 11;
 		Component war = e.wars().isEmpty() ? Component.translatable("screen.airdefense.country.peace")
 				: Component.translatable("screen.airdefense.country.wars", String.join(", ", e.wars()));
