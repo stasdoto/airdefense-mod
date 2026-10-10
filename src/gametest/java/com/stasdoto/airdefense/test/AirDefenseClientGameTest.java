@@ -353,6 +353,22 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 						}
 					}
 				}
+				// The roundabout on the highway nearest the first station.
+				int[] ring = null;
+				double best = 1e9;
+				for (var r : com.stasdoto.airdefense.nation.Cities.roadsNear(l.getSeed(), t, line.xs[0], line.zs[0])) {
+					if (!r.highway) {
+						continue;
+					}
+					for (double at : new double[]{30, r.length - 30}) {
+						double[] c = r.pointAt(at);
+						double d = Math.hypot(c[0] - line.xs[0], c[1] - line.zs[0]);
+						if (d < best) {
+							best = d;
+							ring = new int[]{(int) Math.floor(c[0]), (int) Math.floor(r.height(at)), (int) Math.floor(c[1]), 1, 0, 1};
+						}
+					}
+				}
 				int[] pick = {12, bridge, tunnel, diag, n / 3, under};
 				int[][] out = new int[pick.length][];
 				for (int k = 0; k < pick.length; k++) {
@@ -363,12 +379,14 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					int j = Math.min(n - 1, i + 1);
 					out[k] = new int[]{line.xs[i], line.y(i), line.zs[i], line.xs[j] - line.xs[i], line.zs[j] - line.zs[i], line.platform};
 				}
-				return out;
+				int[][] all = java.util.Arrays.copyOf(out, out.length + 1);
+				all[out.length] = ring;
+				return all;
 			});
 			if (spots == null) {
 				return;
 			}
-			String[] names = {"rl1_station", "rl2_bridge", "rl3_tunnel", "rl4_diagonal", "rl5_line", "rl9_road_over"};
+			String[] names = {"rl1_station", "rl2_bridge", "rl3_tunnel", "rl4_diagonal", "rl5_line", "rl9_road_over", "rl10_roundabout"};
 			for (int k = 0; k < spots.length; k++) {
 				int[] p = spots[k];
 				if (p == null) {
@@ -378,7 +396,11 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				// The station and the tunnel mouth from above the line, looking along it (they lie in cuttings).
 				int side = k == 0 ? p[5] : 1;
 				boolean along = k == 0 || k == 2;
-				railCam(ctx, server, p, side, along ? 4 : k == 1 ? 40 : 22, along ? 16 : 12, along ? 22 : 18);
+				if (k == 6) {
+					railCam(ctx, server, p, 1, 14, 22, 14);
+				} else {
+					railCam(ctx, server, p, side, along ? 4 : k == 1 ? 40 : 22, along ? 16 : 12, along ? 22 : 18);
+				}
 				ctx.takeScreenshot(names[k]);
 			}
 			AirDefense.LOGGER.info("[airdefense-test] RESULT rail_built: {} track blocks laid, {} chunks made, avg {} us per chunk; client saw {} track blocks",

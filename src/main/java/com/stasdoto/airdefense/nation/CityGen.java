@@ -221,6 +221,21 @@ public final class CityGen {
 				ports.add(pt);
 			}
 		}
+		// 1.39: a roundabout on each highway a little way out of the town it comes into.
+		List<int[]> rings = new ArrayList<>();
+		if (Cities.railways) {
+			for (Cities.Road r : roads) {
+				if (!r.highway || r.length < RING_AT * 3) {
+					continue;
+				}
+				for (double at : new double[]{RING_AT, r.length - RING_AT}) {
+					double[] c = r.pointAt(at);
+					if (c[0] >= x0 - RING_R - 2 && c[0] <= x0 + 15 + RING_R + 2 && c[1] >= z0 - RING_R - 2 && c[1] <= z0 + 15 + RING_R + 2) {
+						rings.add(new int[]{(int) Math.floor(c[0]), (int) Math.floor(c[1]), (int) Math.floor(r.height(at))});
+					}
+				}
+			}
+		}
 		List<Railways.Line> lines = new ArrayList<>();
 		for (Railways.Line l : Railways.near(seed, t, mx, mz)) {
 			if (l.near(mx, mz, 8 + Railways.SIDE + 4)) {
@@ -246,6 +261,16 @@ public final class CityGen {
 				}
 				if (in != null) {
 					cityColumn(w, t, in, x, z, pos);
+					continue;
+				}
+				int[] ring = null;
+				for (int[] rg : rings) {
+					if ((x - rg[0]) * (x - rg[0]) + (z - rg[1]) * (z - rg[1]) <= (RING_R + 2) * (RING_R + 2)) {
+						ring = rg;
+					}
+				}
+				if (ring != null) {
+					ringColumn(w, ring, x, z, pos);
 					continue;
 				}
 				Cities.Road road = null;
@@ -767,7 +792,22 @@ public final class CityGen {
 				}
 			}
 			if (d > half - 0.5) {
-				w.set(pos.set(x, deck + 1, z), r.dirt ? Blocks.SPRUCE_FENCE.defaultBlockState() : RAIL);
+				if (Cities.railways && r.highway && Math.floorMod((int) along, 32) == 0) {
+					// 1.39: lamps along a highway's bridge.
+					for (int yy = 1; yy <= 4; yy++) {
+						w.set(pos.set(x, deck + yy, z), com.stasdoto.airdefense.street.StreetBlocks.POLE_STEEL.defaultBlockState()
+								.setValue(com.stasdoto.airdefense.street.StreetPoleBlock.BOTTOM, yy == 1));
+					}
+					w.set(pos.set(x, deck + 5, z), com.stasdoto.airdefense.street.StreetBlocks.LAMP_MODERN.defaultBlockState()
+							.setValue(com.stasdoto.airdefense.street.StreetBlock.FACING, net.minecraft.core.Direction.getApproximateNearest(-spot.across * -spot.uz,
+									0, -spot.across * spot.ux)));
+				} else {
+					w.set(pos.set(x, deck + 1, z), r.dirt ? Blocks.SPRUCE_FENCE.defaultBlockState() : RAIL);
+				}
+			}
+			if (Cities.railways && !r.dirt && d > half - 1.5) {
+				// 1.39: the deck's edge beam (the bridge has some depth to it).
+				w.set(pos.set(x, deck - 1, z), Blocks.SMOOTH_STONE.defaultBlockState());
 			}
 			if (Math.floorMod((int) along, 24) < 2 && d <= half - 0.5 && (!r.highway || d < 1.5 || d > half - 2.5)) {
 				for (int yy = deck - 1; yy > w.level.getMinY(); yy--) {
@@ -797,6 +837,44 @@ public final class CityGen {
 		// Crash barriers along a highway where it runs high on an embankment.
 		if (r.highway && d > half - 0.5 && g[0] < y - 2 && !slab) {
 			w.set(pos.set(x, y + 1, z), BARRIER);
+		}
+	}
+
+	/** 1.39: where on a highway its roundabout is (from the town's end), and how big (to the outer kerb). */
+	private static final int RING_AT = 30;
+	private static final int RING_R = 11;
+
+	/**
+	 * A column of a roundabout: the island in the middle (grass, flowers, a bush), its kerb, the carriageway going round
+	 * it (a dashed line between its two lanes), the outer kerb, a strip of grass.
+	 */
+	private static void ringColumn(Writer w, int[] ring, int x, int z, BlockPos.MutableBlockPos pos) {
+		double dx = x + 0.5 - (ring[0] + 0.5);
+		double dz = z + 0.5 - (ring[1] + 0.5);
+		double d = Math.sqrt(dx * dx + dz * dz);
+		int y = ring[2];
+		int[] g = ground(w, x, z, pos);
+		if (d <= 3.6) {
+			shape(w, x, z, y + 1, GRASS, g, pos);
+			long h = mix(x * 341873128712L + z * 132897987541L);
+			if (d < 0.8) {
+				w.set(pos.set(x, y + 2, z), Blocks.FLOWERING_AZALEA.defaultBlockState());
+			} else if (Math.floorMod(h, 3) == 0) {
+				BlockState[] flowers = {Blocks.POPPY.defaultBlockState(), Blocks.DANDELION.defaultBlockState(), Blocks.CORNFLOWER.defaultBlockState(),
+						Blocks.OXEYE_DAISY.defaultBlockState()};
+				w.set(pos.set(x, y + 2, z), flowers[(int) Math.floorMod(h >> 8, flowers.length)]);
+			}
+		} else if (d <= 4.6) {
+			shape(w, x, z, y + 1, KERB, g, pos);
+			w.set(pos.set(x, y, z), Blocks.STONE.defaultBlockState());
+		} else if (d <= RING_R - 0.5) {
+			double a = Math.atan2(dz, dx);
+			boolean dash = d > 7.1 && d <= 8.1 && Math.floorMod((int) Math.floor(a * 8 / Math.PI * 2), 2) == 0;
+			shape(w, x, z, y, dash ? MARK : ASPHALT, g, pos);
+		} else if (d <= RING_R + 0.5) {
+			shape(w, x, z, y, KERB, g, pos);
+		} else if (g[2] == 0) {
+			shape(w, x, z, y, GRASS, g, pos);
 		}
 	}
 
