@@ -798,9 +798,10 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			out[2] = c.z;
 			out[3] = Math.max(x1 - x0, z1 - z0);
 			AirDefense.LOGGER.info("[airdefense-test] RESULT metro_plan: {} parts (centre {}, estates {}, suburbs {}, works {}), {} m across ({} x {}), {} buildings; "
-					+ "a far cell planned in {} ms ({} towns), its roads in {} ms ({} roads); towns of the country beyond: {}",
+					+ "a far cell planned in {} ms ({} towns), its roads in {} ms ({} roads); towns of the country beyond: {}; districts in all {} planned, {} given up",
 					kinds[1] + kinds[2] + kinds[3] + kinds[4], kinds[1], kinds[2], kinds[3], kinds[4], (int) out[3], x1 - x0, z1 - z0, buildings, planMs,
-					far.size(), roadMs, farRoads.size(), list.stream().filter(k -> k.index == 1 || k.index == 2).count());
+					far.size(), roadMs, farRoads.size(), list.stream().filter(k -> k.index == 1 || k.index == 2).count(),
+					com.stasdoto.airdefense.nation.Cities.districtsPlanned, com.stasdoto.airdefense.nation.Cities.districtsRefused);
 			return out;
 		});
 		if (m == null) {
@@ -811,7 +812,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.runOnClient(mc -> mc.gui.hud.toggle());
 		// The skyline from beyond its edge, then from above the centre.
 		double r = m[3] / 2;
-		look(server, m[0] - r * 0.55, m[1] + 95, m[2] - r * 0.55, m[0], m[1] + 10, m[2]);
+		look(server, m[0] - 150, m[1] + 70, m[2] - 150, m[0] + 60, m[1] + 20, m[2] + 60);
 		ctx.waitTicks(500);
 		ctx.takeScreenshot("mt1_skyline");
 		look(server, m[0] + 60, m[1] + 160, m[2] + 60, m[0] - 200, m[1], m[2] - 200);

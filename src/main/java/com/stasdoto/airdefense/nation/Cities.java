@@ -752,6 +752,10 @@ public final class Cities {
 		return out;
 	}
 
+	/** For the tests: districts planned, and those given up (water, too steep, no room). */
+	public static int districtsPlanned;
+	public static int districtsRefused;
+
 	/** 1.46: how far the rings of a great city's districts lie from its centre. */
 	static final int[] RING_R = {0, 390, 790, 1180};
 	/** How many districts each ring has. */
@@ -800,8 +804,10 @@ public final class Cities {
 				Size size = ring == 3 && kind == KIND_SUBURB && r.nextBoolean() ? Size.MEDIUM : Size.LARGE;
 				int[] site = quickSite(t, r, size, tx, tz, 36);
 				if (site == null || clashes(out, site[0], site[1], size, 30)) {
+					districtsRefused++;
 					continue;
 				}
+				districtsPlanned++;
 				// The ground of a district: near its neighbour's (towards the centre), so the avenues between them are not steep.
 				int base = site[2];
 				City inner = nearest(out, site[0], site[1]);
@@ -873,7 +879,7 @@ public final class Cities {
 		int h = size.half();
 		int[] best = null;
 		double bestScore = Double.MAX_VALUE;
-		for (int i = 0; i < 2; i++) {
+		for (int i = 0; i < 3; i++) {
 			int sx = x + (i == 0 ? 0 : r.nextInt(2 * jitter + 1) - jitter);
 			int sz = z + (i == 0 ? 0 : r.nextInt(2 * jitter + 1) - jitter);
 			int[] hs = new int[9];
@@ -887,7 +893,7 @@ public final class Cities {
 					}
 				}
 			}
-			if (wet > 2) {
+			if (wet > 3) {
 				continue;
 			}
 			int[] sorted = hs.clone();
@@ -897,7 +903,8 @@ public final class Cities {
 			for (int y : hs) {
 				spread += Math.abs(y - median);
 			}
-			if (spread / 9 > 9) {
+			spread += wet * 20;
+			if (spread / 9 > 22) {
 				continue;
 			}
 			if (spread < bestScore) {
@@ -1151,6 +1158,33 @@ public final class Cities {
 	private static final Object[] DESERT_MID = {BuildingType.APARTMENTS, 4, BuildingType.PANEL5, 3, BuildingType.SHOP, 3};
 	private static final Object[] DESERT_OUTER = {BuildingType.HOUSE, 4, BuildingType.SMALL_HOUSE, 4, BuildingType.COTTAGE, 2, BuildingType.SHOP, 1};
 
+	// 1.46: a great city's housing estates (tall panel blocks and residential towers) and its centre (towers and offices).
+	private static final Object[] SOVIET_ESTATES = {BuildingType.PANEL9, 6, BuildingType.PANEL5, 3, BuildingType.TOWER, 1, BuildingType.SHOP, 1};
+	private static final Object[] EURO_ESTATES = {BuildingType.PANEL9, 4, BuildingType.PANEL5, 3, BuildingType.APARTMENTS, 2, BuildingType.TOWER, 1,
+			BuildingType.SHOP, 1};
+	private static final Object[] US_ESTATES = {BuildingType.TOWER, 3, BuildingType.PANEL9, 3, BuildingType.APARTMENTS, 3, BuildingType.SHOP, 1};
+	private static final Object[] DESERT_ESTATES = {BuildingType.PANEL9, 3, BuildingType.APARTMENTS, 4, BuildingType.TOWER, 1, BuildingType.SHOP, 1};
+	private static final Object[] ESTATES = {BuildingType.PANEL9, 5, BuildingType.TOWER, 2, BuildingType.PANEL5, 2, BuildingType.SHOP, 1};
+	private static final Object[] METRO_CENTRE = {BuildingType.TOWER, 5, BuildingType.OFFICE, 4, BuildingType.PANEL9, 2, BuildingType.SHOP, 2};
+	private static final Object[] DESERT_CENTRE = {BuildingType.OFFICE, 4, BuildingType.TOWER, 3, BuildingType.PANEL9, 2, BuildingType.SHOP, 3};
+
+	/** 1.46: the mix for a lot of this district, minding what the great city's district is mostly made of. */
+	private static Object[] mix(City c, int district) {
+		if (c.kind == KIND_ESTATES && district != CityShape.OUTER) {
+			return switch (c.style) {
+				case SOVIET -> SOVIET_ESTATES;
+				case EUROPEAN -> EURO_ESTATES;
+				case AMERICAN -> US_ESTATES;
+				case DESERT -> DESERT_ESTATES;
+				default -> ESTATES;
+			};
+		}
+		if (c.kind == KIND_CENTRE && district == CityShape.DOWNTOWN) {
+			return c.style == CityStyle.DESERT ? DESERT_CENTRE : METRO_CENTRE;
+		}
+		return mix(c.style, district);
+	}
+
 	private static Object[] mix(CityStyle style, int district) {
 		return switch (style) {
 			case SOVIET -> district == CityShape.DOWNTOWN ? SOVIET_DOWNTOWN : district == CityShape.MID ? SOVIET_MID : SOVIET_OUTER;
@@ -1365,8 +1399,8 @@ public final class Cities {
 						out.add(park);
 					}
 				}
-				case CityShape.DOWNTOWN -> rows(f, r, mix(c.style, CityShape.DOWNTOWN), y, out);
-				case CityShape.MID -> rows(f, r, mix(c.style, CityShape.MID), y, out);
+				case CityShape.DOWNTOWN -> rows(f, r, mix(c, CityShape.DOWNTOWN), y, out);
+				case CityShape.MID -> rows(f, r, mix(c, CityShape.MID), y, out);
 				case CityShape.INDUSTRY -> rows(f, r, INDUSTRY, y, out);
 				default -> rows(f, r, mix(c.style, CityShape.OUTER), y, out);
 			}
