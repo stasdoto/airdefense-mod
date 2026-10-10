@@ -550,6 +550,21 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		AirDefense.LOGGER.info("[airdefense-test] RESULT airport_parked: {} planes at the stands after {} ticks, {} airports seen",
 				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.planes().size()), parked,
 				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.airports()));
+		// A parked plane up close.
+		double[] pk = ctx.computeOnClient(mc -> {
+			for (double[] q : com.stasdoto.airdefense.client.nation.AirTraffic.planes()) {
+				if (q[3] == 1) {
+					return q;
+				}
+			}
+			return null;
+		});
+		if (pk != null) {
+			look(server, pk[0] - a[4] * 30 + a[2] * 22, pk[1] + 9, pk[2] - a[5] * 30 + a[3] * 22, pk[0], pk[1] + 3, pk[2]);
+			ctx.waitTicks(40);
+			ctx.runOnClient(mc -> mc.gui.hud.getChat().clearMessages(false));
+			ctx.takeScreenshot("ap1b_parked_plane");
+		}
 		// From above, the whole airport.
 		double[] c = at.apply((double) mid, 50.0);
 		double[] eye = at.apply((double) mid + 60, -110.0);
