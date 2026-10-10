@@ -873,7 +873,7 @@ public final class Arsenals extends SavedData {
 				// 1.34: a reconnaissance drone goes over the target: the guns that follow are corrected by it.
 				recon(level, p, c, waveTarget);
 				Country owner = p.country(waveTarget.country);
-				if (owner != null && owner.owner != null && level.getServer().getPlayerList().getPlayer(owner.owner) instanceof ServerPlayer pl) {
+				for (ServerPlayer pl : Politics.online(level.getServer(), owner)) {
 					pl.sendSystemMessage(sites == 1 ? Component.translatable("nation.airdefense.strike.incoming", first.name, waveTarget.name)
 							: Component.translatable("nation.airdefense.strike.wave", c.name, waveTarget.name, sites));
 				}
@@ -1240,7 +1240,7 @@ public final class Arsenals extends SavedData {
 						&& Math.sqrt(s.center.distSqr(target.center)) <= u.type.launcher.maxRange && sendDrone(level, s, ar, u, target.center)) {
 					reconFlights++;
 					Country owner = p.country(target.country);
-					if (owner != null && owner.owner != null && level.getServer().getPlayerList().getPlayer(owner.owner) instanceof ServerPlayer pl) {
+					for (ServerPlayer pl : Politics.online(level.getServer(), owner)) {
 						pl.sendSystemMessage(Component.translatable("nation.airdefense.recon.incoming", s.name, target.name,
 								Component.translatable("item.airdefense." + u.type.launcher.missile.itemId)));
 					}
@@ -1531,13 +1531,12 @@ public final class Arsenals extends SavedData {
 			return;
 		}
 		Country c = p.country(target.country);
-		if (c == null || c.owner == null || !(level.getServer().getPlayerList().getPlayer(c.owner) instanceof ServerPlayer owner)) {
-			return;
-		}
-		if (remote) {
-			owner.sendSystemMessage(Component.translatable("nation.airdefense.strike.remote", from.name, target.name, fired, down));
-		} else {
-			owner.sendSystemMessage(Component.translatable("nation.airdefense.strike.incoming", from.name, target.name));
+		for (ServerPlayer owner : Politics.online(level.getServer(), c)) {
+			if (remote) {
+				owner.sendSystemMessage(Component.translatable("nation.airdefense.strike.remote", from.name, target.name, fired, down));
+			} else {
+				owner.sendSystemMessage(Component.translatable("nation.airdefense.strike.incoming", from.name, target.name));
+			}
 		}
 	}
 }

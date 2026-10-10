@@ -323,7 +323,7 @@ public final class Unrest {
 	}
 
 	private static void tell(ServerLevel level, Country c, Component message) {
-		if (c.owner != null && level.getServer().getPlayerList().getPlayer(c.owner) instanceof ServerPlayer owner) {
+		for (ServerPlayer owner : Politics.online(level.getServer(), c)) {
 			owner.sendSystemMessage(message);
 		}
 	}

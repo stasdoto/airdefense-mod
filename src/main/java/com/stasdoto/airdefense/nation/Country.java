@@ -44,10 +44,15 @@ public final class Country {
 				});
 				return out;
 			}),
-			Codec.LONG.optionalFieldOf("cell", Long.MIN_VALUE).forGetter(c -> c.cell)
-	).apply(i, (id, name, color, owner, ownerName, capital, cityState, wars, wanted, since, score, cell) -> {
+			Codec.LONG.optionalFieldOf("cell", Long.MIN_VALUE).forGetter(c -> c.cell),
+			UUIDUtil.CODEC.listOf().optionalFieldOf("members", List.of()).forGetter(c -> new ArrayList<>(c.members.keySet())),
+			Codec.STRING.listOf().optionalFieldOf("member_names", List.of()).forGetter(c -> new ArrayList<>(c.members.values()))
+	).apply(i, (id, name, color, owner, ownerName, capital, cityState, wars, wanted, since, score, cell, members, memberNames) -> {
 		Country c = new Country(id, name, color, owner, ownerName, capital, cityState, wars, wanted);
 		c.cell = cell;
+		for (int k = 0; k < members.size(); k++) {
+			c.members.put(members.get(k), k < memberNames.size() ? memberNames.get(k) : "?");
+		}
 		for (int k = 0; k + 1 < since.size(); k += 2) {
 			c.warSince.put((int) (long) since.get(k), since.get(k + 1));
 		}
@@ -69,6 +74,11 @@ public final class Country {
 	/** The country cell of the world plan it was made for ({@link Cities#cellKey}), or Long.MIN_VALUE. */
 	public long cell = Long.MIN_VALUE;
 	public final Set<Integer> wars = new HashSet<>();
+	/**
+	 * 1.43: the players who play for this country besides its {@link #owner} (the one who leads it), with their names. A
+	 * player country with friends: all of them run it together.
+	 */
+	public final java.util.Map<UUID, String> members = new java.util.LinkedHashMap<>();
 	/** Players who shot at this country's people: its guards shoot them on sight. */
 	public final Set<UUID> wanted = new HashSet<>();
 	/** When each war began (game time), by enemy country. */
@@ -104,6 +114,39 @@ public final class Country {
 
 	public boolean isPlayers() {
 		return owner != null;
+	}
+
+	/** Does this player play for this country (its leader or one of its members)? */
+	public boolean isMember(UUID player) {
+		return player != null && (player.equals(owner) || members.containsKey(player));
+	}
+
+	/** Everybody who plays for it: the leader first. */
+	public List<UUID> everyone() {
+		List<UUID> out = new ArrayList<>();
+		if (owner != null) {
+			out.add(owner);
+		}
+		for (UUID u : members.keySet()) {
+			if (!u.equals(owner)) {
+				out.add(u);
+			}
+		}
+		return out;
+	}
+
+	/** The names of everybody who plays for it. */
+	public List<String> everyoneNames() {
+		List<String> out = new ArrayList<>();
+		if (owner != null) {
+			out.add(ownerName);
+		}
+		members.forEach((u, n) -> {
+			if (!u.equals(owner)) {
+				out.add(n);
+			}
+		});
+		return out;
 	}
 
 	public boolean atWarWith(int other) {

@@ -869,7 +869,7 @@ public final class Nations {
 	@Nullable
 	public static Component charterProblem(ServerLevel level, Politics p, Settlement s, ServerPlayer player) {
 		Country c = p.country(s.country);
-		if (c != null && player.getUUID().equals(c.owner)) {
+		if (c != null && c.isMember(player.getUUID())) {
 			return Component.translatable("nation.airdefense.already_yours");
 		}
 		if (c != null && c.owner != null) {
@@ -965,7 +965,7 @@ public final class Nations {
 			}
 			Player at = level.getNearestPlayer(s.flag.getX() + 0.5, s.flag.getY(), s.flag.getZ() + 0.5, 5, false);
 			Country owner = p.country(s.country);
-			boolean mine = at != null && owner != null && at.getUUID().equals(owner.owner);
+			boolean mine = at != null && owner != null && owner.isMember(at.getUUID());
 			if (!(at instanceof ServerPlayer player) || at.isSpectator() || mine) {
 				if (s.captureTicks > 0) {
 					s.captureTicks = Math.max(0, s.captureTicks - 2);
@@ -1038,7 +1038,7 @@ public final class Nations {
 		}
 		Politics p = Politics.get(level.getServer());
 		Country c = p.country(soldier.country());
-		if (c != null && !player.getUUID().equals(c.owner) && c.wanted.add(player.getUUID())) {
+		if (c != null && !c.isMember(player.getUUID()) && c.wanted.add(player.getUUID())) {
 			p.setDirty();
 		}
 		Settlement home = p.settlements.get(soldier.home());
@@ -1077,7 +1077,7 @@ public final class Nations {
 	public static int mobilize(ServerLevel level, ServerPlayer player, Settlement s, int count) {
 		Politics p = Politics.get(level.getServer());
 		Country c = p.country(s.country);
-		if (c == null || !player.getUUID().equals(c.owner)) {
+		if (c == null || !c.isMember(player.getUUID())) {
 			player.sendOverlayMessage(Component.translatable("nation.airdefense.not_yours"));
 			return 0;
 		}
@@ -1117,7 +1117,7 @@ public final class Nations {
 	public static int order(ServerLevel level, ServerPlayer player, Settlement s, @Nullable BlockPos target) {
 		Politics p = Politics.get(level.getServer());
 		Country c = p.country(s.country);
-		if (c == null || !player.getUUID().equals(c.owner)) {
+		if (c == null || !c.isMember(player.getUUID())) {
 			return 0;
 		}
 		int n = 0;
@@ -1132,7 +1132,7 @@ public final class Nations {
 	public static int demobilize(ServerLevel level, ServerPlayer player, Settlement s) {
 		Politics p = Politics.get(level.getServer());
 		Country c = p.country(s.country);
-		if (c == null || !player.getUUID().equals(c.owner)) {
+		if (c == null || !c.isMember(player.getUUID())) {
 			return 0;
 		}
 		int n = 0;
@@ -1160,7 +1160,7 @@ public final class Nations {
 			for (Settlement s : p.settlements.values()) {
 				double d = s.center.distSqr(player.blockPosition());
 				Country c = p.country(s.country);
-				if (d < best && (c == null || !player.getUUID().equals(c.owner) || r.nextBoolean())) {
+				if (d < best && (c == null || !c.isMember(player.getUUID()) || r.nextBoolean())) {
 					best = d;
 					target = s;
 				}

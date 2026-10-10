@@ -34,6 +34,8 @@ public final class NationClient {
 		EntityRenderers.register(ModEntities.PROP, PropRenderer::new);
 		Cranes.init();
 		Farms.init();
+		// 1.43: choosing the country to play for.
+		CountryClient.init();
 		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(mc -> {
 			Traffic.tick(mc);
 			Cranes.tick(mc);
