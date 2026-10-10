@@ -175,11 +175,11 @@ public final class Airports {
 			int ux = -d[1];
 			int uz = d[0];
 			for (int gap : new int[]{50, 110}) {
-				for (int shift : new int[]{0, -(MID + 60), MID + 60}) {
+				for (int shift : new int[]{-(MID + 60), MID + 60}) {
 					int sx = e[0] + d[0] * (gap + V1) - ux * (MID + shift);
 					int sz = e[1] + d[1] * (gap + V1) - uz * (MID + shift);
 					WHY.clear();
-					double score = sample(seed, t, c, sx, sz, ux, uz, vx, vz, 1, 1, null);
+					double score = sample(seed, t, c, sx, sz, ux, uz, vx, vz, 1, 0, null);
 					sb.append(String.format(" [%d,%d g%d s%d: %s]", d[0], d[1], gap, shift, score < Double.MAX_VALUE ? String.format("%.1f", score) : WHY.keySet()));
 				}
 			}
@@ -241,32 +241,12 @@ public final class Airports {
 	}
 
 	private static Airport plan(long seed, Cities.Terrain t, Cities.City c) {
-		// The ways out of town to stay clear of: towards the next capitals, towards the town's own satellites.
-		List<double[]> ways = new ArrayList<>();
-		for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
-			List<Cities.City> n = Cities.cities(seed, t, c.cx + d[0], c.cz + d[1]);
-			if (!n.isEmpty()) {
-				ways.add(new double[]{n.getFirst().x - c.x, n.getFirst().z - c.z});
-			}
-		}
-		for (Cities.City o : Cities.cities(seed, t, c.cx, c.cz)) {
-			if (o != c) {
-				ways.add(new double[]{o.x - c.x, o.z - c.z});
-			}
-		}
 		int sea = t.sea();
-		// Every candidate site first roughly (its four corners), then the two likeliest more carefully (eighteen samples).
+		// Every candidate site first roughly (two samples), then the likeliest more carefully (eighteen; the next if that fails).
 		List<double[]> rough = new ArrayList<>();
 		for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
-			// A highway leaves this way (to the next capital, to a satellite): the airport only off to one side of it, clear
-			// of the way straight out.
-			boolean blocked = false;
-			for (double[] w : ways) {
-				double cos = (w[0] * d[0] + w[1] * d[1]) / Math.max(1, Math.hypot(w[0], w[1]));
-				if (cos > Math.cos(Math.toRadians(50))) {
-					blocked = true;
-				}
-			}
+			// A highway leaves the town each way (to the next capitals east, west, north and south): the airport off to one
+			// side of it, clear of the way straight out.
 			int[] e = Cities.edge(c, c.x + d[0] * 2000, c.z + d[1] * 2000);
 			// v points back towards the town; u along the town's side.
 			int vx = -d[0];
@@ -274,13 +254,13 @@ public final class Airports {
 			int ux = -d[1];
 			int uz = d[0];
 			for (int gap : new int[]{50, 110}) {
-				for (int shift : blocked ? new int[]{-(MID + 60), MID + 60} : new int[]{0, -120, 120, -(MID + 60), MID + 60}) {
+				for (int shift : new int[]{-(MID + 60), MID + 60}) {
 					// The fence on the town side is gap blocks out from the edge; the threshold is MID (+ shift) along.
 					int sx = e[0] + d[0] * (gap + V1) - ux * (MID + shift);
 					int sz = e[1] + d[1] * (gap + V1) - uz * (MID + shift);
-					double score = sample(seed, t, c, sx, sz, ux, uz, vx, vz, 1, 1, null);
+					double score = sample(seed, t, c, sx, sz, ux, uz, vx, vz, 1, 0, null);
 					if (score < Double.MAX_VALUE) {
-						rough.add(new double[]{score + gap * 0.2 + Math.abs(shift) * 0.1, sx, sz, ux, uz, vx, vz});
+						rough.add(new double[]{score + gap * 0.2, sx, sz, ux, uz, vx, vz});
 					}
 				}
 			}
@@ -288,7 +268,7 @@ public final class Airports {
 		rough.sort((p, q) -> Double.compare(p[0], q[0]));
 		Airport best = null;
 		double bestScore = Double.MAX_VALUE;
-		for (int i = 0; i < Math.min(2, rough.size()); i++) {
+		for (int i = 0; i < Math.min(2, rough.size()) && best == null; i++) {
 			double[] r = rough.get(i);
 			int[] level = new int[1];
 			double score = sample(seed, t, c, (int) r[1], (int) r[2], (int) r[3], (int) r[4], (int) r[5], (int) r[6], 5, 2, level);
@@ -328,7 +308,8 @@ public final class Airports {
 		int wet = 0;
 		for (int i = 0; i <= nu; i++) {
 			for (int j = 0; j <= nv; j++) {
-				int[] w = world(sx, sz, ux, uz, vx, vz, U0 + (U1 - U0) * i / nu, V0 + (V1 - V0) * j / nv);
+				// (nv 0: the two opposite corners.)
+				int[] w = world(sx, sz, ux, uz, vx, vz, U0 + (U1 - U0) * i / nu, nv == 0 ? (i == 0 ? V0 : V1) : V0 + (V1 - V0) * j / nv);
 				// Water may be filled in (a pond, a stream), but not too much of it (not the sea).
 				int y = t.top(w[0], w[1]);
 				if (y <= sea) {
