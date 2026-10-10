@@ -881,5 +881,88 @@
       }
     ],
     "subtitle": "subtitles.airdefense.whistle"
+  },
+  "city_traffic": {
+    "sounds": [
+      {
+        "name": "airdefense:city_traffic",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.airdefense.city_traffic"
+  },
+  "city_car": {
+    "sounds": [
+      {
+        "name": "airdefense:car_pass_0",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "airdefense:car_pass_1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "airdefense:car_pass_2",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.airdefense.city_car"
+  },
+  "city_horn": {
+    "sounds": [
+      {
+        "name": "airdefense:car_horn_0",
+        "attenuation_distance": 64
+      },
+      {
+        "name": "airdefense:car_horn_1",
+        "attenuation_distance": 64
+      }
+    ],
+    "subtitle": "subtitles.airdefense.city_horn"
+  },
+  "city_birds": {
+    "sounds": [
+      {
+        "name": "airdefense:birds_0",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "airdefense:birds_1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "airdefense:birds_2",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.airdefense.city_birds"
+  },
+  "city_crickets": {
+    "sounds": [
+      {
+        "name": "airdefense:crickets",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.airdefense.city_crickets"
+  },
+  "city_owl": {
+    "sounds": [
+      {
+        "name": "airdefense:owl",
+        "attenuation_distance": 64
+      }
+    ],
+    "subtitle": "subtitles.airdefense.city_owl"
+  },
+  "town_bell": {
+    "sounds": [
+      {
+        "name": "airdefense:town_bell",
+        "attenuation_distance": 160
+      }
+    ],
+    "subtitle": "subtitles.airdefense.town_bell"
   }
 }

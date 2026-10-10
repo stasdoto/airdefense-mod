@@ -41,11 +41,14 @@ public final class Politics extends SavedData {
 	 * towns are half built already).
 	 */
 	public final int styles;
-	/** 1.35: 1 in worlds started with the town outlines (round, square...); older worlds read 0 and keep the blobs. */
+	/**
+	 * 1.35: 1 in worlds started with the town outlines (round, square...); older worlds read 0 and keep the blobs. 1.36: 2 in
+	 * worlds started with the playgrounds and stadiums in the parks.
+	 */
 	public final int shapes;
 
 	public Politics() {
-		this(List.of(), List.of(), 1, List.of(), 1, 1);
+		this(List.of(), List.of(), 1, List.of(), 1, 2);
 	}
 
 	private Politics(List<Country> countries, List<Settlement> settlements, int nextId, List<Integer> pending, int styles, int shapes) {

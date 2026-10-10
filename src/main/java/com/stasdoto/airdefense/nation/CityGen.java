@@ -392,6 +392,23 @@ public final class CityGen {
 		return false;
 	}
 
+	/** 1.36: the towns' glass is the kind that lights up at night (same look by day). */
+	static BlockState window(BlockState s) {
+		Block b = s.getBlock();
+		if (b == Blocks.GLASS_PANE) {
+			return com.stasdoto.airdefense.street.StreetBlocks.CITY_WINDOW.defaultBlockState()
+					.setValue(BlockStateProperties.NORTH, s.getValue(BlockStateProperties.NORTH))
+					.setValue(BlockStateProperties.EAST, s.getValue(BlockStateProperties.EAST))
+					.setValue(BlockStateProperties.SOUTH, s.getValue(BlockStateProperties.SOUTH))
+					.setValue(BlockStateProperties.WEST, s.getValue(BlockStateProperties.WEST))
+					.setValue(BlockStateProperties.WATERLOGGED, s.getValue(BlockStateProperties.WATERLOGGED));
+		}
+		if (b == Blocks.GLASS) {
+			return com.stasdoto.airdefense.street.StreetBlocks.CITY_GLASS.defaultBlockState();
+		}
+		return s;
+	}
+
 	/** For the tests: what kind of ground {@code p}'s column is (town, its margin, a road...) and what is round {@code p}. */
 	public static String describe(ServerLevel level, BlockPos p) {
 		Cities.Terrain t = Cities.terrain(level);
@@ -1272,6 +1289,7 @@ public final class CityGen {
 		}
 
 		void set(BlockPos p, BlockState s) {
+			s = window(s);
 			if (capture != null) {
 				if (box.isInside(p)) {
 					capture.put(p.asLong(), s);

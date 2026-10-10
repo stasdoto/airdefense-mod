@@ -237,6 +237,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("streets")) {
 				streets(ctx, server);
 			}
+			if (scene("night")) {
+				night(ctx, server);
+			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
@@ -1748,6 +1751,129 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		}
 		ctx.runOnClient(mc -> mc.options.renderDistance().set(8));
 		AirDefense.LOGGER.info("[airdefense-test] RESULT city_forms: {}", report);
+		language(ctx, "en_us");
+	}
+
+	/**
+	 * 1.36: a town's parks as a playground, a sports ground and a stadium; the town by night with its windows lit (and dark
+	 * in a blackout), the town's sounds round the player.
+	 */
+	private void night(ClientGameTestContext ctx, TestServerContext server) {
+		language(ctx, "ru_ru");
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 6000");
+		int cellX = 90;
+		int cellZ = 70;
+		int[] cap = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = com.stasdoto.airdefense.nation.CityStyle.EUROPEAN;
+			com.stasdoto.airdefense.nation.Cities.FORCE_FORM = com.stasdoto.airdefense.nation.CityForm.ROUND;
+			var list = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), com.stasdoto.airdefense.nation.Cities.terrain(l), cellX, cellZ);
+			com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = null;
+			com.stasdoto.airdefense.nation.Cities.FORCE_FORM = null;
+			if (list.isEmpty()) {
+				return null;
+			}
+			var c = list.getFirst();
+			c.shape();
+			// The parks: the first a stadium, the second a playground, the third a sports ground.
+			int[] kinds = {5, 2, 4};
+			int k = 0;
+			int[] out = new int[11];
+			out[0] = c.x;
+			out[1] = c.z;
+			out[2] = c.half();
+			out[3] = c.base;
+			for (var b : c.buildings()) {
+				if (b.type == com.stasdoto.airdefense.nation.BuildingType.PARK && k < 3) {
+					b.variant = kinds[k];
+					var center = b.origin.relative(b.facing, 10);
+					out[4 + k * 2] = center.getX();
+					out[5 + k * 2] = center.getZ();
+					k++;
+				}
+			}
+			out[10] = k;
+			AirDefense.LOGGER.info("[airdefense-test] RESULT night_town: parks {} parks flag {}", k, com.stasdoto.airdefense.nation.Cities.parks);
+			return out;
+		});
+		if (cap == null) {
+			return;
+		}
+		int cx = cap[0];
+		int cz = cap[1];
+		int half = cap[2];
+		int base = cap[3];
+		camera(server, cx + 0.5, base + 60, cz + 0.5, 0, 90);
+		ctx.waitTicks(40);
+		generateCity(server, cx - half - 14, cz - half - 14, cx + half + 14, cz + half + 14);
+		String[] names = {"n1_stadium", "n2_playground", "n3_sports"};
+		for (int k = 0; k < cap[10]; k++) {
+			int px = cap[4 + k * 2];
+			int pz = cap[5 + k * 2];
+			look(server, px - 8.5, base + 8, pz - 8.5, px + 0.5, base + 1, pz + 0.5);
+			ctx.waitTicks(k == 0 ? 120 : 40);
+			ctx.takeScreenshot(names[k]);
+		}
+		// The town's sounds by day, standing on a street by the town hall.
+		look(server, cx + 0.5, base + 2, cz + 20.5, cx + 0.5, base + 2, cz + 0.5);
+		int played0 = com.stasdoto.airdefense.client.fx.CityAmbience.played;
+		ctx.waitTicks(600);
+		int playedDay = com.stasdoto.airdefense.client.fx.CityAmbience.played - played0;
+		boolean inTown = com.stasdoto.airdefense.client.fx.CityAmbience.inTown;
+		// Night: the windows' random ticks quickened so they catch up in a few seconds.
+		server.runCommand("time set 15000");
+		server.runCommand("gamerule randomTickSpeed 400");
+		server.runCommand("gamerule random_tick_speed 400");
+		ctx.waitTicks(200);
+		int r = half + 10;
+		java.util.function.Supplier<int[]> count = () -> server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			int lit = 0;
+			int all = 0;
+			BlockPos.MutableBlockPos q = new BlockPos.MutableBlockPos();
+			for (int x = cx - r; x <= cx + r; x += 1) {
+				for (int z = cz - r; z <= cz + r; z += 1) {
+					for (int y = base + 1; y < base + 40; y++) {
+						var st = l.getBlockState(q.set(x, y, z));
+						if (st.is(com.stasdoto.airdefense.street.StreetBlocks.CITY_WINDOW) || st.is(com.stasdoto.airdefense.street.StreetBlocks.CITY_GLASS)) {
+							all++;
+							if (st.getValue(com.stasdoto.airdefense.street.WindowLights.LIT)) {
+								lit++;
+							}
+						}
+					}
+				}
+			}
+			return new int[]{lit, all};
+		});
+		int[] lit = count.get();
+		look(server, cx + 0.5, base + 22, cz + half * 0.5 + 20.5, cx + 0.5, base + 8, cz + 0.5);
+		ctx.waitTicks(80);
+		ctx.takeScreenshot("n4_night_town");
+		look(server, cx + 0.5, base + 2.5, cz + 20.5, cx + 0.5, base + 6, cz + 0.5);
+		played0 = com.stasdoto.airdefense.client.fx.CityAmbience.played;
+		ctx.waitTicks(400);
+		int playedNight = com.stasdoto.airdefense.client.fx.CityAmbience.played - played0;
+		ctx.takeScreenshot("n5_night_street");
+		if (cap[10] > 0) {
+			look(server, cap[4] - 8.5, base + 8, cap[5] - 8.5, cap[4] + 0.5, base + 1, cap[5] + 0.5);
+			ctx.waitTicks(40);
+			ctx.takeScreenshot("n6_stadium_night");
+		}
+		// A blackout: every town on alert, the lights go out.
+		server.runOnServer(s -> com.stasdoto.airdefense.siren.Sirens.get(s).everywhere = true);
+		ctx.waitTicks(200);
+		int[] dark = count.get();
+		look(server, cx + 0.5, base + 22, cz + half * 0.5 + 20.5, cx + 0.5, base + 8, cz + 0.5);
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("n7_blackout");
+		server.runOnServer(s -> com.stasdoto.airdefense.siren.Sirens.get(s).everywhere = false);
+		server.runCommand("gamerule randomTickSpeed 3");
+		server.runCommand("gamerule random_tick_speed 3");
+		server.runCommand("time set 6000");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT night_lights: windows {} lit {} at 21:00; in the blackout lit {}; sounds by day {} at night {}, "
+				+ "in town {}", lit[1], lit[0], dark[0], playedDay, playedNight, inTown);
 		language(ctx, "en_us");
 	}
 

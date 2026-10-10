@@ -554,6 +554,10 @@ public final class Orphans {
 		}
 		yMin = Math.max(Math.max(level.getMinY() + 1, yMin - 3), lo - 1);
 		int yMax = Math.min(hi + 1, yMin + 160);
+		if (yMax <= yMin) {
+			// The only trunks and leaves about are under this chunk's ground (a mineshaft's beams, roots): nothing hangs here.
+			return true;
+		}
 		// A copy of the sections in that height (cheap), swept on the sweeping thread; what it finds is taken away here, in
 		// a later tick, where the block is still the same.
 		int s0 = level.getSectionIndex(yMin);
