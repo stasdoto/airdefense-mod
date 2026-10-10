@@ -87,11 +87,11 @@ public class FlightScreen extends Screen {
 			xBox.setValue(String.valueOf(pendingX));
 			zBox.setValue(String.valueOf(pendingZ));
 		}
-		addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.flight.mark"), b -> fromMark())
+		addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.flight.mark"), b -> fromMark())
 				.bounds(x0 + 178, y - 1, 38, 18).build());
-		addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.flight.me"), b -> fromMe())
+		addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.flight.me"), b -> fromMe())
 				.bounds(x0 + 218, y - 1, 34, 18).build());
-		addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.flight.look"), b -> fromLook())
+		addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.flight.look"), b -> fromLook())
 				.bounds(x0 + 254, y - 1, 40, 18).build());
 		y += 26;
 		stepper(y, () -> altitude = Mth.clamp(altitude - 5, FlightPlan.MIN_ALT, FlightPlan.MAX_ALT),
@@ -99,25 +99,25 @@ public class FlightScreen extends Screen {
 		y += 22;
 		stepper(y, () -> speed = Mth.clamp(speed - 10, 50, 100), () -> speed = Mth.clamp(speed + 10, 50, 100));
 		y += 22;
-		maneuverButton = addRenderableWidget(UiButton.builder(Component.empty(), b -> maneuver = (maneuver + 1) % FlightPlan.MANEUVERS)
+		maneuverButton = addRenderableWidget(UiButton.create(Component.empty(), b -> maneuver = (maneuver + 1) % FlightPlan.MANEUVERS)
 				.bounds(x0 + 150, y - 2, 144, 18).build());
 		y += 22;
 		stepper(y, () -> count = Math.max(1, count - 1), () -> count = Math.min(Math.max(1, Integer.bitCount(vehicle.loaded())), count + 1));
 		y += 22;
-		cameraButton = addRenderableWidget(UiButton.builder(Component.empty(), b -> camera = !camera).bounds(x0 + 150, y - 2, 144, 18).build());
-		launchButton = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.flight.launch"), b -> launch())
+		cameraButton = addRenderableWidget(UiButton.create(Component.empty(), b -> camera = !camera).bounds(x0 + 150, y - 2, 144, 18).build());
+		launchButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.flight.launch"), b -> launch())
 				.bounds(x0 + 6, y0 + H - 26, 140, 20).build());
-		addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.flight.back"), b -> back())
+		addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.flight.back"), b -> back())
 				.bounds(x0 + W - 146, y0 + H - 26, 140, 20).build());
 		update();
 	}
 
 	private void stepper(int y, Runnable minus, Runnable plus) {
-		addRenderableWidget(UiButton.builder(Component.literal("-"), b -> {
+		addRenderableWidget(UiButton.create(Component.literal("-"), b -> {
 			minus.run();
 			update();
 		}).bounds(x0 + 150, y - 2, 20, 18).build());
-		addRenderableWidget(UiButton.builder(Component.literal("+"), b -> {
+		addRenderableWidget(UiButton.create(Component.literal("+"), b -> {
 			plus.run();
 			update();
 		}).bounds(x0 + 274, y - 2, 20, 18).build());

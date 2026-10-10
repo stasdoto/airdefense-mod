@@ -126,47 +126,47 @@ public class TacticalMapScreen extends Screen {
 		int pw = PANEL_W - 8;
 		listTop = my0 + 16;
 		listBottom = my1 - 70;
-		tabVehicles = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.map.tab_vehicles"), b -> setTab(0))
+		tabVehicles = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.tab_vehicles"), b -> setTab(0))
 				.bounds(px0 + 4, my0 + 1, pw / 2 - 1, 13).style(UiButton.Style.TAB).build());
-		tabArmy = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.map.tab_army"), b -> setTab(1))
+		tabArmy = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.tab_army"), b -> setTab(1))
 				.bounds(px0 + 4 + pw / 2 + 1, my0 + 1, pw - pw / 2 - 1, 13).style(UiButton.Style.TAB).build());
-		manageButton = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.map.manage"), b -> army(NationActionPayload.OPEN))
+		manageButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.manage"), b -> army(NationActionPayload.OPEN))
 				.bounds(px0 + 4, my1 - 64, pw, 20).build());
-		callButton = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.map.call"), b -> army(NationActionPayload.MOBILIZE))
+		callButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.call"), b -> army(NationActionPayload.MOBILIZE))
 				.bounds(px0 + 4, my1 - 42, pw / 2 - 1, 20).build());
-		dismissButton = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.map.dismiss"), b -> army(NationActionPayload.DEMOBILIZE))
+		dismissButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.dismiss"), b -> army(NationActionPayload.DEMOBILIZE))
 				.bounds(px0 + 4 + pw / 2 + 1, my1 - 42, pw - pw / 2 - 1, 20).build());
-		sendButton = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.map.send"), b -> army(NationActionPayload.ORDER))
+		sendButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.send"), b -> army(NationActionPayload.ORDER))
 				.bounds(px0 + 4, my1 - 20, pw / 2 - 1, 20).build());
-		homeButton = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.map.home"), b -> army(NationActionPayload.RECALL))
+		homeButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.home"), b -> army(NationActionPayload.RECALL))
 				.bounds(px0 + 4 + pw / 2 + 1, my1 - 20, pw - pw / 2 - 1, 20).build());
-		fireButton = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.map.fire"), b -> fire())
+		fireButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.fire"), b -> fire())
 				.bounds(px0 + 4, my1 - 20, pw, 20).style(UiButton.Style.DANGER).build());
-		modeButton = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.map.mode_auto"), b -> toggleMode())
+		modeButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.mode_auto"), b -> toggleMode())
 				.bounds(px0 + 4, my1 - 20, pw, 20).build());
-		clearButton = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.map.clear"), b -> clearTarget())
+		clearButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.clear"), b -> clearTarget())
 				.bounds(px0 + 4, my1 - 42, pw / 2 - 1, 20).build());
-		addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.map.to_radar"), b -> minecraft.gui.setScreen(new RadarScreen()))
+		addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.to_radar"), b -> minecraft.gui.setScreen(new RadarScreen()))
 				.bounds(mx0 + (int) (font.width(title) * 1.25f) + 8, 2, 70, 13).build());
-		massButton = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.map.mass_strike"), b -> massStrike())
+		massButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.mass_strike"), b -> massStrike())
 				.bounds(mx0 + (int) (font.width(title) * 1.25f) + 82, 2, 110, 13).build());
-		addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.map.sirens"),
+		addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.sirens"),
 						b -> minecraft.gui.setScreen(new com.stasdoto.airdefense.client.siren.SirenScreen()))
 				.bounds(mx0 + (int) (font.width(title) * 1.25f) + 196, 2, 80, 13).build());
-		planButton = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.map.plan"), b -> openPlan())
+		planButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.plan"), b -> openPlan())
 				.bounds(px0 + 4 + pw / 2 + 1, my1 - 20, pw - pw / 2 - 1, 20).build());
-		meButton = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.map.me"), b -> follow = true)
+		meButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.me"), b -> follow = true)
 				.bounds(px0 + 4 + pw / 2 + 1, my1 - 42, pw - pw / 2 - 1, 20).build());
-		roundsButton = addRenderableWidget(UiButton.builder(Component.empty(), b -> cycleRounds())
+		roundsButton = addRenderableWidget(UiButton.create(Component.empty(), b -> cycleRounds())
 				.bounds(px0 + 4 + pw / 2 + 1, my1 - 20, pw - pw / 2 - 1, 20).build());
-		prevTypeButton = addRenderableWidget(UiButton.builder(Component.literal("<"), b -> cycleRebuild(-1)).bounds(px0 + 4, my1 - 64, 18, 20).build());
-		typeButton = addRenderableWidget(UiButton.builder(Component.empty(), b -> cycleRebuild(1)).bounds(px0 + 24, my1 - 64, pw - 40, 20).build());
-		nextTypeButton = addRenderableWidget(UiButton.builder(Component.literal(">"), b -> cycleRebuild(1)).bounds(px0 + pw - 14, my1 - 64, 18, 20).build());
-		rebuildButton = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.map.rebuild"), b -> buildingAction(NationActionPayload.REBUILD))
+		prevTypeButton = addRenderableWidget(UiButton.create(Component.literal("<"), b -> cycleRebuild(-1)).bounds(px0 + 4, my1 - 64, 18, 20).build());
+		typeButton = addRenderableWidget(UiButton.create(Component.empty(), b -> cycleRebuild(1)).bounds(px0 + 24, my1 - 64, pw - 40, 20).build());
+		nextTypeButton = addRenderableWidget(UiButton.create(Component.literal(">"), b -> cycleRebuild(1)).bounds(px0 + pw - 14, my1 - 64, 18, 20).build());
+		rebuildButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.rebuild"), b -> buildingAction(NationActionPayload.REBUILD))
 				.bounds(px0 + 4, my1 - 42, pw, 20).build());
-		demolishButton = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.map.demolish"), b -> buildingAction(NationActionPayload.DEMOLISH))
+		demolishButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.demolish"), b -> buildingAction(NationActionPayload.DEMOLISH))
 				.bounds(px0 + 4, my1 - 20, pw / 2 - 1, 20).build());
-		dropButton = addRenderableWidget(UiButton.builder(Component.translatable("screen.airdefense.map.drop"), b -> dropBuilding())
+		dropButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.drop"), b -> dropBuilding())
 				.bounds(px0 + 4 + pw / 2 + 1, my1 - 20, pw - pw / 2 - 1, 20).build());
 		if (!initialised) {
 			initialised = true;

@@ -55,7 +55,7 @@ public class DialogueScreen extends Screen {
 		for (int option : talk.options()) {
 			int col = k % 2;
 			int row = k / 2;
-			addRenderableWidget(UiButton.builder(Component.translatable("dialogue.airdefense.option." + option), b -> choose(option))
+			addRenderableWidget(UiButton.create(Component.translatable("dialogue.airdefense.option." + option), b -> choose(option))
 					.bounds(x0 + 6 + col * (bw + 6), y0 + 78 + row * 22, bw, 20).build());
 			k++;
 		}

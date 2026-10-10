@@ -56,7 +56,7 @@ public class SirenScreen extends Screen {
 		for (int i = 0; i < 4; i++) {
 			int col = oneRow ? i : i % 2;
 			int row = oneRow ? 0 : i / 2;
-			addRenderableWidget(UiButton.builder(labels[i], actions[i]).bounds(x0 + col * (bw + 4), 22 + row * 22, bw, 20).build());
+			addRenderableWidget(UiButton.create(labels[i], actions[i]).bounds(x0 + col * (bw + 4), 22 + row * 22, bw, 20).build());
 		}
 		top = oneRow ? 50 : 72;
 		alertW = font.width(Component.translatable("screen.airdefense.siren.alert")) + 10;
