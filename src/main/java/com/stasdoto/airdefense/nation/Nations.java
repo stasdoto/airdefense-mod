@@ -70,6 +70,7 @@ public final class Nations {
 					Cities.railways = Politics.get(server).shapes >= 4;
 					Cities.airports = Politics.get(server).shapes >= 5;
 					Cities.growth = Politics.get(server).shapes >= 6;
+					Cities.setMetro(Politics.get(server).shapes >= 7);
 				} catch (RuntimeException e) {
 					Cities.styles = true;
 					Cities.shapes = true;
@@ -78,6 +79,7 @@ public final class Nations {
 					Cities.railways = true;
 					Cities.airports = true;
 					Cities.growth = true;
+					Cities.setMetro(true);
 				}
 				com.stasdoto.airdefense.AirDefense.LOGGER.info("[airdefense] town styles {}", Cities.styles ? "on" : "off (an older world)");
 			}

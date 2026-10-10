@@ -91,6 +91,10 @@ public final class Hamlets {
 	}
 
 	static List<Hamlet> plan(long seed, Cities.Terrain t, Cities.City c) {
+		if (c.district() || Cities.metro && c.capital()) {
+			// 1.46: a great city's districts and centre have none of their own (the towns round it do).
+			return List.of();
+		}
 		Random r = new Random(c.seed ^ 0x4A4D4C3EL);
 		int count = c.size == Cities.Size.LARGE ? 3 + r.nextInt(2) : 2 + r.nextInt(2);
 		List<Cities.Road> main = Cities.mainRoadsNear(seed, t, c.x, c.z);

@@ -66,6 +66,10 @@ public final class Depots {
 	/** The city's depot: by the first highway out of it, on the flattest dry ground found. Null if there is none. */
 	@Nullable
 	static Depot plan(long seed, Cities.Terrain t, Cities.City c) {
+		if (c.district() || Cities.metro && c.capital()) {
+			// 1.46: a great city's districts and centre have none of their own (the towns round it do).
+			return null;
+		}
 		Random r = new Random(c.seed ^ 0xDE9075L);
 		int n = c.capital() ? 3 : c.size == Cities.Size.MEDIUM ? 2 : 1;
 		BuildingType type = BuildingType.DEPOT;

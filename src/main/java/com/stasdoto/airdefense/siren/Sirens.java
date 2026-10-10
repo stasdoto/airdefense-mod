@@ -276,7 +276,7 @@ public final class Sirens extends SavedData {
 	public static void planCity(ServerLevel level, Cities.City c) {
 		Sirens s = get(level.getServer());
 		CityShape sh = c.shape();
-		int count = switch (c.size) {
+		int count = c.district() ? 2 : switch (c.size) {
 			case SMALL -> 2;
 			case MEDIUM -> 4;
 			case LARGE -> 6;
