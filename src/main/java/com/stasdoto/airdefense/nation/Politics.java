@@ -26,7 +26,8 @@ public final class Politics extends SavedData {
 			Codec.INT.optionalFieldOf("next_id", 1).forGetter(p -> p.nextId),
 			Codec.INT.listOf().optionalFieldOf("flags_pending", List.of()).forGetter(p -> new ArrayList<>(p.flagsPending)),
 			Codec.INT.optionalFieldOf("styles", 0).forGetter(p -> p.styles),
-			Codec.INT.optionalFieldOf("shapes", 0).forGetter(p -> p.shapes)
+			Codec.INT.optionalFieldOf("shapes", 0).forGetter(p -> p.shapes),
+			net.minecraft.core.UUIDUtil.CODEC.listOf().optionalFieldOf("chosen", List.of()).forGetter(p -> new ArrayList<>(p.chosen))
 	).apply(i, Politics::new));
 	public static final SavedDataType<Politics> TYPE = new SavedDataType<>(AirDefense.id("politics"), Politics::new, CODEC, null);
 
@@ -35,6 +36,8 @@ public final class Politics extends SavedData {
 	/** Towns founded from afar (the atlas) whose flag goes up once somebody comes near. */
 	public final java.util.Set<Integer> flagsPending = new java.util.HashSet<>();
 	private int nextId;
+	/** 1.43: the players who have chosen their country (or to go on their own) in this world. */
+	public final java.util.Set<UUID> chosen = new java.util.HashSet<>();
 
 	/**
 	 * 1.28: 1 in worlds started with the town styles; worlds saved before them read 0 and keep the classic look (their
@@ -48,10 +51,12 @@ public final class Politics extends SavedData {
 	public final int shapes;
 
 	public Politics() {
-		this(List.of(), List.of(), 1, List.of(), 1, 6);
+		this(List.of(), List.of(), 1, List.of(), 1, 6, List.of());
 	}
 
-	private Politics(List<Country> countries, List<Settlement> settlements, int nextId, List<Integer> pending, int styles, int shapes) {
+	private Politics(List<Country> countries, List<Settlement> settlements, int nextId, List<Integer> pending, int styles, int shapes,
+			List<UUID> chosen) {
+		this.chosen.addAll(chosen);
 		this.styles = styles;
 		this.shapes = shapes;
 		this.flagsPending.addAll(pending);
@@ -90,7 +95,26 @@ public final class Politics extends SavedData {
 				return c;
 			}
 		}
+		for (Country c : countries.values()) {
+			if (c.members.containsKey(player)) {
+				return c;
+			}
+		}
 		return null;
+	}
+
+	/** 1.43: the players of this country who are in the game now (the leader first). */
+	public static List<net.minecraft.server.level.ServerPlayer> online(MinecraftServer server, @Nullable Country c) {
+		List<net.minecraft.server.level.ServerPlayer> out = new ArrayList<>();
+		if (c != null) {
+			for (UUID u : c.everyone()) {
+				net.minecraft.server.level.ServerPlayer pl = server.getPlayerList().getPlayer(u);
+				if (pl != null) {
+					out.add(pl);
+				}
+			}
+		}
+		return out;
 	}
 
 	/** The village whose area contains {@code pos} (the nearest, if areas overlap). */

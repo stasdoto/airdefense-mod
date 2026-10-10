@@ -303,7 +303,7 @@ public final class Repairs extends SavedData {
 		Country c = s == null ? null : p.country(s.country);
 		for (ServerPlayer pl : level.players()) {
 			if (pl.getAbilities().instabuild && !pl.isSpectator() && pl.distanceToSqr(z.x, z.y, z.z) < 220 * 220
-					&& (s == null || c != null && pl.getUUID().equals(c.owner))) {
+					&& (s == null || c != null && c.isMember(pl.getUUID()))) {
 				return true;
 			}
 		}

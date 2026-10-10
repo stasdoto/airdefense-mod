@@ -719,9 +719,10 @@ public final class War {
 			}
 			boolean defended = !level.getEntitiesOfClass(SoldierEntity.class, new AABB(s.flag).inflate(20, 8, 20),
 					e -> e.isAlive() && e.country() == owner.id && (e.role() == SoldierEntity.GUARD || e.role() == SoldierEntity.SOLDIER)).isEmpty();
-			ServerPlayer ruler = level.getServer().getPlayerList().getPlayer(owner.owner);
-			if (ruler != null && !ruler.isSpectator() && ruler.level() == level && ruler.distanceToSqr(flag) < 16 * 16) {
-				defended = true;
+			for (ServerPlayer ruler : Politics.online(level.getServer(), owner)) {
+				if (!ruler.isSpectator() && ruler.level() == level && ruler.distanceToSqr(flag) < 16 * 16) {
+					defended = true;
+				}
 			}
 			if (defended) {
 				continue;
@@ -853,7 +854,7 @@ public final class War {
 	}
 
 	private static void tell(ServerLevel level, Country c, Component message) {
-		if (c.owner != null && level.getServer().getPlayerList().getPlayer(c.owner) instanceof ServerPlayer owner) {
+		for (ServerPlayer owner : Politics.online(level.getServer(), c)) {
 			owner.sendSystemMessage(message);
 		}
 	}

@@ -132,7 +132,7 @@ public final class Dialogue {
 	/** A soldier or guard of a country the player runs. */
 	private static boolean own(Politics p, ServerPlayer player, SoldierEntity s) {
 		Country c = p.country(s.country());
-		return c != null && player.getUUID().equals(c.owner);
+		return c != null && c.isMember(player.getUUID());
 	}
 
 	// ------------------------------------------------------------------------------------------------

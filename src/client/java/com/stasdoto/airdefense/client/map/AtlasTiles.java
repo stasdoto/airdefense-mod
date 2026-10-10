@@ -30,7 +30,7 @@ import com.stasdoto.airdefense.nation.Territory;
  * map just lays the tiles down - instead of drawing tens of thousands of little rectangles every frame, which made
  * the map stutter. A tile is painted again only when who holds what changes.
  */
-final class AtlasTiles {
+public final class AtlasTiles {
 	private static final int TILE = 256;
 	private static final int MIN_LOD = -2;
 	private static final int MAX_LOD = 5;
@@ -89,7 +89,7 @@ final class AtlasTiles {
 	 * Lays the tiles over the map rectangle: {@code toSx/toSy} turn world coordinates into the screen's. Tiles not
 	 * painted yet are asked for; meanwhile the coarser tile under them (if any) stands in.
 	 */
-	static void draw(GuiGraphicsExtractor g, float scale, double centerX, double centerZ, int mx0, int my0, int mx1, int my1) {
+	public static void draw(GuiGraphicsExtractor g, float scale, double centerX, double centerZ, int mx0, int my0, int mx1, int my1) {
 		if (!AtlasClient.loaded) {
 			return;
 		}

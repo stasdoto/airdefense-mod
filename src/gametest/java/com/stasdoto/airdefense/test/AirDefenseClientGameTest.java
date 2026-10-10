@@ -40,6 +40,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	@Override
 	public void runTest(ClientGameTestContext ctx) {
 		System.setProperty("airdefense.debug", "true");
+		// 1.43: the country screen opens by itself only in the scene about it.
+		com.stasdoto.airdefense.nation.Allegiance.quiet = true;
 		ctx.runOnClient(mc -> mc.options.renderDistance().set(12));
 		try (TestSingleplayerContext sp = ctx.worldBuilder().setUseConsistentSettings(true).create()) {
 			TestServerContext server = sp.getServer();
@@ -252,7 +254,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		if (scene("realcity")) {
 			realCity(ctx);
 		}
-		if (scene("rail") || scene("airport") || scene("country") || scene("world")) {
+		if (scene("rail") || scene("airport") || scene("country") || scene("world") || scene("choice")) {
 			rail(ctx);
 		}
 	}
@@ -293,6 +295,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 			if (scene("airport")) {
 				airport(ctx, server);
+			}
+			if (scene("choice")) {
+				choice(ctx, server);
 			}
 			if (!scene("rail")) {
 				return;
@@ -734,6 +739,77 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	}
 
 	/** 1.40: a capital's airport in a normal world - from above, the terminal, the runway; planes parked, landing, leaving. */
+	/** 1.43: the country screen on coming into the world, playing for a country (and its capital), a friend in it too. */
+	private void choice(ClientGameTestContext ctx, TestServerContext server) {
+		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.nation.CountryClient.last = null);
+		// Earlier scenes in this world may have given the player a country: start as one who has just come in.
+		server.runOnServer(s -> com.stasdoto.airdefense.nation.Allegiance.forget(s.overworld(), s.getPlayerList().getPlayers().get(0)));
+		com.stasdoto.airdefense.nation.Allegiance.quiet = false;
+		int waited = waitUntil(ctx, () -> com.stasdoto.airdefense.client.nation.CountryClient.last != null, 2400);
+		ctx.waitTicks(60);
+		boolean open = ctx.computeOnClient(mc -> mc.gui.screen() instanceof com.stasdoto.airdefense.client.nation.CountryScreen);
+		var list = com.stasdoto.airdefense.client.nation.CountryClient.last;
+		AirDefense.LOGGER.info("[airdefense-test] RESULT choice_list: after {} ticks, screen open {}, {} countries: {}", waited, open,
+				list == null ? 0 : list.countries().size(), list == null ? "-" : list.countries().stream().limit(6)
+						.map(e -> e.name() + " (" + e.towns() + " towns, " + e.people() + ")").toList());
+		if (list == null || list.countries().size() < 2) {
+			com.stasdoto.airdefense.nation.Allegiance.quiet = true;
+			return;
+		}
+		ctx.takeScreenshot("ch1_choice");
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.nation.CountryScreen s) {
+				s.select(1);
+			}
+		});
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("ch2_picked");
+		var pick = list.countries().get(1);
+		ctx.runOnClient(mc -> {
+			net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(new com.stasdoto.airdefense.nation.CountryActionPayload(
+					com.stasdoto.airdefense.nation.CountryActionPayload.JOIN, pick.id(), true));
+			mc.gui.setScreen(null);
+		});
+		ctx.waitTicks(200);
+		String joined = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var pl = s.getPlayerList().getPlayers().get(0);
+			var c = p.countryOwnedBy(pl.getUUID());
+			var cap = c == null ? null : p.settlements.get(c.capital);
+			return (c == null ? "none" : c.name + " ruler " + pl.getUUID().equals(c.owner)) + ", "
+					+ (cap == null ? "?" : (int) Math.sqrt(pl.blockPosition().distSqr(cap.center)) + " blocks from " + cap.name) + ", chosen "
+					+ p.chosen.contains(pl.getUUID());
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT choice_join: {}", joined);
+		ctx.runOnClient(mc -> mc.gui.hud.getChat().clearMessages(false));
+		ctx.takeScreenshot("ch3_in_capital");
+		// A friend plays for it too (a second player cannot come in here: his place in the country is put in by hand).
+		java.util.UUID friend = java.util.UUID.nameUUIDFromBytes("friend".getBytes());
+		String both = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var c = p.country(pick.id());
+			c.members.put(friend, "Друг");
+			var f = p.countryOwnedBy(friend);
+			return c.everyoneNames() + ", friend's country " + (f == null ? "none" : f.name);
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT choice_friend: {}", both);
+		ctx.runOnClient(mc -> {
+			com.stasdoto.airdefense.client.nation.CountryClient.last = null;
+			net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(new com.stasdoto.airdefense.nation.CountryActionPayload(
+					com.stasdoto.airdefense.nation.CountryActionPayload.LIST, -1, false));
+		});
+		waitUntil(ctx, () -> com.stasdoto.airdefense.client.nation.CountryClient.last != null, 200);
+		ctx.waitTicks(60);
+		ctx.takeScreenshot("ch4_again");
+		ctx.runOnClient(mc -> mc.gui.setScreen(null));
+		server.runOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			p.country(pick.id()).members.remove(friend);
+			com.stasdoto.airdefense.nation.Allegiance.leave(s.overworld(), p, s.getPlayerList().getPlayers().get(0));
+		});
+		com.stasdoto.airdefense.nation.Allegiance.quiet = true;
+	}
+
 	private void airport(ClientGameTestContext ctx, TestServerContext server) {
 		// {threshold x, z, u x, u z, v x, v z, y}
 		int[] a = server.computeOnServer(s -> {

@@ -363,7 +363,7 @@ public class SoldierEntity extends PathfinderMob {
 		}
 		if (e instanceof Player p && level() instanceof ServerLevel sl) {
 			Country c = Politics.get(sl.getServer()).country(country);
-			return c != null && p.getUUID().equals(c.owner);
+			return c != null && c.isMember(p.getUUID());
 		}
 		return false;
 	}
@@ -386,7 +386,7 @@ public class SoldierEntity extends PathfinderMob {
 			}
 			if (e instanceof Player p && level() instanceof ServerLevel sl) {
 				Country c = Politics.get(sl.getServer()).country(country);
-				return c != null && p.getUUID().equals(c.owner);
+				return c != null && c.isMember(p.getUUID());
 			}
 			return false;
 		}

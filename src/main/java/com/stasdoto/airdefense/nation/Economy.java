@@ -305,7 +305,7 @@ public final class Economy {
 		}
 		level.playSound(null, b.type == BuildingType.ROADS ? s.center : b.middle(), SoundEvents.VILLAGER_CELEBRATE, SoundSource.NEUTRAL, 1f, 1f);
 		Country c = p.country(s.country);
-		if (c != null && c.owner != null && level.getServer().getPlayerList().getPlayer(c.owner) instanceof ServerPlayer owner) {
+		for (ServerPlayer owner : Politics.online(level.getServer(), c)) {
 			owner.sendSystemMessage(Component.translatable("nation.airdefense.eco.built", Component.translatable(b.type.key()), s.name));
 		}
 		AirDefense.LOGGER.info("[airdefense] {} built in {} at {}", b.type.id, s.name, b.origin.toShortString());
@@ -384,7 +384,7 @@ public final class Economy {
 
 	public static boolean owner(Politics p, Settlement s, Player player) {
 		Country c = p.country(s.country);
-		return c != null && player.getUUID().equals(c.owner);
+		return c != null && c.isMember(player.getUUID());
 	}
 
 	/** Orders a building: pays for it from the store (not in creative), finds its place, puts it in line. */
@@ -1052,7 +1052,7 @@ public final class Economy {
 
 	private static void tellOwner(ServerLevel level, Politics p, Settlement s, Component message) {
 		Country c = p.country(s.country);
-		if (c != null && c.owner != null && level.getServer().getPlayerList().getPlayer(c.owner) instanceof ServerPlayer owner) {
+		for (ServerPlayer owner : Politics.online(level.getServer(), c)) {
 			owner.sendSystemMessage(message);
 		}
 	}
@@ -1242,9 +1242,10 @@ public final class Economy {
 		born++;
 		p.setDirty();
 		Country c = p.country(s.country);
-		if (c != null && c.owner != null && level.getServer().getPlayerList().getPlayer(c.owner) instanceof ServerPlayer owner
-				&& owner.distanceToSqr(Vec3.atCenterOf(at)) < 96 * 96) {
-			owner.sendOverlayMessage(Component.translatable("nation.airdefense.eco.born", s.name));
+		for (ServerPlayer owner : Politics.online(level.getServer(), c)) {
+			if (owner.distanceToSqr(Vec3.atCenterOf(at)) < 96 * 96) {
+				owner.sendOverlayMessage(Component.translatable("nation.airdefense.eco.born", s.name));
+			}
 		}
 		return true;
 	}

@@ -194,7 +194,7 @@ public final class NationNet {
 	public static void sendInfo(ServerLevel level, ServerPlayer player, Settlement s, boolean open) {
 		Politics p = Politics.get(level.getServer());
 		Country c = p.country(s.country);
-		boolean mine = c != null && player.getUUID().equals(c.owner);
+		boolean mine = c != null && c.isMember(player.getUUID());
 		s.population = Nations.villagers(level, s).size() + Economy.workers(level, s).size();
 		Component problem = Nations.charterProblem(level, p, s, player);
 		String elder = "";

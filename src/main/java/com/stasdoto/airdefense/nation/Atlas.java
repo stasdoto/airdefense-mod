@@ -148,6 +148,16 @@ public final class Atlas {
 		});
 	}
 
+	/** 1.43: the atlas is made and all its towns have joined the political map (the countries are all there). */
+	public static boolean settled() {
+		if (!ready) {
+			return false;
+		}
+		synchronized (TO_FOUND) {
+			return TO_FOUND.isEmpty();
+		}
+	}
+
 	public static void send(ServerPlayer player) {
 		byte[] b = packed;
 		if (b != null && ServerPlayNetworking.canSend(player, AtlasPayload.TYPE)) {
