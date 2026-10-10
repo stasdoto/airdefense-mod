@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "GSB",
+    "SGS",
+    "BSG"
+  ],
+  "key": {
+    "G": "minecraft:green_dye",
+    "B": "minecraft:brown_dye",
+    "S": "minecraft:string"
+  },
+  "result": {
+    "id": "airdefense:camo_net",
+    "count": 4
+  }
+}

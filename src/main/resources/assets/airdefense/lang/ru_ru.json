@@ -1427,5 +1427,19 @@
   "nation.airdefense.choice.friend_joined": "%s теперь играет за «%s» вместе с вами",
   "nation.airdefense.choice.friend_left": "%s больше не играет за «%s»",
   "screen.airdefense.country.capital": "Столица: %s · стиль: %s",
-  "screen.airdefense.village.chip_people": "%s жит."
+  "screen.airdefense.village.chip_people": "%s жит.",
+  "itemGroup.airdefense.fort": "Позиции",
+  "block.airdefense.sandbags": "Мешки с песком",
+  "block.airdefense.sandbags_low": "Бруствер из мешков",
+  "block.airdefense.hedgehog": "Противотанковый ёж",
+  "block.airdefense.barbed_wire": "Колючая проволока",
+  "block.airdefense.camo_net": "Маскировочная сеть",
+  "item.airdefense.trench_kit": "Окоп",
+  "item.airdefense.position_kit": "Огневая точка",
+  "item.airdefense.dugout_kit": "Блиндаж",
+  "item.airdefense.pillbox_kit": "ДОТ",
+  "item.airdefense.revetment_kit": "Капонир для техники",
+  "item.airdefense.fort_kit.hint": "Правый клик по земле — будет вырыто и построено там, передом туда, куда вы смотрите.",
+  "message.airdefense.fort.built": "%s готов(а)",
+  "message.airdefense.fort.no_room": "Здесь не построить (вода или нет места)"
 }

@@ -116,6 +116,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("tactics")) {
 				tactics(ctx, server);
 			}
+			if (scene("fort")) {
+				fort(ctx, server);
+			}
 			if (scene("armor")) {
 				armor(ctx, server);
 			}
@@ -1612,6 +1615,102 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.takeScreenshot("96_mfg_fight");
 		ctx.waitTicks(260);
 		report("mfg_zu23_vs_5_shahed", before);
+	}
+
+	/**
+	 * 1.48: the field works - a trench, a firing position, a dugout, a pillbox, a revetment with a tank in it, a line of
+	 * hedgehogs and wire; a town at war digging in towards its enemy; guards taking the posts; soldiers digging foxholes.
+	 */
+	private void fort(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 66000;
+		server.runCommand("time set 6000");
+		// (A spectator does not count as somebody near: the towns dig in only with players about.)
+		server.runCommand("gamemode creative @a");
+		ctx.runOnClient(mc -> mc.gui.hud.toggle());
+		com.stasdoto.airdefense.fort.Fortify.Kind[] kinds = {com.stasdoto.airdefense.fort.Fortify.Kind.TRENCH, com.stasdoto.airdefense.fort.Fortify.Kind.POSITION,
+				com.stasdoto.airdefense.fort.Fortify.Kind.DUGOUT, com.stasdoto.airdefense.fort.Fortify.Kind.PILLBOX,
+				com.stasdoto.airdefense.fort.Fortify.Kind.REVETMENT, com.stasdoto.airdefense.fort.Fortify.Kind.OBSTACLES};
+		String[] shots = {"ft1_trench", "ft2_position", "ft3_dugout", "ft4_pillbox", "ft5_revetment", "ft6_obstacles"};
+		camera(server, x + 50, ground + 12, 20, 180, 30);
+		ctx.waitTicks(80);
+		for (int k = 0; k < kinds.length; k++) {
+			int kx = x + k * 24;
+			var kind = kinds[k];
+			boolean ok = server.computeOnServer(s -> com.stasdoto.airdefense.fort.Fortify.build(s.overworld(), new BlockPos(kx, ground - 1, 0),
+					net.minecraft.core.Direction.NORTH, kind));
+			if (kind == com.stasdoto.airdefense.fort.Fortify.Kind.REVETMENT) {
+				server.runOnServer(s -> VehicleEntity.spawn(s.overworld(), VehicleType.T72, new Vec3(kx + 0.5, ground - 1, -5.5), 180));
+			}
+			look(server, kx + 7, ground + 6, 9, kx, ground, -2);
+			ctx.waitTicks(k == 0 ? 60 : 25);
+			ctx.takeScreenshot(shots[k]);
+			AirDefense.LOGGER.info("[airdefense-test] RESULT fort_{}: built {}", kind.name().toLowerCase(java.util.Locale.ROOT), ok);
+		}
+		// Inside the dugout and the pillbox.
+		look(server, x + 48.5, ground - 1.4, -1.5, x + 48.5, ground - 1.6, -4);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("ft7_in_dugout");
+		look(server, x + 72.5, ground + 0.7, -2.5, x + 72.5, ground + 0.8, -12);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("ft8_in_pillbox");
+		// A town at war digs in towards its enemy.
+		int tx = x + 300;
+		int[] made = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			int[] ids = new int[2];
+			int[] towns = new int[2];
+			for (int k = 0; k < 2; k++) {
+				int id = p.newId();
+				var st = new com.stasdoto.airdefense.nation.Settlement(id, "Рубеж " + k, new BlockPos(tx, ground, k == 0 ? 0 : -400),
+						new BlockPos(tx, ground + 2, k == 0 ? 0 : -400), -1, java.util.Optional.empty(), 0, java.util.Map.of(), List.of(), List.of());
+				st.radius = 30;
+				p.settlements.put(id, st);
+				var c = com.stasdoto.airdefense.nation.Nations.newWorldCountry(p, id);
+				st.country = c.id;
+				ids[k] = c.id;
+				towns[k] = id;
+			}
+			com.stasdoto.airdefense.nation.War.declare(l, p, p.country(ids[1]), p.country(ids[0]), net.minecraft.network.chat.Component.literal("test"));
+			return new int[]{ids[0], ids[1], towns[0]};
+		});
+		camera(server, tx, ground + 30, 40, 180, 40);
+		ctx.waitTicks(80);
+		int before = com.stasdoto.airdefense.fort.Fortify.aiBuilt;
+		for (int k = 0; k < 5; k++) {
+			server.runOnServer(com.stasdoto.airdefense.fort.Fortify::fortifyOnce);
+			ctx.waitTicks(5);
+		}
+		look(server, tx + 30, ground + 25, 10, tx, ground, -40);
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("ft9_town_dug_in");
+		// Guards take the posts when the enemy comes; a squad sent off digs in where it stops.
+		int manned0 = com.stasdoto.airdefense.fort.Fortify.manned;
+		int dug0 = com.stasdoto.airdefense.fort.Fortify.dugIn;
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var r = new java.util.Random(48);
+			for (int i = 0; i < 6; i++) {
+				var g = com.stasdoto.airdefense.nation.SoldierEntity.create(l, com.stasdoto.airdefense.nation.SoldierEntity.GUARD, made[0], 14, made[2],
+						new Vec3(tx - 6 + i * 2 + 0.5, ground, -20.5), r.nextInt());
+				l.addFreshEntity(g);
+			}
+			for (int i = 0; i < 6; i++) {
+				var e = com.stasdoto.airdefense.nation.SoldierEntity.create(l, com.stasdoto.airdefense.nation.SoldierEntity.SOLDIER, made[1], 11, -1,
+						new Vec3(tx - 6 + i * 2 + 0.5, ground, -95.5), r.nextInt());
+				e.orderTo(new BlockPos(tx - 6 + i * 2, ground, -80));
+				l.addFreshEntity(e);
+			}
+		});
+		ctx.waitTicks(400);
+		ctx.takeScreenshot("ft10_fight_at_the_works");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT fort_ai: works the town dug {}, posts taken {}, foxholes dug {}",
+				com.stasdoto.airdefense.fort.Fortify.aiBuilt - before, com.stasdoto.airdefense.fort.Fortify.manned - manned0,
+				com.stasdoto.airdefense.fort.Fortify.dugIn - dug0);
+		ctx.runOnClient(mc -> mc.gui.hud.toggle());
+		server.runCommand("gamemode spectator @a");
+		server.runOnServer(s -> s.overworld().getEntitiesOfClass(com.stasdoto.airdefense.nation.SoldierEntity.class,
+				new net.minecraft.world.phys.AABB(tx - 200, ground - 10, -300, tx + 200, ground + 20, 200)).forEach(Entity::discard));
 	}
 
 	/**

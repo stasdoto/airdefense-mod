@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "LLL",
+    "LSL",
+    "PTP"
+  ],
+  "key": {
+    "L": "minecraft:spruce_log",
+    "S": "minecraft:iron_shovel",
+    "P": "minecraft:spruce_planks",
+    "T": "minecraft:lantern"
+  },
+  "result": {
+    "id": "airdefense:dugout_kit",
+    "count": 1
+  }
+}

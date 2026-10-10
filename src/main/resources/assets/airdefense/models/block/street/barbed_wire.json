@@ -1,0 +1,242 @@
+{
+ "parent": "minecraft:block/block",
+ "ambientocclusion": false,
+ "textures": {
+  "barbed_wire": "airdefense:block/street/barbed_wire",
+  "particle": "airdefense:block/street/barbed_wire"
+ },
+ "elements": [
+  {
+   "from": [
+    0,
+    0,
+    8
+   ],
+   "to": [
+    16,
+    12,
+    8.01
+   ],
+   "faces": {
+    "north": {
+     "texture": "#barbed_wire",
+     "uv": [
+      0,
+      0,
+      16,
+      12
+     ]
+    },
+    "south": {
+     "texture": "#barbed_wire",
+     "uv": [
+      0,
+      0,
+      16,
+      12
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    8,
+    0,
+    0
+   ],
+   "to": [
+    8.01,
+    12,
+    16
+   ],
+   "faces": {
+    "east": {
+     "texture": "#barbed_wire",
+     "uv": [
+      0,
+      0,
+      16,
+      12
+     ]
+    },
+    "west": {
+     "texture": "#barbed_wire",
+     "uv": [
+      0,
+      0,
+      16,
+      12
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    0,
+    0,
+    3
+   ],
+   "to": [
+    16,
+    12,
+    3.01
+   ],
+   "faces": {
+    "north": {
+     "texture": "#barbed_wire",
+     "uv": [
+      0,
+      0,
+      16,
+      12
+     ]
+    },
+    "south": {
+     "texture": "#barbed_wire",
+     "uv": [
+      0,
+      0,
+      16,
+      12
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    0,
+    0,
+    13
+   ],
+   "to": [
+    16,
+    12,
+    13.01
+   ],
+   "faces": {
+    "north": {
+     "texture": "#barbed_wire",
+     "uv": [
+      0,
+      0,
+      16,
+      12
+     ]
+    },
+    "south": {
+     "texture": "#barbed_wire",
+     "uv": [
+      0,
+      0,
+      16,
+      12
+     ]
+    }
+   }
+  }
+ ],
+ "display": {
+  "gui": {
+   "rotation": [
+    30,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0.0,
+    0
+   ],
+   "scale": [
+    0.7,
+    0.7,
+    0.7
+   ]
+  },
+  "ground": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    3,
+    0
+   ],
+   "scale": [
+    0.25,
+    0.25,
+    0.25
+   ]
+  },
+  "fixed": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.5599999999999999,
+    0.5599999999999999,
+    0.5599999999999999
+   ]
+  },
+  "thirdperson_righthand": {
+   "rotation": [
+    75,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    2.5,
+    0
+   ],
+   "scale": [
+    0.42,
+    0.42,
+    0.42
+   ]
+  },
+  "firstperson_righthand": {
+   "rotation": [
+    0,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.44799999999999995,
+    0.44799999999999995,
+    0.44799999999999995
+   ]
+  },
+  "firstperson_lefthand": {
+   "rotation": [
+    0,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.44799999999999995,
+    0.44799999999999995,
+    0.44799999999999995
+   ]
+  }
+ }
+}

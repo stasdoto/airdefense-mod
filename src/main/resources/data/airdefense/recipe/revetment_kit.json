@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "NNN",
+    "BDB",
+    "BDB"
+  ],
+  "key": {
+    "N": "airdefense:camo_net",
+    "B": "airdefense:sandbags",
+    "D": "minecraft:coarse_dirt"
+  },
+  "result": {
+    "id": "airdefense:revetment_kit",
+    "count": 1
+  }
+}

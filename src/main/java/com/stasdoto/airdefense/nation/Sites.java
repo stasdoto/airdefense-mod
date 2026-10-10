@@ -213,7 +213,7 @@ public final class Sites {
 	}
 
 	/** Ground the village may build on: soil, sand, rock - not paths, fields or anything laid by hand. */
-	static boolean naturalGround(BlockState s) {
+	public static boolean naturalGround(BlockState s) {
 		if (s.is(Blocks.DIRT_PATH) || s.is(Blocks.FARMLAND) || s.hasBlockEntity()) {
 			return false;
 		}
