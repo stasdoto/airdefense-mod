@@ -257,6 +257,23 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		}
 	}
 
+	/**
+	 * Looks at the track block {x, y, z, dir x, dir z} from {@code dist} blocks off to one side ({@code side}: 1 left of
+	 * the way, -1 right) and {@code back} blocks back along it, at least {@code up} above the rails and 3 above the ground.
+	 */
+	private static void railCam(ClientGameTestContext ctx, TestServerContext server, int[] p, int side, double dist, double up, double back) {
+		double ax = -p[4] * side;
+		double az = p[3] * side;
+		double al = Math.hypot(ax, az);
+		double fx = p[0] + 0.5 + ax / al * dist - p[3] * back;
+		double fz = p[2] + 0.5 + az / al * dist - p[4] * back;
+		look(server, fx, p[1] + up, fz, p[0] + 0.5, p[1] + 1, p[2] + 0.5);
+		ctx.waitTicks(140);
+		int ground = server.computeOnServer(s -> s.overworld().getHeight(Heightmap.Types.MOTION_BLOCKING, (int) Math.floor(fx), (int) Math.floor(fz)));
+		look(server, fx, Math.max(p[1] + up, ground + 3), fz, p[0] + 0.5 + p[3] * 4, p[1] + 1.5, p[2] + 0.5 + p[4] * 4);
+		ctx.waitTicks(30);
+	}
+
 	/** 1.39: the railway out of the capital in a normal world - the station, a bridge, a tunnel, the trains on it. */
 	private void rail(ClientGameTestContext ctx) {
 		try (TestSingleplayerContext sp = ctx.worldBuilder().setUseConsistentSettings(false).adjustSettings(st -> st.setSeed("airdefense")).create()) {
@@ -283,9 +300,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					}
 				}
 				AirDefense.LOGGER.info("[airdefense-test] RESULT rail_plan: {} lines planned, {} given up, in {} ms (the test's own call); planning took {} ms "
-						+ "in all, {} ms of it the roads near; ways given up: {}", com.stasdoto.airdefense.nation.Railways.planned,
+						+ "in all; roads raised over a line {}; ways given up: {}", com.stasdoto.airdefense.nation.Railways.planned,
 						com.stasdoto.airdefense.nation.Railways.refused, (System.nanoTime() - t0) / 1_000_000,
-						com.stasdoto.airdefense.nation.Railways.planNanos / 1_000_000, com.stasdoto.airdefense.nation.Railways.roadNanos / 1_000_000,
+						com.stasdoto.airdefense.nation.Railways.planNanos / 1_000_000, com.stasdoto.airdefense.nation.Railways.bridged,
 						com.stasdoto.airdefense.nation.Railways.WHY);
 				if (lines.isEmpty()) {
 					return null;
@@ -322,7 +339,19 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				}
 				AirDefense.LOGGER.info("[airdefense-test] RESULT rail_line: {} blocks from {} {} to {} {}, {} on bridges, {} in tunnels, platform side {}", n,
 						line.xs[0], line.zs[0], line.xs[n - 1], line.zs[n - 1], bridges, tunnels, line.platform);
-				int[] pick = {12, bridge, tunnel, diag, n / 3};
+				// A road over the line on its bridge.
+				int under = -1;
+				var probe = new com.stasdoto.airdefense.nation.Cities.Road.Spot();
+				for (int i = 0; i < n && under < 0; i += 2) {
+					for (var r : com.stasdoto.airdefense.nation.Cities.roadsNear(l.getSeed(), t, line.xs[i], line.zs[i])) {
+						if (r.locate(line.xs[i] + 0.5, line.zs[i] + 0.5, r.half + 1, probe) && probe.along > 0 && probe.along < r.length
+								&& r.height(probe.along) >= line.y(i) + 6) {
+							under = i;
+							break;
+						}
+					}
+				}
+				int[] pick = {12, bridge, tunnel, diag, n / 3, under};
 				int[][] out = new int[pick.length][];
 				for (int k = 0; k < pick.length; k++) {
 					int i = pick[k];
@@ -330,31 +359,22 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 						continue;
 					}
 					int j = Math.min(n - 1, i + 1);
-					out[k] = new int[]{line.xs[i], line.y(i), line.zs[i], line.xs[j] - line.xs[i], line.zs[j] - line.zs[i]};
+					out[k] = new int[]{line.xs[i], line.y(i), line.zs[i], line.xs[j] - line.xs[i], line.zs[j] - line.zs[i], line.platform};
 				}
 				return out;
 			});
 			if (spots == null) {
 				return;
 			}
-			String[] names = {"rl1_station", "rl2_bridge", "rl3_tunnel", "rl4_diagonal", "rl5_line"};
+			String[] names = {"rl1_station", "rl2_bridge", "rl3_tunnel", "rl4_diagonal", "rl5_line", "rl9_road_over"};
 			for (int k = 0; k < spots.length; k++) {
 				int[] p = spots[k];
 				if (p == null) {
 					continue;
 				}
-				// From the side (the platform side for the station) and a little above, along the line.
-				double ax = -p[4];
-				double az = p[3];
-				double al = Math.hypot(ax, az);
-				ax /= al;
-				az /= al;
-				double side = k == 1 ? 34 : 16;
-				double up = k == 1 ? 10 : 7;
-				double fx = p[0] + 0.5 + ax * side - p[3] * 14;
-				double fz = p[2] + 0.5 + az * side - p[4] * 14;
-				look(server, fx, p[1] + up, fz, p[0] + 0.5 + p[3] * 10, p[1] + 1, p[2] + 0.5 + p[4] * 10);
-				ctx.waitTicks(k == 0 ? 260 : 160);
+				// From the side (the platform side at the station), back along the line a little, above the trees.
+				int side = k == 0 ? p[5] : 1;
+				railCam(ctx, server, p, side, k == 1 ? 40 : k == 0 ? 14 : 22, k == 0 ? 6 : 12, k == 0 ? 10 : 18);
 				ctx.takeScreenshot(names[k]);
 			}
 			AirDefense.LOGGER.info("[airdefense-test] RESULT rail_built: {} track blocks laid, {} chunks made, avg {} us per chunk; client saw {} track blocks",
@@ -371,8 +391,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			String[] trainNames = {"rl6_electric", "rl7_goods"};
 			for (int kind = 1; kind <= 2; kind++) {
 				int k = kind;
-				look(server, p[0] + 0.5 + ax * 14, p[1] + 5, p[2] + 0.5 + az * 14, p[0] + 0.5, p[1] + 2, p[2] + 0.5);
-				ctx.waitTicks(40);
+				railCam(ctx, server, p, 1, 18, 7, 0);
 				ctx.runOnClient(mc -> {
 					for (var tr : new java.util.ArrayList<>(com.stasdoto.airdefense.client.nation.Trains.ALL)) {
 						tr.done = true;
@@ -401,8 +420,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			double sx = -st[4];
 			double sz = st[3];
 			double sl = Math.hypot(sx, sz);
-			look(server, st[0] + 0.5 + sx / sl * 12, st[1] + 6, st[2] + 0.5 + sz / sl * 12 + 0, st[0] + 0.5 + st[3] * 8, st[1] + 2, st[2] + 0.5 + st[4] * 8);
-			ctx.waitTicks(80);
+			railCam(ctx, server, st, st[5], 14, 6, 10);
 			ctx.runOnClient(mc -> {
 				for (var tr : new java.util.ArrayList<>(com.stasdoto.airdefense.client.nation.Trains.ALL)) {
 					tr.done = true;

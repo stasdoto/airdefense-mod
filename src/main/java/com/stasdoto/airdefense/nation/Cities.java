@@ -792,7 +792,10 @@ public final class Cities {
 		float[][] line = RoadPlanner.route(t, rs, ea[0], ea[1], da[0], da[1], eb[0], eb[1], db[0], db[1], 32, 28,
 				(x, z) -> avoidTowns(seed, t, a, b, x, z));
 		float[] hs = RoadPlanner.heights(t, line[0], line[1], a.base, b.base, 0.065);
-		return new Road(line[0], line[1], hs, HIGHWAY_HALF, false, true, STREET_HALF);
+		Road r = new Road(line[0], line[1], hs, HIGHWAY_HALF, false, true, STREET_HALF);
+		// 1.39: over the railways it crosses on a bridge.
+		Railways.raiseRoad(seed, t, r);
+		return r;
 	}
 
 	/** The way out of a city at its edge point: along the street it leaves by (the axis nearest the direction out). */

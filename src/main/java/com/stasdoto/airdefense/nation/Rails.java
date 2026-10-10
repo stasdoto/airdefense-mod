@@ -131,10 +131,16 @@ public final class Rails {
 		int kind = l.kind[nb];
 		boolean platform = l.station(nb) && spot.across * l.platform > 0 && kind == 0;
 		int road = roadTop(roads, rs, x, z);
-		if (road != Integer.MIN_VALUE) {
-			// Over a road: only the deck, high above it (the road below is left as it is).
-			if (d <= Railways.BED && y - 1 > road + 3) {
-				deck(w, l, nb, x, z, y, d, false, pos);
+		if (road != Integer.MIN_VALUE && road >= y + 6) {
+			// Under a road (the roads cross the lines on bridges): the way under the deck cleared, the bed laid.
+			if (d <= Railways.BED) {
+				w.set(pos.set(x, y - 1, z), GRAVEL);
+				for (int yy = y; yy < road; yy++) {
+					if (!w.get(pos.set(x, yy, z)).isAir()) {
+						w.set(pos, AIR);
+					}
+				}
+				w.levelled(y - 1, road);
 			}
 			return;
 		}
