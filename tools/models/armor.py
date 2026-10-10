@@ -2,22 +2,25 @@
 from boxgen import Model
 from kit import axles, tracks, lights, cabover
 from airdefense import barrel, missile, canister
-from tankkit import (bin_box, smoke_launchers, cupola, hatch, periscope, antenna, cables, track_links, log, grille,
+from tankkit import (slope, plate_bricks, bin_box, smoke_launchers, cupola, hatch, periscope, antenna, cables, track_links, log, grille,
                      skirt_panels, roof_era, tarp, basket, headlights, fuel_tanks, mantlet_cover, sight_box)
 
 
-def glacis(body, z0, z1, y0, y1, half, paint, steps=4):
-    """A sloped front plate from (z0, y1) down to (z1, y0) built from steps."""
+def glacis(body, z0, z1, y0, y1, half, paint, steps=4, era=0, era_rows=1):
+    """A sloped front plate from (z0, y1) down to (z1, y0): one turned plate (1.44) over a stair of boxes that fills
+    the hull under it; {era}: that many reactive armour bricks across it."""
     for i in range(steps):
-        t0 = i / steps
-        t1 = (i + 1) / steps
-        za = z0 + (z1 - z0) * t0
-        zb = z0 + (z1 - z0) * t1
-        yb = y1 - (y1 - y0) * t1
-        body.box((-half, y0, za), (half, yb + (y1 - y0) / steps, zb), paint)
+        za = z0 + (z1 - z0) * i / steps
+        zb = z0 + (z1 - z0) * (i + 1) / steps
+        yb = y1 - (y1 - y0) * (i + 1) / steps
+        body.box((-half, y0, za), (half, yb, zb), paint)
+    p = slope(body, -half, half, y1, z0, y0, z1, paint)
+    if era:
+        plate_bricks(p, era, rows=era_rows, start=0.08, end=0.7)
+    return p
 
 
-def tank_hull(m, body, length, width, top, hull_top, paint, wheels=6, r=0.36, track_w=0.58):
+def tank_hull(m, body, length, width, top, hull_top, paint, wheels=6, r=0.36, track_w=0.58, era=0):
     """Tracked hull centred on z=0; returns (front z, back z)."""
     z0, z1 = -length / 2, length / 2
     tracks(m, body, z0, z1, top, width, track_w, wheels, r, paint)
@@ -25,16 +28,18 @@ def tank_hull(m, body, length, width, top, hull_top, paint, wheels=6, r=0.36, tr
     inner = hw - track_w
     body.box((-inner, 0.4, z0 + 0.2), (inner, top + 0.05, z1 - 0.3), paint)
     body.box((-hw, top + 0.05, z0), (hw, hull_top, z1 - 1.2), paint)
-    glacis(body, z1 - 1.2, z1 + 0.05, top - 0.25, hull_top, hw - 0.05, paint)
+    glacis(body, z1 - 1.2, z1 + 0.05, top - 0.25, hull_top, hw - 0.05, paint, era=era, era_rows=2 if era else 1)
     lights(body, z1 - 0.3, top + 0.15, hw - 0.4)
     lights(body, z0, top + 0.2, hw - 0.3, front=False)
     return z1, z0
 
 
 def turret_dome(part, cx, cz, y0, w, l, h, paint, layers=3):
-    """A rounded cast turret from stacked boxes."""
+    """A rounded cast turret from stacked boxes (1.44: twice as many, finer steps - it reads as cast, not a pyramid)."""
+    layers = layers * 2
     for i in range(layers):
-        k = 1 - i * 0.16
+        t = i / layers
+        k = 1 - 0.5 * t * t - 0.12 * t
         part.box((cx - w / 2 * k, y0 + h * i / layers, cz - l / 2 * k), (cx + w / 2 * k, y0 + h * (i + 1) / layers, cz + l / 2 * k * 0.95), paint)
 
 
@@ -69,8 +74,7 @@ def t72():
     m.tracked = True
     m.camera = 10
     body = m.part('body')
-    zf, zb = tank_hull(m, body, 6.9, 3.6, 0.95, 1.55, 'rgreen')
-    era(body, -1.6, 1.6, 1.2, 1.5, zf - 1.0, 'rgreen', n=6)
+    zf, zb = tank_hull(m, body, 6.9, 3.6, 0.95, 1.55, 'rgreen', era=6)
     skirt_panels(body, zb + 0.5, zf - 0.9, 0.62, 0.98, 1.8, 'rgreen', n=6, era=True)
     headlights(body, zf - 0.85, 1.55, 1.25)
     # The right fender: the fuel tanks and stowage boxes; the left: the boxes and the tow cable.
@@ -124,8 +128,7 @@ def t90():
     m.tracked = True
     m.camera = 10
     body = m.part('body')
-    zf, zb = tank_hull(m, body, 6.9, 3.78, 0.95, 1.55, 'rgreen')
-    era(body, -1.6, 1.6, 1.2, 1.5, zf - 1.0, 'rgreen', n=6)
+    zf, zb = tank_hull(m, body, 6.9, 3.78, 0.95, 1.55, 'rgreen', era=6)
     skirt_panels(body, zb + 0.5, zf - 0.9, 0.62, 0.98, 1.89, 'rgreen', n=6, era=True)
     headlights(body, zf - 0.85, 1.55, 1.3)
     fuel_tanks(body, 1.3, 1.85, 1.0, zb + 0.6, zb + 2.9, 'rgreen', n=3)
@@ -257,6 +260,8 @@ def abrams():
 
 
 def bmp2():
+    """BMP-2: the low boat-shaped hull with the ribbed glacis, the two-man turret with the long 30 mm 2A42 and the
+    Konkurs launcher, the periscopes along the troop roof, the fuel-tank doors at the back."""
     m = Model('bmp2', paint='ugreen', seed=2005)
     m.width = 3.15
     m.tracked = True
@@ -267,15 +272,36 @@ def bmp2():
     body.box((-1.1, 0.4, z0 + 0.2), (1.1, 0.9, z1 - 0.3), 'ugreen')
     body.box((-1.57, 0.9, z0), (1.57, 1.75, z1 - 1.6), 'ugreen')
     glacis(body, z1 - 1.6, z1 + 0.05, 0.6, 1.75, 1.5, 'ugreen', steps=5)
-    # Rear doors (fuel tanks).
+    # The ribs on the glacis, the driver's and commander's hatches with periscopes.
+    for i in range(4):
+        z = z1 - 1.45 + i * 0.32
+        body.box((-1.45, 1.66 - i * 0.22, z), (1.45, 1.7 - i * 0.22, z + 0.06), 'ugreen')
+    hatch(body, -0.75, 1.75, z1 - 1.95, 0.5, 0.5, 'ugreen')
+    for k in range(3):
+        periscope(body, -0.95 + k * 0.2, 1.75, z1 - 1.65, 'ugreen')
+    # The troop roof: two rows of hatches with periscopes along each side.
+    for s in (-1, 1):
+        hatch(body, s * 0.55, 1.75, z0 + 1.2, 0.7, 1.4, 'ugreen')
+        for k in range(4):
+            periscope(body, s * 1.05, 1.75, z0 + 0.4 + k * 0.45, 'ugreen', facing='right' if s > 0 else 'left', w=0.12)
+    grille(body, 0.3, 1.4, 1.75, z1 - 2.6, z1 - 1.8)
+    bin_box(body, 1.1, 1.55, 1.75, 2.0, z0 + 0.2, z0 + 1.0, 'ugreen', straps=1)
+    cables(body, -1, -1.5, 1.78, z0 + 1.3, z1 - 2.2)
+    # Rear doors (fuel tanks), with their handles.
     for s in (-1, 1):
         body.box((s * 0.6 - 0.35, 0.95, z0 - 0.08), (s * 0.6 + 0.35, 1.6, z0), 'ugreen')
-    lights(body, z1 - 0.6, 1.05, 1.2)
+        body.box((s * 0.6 - 0.05, 1.25, z0 - 0.12), (s * 0.6 + 0.05, 1.3, z0 - 0.08), 'dark')
+    headlights(body, z1 - 0.55, 1.12, 1.15)
+    lights(body, z0, 1.3, 1.3, front=False)
     tz = -0.2
     tur = m.part('turret', (0, 1.75, tz))
     m.set_turret(tur)
     turret_dome(tur, 0, tz, 1.75, 1.6, 1.8, 0.55, 'ugreen', layers=2)
-    tur.box((0.25, 2.3, tz - 0.4), (0.7, 2.45, tz + 0.1), 'ugreen')
+    sight_box(tur, 0.25, 0.7, 2.3, 2.47, tz - 0.4, tz + 0.1, 'ugreen')
+    cupola(tur, -0.4, 2.3, tz - 0.2, 'ugreen', mg=False, r=0.28, h=0.1)
+    smoke_launchers(tur, 0.8, 2.05, tz + 0.35, 3, 1, step=0.1, tube=0.08)
+    smoke_launchers(tur, -0.8, 2.05, tz + 0.35, 3, -1, step=0.1, tube=0.08)
+    antenna(tur, -0.65, 2.3, tz - 0.7, 2.6)
     el = gun(m, tur, (0, 2.05, tz + 0.85), 2.9, 0.08, mantlet=0.4)
     # Konkurs ATGM tube on the roof.
     canister(el, 0.0, 2.55, tz + 0.2, 1.2, 0.16, 'ugreen')
@@ -285,6 +311,8 @@ def bmp2():
 
 
 def bradley():
+    """M2 Bradley: the tall slab-sided hull with its ERA tiles, the turret offset to the right with the 25 mm
+    Bushmaster and the TOW box, skirts in panels, the ramp at the back."""
     m = Model('bradley', paint='tan', seed=2006)
     m.width = 3.6
     m.tracked = True
@@ -295,8 +323,21 @@ def bradley():
     body.box((-1.25, 0.45, z0 + 0.2), (1.25, 1.0, z1 - 0.3), 'tan')
     body.box((-1.8, 1.0, z0), (1.8, 2.15, z1 - 1.0), 'tan')
     glacis(body, z1 - 1.0, z1 + 0.05, 0.7, 2.15, 1.75, 'tan', steps=4)
+    skirt_panels(body, z0 + 0.3, z1 - 0.6, 0.6, 1.0, 1.8, 'tan', n=5, rubber=False)
+    # ERA tiles on the hull sides (the A3's boxes).
+    for s in (-1, 1):
+        for k in range(5):
+            z = z0 + 0.4 + k * 1.05
+            body.box((s * 1.8 - (0.0 if s > 0 else 0.1), 1.25, z), (s * 1.8 + (0.1 if s > 0 else 0.0), 1.95, z + 0.95), 'tan')
+    # The ramp and its door, the trim vane on the glacis.
     body.box((-0.7, 0.9, z0 - 0.1), (0.7, 2.0, z0), 'tan')
-    lights(body, z1 - 0.2, 1.1, 1.35)
+    body.box((-0.25, 1.2, z0 - 0.14), (0.25, 1.8, z0 - 0.1), 'tan')
+    body.box((-1.5, 1.95, z1 - 0.9), (1.5, 2.03, z1 - 0.55), 'tan')
+    hatch(body, -0.9, 2.15, z1 - 1.5, 0.55, 0.55, 'tan')
+    grille(body, 0.4, 1.5, 2.15, z1 - 2.3, z1 - 1.3)
+    bin_box(body, -1.6, -0.6, 2.15, 2.45, z0 + 0.3, z0 + 1.2, 'tan')
+    headlights(body, z1 - 0.2, 1.1, 1.35)
+    lights(body, z0, 1.6, 1.4, front=False)
     tz = -0.3
     tur = m.part('turret', (0.35, 2.15, tz))
     m.set_turret(tur)
@@ -304,6 +345,10 @@ def bradley():
     # TOW launcher box on the left of the turret.
     tur.box((-1.05, 2.3, tz - 0.6), (-0.6, 2.75, tz + 0.7), 'tan', sides={'front': 'dark'})
     tur.box((0.6, 2.85, tz - 0.2), (1.1, 3.1, tz + 0.2), 'tan', sides={'front': 'glass'})
+    cupola(tur, 0.0, 2.85, tz - 0.5, 'tan', mg=False, r=0.3, h=0.08)
+    basket(tur, -0.55, 1.25, 2.25, 2.7, tz - 1.55, tz - 1.1)
+    smoke_launchers(tur, 1.3, 2.6, tz + 0.5, 4, 1)
+    antenna(tur, -0.4, 2.85, tz - 0.9, 2.6)
     gun(m, tur, (0.35, 2.45, tz + 1.0), 2.4, 0.07, mantlet=0.4)
     m.seat('driver', -0.9, 1.4, 2.0)
     m.seat('gunner', 0.35, 2.5, tz - 0.4)

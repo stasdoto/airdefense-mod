@@ -6,7 +6,7 @@ from boxgen import Model
 from kit import axles, tracks, lights, hood_cab
 from armor import glacis, tank_hull, turret_dome, era, gun
 from airdefense import barrel, canister
-from tankkit import (bin_box, smoke_launchers, cupola, hatch, antenna, cables, track_links, log, grille, skirt_panels, roof_era,
+from tankkit import (periscope, bin_box, smoke_launchers, cupola, hatch, antenna, cables, track_links, log, grille, skirt_panels, roof_era,
                      tarp, basket, headlights, fuel_tanks, mantlet_cover, sight_box)
 
 
@@ -38,9 +38,8 @@ def t80bvm():
     m.tracked = True
     m.camera = 10
     body = m.part('body')
-    zf, zb = tank_hull(m, body, 7.0, 3.58, 0.92, 1.5, 'rgreen')
+    zf, zb = tank_hull(m, body, 7.0, 3.58, 0.92, 1.5, 'rgreen', era=7)
     skirt_panels(body, zb + 0.4, zf - 0.6, 0.65, 0.98, 1.79, 'rgreen', n=6, era=True)
-    era(body, -1.55, 1.55, 1.15, 1.45, zf - 1.0, 'rgreen', n=7)
     headlights(body, zf - 0.9, 1.5, 1.25)
     # The turbine's deck: a long grille, the exhaust at the very back.
     grille(body, -1.2, 1.2, 1.5, zb + 0.2, zb + 2.0)
@@ -135,16 +134,25 @@ def bmp3():
     # The splash board folded on the glacis, the rear doors under the raised engine deck.
     body.box((-1.4, 1.55, z1 - 0.95), (1.4, 1.63, z1 - 0.6), 'rgreen')
     body.box((-1.45, 1.75, z0), (1.45, 1.95, z0 + 2.2), 'rgreen')
-    body.box((-1.2, 1.78, z0 + 0.3), (1.2, 1.97, z0 + 1.8), 'mesh_dark')
+    grille(body, -1.2, 1.2, 1.95, z0 + 0.3, z0 + 1.8)
     for s in (-1, 1):
         body.box((s * 0.55 - 0.35, 0.95, z0 - 0.07), (s * 0.55 + 0.35, 1.6, z0), 'rgreen')
-    lights(body, z1 - 0.5, 1.05, 1.25)
+        hatch(body, s * 0.6, 1.75, z0 + 2.6, 0.6, 0.8, 'rgreen')
+    for k in range(3):
+        periscope(body, -0.9 + k * 0.2, 1.75, z1 - 1.5, 'rgreen')
+    cables(body, 1, 1.45, 1.78, z0 + 2.3, z1 - 1.6)
+    skirt_panels(body, z0 + 0.5, z1 - 0.8, 0.62, 0.9, 1.575, 'rgreen', n=5, rubber=False)
+    headlights(body, z1 - 0.5, 1.1, 1.2)
     tz = 0.2
     tur = m.part('turret', (0, 1.75, tz))
     m.set_turret(tur)
     turret_dome(tur, 0, tz, 1.75, 1.9, 2.1, 0.55, 'rgreen', layers=2)
     tur.box((0.35, 2.3, tz - 0.5), (0.85, 2.55, tz + 0.0), 'rgreen', sides={'front': 'glass'})
-    tur.box((-0.85, 2.3, tz - 0.4), (-0.4, 2.45, tz + 0.05), 'rgreen')
+    cupola(tur, -0.6, 2.3, tz - 0.2, 'rgreen', mg=False, r=0.28, h=0.1)
+    smoke_launchers(tur, 0.95, 2.05, tz + 0.4, 3, 1)
+    smoke_launchers(tur, -0.95, 2.05, tz + 0.4, 3, -1)
+    antenna(tur, -0.8, 2.3, tz - 0.8, 2.6)
+    bin_box(tur, -0.8, 0.8, 1.85, 2.15, tz - 1.35, tz - 1.0, 'rgreen', straps=2)
     # The 100 mm 2A70 on the centre line and the 30 mm 2A72 to its right, elevating together.
     el = gun(m, tur, (0, 2.1, tz + 1.0), 2.6, 0.13, mantlet=0.55)
     barrel(el, 0.38, 2.1, tz + 1.3, 2.9, 0.07)
@@ -176,6 +184,13 @@ def cv90():
         tur.box((s * 0.8 - 0.45, 2.0, tz + 1.0), (s * 0.8 + 0.45, 2.55, tz + 1.4), 'camo')
     tur.box((-1.2, 2.05, tz - 1.9), (1.2, 2.55, tz - 1.4), 'camo')
     tur.box((0.4, 2.65, tz - 0.5), (0.95, 2.95, tz + 0.0), 'camo', sides={'front': 'glass'})
+    cupola(tur, -0.6, 2.65, tz - 0.3, 'camo', mg=False, r=0.3, h=0.08)
+    for s in (-1, 1):
+        smoke_launchers(tur, s * 1.3, 2.4, tz + 0.2, 4, s)
+    basket(tur, -1.2, 1.2, 2.1, 2.55, tz - 2.3, tz - 1.9)
+    antenna(tur, -1.0, 2.65, tz - 1.2, 2.8)
+    grille(body, 0.3, 1.4, 1.95, z1 - 2.4, z1 - 1.4)
+    headlights(body, z1 - 0.15, 1.15, 1.25)
     gun(m, tur, (0, 2.35, tz + 1.4), 2.9, 0.08, mantlet=0.5)
     m.seat('driver', -0.75, 1.3, 2.4)
     m.seat('gunner', 0.0, 2.45, tz - 0.5)
@@ -357,8 +372,7 @@ def tos1():
     m.tracked = True
     m.camera = 11
     body = m.part('body')
-    zf, zb = tank_hull(m, body, 6.9, 3.6, 0.95, 1.55, 'rgreen')
-    era(body, -1.6, 1.6, 1.2, 1.5, zf - 1.0, 'rgreen', n=6)
+    zf, zb = tank_hull(m, body, 6.9, 3.6, 0.95, 1.55, 'rgreen', era=6)
     tz = -0.6
     tur = m.part('turret', (0, 1.55, tz))
     m.set_turret(tur)

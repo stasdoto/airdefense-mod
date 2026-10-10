@@ -4,7 +4,42 @@ the commander's machine gun, periscopes, antennas, tow cables, spare track links
 skirts made of separate panels, return rollers, ERA bricks on the turret roof, a rolled tarpaulin. Metres, x right,
 y up, z forward.
 """
+import math
+
 from airdefense import barrel
+
+
+def slope(part, x0, x1, y_top, z_top, y_bot, z_bot, paint, t=0.06, sides=None):
+    """A flat plate leaning from (z_top, y_top) down to (z_bot, y_bot) - a glacis, a sloped turret face: one turned
+    box instead of a stair of boxes. Returns the plate's part (bricks laid on it at rest, on top of the plate in its
+    unturned frame, turn with it)."""
+    m = part.model
+    m.slope_n = getattr(m, 'slope_n', 0) + 1
+    length = math.hypot(z_bot - z_top, y_top - y_bot)
+    angle = math.degrees(math.atan2(y_top - y_bot, abs(z_bot - z_top)))
+    if z_bot >= z_top:
+        p = part.part('slope%d' % m.slope_n, (0, y_top, z_top), rot=(-angle, 0, 0))
+        p.box((x0, y_top - t / 2, z_top), (x1, y_top + t / 2, z_top + length), paint, sides=sides)
+    else:
+        p = part.part('slope%d' % m.slope_n, (0, y_top, z_top), rot=(angle, 0, 0))
+        p.box((x0, y_top - t / 2, z_top - length), (x1, y_top + t / 2, z_top), paint, sides=sides)
+    p.plate = (x0, x1, y_top + t / 2, z_top, length, 1 if z_bot >= z_top else -1)
+    return p
+
+
+def plate_bricks(p, n, rows=1, paint=None, inset=0.08, h=0.1, start=0.1, end=0.95):
+    """ERA bricks in rows on a sloped plate made by slope()."""
+    x0, x1, y, z0, length, d = p.plate
+    w = (x1 - x0 - 2 * inset) / n
+    za = z0 + d * length * start
+    zb = z0 + d * length * end
+    l = (zb - za) / rows
+    for r in range(rows):
+        for i in range(n):
+            xa = x0 + inset + i * w + 0.02
+            zz0 = za + r * l
+            zz1 = zz0 + l
+            p.box((xa, y, min(zz0, zz1) + 0.02), (xa + w - 0.04, y + h, max(zz0, zz1) - 0.02), paint or p.model.paint)
 
 
 def bin_box(part, x0, x1, y0, y1, z0, z1, paint, straps=2, lid=True):
