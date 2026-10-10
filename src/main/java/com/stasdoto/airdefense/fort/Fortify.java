@@ -228,10 +228,11 @@ public final class Fortify {
 						w.air(i, j, dy);
 					}
 				}
-				// The roof: logs across, a layer of earth over them, grass on top.
+				// The roof: a layer of logs just above the ground, turf over the middle of it (a low mound).
 				w.set(i, j, 1, w.log(w.r));
-				w.set(i, j, 2, Blocks.DIRT.defaultBlockState());
-				w.set(i, j, 3, Blocks.GRASS_BLOCK.defaultBlockState());
+				if (Math.abs(i) <= 2 && j >= 0 && j <= 3) {
+					w.set(i, j, 2, Math.abs(i) <= 1 && j >= 1 && j <= 2 ? Blocks.GRASS_BLOCK.defaultBlockState() : Blocks.MOSS_CARPET.defaultBlockState());
+				}
 			}
 		}
 		// Steps down from the back, through the wall.
@@ -250,7 +251,6 @@ public final class Fortify {
 		}
 		w.air(0, -1, 1);
 		w.air(0, -1, 2);
-		w.air(0, -1, 3);
 		// A lantern, a barrel of supplies, a bench along the wall.
 		w.set(-2, 3, -2, Blocks.LANTERN.defaultBlockState());
 		w.set(2, 3, -2, Blocks.BARREL.defaultBlockState());
@@ -271,6 +271,9 @@ public final class Fortify {
 					w.set(i, j, dy, wall ? concrete : Blocks.AIR.defaultBlockState());
 				}
 				w.set(i, j, 4, concrete);
+				// Turf and bags on the roof (it hides in the ground from the air).
+				w.set(i, j, 5, Math.abs(i) <= 1 && j >= 1 && j <= 3 ? Blocks.GRASS_BLOCK.defaultBlockState()
+						: wall && (i + j) % 2 == 0 ? w.bags(true) : Blocks.MOSS_CARPET.defaultBlockState());
 			}
 		}
 		// Firing slits: three to the front, one each side; the door at the back.
