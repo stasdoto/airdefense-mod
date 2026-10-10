@@ -745,6 +745,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	/** 1.43: the country screen on coming into the world, playing for a country (and its capital), a friend in it too. */
 	private void choice(ClientGameTestContext ctx, TestServerContext server) {
 		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.nation.CountryClient.last = null);
+		// Earlier scenes in this world may have given the player a country: start as one who has just come in.
+		server.runOnServer(s -> com.stasdoto.airdefense.nation.Allegiance.forget(s.overworld(), s.getPlayerList().getPlayers().get(0)));
 		com.stasdoto.airdefense.nation.Allegiance.quiet = false;
 		int waited = waitUntil(ctx, () -> com.stasdoto.airdefense.client.nation.CountryClient.last != null, 2400);
 		ctx.waitTicks(60);
