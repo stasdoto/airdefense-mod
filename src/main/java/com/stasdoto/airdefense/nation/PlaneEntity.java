@@ -106,10 +106,11 @@ public class PlaneEntity extends Entity {
 			limit = Math.min(limit, Math.sqrt(end * end + 2 * ground * Math.max(0, dist - 0.3)));
 		}
 		Point target = way.get(next);
-		double want = Math.min(limit, target.speed);
+		// Never quite stopping short of a point it is to stop at (it creeps the last bit).
+		double want = Math.max(0.03, Math.min(limit, target.speed));
 		speed = speed < want ? Math.min(want, speed + (pose[1] - way.getLast().y > 2 ? 0.03 : 0.012)) : want;
 		s += speed;
-		while (next < way.size() && s >= cum.get(next) - 0.05) {
+		while (next < way.size() && s >= cum.get(next) - 0.1) {
 			Point p = way.get(next);
 			if (p.hold > 0) {
 				s = cum.get(next);
@@ -118,7 +119,7 @@ public class PlaneEntity extends Entity {
 			}
 			next++;
 		}
-		if (next >= way.size() || s >= total) {
+		if (next >= way.size() || s >= total - 0.1) {
 			s = total;
 			arrived = true;
 		}

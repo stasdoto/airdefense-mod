@@ -593,7 +593,8 @@ public final class CityGen {
 				depots.add(d);
 			}
 		}
-		if (cities.isEmpty() && roads.isEmpty() && hamlets.isEmpty() && depots.isEmpty()) {
+		List<Airports.Airport> airports = Airports.near(seed, t, x0 + 8, z0 + 8, 12);
+		if (cities.isEmpty() && roads.isEmpty() && hamlets.isEmpty() && depots.isEmpty() && airports.isEmpty()) {
 			return;
 		}
 		// The logs of our own buildings (timber frames, barns) stay.
@@ -630,6 +631,13 @@ public final class CityGen {
 					}
 				}
 				int span = 28;
+				for (Airports.Airport ap : airports) {
+					if (ap.out(x, z) <= 2) {
+						// 1.40: nothing grows on an airport (the trees the neighbours put up over it).
+						from = ap.y + 1;
+						span = 40;
+					}
+				}
 				for (Cities.City c : cities) {
 					if (c.inside(x, z)) {
 						boolean park = false;

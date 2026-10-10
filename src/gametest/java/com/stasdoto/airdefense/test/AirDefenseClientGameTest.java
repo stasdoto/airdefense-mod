@@ -529,15 +529,15 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.planes().size()), parked,
 				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.airports()));
 		// From above, the whole airport.
-		double[] c = at.apply((double) mid, 60.0);
-		double[] eye = at.apply((double) mid, 330.0);
-		look(server, eye[0], a[6] + 170, eye[1], c[0], a[6], c[1]);
+		double[] c = at.apply((double) mid, 40.0);
+		double[] eye = at.apply((double) mid + 120, 300.0);
+		look(server, eye[0], a[6] + 90, eye[1], c[0], a[6], c[1]);
 		ctx.waitTicks(200);
 		ctx.takeScreenshot("ap2_from_above");
 		// A plane lands: watched from beside the runway near the threshold.
-		double[] side = at.apply(150.0, -40.0);
-		double[] touch = at.apply(60.0, 0.0);
-		look(server, side[0], a[6] + 8, side[1], touch[0], a[6] + 6, touch[1]);
+		double[] side = at.apply(170.0, -60.0);
+		double[] touch = at.apply(40.0, 0.0);
+		look(server, side[0], a[6] + 14, side[1], touch[0], a[6] + 8, touch[1]);
 		ctx.waitTicks(60);
 		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.force = 1);
 		int landing = waitUntil(ctx, () -> ctx.computeOnClient(mc -> {
@@ -550,12 +550,14 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		}), 1400);
 		ctx.takeScreenshot("ap3_landing");
 		int down = waitUntil(ctx, () -> ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.landed) > 0, 2400);
+		look(server, term[0], a[6] + 30, term[1], apron[0], a[6] + 2, apron[1]);
+		ctx.waitTicks(60);
 		ctx.takeScreenshot("ap4_parked_after_landing");
 		AirDefense.LOGGER.info("[airdefense-test] RESULT airport_landing: on the approach after {} ticks, at the stand {} ticks later", landing, down);
 		// One leaves: watched from beside the runway half way along.
-		double[] side2 = at.apply(300.0, -45.0);
-		double[] run = at.apply(380.0, 0.0);
-		look(server, side2[0], a[6] + 6, side2[1], run[0], a[6] + 5, run[1]);
+		double[] side2 = at.apply(300.0, -60.0);
+		double[] run = at.apply(420.0, 0.0);
+		look(server, side2[0], a[6] + 12, side2[1], run[0], a[6] + 8, run[1]);
 		ctx.waitTicks(40);
 		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.force = 2);
 		int rolling = waitUntil(ctx, () -> ctx.computeOnClient(mc -> {
@@ -575,7 +577,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.nation.AirTraffic.departed));
 		// At night: the runway's lights, the terminal's windows.
 		server.runCommand("time set 18000");
-		look(server, eye[0], a[6] + 120, eye[1], c[0], a[6], c[1]);
+		look(server, term[0], a[6] + 30, term[1], apron[0], a[6] + 2, apron[1]);
 		ctx.waitTicks(100);
 		ctx.takeScreenshot("ap6_night");
 		server.runCommand("time set 6000");
