@@ -1296,5 +1296,8 @@
   "map.airdefense.short.ambulance": "СКОРАЯ",
   "map.airdefense.short.police_car": "ПОЛИЦИЯ",
   "item.airdefense.vehicle.hint_service": "Города сами высылают такие машины: пожарная тушит пожары, скорая и полиция едут на место взрыва. Можно сесть и поехать самому",
-  "subtitles.airdefense.service_siren": "Воет сирена"
+  "subtitles.airdefense.service_siren": "Воет сирена",
+  "message.airdefense.vehicle.status_service": "%s: прочность %s%%, топливо %s/%s",
+  "hud.airdefense.vehicle.service": "Служебная машина",
+  "hud.airdefense.vehicle.service_call": "На вызове: мигалки и сирена"
 }

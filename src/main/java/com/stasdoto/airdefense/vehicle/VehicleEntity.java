@@ -1594,6 +1594,8 @@ public class VehicleEntity extends LivingEntity {
 			tickAir(level);
 		} else if (vtype.isTruck()) {
 			tickTruck(level);
+		} else if (vtype.isService()) {
+			setState(DEPLOYED);
 		} else if (vtype.isArmed()) {
 			tickArmed(level);
 		} else {
@@ -3214,6 +3216,9 @@ public class VehicleEntity extends LivingEntity {
 					: radarWorking() ? "message.airdefense.radar.working" : "message.airdefense.radar.deploying");
 			return Component.translatable(vtype.isJammer() ? "message.airdefense.vehicle.status_ew" : "message.airdefense.vehicle.status_radar",
 					name, hp, state, (int) r.range);
+		}
+		if (vtype.isService() || vtype.defense == null) {
+			return Component.translatable("message.airdefense.vehicle.status_service", name, hp, (int) getFuel(), vtype.fuelCapacity());
 		}
 		DefenseType type = vtype.defense;
 		Component mode = Component.translatable(getMode() == MODE_AUTO ? "message.airdefense.status.on"

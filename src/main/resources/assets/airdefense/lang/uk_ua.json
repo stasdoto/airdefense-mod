@@ -1296,5 +1296,8 @@
   "map.airdefense.short.ambulance": "ШВИДКА",
   "map.airdefense.short.police_car": "ПОЛІЦІЯ",
   "item.airdefense.vehicle.hint_service": "Міста самі надсилають такі машини: пожежна гасить пожежі, швидка й поліція їдуть на місце вибуху. Можна сісти й поїхати самому",
-  "subtitles.airdefense.service_siren": "Виє сирена"
+  "subtitles.airdefense.service_siren": "Виє сирена",
+  "message.airdefense.vehicle.status_service": "%s: міцність %s%%, пальне %s/%s",
+  "hud.airdefense.vehicle.service": "Службова машина",
+  "hud.airdefense.vehicle.service_call": "На виклику: мигалки й сирена"
 }

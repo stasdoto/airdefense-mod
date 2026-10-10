@@ -521,7 +521,7 @@ public enum VehicleType {
 
 	/** Missiles carried: launchers one per rail; air defence per its magazine (Patriot canisters hold several). */
 	public int magazine() {
-		return defense != null ? defense.magazine : radar != null ? 0 : ship != null ? strikeLoad() : weapon != null ? weapon.magazine : strikeLoad();
+		return isService() || cargo != 0 ? 0 : defense != null ? defense.magazine : radar != null ? 0 : ship != null ? strikeLoad() : weapon != null ? weapon.magazine : strikeLoad();
 	}
 
 	/** By its id ("patriot"); Patriot if there is no such vehicle. */

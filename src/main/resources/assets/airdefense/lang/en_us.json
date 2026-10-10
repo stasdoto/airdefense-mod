@@ -1296,5 +1296,8 @@
   "map.airdefense.short.ambulance": "AMB",
   "map.airdefense.short.police_car": "POLICE",
   "item.airdefense.vehicle.hint_service": "The towns send these themselves: the fire engine puts out fires, the ambulance and the police come to a blast. You can drive one too",
-  "subtitles.airdefense.service_siren": "Siren wails"
+  "subtitles.airdefense.service_siren": "Siren wails",
+  "message.airdefense.vehicle.status_service": "%s: health %s%%, fuel %s/%s",
+  "hud.airdefense.vehicle.service": "Service vehicle",
+  "hud.airdefense.vehicle.service_call": "On a call: lights and siren"
 }
