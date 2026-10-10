@@ -1,0 +1,400 @@
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Большой Ольховец (LARGE, 676 people, 89 buildings) at -2104, 78, -1220 -> Королевство Арвения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Ручьи (LARGE, 746 people, 69 buildings) at -2269, 78, -1659 -> Королевство Арвения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Большое Ясенево (LARGE, 1592 people, 40 buildings) at -2130, 71, -2111 -> Королевство Арвения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Новое Заречье (LARGE, 1696 people, 66 buildings) at -1655, 112, -2403 -> Королевство Арвения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Малое Заречье (LARGE, 981 people, 128 buildings) at -1247, 99, -2447 -> Королевство Арвения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Мельничное (LARGE, 821 people, 86 buildings) at -2194, 85, -2605 -> Королевство Арвения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Малый Ольховец (LARGE, 827 people, 94 buildings) at -1618, 106, -2816 -> Королевство Арвения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Большое Троицкое (LARGE, 711 people, 85 buildings) at -1095, 108, -2737 -> Королевство Арвения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Нижний Хуторок (LARGE, 792 people, 147 buildings) at -737, 108, -2591 -> Королевство Арвения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] slow tick 174 ms:; the rest (the game) 174 ms
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Вишнёвое (LARGE, 700 people, 144 buildings) at -856, 70, -600 -> Королевство Арвения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Верхнее Кузнецово (LARGE, 806 people, 89 buildings) at -1484, 70, -485 -> Королевство Арвения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Новые Курганы (SMALL, 241 people, 7 buildings) at -338, 99, 517 -> Княжество Яргения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Троицкое (LARGE, 1858 people, 72 buildings) at -1610, 65, 2017 -> Княжество Яргения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Малая Липовка (LARGE, 761 people, 92 buildings) at -1410, 69, 1310 -> Княжество Яргения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Старое Заречье (LARGE, 1330 people, 72 buildings) at -1162, 67, 1557 -> Княжество Яргения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Верхнее Березино (LARGE, 1376 people, 56 buildings) at -1236, 64, 1983 -> Княжество Яргения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Овражки (LARGE, 659 people, 110 buildings) at -787, 65, 1396 -> Княжество Яргения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Старое Троицкое (LARGE, 833 people, 97 buildings) at -768, 65, 1882 -> Княжество Яргения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Верхнее Заречье (LARGE, 836 people, 175 buildings) at -1019, 66, 2329 -> Княжество Яргения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Малое Верболозье (LARGE, 1562 people, 87 buildings) at -1470, 68, 2459 -> Княжество Яргения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Старое Луговое (LARGE, 1734 people, 55 buildings) at -2014, 67, 1013 -> Княжество Яргения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Малиновка (LARGE, 1894 people, 60 buildings) at -1553, 65, 875 -> Княжество Яргения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Ольховец (LARGE, 1828 people, 61 buildings) at -1024, 78, 1073 -> Княжество Яргения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Верхнее Степное (LARGE, 683 people, 156 buildings) at -879, 66, 2687 -> Княжество Яргения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Новые Озерки (LARGE, 783 people, 160 buildings) at -1347, 77, 2857 -> Княжество Яргения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Камышино (MEDIUM, 470 people, 58 buildings) at -2430, 65, 912 -> Княжество Яргения
+[15:01:31] [Server thread/INFO] (airdefense) [airdefense] city Верхние Черёмушки (LARGE, 808 people, 154 buildings) at -1856, 69, 566 -> Княжество Яргения
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Нижнее Камышино (LARGE, 815 people, 144 buildings) at -1384, 68, 490 -> Княжество Яргения
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Большая Рябиновка (LARGE, 888 people, 137 buildings) at -773, 77, 766 -> Княжество Яргения
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Малое Троицкое (MEDIUM, 305 people, 54 buildings) at -511, 77, 1129 -> Княжество Яргения
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Новые Черёмушки (LARGE, 700 people, 115 buildings) at -327, 71, 1626 -> Княжество Яргения
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Малое Ясенево (MEDIUM, 540 people, 47 buildings) at -473, 67, 2262 -> Княжество Яргения
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Ясная Поляна (LARGE, 1530 people, 79 buildings) at 1800, 66, -4731 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Большая Ивановка (LARGE, 1778 people, 66 buildings) at 1925, 65, -4366 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Верхние Озерки (LARGE, 783 people, 91 buildings) at 1591, 67, -4120 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Новая Покровка (LARGE, 1692 people, 87 buildings) at 1208, 67, -4647 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] slow tick 84 ms:; the rest (the game) 83 ms
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Нижнее Ракитное (LARGE, 1476 people, 46 buildings) at 1503, 64, -4827 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Малые Ручьи (LARGE, 983 people, 129 buildings) at 2178, 72, -4935 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Новые Дубки (LARGE, 1814 people, 80 buildings) at 2354, 68, -4460 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Тихая Заводь (LARGE, 995 people, 101 buildings) at 2202, 68, -4020 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Новое Гончарово (LARGE, 845 people, 117 buildings) at 1768, 68, -3729 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Старый Ольховец (LARGE, 1668 people, 52 buildings) at 1305, 70, -3705 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] slow tick 280 ms:; the rest (the game) 279 ms
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Старая Покровка (LARGE, 775 people, 159 buildings) at 904, 76, -4021 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Нижняя Ивановка (LARGE, 1302 people, 77 buildings) at 739, 70, -4530 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Нижние Черёмушки (LARGE, 926 people, 79 buildings) at 874, 69, -4903 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Новый Ольховец (LARGE, 1448 people, 72 buildings) at 1327, 68, -5285 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Нижняя Липовка (LARGE, 1980 people, 86 buildings) at 1823, 69, -5237 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Малые Озерки (MEDIUM, 603 people, 53 buildings) at 403, 81, -4511 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Большая Покровка (LARGE, 747 people, 154 buildings) at 1037, 81, -5574 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Верхнее Луговое (LARGE, 965 people, 102 buildings) at 1555, 82, -5672 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Старая Полянка (MEDIUM, 424 people, 89 buildings) at 2118, 70, -5522 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Малая Ивановка (LARGE, 880 people, 87 buildings) at 2692, 69, -4744 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Верхние Ключи (LARGE, 738 people, 132 buildings) at 2647, 68, -4067 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Старые Дубки (LARGE, 705 people, 176 buildings) at 2390, 65, -3646 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Новое Ракитное (MEDIUM, 425 people, 85 buildings) at 1817, 64, -3341 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Малые Мостки (LARGE, 720 people, 63 buildings) at 1392, 66, -3299 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Старая Яблоневка (LARGE, 870 people, 144 buildings) at 758, 65, -3583 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Малая Калиновка (LARGE, 725 people, 134 buildings) at 468, 74, -4044 -> Земля Озерия
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Нижняя Пасека (SMALL, 255 people, 25 buildings) at 2568, 71, 338 -> Федерация Синегория
+[15:01:32] [Server thread/INFO] (airdefense) [airdefense] city Покровка (MEDIUM, 582 people, 37 buildings) at 967, 71, 2804 -> Федерация Синегория
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Старое Никольское (LARGE, 956 people, 69 buildings) at 1689, 89, 1930 -> Федерация Синегория
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Ракитное (LARGE, 1974 people, 71 buildings) at 1284, 76, 1864 -> Федерация Синегория
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Старая Рябиновка (LARGE, 1892 people, 94 buildings) at 1177, 75, 1496 -> Федерация Синегория
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Малая Пасека (LARGE, 1972 people, 82 buildings) at 1452, 73, 1179 -> Федерация Синегория
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Малое Боровое (LARGE, 1808 people, 61 buildings) at 1468, 74, 2324 -> Федерация Синегория
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Малая Медовка (LARGE, 743 people, 82 buildings) at 1055, 64, 2176 -> Федерация Синегория
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Большая Семёновка (LARGE, 1944 people, 82 buildings) at 771, 89, 1650 -> Федерация Синегория
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Верхний Ольховец (LARGE, 1858 people, 74 buildings) at 840, 79, 1179 -> Федерация Синегория
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Старая Калиновка (LARGE, 1894 people, 49 buildings) at 1170, 69, 913 -> Федерация Синегория
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Старое Камышино (LARGE, 1972 people, 87 buildings) at 2320, 110, 1916 -> Федерация Синегория
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Верхнее Боровое (LARGE, 721 people, 124 buildings) at 1869, 97, 2256 -> Федерация Синегория
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Новая Малиновка (MEDIUM, 590 people, 71 buildings) at 400, 104, 1377 -> Федерация Синегория
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] slow tick 165 ms:; the rest (the game) 165 ms
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Нижнее Петровское (LARGE, 951 people, 92 buildings) at 487, 70, 942 -> Федерация Синегория
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Верхнее Камышино (LARGE, 941 people, 98 buildings) at 1050, 69, 545 -> Федерация Синегория
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Новая Сосновка (MEDIUM, 571 people, 68 buildings) at 2741, 86, 1324 -> Федерация Синегория
+[15:01:33] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 19785ms or 395 ticks behind
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] slow tick 234 ms:; the rest (the game) 233 ms
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Нижние Ключи (LARGE, 975 people, 154 buildings) at 2717, 97, 1813 -> Федерация Синегория
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Большое Кузнецово (MEDIUM, 589 people, 61 buildings) at 2372, 95, 2379 -> Федерация Синегория
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Верхнее Вишнёвое (LARGE, 967 people, 130 buildings) at 1983, 90, 2641 -> Федерация Синегория
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Малое Гончарово (SMALL, 206 people, 15 buildings) at 321, 99, 5726 -> Королевство Луговия
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Нижнее Боровое (LARGE, 1728 people, 106 buildings) at 1046, 72, 4535 -> Королевство Луговия
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Нижняя Каменка (LARGE, 1642 people, 114 buildings) at 1283, 71, 4230 -> Королевство Луговия
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Верхняя Покровка (LARGE, 1366 people, 89 buildings) at 1671, 69, 4251 -> Королевство Луговия
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Малое Студёное (LARGE, 1412 people, 86 buildings) at 1819, 69, 4647 -> Королевство Луговия
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Малое Камышино (LARGE, 1666 people, 105 buildings) at 2125, 68, 4173 -> Королевство Луговия
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Новая Медовка (LARGE, 786 people, 152 buildings) at 2247, 69, 4696 -> Королевство Луговия
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Старое Подгорное (LARGE, 816 people, 62 buildings) at 2024, 84, 5093 -> Королевство Луговия
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Верхнее Троицкое (LARGE, 1498 people, 56 buildings) at 1651, 94, 5373 -> Королевство Луговия
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Большая Липовка (LARGE, 1934 people, 44 buildings) at 1098, 76, 5293 -> Королевство Луговия
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Верхние Курганы (LARGE, 1406 people, 114 buildings) at 717, 83, 4430 -> Королевство Луговия
+[15:01:33] [Server thread/INFO] (airdefense) [airdefense] city Малый Хуторок (LARGE, 935 people, 84 buildings) at 834, 96, 4054 -> Королевство Луговия
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Верхние Ручьи (LARGE, 769 people, 141 buildings) at 1294, 66, 3831 -> Королевство Луговия
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Новая Яблоневка (LARGE, 1778 people, 84 buildings) at 1816, 66, 3893 -> Королевство Луговия
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Нижнее Никольское (LARGE, 940 people, 152 buildings) at 852, 84, 3580 -> Королевство Луговия
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Новое Никольское (LARGE, 822 people, 120 buildings) at 1464, 65, 3391 -> Королевство Луговия
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Большая Полянка (MEDIUM, 477 people, 70 buildings) at 1882, 73, 3458 -> Королевство Луговия
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Верхняя Липовка (MEDIUM, 554 people, 50 buildings) at 2444, 70, 3977 -> Королевство Луговия
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Новая Рябиновка (LARGE, 779 people, 129 buildings) at 2613, 71, 4436 -> Королевство Луговия
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Старое Березино (LARGE, 728 people, 133 buildings) at 2263, 76, 5437 -> Королевство Луговия
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Малая Рябиновка (LARGE, 835 people, 152 buildings) at 1730, 94, 5716 -> Королевство Луговия
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Большие Ключи (MEDIUM, 345 people, 85 buildings) at 1212, 70, 5730 -> Королевство Луговия
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Малое Подгорное (MEDIUM, 461 people, 35 buildings) at 710, 70, 5525 -> Королевство Луговия
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Нижняя Полянка (LARGE, 977 people, 92 buildings) at 319, 65, 4967 -> Королевство Луговия
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Новое Подгорное (LARGE, 863 people, 80 buildings) at 267, 79, 4519 -> Королевство Луговия
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Верхняя Яблоневка (LARGE, 833 people, 127 buildings) at 504, 84, 3860 -> Королевство Луговия
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Верхнее Никольское (LARGE, 1702 people, 85 buildings) at 4518, 81, -4311 -> Княжество Угория
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Нижняя Сосновка (LARGE, 731 people, 92 buildings) at 4339, 69, -4654 -> Княжество Угория
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Новые Ключи (LARGE, 1512 people, 83 buildings) at 4560, 82, -5000 -> Княжество Угория
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Малое Березино (LARGE, 1954 people, 88 buildings) at 4966, 105, -4973 -> Княжество Угория
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Большая Медовка (LARGE, 1510 people, 50 buildings) at 4961, 91, -4300 -> Княжество Угория
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Старый Хуторок (LARGE, 1808 people, 81 buildings) at 5003, 95, -5395 -> Княжество Угория
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Старые Черёмушки (LARGE, 1940 people, 74 buildings) at 5359, 78, -4173 -> Княжество Угория
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Новые Ручьи (LARGE, 837 people, 124 buildings) at 4555, 70, -3878 -> Княжество Угория
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Большое Петровское (LARGE, 1926 people, 72 buildings) at 4102, 69, -4130 -> Княжество Угория
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Малое Петровское (LARGE, 1736 people, 97 buildings) at 3931, 67, -4589 -> Княжество Угория
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Верхняя Рябиновка (LARGE, 1642 people, 53 buildings) at 4126, 68, -5129 -> Княжество Угория
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Новое Степное (LARGE, 994 people, 68 buildings) at 4462, 85, -5401 -> Княжество Угория
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Новая Ивановка (MEDIUM, 517 people, 72 buildings) at 5234, 68, -3585 -> Княжество Угория
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Верхняя Медовка (LARGE, 652 people, 86 buildings) at 4679, 69, -3459 -> Княжество Угория
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Новое Луговое (MEDIUM, 470 people, 55 buildings) at 4209, 69, -3612 -> Княжество Угория
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Нижнее Заречье (MEDIUM, 619 people, 70 buildings) at 3701, 66, -4097 -> Княжество Угория
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Нижняя Калиновка (LARGE, 695 people, 129 buildings) at 3570, 69, -4428 -> Княжество Угория
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Большое Мельничное (LARGE, 882 people, 105 buildings) at 3616, 66, -5089 -> Княжество Угория
+[15:01:34] [Server thread/INFO] (airdefense) [airdefense] city Малое Кузнецово (LARGE, 916 people, 134 buildings) at 3898, 64, -5506 -> Княжество Угория
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] slow tick 155 ms:; the rest (the game) 155 ms
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] city Верхнее Мельничное (MEDIUM, 460 people, 69 buildings) at 5478, 96, -5556 -> Княжество Угория
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] city Нижнее Подгорное (LARGE, 1482 people, 59 buildings) at 4498, 65, -1143 -> Земля Ратония
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] city Новое Петровское (LARGE, 1958 people, 39 buildings) at 4227, 68, -1404 -> Земля Ратония
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] city Нижний Ольховец (LARGE, 1374 people, 77 buildings) at 4330, 68, -1841 -> Земля Ратония
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] city Большое Никольское (LARGE, 1574 people, 42 buildings) at 4742, 70, -1921 -> Земля Ратония
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] city Новое Березино (LARGE, 1378 people, 78 buildings) at 4979, 67, -1605 -> Земля Ратония
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] city Нижние Ветряки (LARGE, 799 people, 96 buildings) at 4913, 70, -1227 -> Земля Ратония
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] city Нижнее Мельничное (LARGE, 724 people, 80 buildings) at 5233, 69, -1043 -> Земля Ратония
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] city Малое Степное (LARGE, 935 people, 74 buildings) at 4764, 64, -753 -> Земля Ратония
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] city Старая Липовка (LARGE, 1504 people, 76 buildings) at 4259, 68, -822 -> Земля Ратония
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] city Большое Подгорное (LARGE, 931 people, 92 buildings) at 3976, 68, -1090 -> Земля Ратония
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] city Нижнее Студёное (LARGE, 759 people, 113 buildings) at 3802, 66, -1546 -> Земля Ратония
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1537, 90, 1444
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] city Нижние Курганы (LARGE, 939 people, 126 buildings) at 3986, 68, -2010 -> Земля Ратония
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] city Старое Степное (LARGE, 784 people, 83 buildings) at 4344, 66, -2329 -> Земля Ратония
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] city Старые Пригорки (LARGE, 1446 people, 48 buildings) at 4827, 71, -2254 -> Земля Ратония
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] city Большие Черёмушки (LARGE, 1798 people, 68 buildings) at 5211, 68, -1995 -> Земля Ратония
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] city Большие Ветряки (LARGE, 810 people, 90 buildings) at 5430, 69, -683 -> Земля Ратония
+[15:01:35] [Server thread/INFO] (airdefense) [airdefense] city Новая Липовка (LARGE, 675 people, 86 buildings) at 4873, 65, -401 -> Земля Ратония
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] slow tick 250 ms:; the rest (the game) 250 ms
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Старые Озерки (MEDIUM, 336 people, 59 buildings) at 4415, 68, -396 -> Земля Ратония
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Нижние Овражки (MEDIUM, 413 people, 34 buildings) at 3859, 80, -689 -> Земля Ратония
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Новый Хуторок (MEDIUM, 423 people, 65 buildings) at 3479, 82, -1164 -> Земля Ратония
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Нижнее Верболозье (LARGE, 679 people, 92 buildings) at 3404, 71, -1599 -> Земля Ратония
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Нижние Ручьи (LARGE, 708 people, 94 buildings) at 3635, 66, -2240 -> Земля Ратония
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Малое Вишнёвое (MEDIUM, 544 people, 78 buildings) at 4111, 70, -2608 -> Земля Ратония
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Старая Медовка (LARGE, 705 people, 94 buildings) at 4634, 70, -2717 -> Земля Ратония
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Новые Овражки (MEDIUM, 336 people, 60 buildings) at 5224, 68, -2557 -> Земля Ратония
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Верхние Ветряки (LARGE, 805 people, 93 buildings) at 5641, 65, -1004 -> Земля Ратония
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Новое Боровое (LARGE, 1734 people, 74 buildings) at 4824, 75, 1415 -> Королевство Лиравия
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Нижняя Малиновка (LARGE, 1892 people, 64 buildings) at 4911, 77, 1758 -> Королевство Лиравия
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Старые Ключи (LARGE, 844 people, 100 buildings) at 4167, 64, 1767 -> Королевство Лиравия
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Малое Луговое (LARGE, 1642 people, 62 buildings) at 5294, 85, 1880 -> Королевство Лиравия
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Большое Ракитное (LARGE, 1786 people, 79 buildings) at 4918, 94, 2280 -> Королевство Лиравия
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Старое Вишнёвое (LARGE, 924 people, 111 buildings) at 4422, 78, 2384 -> Королевство Лиравия
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Нижнее Луговое (LARGE, 1428 people, 96 buildings) at 4084, 70, 2224 -> Королевство Лиравия
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Большое Заречье (LARGE, 1612 people, 76 buildings) at 3754, 71, 1733 -> Королевство Лиравия
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Верхняя Калиновка (LARGE, 1406 people, 72 buildings) at 3773, 80, 1297 -> Королевство Лиравия
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Большие Ручьи (LARGE, 1670 people, 46 buildings) at 4113, 65, 908 -> Королевство Лиравия
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Верхние Пригорки (LARGE, 966 people, 109 buildings) at 5327, 91, 1351 -> Королевство Лиравия
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Нижнее Степное (MEDIUM, 447 people, 60 buildings) at 3494, 71, 1107 -> Королевство Лиравия
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Верхние Овражки (LARGE, 944 people, 114 buildings) at 3791, 65, 641 -> Королевство Лиравия
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Малая Семёновка (LARGE, 748 people, 105 buildings) at 4267, 64, 466 -> Королевство Лиравия
+[15:01:36] [Server thread/INFO] (airdefense) [airdefense] city Малые Черёмушки (LARGE, 854 people, 145 buildings) at 4837, 64, 453 -> Королевство Лиравия
+[15:01:37] [Server thread/INFO] (airdefense) [airdefense] slow tick 339 ms:; the rest (the game) 339 ms
+[15:01:37] [Server thread/INFO] (airdefense) [airdefense] city Нижняя Медовка (LARGE, 973 people, 86 buildings) at 5320, 69, 686 -> Королевство Лиравия
+[15:01:37] [Server thread/INFO] (airdefense) [airdefense] city Старая Малиновка (MEDIUM, 477 people, 54 buildings) at 5617, 80, 1144 -> Королевство Лиравия
+[15:01:37] [Server thread/INFO] (airdefense) [airdefense] city Малые Курганы (LARGE, 764 people, 97 buildings) at 5712, 96, 1683 -> Королевство Лиравия
+[15:01:37] [Server thread/INFO] (airdefense) [airdefense] city Нижняя Покровка (LARGE, 900 people, 112 buildings) at 5450, 88, 2307 -> Королевство Лиравия
+[15:01:37] [Server thread/INFO] (airdefense) [airdefense] city Малое Мельничное (LARGE, 814 people, 87 buildings) at 5026, 108, 2708 -> Королевство Лиравия
+[15:01:37] [Server thread/INFO] (airdefense) [airdefense] city Старое Гончарово (MEDIUM, 305 people, 67 buildings) at 3408, 67, 1586 -> Королевство Лиравия
+[15:01:37] [Server thread/INFO] (airdefense) [airdefense] hamlet Верхняя Пасека (7 buildings) at 13, 71, -2370 -> Королевство Арвения
+[15:01:37] [Server thread/INFO] (airdefense) [airdefense] hamlet Малая Полянка (6 buildings) at -252, 73, 744 -> Княжество Яргения
+[15:01:37] [Server thread/INFO] (airdefense) [airdefense] hamlet Старое Кузнецово (6 buildings) at -515, 127, 421 -> Княжество Яргения
+[15:01:37] [Server thread/INFO] (airdefense) [airdefense] hamlet Новое Студёное (7 buildings) at 978, 72, 2985 -> Федерация Синегория
+[15:01:37] [Server thread/INFO] (airdefense) [airdefense] slow tick 149 ms:; the rest (the game) 148 ms
+[15:01:38] [Render thread/INFO] (Minecraft) Resizing Chunk Sections Command Buffer, capacity limit of 256 reached during a single frame. New capacity will be 512.
+[15:01:38] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1455, 90, 1525
+[15:01:38] [Render thread/INFO] (Minecraft) Resizing Chunk Sections Instanced, capacity limit of 128 reached during a single frame. New capacity will be 256.
+[15:01:39] [Server thread/INFO] (airdefense) [airdefense] village Новая Семёновка at 1312, 73, 1248 -> Земля Ветрания
+[15:01:39] [Server thread/INFO] (airdefense) [airdefense] slow tick 89 ms: nations 11 ms (1) arsenals 10 ms (1); the rest (the game) 66 ms
+[15:01:40] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1315, 78, 1250
+[15:01:40] [Server thread/INFO] (airdefense) [airdefense] slow tick 140 ms:; the rest (the game) 139 ms
+[15:01:41] [Server thread/INFO] (airdefense) [airdefense] slow tick 504 ms:; the rest (the game) 503 ms
+[15:01:44] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=39 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:01:44] [Server thread/INFO] (airdefense) [airdefense] slow tick 114 ms:; the rest (the game) 113 ms
+[15:01:44] [Server thread/INFO] (airdefense) [airdefense] slow tick 79 ms: nations 3 ms (1) economy 2 ms (1); the rest (the game) 73 ms
+[15:01:44] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1553, 90, 1554
+[15:01:45] [Render thread/INFO] (Minecraft) Resizing Chunk Sections Command Buffer, capacity limit of 512 reached during a single frame. New capacity will be 1024.
+[15:01:48] [Server thread/INFO] (airdefense) [airdefense] slow tick 197 ms:; the rest (the game) 197 ms
+[15:01:48] [Server thread/INFO] (airdefense) [airdefense] slow tick 177 ms:; the rest (the game) 176 ms
+[15:01:48] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=79 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:01:48] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=39 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[15:01:48] [Server thread/INFO] (airdefense) [airdefense] slow tick 88 ms: vehicles 0 ms (5); the rest (the game) 87 ms
+[15:01:49] [Render thread/INFO] (Minecraft) Resizing Chunk Sections Instanced, capacity limit of 256 reached during a single frame. New capacity will be 512.
+[15:01:51] [Server thread/INFO] (airdefense) [airdefense] slow tick 249 ms: vehicles 0 ms (7); the rest (the game) 247 ms
+[15:01:51] [Server thread/INFO] (airdefense) [airdefense] slow tick 174 ms: vehicles 0 ms (7); the rest (the game) 173 ms
+[15:01:52] [Server thread/INFO] (airdefense) [airdefense] slow tick 211 ms:; the rest (the game) 210 ms
+[15:01:52] [Server thread/INFO] (airdefense) [airdefense] slow tick 182 ms: vehicles 2 ms (7); the rest (the game) 180 ms
+[15:01:52] [Server thread/INFO] (airdefense) [airdefense] slow tick 141 ms:; the rest (the game) 140 ms
+[15:01:53] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=119 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:01:53] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=79 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[15:01:53] [Server thread/INFO] (airdefense) [airdefense] slow tick 71 ms: nations 1 ms (1) arsenals 1 ms (1) vehicles 1 ms (7); the rest (the game) 66 ms
+[15:01:54] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1442, 78, 1181
+[15:01:55] [Server thread/INFO] (airdefense) [airdefense] slow tick 248 ms:; the rest (the game) 246 ms
+[15:01:56] [Server thread/INFO] (airdefense) [airdefense] slow tick 232 ms:; the rest (the game) 231 ms
+[15:01:57] [Server thread/INFO] (airdefense) [airdefense] slow tick 191 ms:; the rest (the game) 190 ms
+[15:01:57] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1625, 90, 1590
+[15:01:58] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=159 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:01:58] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=119 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[15:02:01] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=39 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:02] [Server thread/INFO] (airdefense) [airdefense] slow tick 174 ms:; the rest (the game) 172 ms
+[15:02:03] [Server thread/INFO] (airdefense) [airdefense] slow tick 307 ms: vehicles 0 ms (12); the rest (the game) 306 ms
+[15:02:03] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=199 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:02:03] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=159 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[15:02:04] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=39 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:04] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1647, 90, 1505
+[15:02:04] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1167, 80, 1498
+[15:02:06] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=79 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:06] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=39 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:02:07] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1516, 90, 1636
+[15:02:08] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=239 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:02:08] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=199 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[15:02:09] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=79 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:09] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 21031ms or 420 ticks behind
+[15:02:11] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=119 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:11] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=79 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:02:13] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=279 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:02:13] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=239 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[15:02:14] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=119 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:14] [Server thread/INFO] (airdefense) [airdefense] slow tick 66 ms: nations 3 ms (1) vehicles 0 ms (12); the rest (the game) 62 ms
+[15:02:16] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=159 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:16] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=119 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:02:16] [Render thread/INFO] (Minecraft) Resizing Chunk Sections Command Buffer, capacity limit of 1024 reached during a single frame. New capacity will be 2048.
+[15:02:16] [Render thread/INFO] (Minecraft) Resizing Chunk Sections Instanced, capacity limit of 512 reached during a single frame. New capacity will be 1024.
+[15:02:16] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1129, 80, 1362
+[15:02:16] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1611.000000, 244.000000, 1600.000000
+[15:02:17] [Server thread/INFO] (airdefense) [airdefense] slow tick 62 ms: vehicles 0 ms (12); the rest (the game) 61 ms
+[15:02:18] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=319 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:02:18] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=279 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[15:02:18] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=159 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:19] [Server thread/INFO] (airdefense) [airdefense] slow tick 187 ms:; the rest (the game) 186 ms
+[15:02:19] [Server thread/INFO] (airdefense) [airdefense] slow tick 115 ms: vehicles 0 ms (12); the rest (the game) 114 ms
+[15:02:20] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=199 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:20] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=159 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:02:22] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=359 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:02:22] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=319 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[15:02:23] [Server thread/INFO] (airdefense) [airdefense] slow tick 114 ms: vehicles 0 ms (16); the rest (the game) 113 ms
+[15:02:23] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=199 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:24] [Server thread/INFO] (airdefense) [airdefense] slow tick 175 ms: vehicles 0 ms (16); the rest (the game) 174 ms
+[15:02:25] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=239 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:25] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=199 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:02:25] [Server thread/INFO] (airdefense) [airdefense] slow tick 147 ms: vehicles 0 ms (17); the rest (the game) 145 ms
+[15:02:26] [Server thread/INFO] (airdefense) [airdefense] slow tick 161 ms: vehicles 0 ms (17); the rest (the game) 160 ms
+[15:02:26] [Server thread/INFO] (airdefense) [airdefense] slow tick 106 ms: nations 7 ms (1); the rest (the game) 98 ms
+[15:02:27] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=399 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:02:27] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=359 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[15:02:27] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=239 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:29] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=279 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:29] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=239 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:02:31] [Server thread/INFO] (airdefense) [airdefense] slow tick 178 ms: vehicles 0 ms (15); the rest (the game) 177 ms
+[15:02:31] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=399 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[15:02:32] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=279 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:32] [Server thread/INFO] (airdefense) [airdefense] slow tick 165 ms: nations 0 ms (1); the rest (the game) 163 ms
+[15:02:32] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1642, 94, 1796
+[15:02:33] [Server thread/INFO] (airdefense) [airdefense] slow tick 199 ms: vehicles 0 ms (13); the rest (the game) 197 ms
+[15:02:33] [Server thread/INFO] (airdefense) [airdefense] slow tick 113 ms: vehicles 0 ms (13); the rest (the game) 112 ms
+[15:02:34] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=319 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:34] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=279 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:02:36] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=439 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[15:02:37] [Server thread/INFO] (airdefense) [airdefense] slow tick 185 ms:; the rest (the game) 184 ms
+[15:02:37] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=319 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:37] [Server thread/INFO] (airdefense) [airdefense] slow tick 168 ms: vehicles 0 ms (13); the rest (the game) 167 ms
+[15:02:37] [Server thread/INFO] (airdefense) [airdefense] slow tick 90 ms:; the rest (the game) 89 ms
+[15:02:38] [Server thread/INFO] (airdefense) [airdefense] slow tick 199 ms: vehicles 0 ms (13); the rest (the game) 198 ms
+[15:02:39] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=359 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:39] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=319 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:02:39] [Server thread/INFO] (airdefense) [airdefense] slow tick 178 ms: vehicles 0 ms (13); the rest (the game) 177 ms
+[15:02:41] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=479 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[15:02:42] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=359 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:44] [Server thread/INFO] (airdefense) [airdefense] slow tick 215 ms:; the rest (the game) 214 ms
+[15:02:44] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=399 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:44] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=359 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:02:44] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 20513ms or 410 ticks behind
+[15:02:44] [Server thread/INFO] (airdefense) [airdefense] slow tick 65 ms: nations 6 ms (1) vehicles 1 ms (13); the rest (the game) 56 ms
+[15:02:46] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=519 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[15:02:47] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=399 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:48] [Server thread/INFO] (airdefense) [airdefense] slow tick 174 ms: vehicles 0 ms (13); the rest (the game) 173 ms
+[15:02:49] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=439 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:49] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=399 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:02:49] [Server thread/INFO] (airdefense) [airdefense] slow tick 208 ms: vehicles 3 ms (13); the rest (the game) 204 ms
+[15:02:51] [Server thread/INFO] (airdefense) [airdefense] slow tick 70 ms: vehicles 0 ms (13); the rest (the game) 68 ms
+[15:02:51] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=559 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[15:02:52] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=439 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:54] [Server thread/INFO] (airdefense) [airdefense] slow tick 120 ms:; the rest (the game) 119 ms
+[15:02:54] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=479 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:54] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=439 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:02:56] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=599 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[15:02:56] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=479 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:58] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=519 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:02:58] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=479 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:03:00] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=639 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[15:03:00] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=519 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:03:02] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=559 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:03:02] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=519 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[15:03:03] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1317.000000, 133.000000, 1897.000000
+[15:03:03] [Server thread/INFO] (airdefense) [airdefense] slow tick 156 ms: nations 0 ms (1) economy 0 ms (1); the rest (the game) 154 ms
+[15:03:05] [Server thread/INFO] (airdefense) [airdefense] slow tick 1100 ms:; the rest (the game) 1099 ms
+[15:03:05] [Server thread/INFO] (airdefense) [airdefense] slow tick 158 ms:; the rest (the game) 157 ms
+[15:03:05] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1274, 81, 1866
+[15:03:06] [Server thread/INFO] (airdefense) [airdefense] slow tick 179 ms:; the rest (the game) 179 ms
+[15:03:06] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=559 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:03:06] [Server thread/INFO] (airdefense) [airdefense] slow tick 93 ms: nations 0 ms (1); the rest (the game) 91 ms
+[15:03:06] [Server thread/INFO] (airdefense) [airdefense] slow tick 61 ms:; the rest (the game) 60 ms
+[15:03:07] [Server thread/INFO] (airdefense) [airdefense] slow tick 92 ms:; the rest (the game) 92 ms
+[15:03:07] [Server thread/INFO] (airdefense) [airdefense] slow tick 161 ms:; the rest (the game) 161 ms
+[15:03:07] [Server thread/INFO] (airdefense) [airdefense] slow tick 84 ms: nations 0 ms (1); the rest (the game) 83 ms
+[15:03:08] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=599 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:03:12] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=639 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:03:13] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1237, 84, 1756
+[15:03:14] [Server thread/INFO] (airdefense) [airdefense] slow tick 105 ms: vehicles 0 ms (3); the rest (the game) 103 ms
+[15:03:16] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 16231ms or 324 ticks behind
+[15:03:17] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=679 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:03:22] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=719 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:03:25] [Server thread/INFO] (airdefense) [airdefense] slow tick 182 ms:; the rest (the game) 182 ms
+[15:03:27] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=759 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[15:03:29] [Server thread/INFO] (airdefense) [airdefense] slow tick 314 ms:; the rest (the game) 313 ms
+[15:03:41] [Render thread/INFO] (Minecraft) Resizing Chunk Sections Command Buffer, capacity limit of 2048 reached during a single frame. New capacity will be 4096.
+[15:03:41] [Render thread/INFO] (Minecraft) Resizing Chunk Sections Instanced, capacity limit of 1024 reached during a single frame. New capacity will be 2048.
+[15:03:41] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1902.000000, 154.000000, 2289.000000
+[15:03:42] [Server thread/INFO] (airdefense) [airdefense] slow tick 205 ms:; the rest (the game) 204 ms
+[15:03:43] [Server thread/INFO] (airdefense) [airdefense] slow tick 320 ms:; the rest (the game) 320 ms
+[15:03:43] [Server thread/INFO] (airdefense) [airdefense] slow tick 380 ms:; the rest (the game) 380 ms
+[15:03:43] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1859, 102, 2258
+[15:03:44] [Server thread/INFO] (airdefense) [airdefense] slow tick 126 ms:; the rest (the game) 125 ms
+[15:03:44] [Server thread/INFO] (airdefense) [airdefense] slow tick 297 ms:; the rest (the game) 296 ms
+[15:03:44] [Server thread/INFO] (airdefense) [airdefense] slow tick 269 ms:; the rest (the game) 269 ms
+[15:03:45] [Server thread/INFO] (airdefense) [airdefense] slow tick 180 ms:; the rest (the game) 179 ms
+[15:03:45] [Server thread/INFO] (airdefense) [airdefense] slow tick 99 ms:; the rest (the game) 98 ms
+[15:03:46] [Server thread/INFO] (airdefense) [airdefense] slow tick 346 ms:; the rest (the game) 345 ms
+[15:03:46] [Server thread/INFO] (airdefense) [airdefense] slow tick 63 ms:; the rest (the game) 62 ms
+[15:03:47] [Server thread/INFO] (airdefense) [airdefense] slow tick 121 ms:; the rest (the game) 121 ms
+[15:03:47] [Server thread/INFO] (airdefense) [airdefense] slow tick 298 ms:; the rest (the game) 297 ms
+[15:03:48] [Server thread/INFO] (airdefense) [airdefense] slow tick 86 ms:; the rest (the game) 85 ms
+[15:03:48] [Server thread/INFO] (airdefense) [airdefense] slow tick 141 ms:; the rest (the game) 140 ms
+[15:03:49] [Server thread/INFO] (airdefense) [airdefense] slow tick 79 ms:; the rest (the game) 78 ms
+[15:03:49] [Server thread/INFO] (airdefense) [airdefense] slow tick 129 ms:; the rest (the game) 128 ms
+[15:03:50] [Server thread/INFO] (airdefense) [airdefense] slow tick 244 ms:; the rest (the game) 244 ms
+[15:03:51] [Server thread/INFO] (airdefense) [airdefense] slow tick 106 ms:; the rest (the game) 106 ms
+[15:03:51] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 19950ms or 399 ticks behind
+[15:03:51] [Server thread/INFO] (airdefense) [airdefense] slow tick 323 ms:; the rest (the game) 323 ms
+[15:03:51] [Server thread/INFO] (airdefense) [airdefense] slow tick 147 ms:; the rest (the game) 147 ms
+[15:03:53] [Server thread/INFO] (airdefense) [airdefense] slow tick 70 ms:; the rest (the game) 69 ms
+[15:03:53] [Server thread/INFO] (airdefense) [airdefense] slow tick 372 ms:; the rest (the game) 371 ms
+[15:03:55] [Server thread/INFO] (airdefense) [airdefense] slow tick 116 ms:; the rest (the game) 115 ms
+[15:03:57] [Server thread/INFO] (airdefense) [airdefense] slow tick 193 ms:; the rest (the game) 193 ms
+[15:03:58] [Server thread/INFO] (airdefense) [airdefense] slow tick 198 ms:; the rest (the game) 197 ms
+[15:03:58] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1895, 102, 2123
+[15:03:59] [Server thread/INFO] (airdefense) [airdefense] slow tick 69 ms:; the rest (the game) 68 ms
+[15:04:04] [Server thread/INFO] (airdefense) [airdefense] slow tick 138 ms: nations 1 ms (1); the rest (the game) 136 ms
+[15:04:06] [Server thread/INFO] (airdefense) [airdefense] slow tick 466 ms:; the rest (the game) 465 ms
+[15:04:07] [Server thread/INFO] (airdefense) [airdefense] slow tick 258 ms:; the rest (the game) 257 ms
+[15:04:08] [Server thread/INFO] (airdefense) [airdefense] slow tick 83 ms:; the rest (the game) 82 ms
+[15:04:08] [Server thread/INFO] (airdefense) [airdefense] slow tick 71 ms:; the rest (the game) 70 ms
+[15:04:11] [Server thread/INFO] (Minecraft) System chat: Player0 телепортирован в точку 1722.000000, 146.000000, 1963.000000
+[15:04:13] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1679, 94, 1932
+[15:04:13] [Server thread/INFO] (airdefense) [airdefense] slow tick 89 ms:; the rest (the game) 88 ms
+[15:04:14] [Server thread/INFO] (airdefense) [airdefense] slow tick 77 ms:; the rest (the game) 77 ms
+[15:04:16] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 10404ms or 208 ticks behind
+[15:04:24] [Server thread/INFO] (airdefense) [airdefense] slow tick 90 ms:; the rest (the game) 89 ms
+[15:04:29] [Server thread/INFO] (airdefense) [airdefense] slow tick 86 ms:; the rest (the game) 86 ms
+[15:04:33] [Server thread/INFO] (airdefense) [airdefense] slow tick 128 ms: nations 0 ms (1) economy 0 ms (1); the rest (the game) 126 ms
+[15:04:34] [Server thread/INFO] (airdefense) [airdefense] siren put up at 1492, 79, 2190
+[15:04:38] [Server thread/INFO] (airdefense) [airdefense] slow tick 194 ms:; the rest (the game) 193 ms
+[15:04:41] [Test thread/INFO] (airdefense) [airdefense-test] RESULT metro_chunks: 3201 town chunks made, avg 4367 us each
+[15:04:41] [Server thread/INFO] (Minecraft) Player0 lost connection: Отключение
+[15:04:41] [Server thread/INFO] (Minecraft) System chat: Player0 покинул игру
+[15:04:41] [Server thread/INFO] (Minecraft) Stopping singleplayer server as player logged out
+[15:04:41] [Server thread/INFO] (Minecraft) Changing view distance to 12, from 16
+[15:04:41] [Server thread/INFO] (Minecraft) Stopping server
+[15:04:41] [Server thread/INFO] (Minecraft) Saving players
+[15:04:41] [Server thread/INFO] (Minecraft) Saving worlds
+[15:04:42] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[New World]'/minecraft:overworld
+[15:04:45] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[New World]'/minecraft:the_end
+[15:04:45] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[New World]'/minecraft:the_nether
+[15:04:46] [Render thread/INFO] (Minecraft) Stopping!
+
+BUILD SUCCESSFUL in 4m 53s
+12 actionable tasks: 6 executed, 6 up-to-date
+Configuration cache entry stored.
