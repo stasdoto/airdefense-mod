@@ -50,27 +50,18 @@ public final class Weathering {
 		}
 		Building b = p.b;
 		double age = age(b);
-		// The outline of the building at each height: the outermost solid block of each row and column looks out.
-		Map<Long, int[]> rows = new HashMap<>();
-		Map<Long, int[]> cols = new HashMap<>();
-		Map<Long, Integer> tops = new HashMap<>();
-		for (Map.Entry<Long, BlockState> e : p.blocks.entrySet()) {
-			if (e.getValue().isAir()) {
-				continue;
-			}
-			long k = e.getKey();
-			int x = BlockPos.getX(k);
-			int y = BlockPos.getY(k);
-			int z = BlockPos.getZ(k);
-			rows.merge(key(y, z), new int[]{x, x}, (a, n) -> new int[]{Math.min(a[0], n[0]), Math.max(a[1], n[1])});
-			cols.merge(key(y, x), new int[]{z, z}, (a, n) -> new int[]{Math.min(a[0], n[0]), Math.max(a[1], n[1])});
-			tops.merge(key(x, z), y, Math::max);
-		}
+		Outline o = new Outline(p.blocks);
 		long seed = CityGen.mix(b.origin.asLong() ^ 0x57EA7E3L);
+		// Each kind of block's material worked out once (the country's swap, then the weathered stand-in).
+		java.util.IdentityHashMap<Block, Weathered.Material> mats = new java.util.IdentityHashMap<>();
+		Weathered.Material none = new Weathered.Material("", Blocks.AIR, new Block[0]);
 		for (Map.Entry<Long, BlockState> e : p.blocks.entrySet()) {
 			BlockState s = e.getValue();
-			Weathered.Material m = Weathered.of(swap(b, s.getBlock()));
-			if (m == null) {
+			Weathered.Material m = mats.computeIfAbsent(s.getBlock(), bl -> {
+				Weathered.Material w = Weathered.of(swap(b, bl));
+				return w == null ? none : w;
+			});
+			if (m == none) {
 				continue;
 			}
 			long k = e.getKey();
@@ -79,24 +70,13 @@ public final class Weathering {
 			int z = BlockPos.getZ(k);
 			double u = (CityGen.mix(seed ^ k) >>> 11) * 0x1.0p-53;
 			// Flat roofs: the top of a column in grey concrete, high up.
-			if (y >= 3 && tops.get(key(x, z)) == y && roofable(s.getBlock()) && tops.getOrDefault(key(x - 1, z), -1) == y
-					&& tops.getOrDefault(key(x + 1, z), -1) == y && tops.getOrDefault(key(x, z - 1), -1) == y && tops.getOrDefault(key(x, z + 1), -1) == y) {
+			if (y >= 3 && o.top(x, z) == y && roofable(s.getBlock()) && o.top(x - 1, z) == y && o.top(x + 1, z) == y && o.top(x, z - 1) == y
+					&& o.top(x, z + 1) == y) {
 				e.setValue(Weathered.ROOF_TAR.defaultBlockState());
 				roofs++;
 				continue;
 			}
-			Blueprints.L out = null;
-			int[] r = rows.get(key(y, z));
-			int[] c = cols.get(key(y, x));
-			if (c != null && c[0] == z) {
-				out = Blueprints.L.FRONT;
-			} else if (r != null && r[0] == x) {
-				out = Blueprints.L.LEFT;
-			} else if (r != null && r[1] == x) {
-				out = Blueprints.L.RIGHT;
-			} else if (c != null && c[1] == z) {
-				out = Blueprints.L.BACK;
-			}
+			Blueprints.L out = o.outward(x, y, z);
 			Weathered.Look look = u < 0.72 ? Weathered.Look.A : Weathered.Look.B;
 			if (out != null) {
 				double v = (CityGen.mix(seed ^ k ^ 0xD1A7L) >>> 11) * 0x1.0p-53;
@@ -125,13 +105,15 @@ public final class Weathering {
 	 * panels, European ones rendered in pastel colours (each house its own), American walk-ups of red brick, the desert's
 	 * of sandstone.
 	 */
+	private static final CityStyle[] STYLES = CityStyle.values();
+
 	private static Block swap(Building b, Block block) {
 		long h = CityGen.mix(b.origin.asLong() * 0x51_7CC1B7L + b.variant);
 		double u = (h >>> 11) * 0x1.0p-53;
 		double v = ((h * 0x9E3779B97F4A7C15L) >>> 11) * 0x1.0p-53;
 		boolean panel = block == Blocks.CONCRETE.pick(DyeColor.WHITE) || block == Blocks.CONCRETE.pick(DyeColor.LIGHT_GRAY);
 		boolean flats = b.type == BuildingType.PANEL5 || b.type == BuildingType.APARTMENTS || b.type == BuildingType.PANEL9;
-		CityStyle style = b.style >= 0 && b.style < CityStyle.values().length ? CityStyle.values()[b.style] : CityStyle.CLASSIC;
+		CityStyle style = b.style >= 0 && b.style < STYLES.length ? STYLES[b.style] : CityStyle.CLASSIC;
 		switch (style) {
 			case SOVIET -> {
 				if (panel && flats && b.type != BuildingType.PANEL9 && u < 0.35) {
