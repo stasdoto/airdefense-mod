@@ -166,6 +166,7 @@ public final class Effects {
 		}
 		level.explode(rocket, source, null, at.x, at.y, at.z, power, false, Level.ExplosionInteraction.TNT,
 				ModParticles.GLOW, ModParticles.GLOW, WeightedList.of(), Holder.direct(ModSounds.SILENT));
+		com.stasdoto.airdefense.street.WarScars.blast(level, at, power);
 		Fx.send(level, FxPayload.GROUND_IMPACT, at, power, new Vec3(0, 1, 1));
 		shockWave(level, rocket, at, 3 * power + 1, 0.5, 0.8);
 	}
@@ -254,6 +255,8 @@ public final class Effects {
 			Level.ExplosionInteraction interaction) {
 		level.explode(source, null, null, at.x, at.y, at.z, power, fire, interaction,
 				ModParticles.GLOW, ModParticles.GLOW, WeightedList.of(), Holder.direct(ModSounds.SILENT));
+		// 1.50: cracked windows, soot on the walls round it.
+		com.stasdoto.airdefense.street.WarScars.blast(level, at, power);
 	}
 
 	/**

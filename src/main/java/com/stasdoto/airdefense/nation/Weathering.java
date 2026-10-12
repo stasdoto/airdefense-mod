@@ -69,7 +69,7 @@ public final class Weathering {
 		long seed = CityGen.mix(b.origin.asLong() ^ 0x57EA7E3L);
 		for (Map.Entry<Long, BlockState> e : p.blocks.entrySet()) {
 			BlockState s = e.getValue();
-			Weathered.Material m = Weathered.of(s.getBlock());
+			Weathered.Material m = Weathered.of(swap(b, s.getBlock()));
 			if (m == null) {
 				continue;
 			}
@@ -118,6 +118,64 @@ public final class Weathering {
 			Direction world = out == null ? Direction.NORTH : p.w(out);
 			e.setValue(m.state(look, world));
 		}
+	}
+
+	/**
+	 * 1.50: each country's towns built in their own way - Soviet blocks of white silicate or red brick as often as of
+	 * panels, European ones rendered in pastel colours (each house its own), American walk-ups of red brick, the desert's
+	 * of sandstone.
+	 */
+	private static Block swap(Building b, Block block) {
+		long h = CityGen.mix(b.origin.asLong() * 0x51_7CC1B7L + b.variant);
+		double u = (h >>> 11) * 0x1.0p-53;
+		double v = ((h * 0x9E3779B97F4A7C15L) >>> 11) * 0x1.0p-53;
+		boolean panel = block == Blocks.CONCRETE.pick(DyeColor.WHITE) || block == Blocks.CONCRETE.pick(DyeColor.LIGHT_GRAY);
+		boolean flats = b.type == BuildingType.PANEL5 || b.type == BuildingType.APARTMENTS || b.type == BuildingType.PANEL9;
+		CityStyle style = b.style >= 0 && b.style < CityStyle.values().length ? CityStyle.values()[b.style] : CityStyle.CLASSIC;
+		switch (style) {
+			case SOVIET -> {
+				if (panel && flats && b.type != BuildingType.PANEL9 && u < 0.35) {
+					return v < 0.5 ? Blocks.SMOOTH_QUARTZ : Blocks.BRICKS;
+				}
+			}
+			case EUROPEAN -> {
+				DyeColor[] pastel = {DyeColor.YELLOW, DyeColor.PINK, DyeColor.LIGHT_BLUE, DyeColor.WHITE, DyeColor.LIME, DyeColor.ORANGE};
+				DyeColor own = pastel[(int) (v * pastel.length)];
+				if (block instanceof net.minecraft.world.level.block.Block && isDyedTerracotta(block)) {
+					return Blocks.DYED_TERRACOTTA.pick(own);
+				}
+				if (panel && flats && u < 0.5) {
+					return Blocks.DYED_TERRACOTTA.pick(own);
+				}
+			}
+			case AMERICAN, CLASSIC -> {
+				if (panel && flats && u < 0.5) {
+					return Blocks.BRICKS;
+				}
+			}
+			case DESERT -> {
+				if (panel && u < 0.6) {
+					return Blocks.SMOOTH_SANDSTONE;
+				}
+			}
+			default -> {
+			}
+		}
+		return block;
+	}
+
+	private static boolean isDyedTerracotta(Block block) {
+		for (DyeColor d : DyeColor.values()) {
+			if (Blocks.DYED_TERRACOTTA.pick(d) == block) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** 1.50: does this town run trams (down its main north-south street)? The big Soviet and European towns. */
+	public static boolean trams(Cities.City c) {
+		return Cities.weathered && c.size == Cities.Size.LARGE && (c.style == CityStyle.SOVIET || c.style == CityStyle.EUROPEAN);
 	}
 
 	/** What the street is made of in a weathered town: {@code kind} 0 asphalt, 1 paint, 2 kerb, 3 pavement, 4 lot grass. */

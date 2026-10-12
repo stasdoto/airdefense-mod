@@ -31,6 +31,14 @@ public final class ModSounds {
 	public static final SoundEvent CITY_CRICKETS = register("city_crickets", 24);
 	public static final SoundEvent CITY_OWL = register("city_owl", 64);
 	public static final SoundEvent TOWN_BELL = register("town_bell", 160);
+	// 1.50: a living town - dogs, hammering on the sites, music from the windows, children, trams, buses.
+	public static final SoundEvent DOG_BARK = register("dog_bark", 48);
+	public static final SoundEvent SITE_HAMMER = register("site_hammer", 64);
+	public static final SoundEvent WINDOW_RADIO = register("window_radio", 20);
+	public static final SoundEvent KIDS_PLAY = register("kids_play", 40);
+	public static final SoundEvent TRAM_BELL = register("tram_bell", 64);
+	public static final SoundEvent TRAM_PASS = register("tram_pass", 64);
+	public static final SoundEvent BUS_GO = register("bus_go", 48);
 	/** 1.38: an emergency vehicle's siren (a three-second wail, played again while it drives with its lights on). */
 	public static final SoundEvent SERVICE_SIREN = register("service_siren", 160);
 	/** 1.39: the trains - the electric train's horn, the diesel's, the wheels over the rail joints. */

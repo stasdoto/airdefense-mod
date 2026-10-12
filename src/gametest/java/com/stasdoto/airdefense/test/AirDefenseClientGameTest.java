@@ -221,6 +221,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("oldtown")) {
 				oldTown(ctx, server);
 			}
+			if (scene("livetown")) {
+				liveTown(ctx, server);
+			}
 			if (scene("port")) {
 				port(ctx, server);
 			}
@@ -4521,6 +4524,278 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				com.stasdoto.airdefense.nation.Weathering.roofs - r0);
 		AirDefense.LOGGER.info("[airdefense-test] RESULT oldtown_facades: conditioners, dishes, flower boxes, pipes, shops, graffiti, notices, roof things {}",
 				java.util.Arrays.toString(com.stasdoto.airdefense.nation.Facades.COUNTS));
+	}
+
+	/** Finds a block of these kinds within {@code r} of (x, z) between y0 and y1 (null if none): x, y, z. */
+	private static int[] findNear(ServerLevel l, int x, int z, int r, int y0, int y1, java.util.function.Predicate<net.minecraft.world.level.block.state.BlockState> what) {
+		BlockPos.MutableBlockPos q = new BlockPos.MutableBlockPos();
+		for (int d = 0; d <= r; d++) {
+			for (int dx = -d; dx <= d; dx++) {
+				for (int dz = -d; dz <= d; dz++) {
+					if (Math.max(Math.abs(dx), Math.abs(dz)) != d) {
+						continue;
+					}
+					for (int y = y0; y <= y1; y++) {
+						if (what.test(l.getBlockState(q.set(x + dx, y, z + dz)))) {
+							return new int[]{x + dx, y, z + dz};
+						}
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * 1.50 "A living town": a big Soviet town at work - its traffic (cars, buses, trolleybuses, a tram), parked cars,
+	 * people on the benches, at the stops, children at play, dogs; the seasons in its streets (snow cleared and heaped
+	 * on the kerbs, leaves on the pavements, puddles); its windows at night; a war (taped windows, a blast: cracked
+	 * panes and soot); a building site that grows and is finished.
+	 */
+	private void liveTown(ClientGameTestContext ctx, TestServerContext server) {
+		language(ctx, "ru_ru");
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 1000");
+		server.runCommand("difficulty peaceful");
+		server.runCommand("weather clear");
+		int cellX = 170;
+		int cellZ = 170;
+		int[] cap = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = com.stasdoto.airdefense.nation.CityStyle.SOVIET;
+			var list = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), com.stasdoto.airdefense.nation.Cities.terrain(l), cellX, cellZ);
+			com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = null;
+			if (list.isEmpty()) {
+				return null;
+			}
+			var c = list.getFirst();
+			var sh = c.shape();
+			int site = -1;
+			for (var b : c.buildings()) {
+				if (com.stasdoto.airdefense.nation.Construction.site(c, b) && site < 0) {
+					site = b.id;
+				}
+			}
+			AirDefense.LOGGER.info("[airdefense-test] RESULT livetown_city: {} size {} trams {} site {}", c.style, c.size,
+					com.stasdoto.airdefense.nation.Weathering.trams(c), site);
+			return new int[]{c.x, c.z, c.half(), c.base, sh.gx[sh.ci], sh.gz[sh.cj], sh.gz[Math.min(sh.n, sh.cj + 1)], site};
+		});
+		if (cap == null) {
+			return;
+		}
+		int cx = cap[0];
+		int cz = cap[1];
+		int half = cap[2];
+		int base = cap[3];
+		int tramX = cap[4];
+		int z0 = cap[5];
+		int z1 = cap[6];
+		camera(server, cx + 0.5, base + 80, cz + half + 80, 180, 35);
+		ctx.waitTicks(40);
+		int m = half + 14;
+		generateCity(server, cx - m, cz - m, cx + m, cz + m);
+		ctx.waitTicks(80);
+		ctx.runOnClient(mc -> mc.gui.hud.getChat().clearMessages(false));
+		// The morning rush: down the tram street at eye height, then the crossing from a first-floor window.
+		com.stasdoto.airdefense.client.nation.TownTraffic.force = 14;
+		int midZ = (z0 + z1) / 2;
+		camera(server, tramX + 4.5, base + 2.6, midZ + 0.5, 180, 4);
+		ctx.waitTicks(260);
+		ctx.takeScreenshot("lt1_traffic");
+		camera(server, tramX - 6.5, base + 7, z0 - 7.5, -135, 22);
+		ctx.waitTicks(200);
+		ctx.takeScreenshot("lt2_crossing");
+		int[] seen = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			int[] pk = findNear(l, tramX, midZ, 70, base, base, st -> st.is(com.stasdoto.airdefense.street.Weathered.PARKING_X)
+					|| st.is(com.stasdoto.airdefense.street.Weathered.PARKING_Z));
+			int[] bench = findNear(l, tramX, midZ, 60, base + 1, base + 1, st -> st.is(com.stasdoto.airdefense.street.StreetBlocks.BENCH_SOVIET)
+					|| st.is(com.stasdoto.airdefense.street.StreetBlocks.BENCH_PARK));
+			int[] stop = findNear(l, tramX, midZ, 70, base + 1, base + 1, st -> st.is(com.stasdoto.airdefense.street.StreetBlocks.BUS_STOP_SOVIET)
+					|| st.is(com.stasdoto.airdefense.street.StreetBlocks.BUS_STOP_MODERN));
+			int[] play = findNear(l, tramX, midZ, 70, base + 1, base + 1, st -> st.is(com.stasdoto.airdefense.street.StreetBlocks.SWING)
+					|| st.is(com.stasdoto.airdefense.street.StreetBlocks.SLIDE) || st.is(com.stasdoto.airdefense.street.StreetBlocks.SANDBOX));
+			int[] hole = findNear(l, tramX, midZ, 70, base, base, st -> st.is(com.stasdoto.airdefense.street.Weathered.ASPHALT_POTHOLE));
+			int[] tree = findNear(l, tramX, midZ, 50, base + 4, base + 6, st -> st.is(net.minecraft.tags.BlockTags.LEAVES));
+			int[] out = new int[18];
+			java.util.Arrays.fill(out, Integer.MIN_VALUE);
+			int[][] all = {pk, bench, stop, play, hole, tree};
+			for (int k = 0; k < all.length; k++) {
+				if (all[k] != null) {
+					out[k * 3] = all[k][0];
+					out[k * 3 + 1] = all[k][1];
+					out[k * 3 + 2] = all[k][2];
+				}
+			}
+			return out;
+		});
+		// Parked cars.
+		if (seen[0] != Integer.MIN_VALUE) {
+			look(server, seen[0] - 6.5, base + 6, seen[2] - 6.5, seen[0] + 1, base + 1, seen[2] + 1);
+			ctx.waitTicks(140);
+			ctx.takeScreenshot("lt3_parked");
+		}
+		// The day: people on the benches, at the bus stop, children in the playground.
+		server.runCommand("time set 6000");
+		String[] names = {"lt4_bench", "lt5_stop", "lt6_play"};
+		for (int k = 0; k < 3; k++) {
+			int i = (k + 1) * 3;
+			if (seen[i] == Integer.MIN_VALUE) {
+				continue;
+			}
+			look(server, seen[i] + 7.5, base + 3.5, seen[i + 2] + 7.5, seen[i] + 0.5, base + 1.2, seen[i + 2] + 0.5);
+			ctx.waitTicks(240);
+			ctx.takeScreenshot(names[k]);
+		}
+		AirDefense.LOGGER.info("[airdefense-test] RESULT livetown_people: sat, waited, played, stood, dogs, boarded {}; about now {}",
+				java.util.Arrays.toString(com.stasdoto.airdefense.client.nation.Pedestrians.ACTIVITIES),
+				com.stasdoto.airdefense.client.nation.Pedestrians.count());
+		AirDefense.LOGGER.info("[airdefense-test] RESULT livetown_traffic: cars, taxis, buses, trolleybuses, trams {}; moving {}, parked {}; bus stops {}, turns {}, waited for people {}",
+				java.util.Arrays.toString(com.stasdoto.airdefense.client.nation.TownTraffic.MADE),
+				com.stasdoto.airdefense.client.nation.TownTraffic.count(), com.stasdoto.airdefense.client.nation.TownTraffic.parkedCount(),
+				com.stasdoto.airdefense.client.nation.TownTraffic.busStops, com.stasdoto.airdefense.client.nation.TownTraffic.turns,
+				com.stasdoto.airdefense.client.nation.TownTraffic.waits);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT livetown_vehicles: {}", com.stasdoto.airdefense.client.nation.TownTraffic.where());
+		// Winter: coats and hats; the snow cleared off the pavements and heaped on the kerbs.
+		server.runOnServer(s -> com.stasdoto.airdefense.nation.Seasons.force = com.stasdoto.airdefense.nation.Seasons.WINTER);
+		server.runCommand("weather rain");
+		server.runCommand("gamerule randomTickSpeed 300");
+		server.runCommand("gamerule random_tick_speed 300");
+		camera(server, tramX + 4.5, base + 2.6, midZ + 0.5, 180, 8);
+		ctx.waitTicks(400);
+		ctx.takeScreenshot("lt7_winter");
+		// Autumn: leaves under the trees, puddles in the potholes.
+		server.runOnServer(s -> {
+			com.stasdoto.airdefense.nation.Seasons.force = com.stasdoto.airdefense.nation.Seasons.AUTUMN;
+			ServerLevel l = s.overworld();
+			// The snow of the winter scene goes (it would take its time to thaw).
+			BlockPos.MutableBlockPos q = new BlockPos.MutableBlockPos();
+			for (int x = cx - m; x <= cx + m; x++) {
+				for (int z = cz - m; z <= cz + m; z++) {
+					for (int y = base; y <= base + 3; y++) {
+						if (l.getBlockState(q.set(x, y, z)).is(net.minecraft.world.level.block.Blocks.SNOW)) {
+							l.setBlock(q, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+						}
+					}
+				}
+			}
+		});
+		ctx.waitTicks(400);
+		if (seen[15] != Integer.MIN_VALUE) {
+			look(server, seen[15] + 5.5, base + 3.5, seen[17] + 5.5, seen[15] + 0.5, base + 1, seen[17] + 0.5);
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("lt8_autumn");
+		}
+		if (seen[12] != Integer.MIN_VALUE) {
+			look(server, seen[12] + 3.5, base + 3, seen[14] + 3.5, seen[12] + 0.5, base + 1, seen[14] + 0.5);
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("lt9_puddle");
+		}
+		int[] weather = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			int litter = 0;
+			int puddles = 0;
+			BlockPos.MutableBlockPos q = new BlockPos.MutableBlockPos();
+			for (int x = cx - m; x <= cx + m; x++) {
+				for (int z = cz - m; z <= cz + m; z++) {
+					if (l.getBlockState(q.set(x, base + 1, z)).is(net.minecraft.world.level.block.Blocks.LEAF_LITTER)) {
+						litter++;
+					}
+					if (l.getBlockState(q.set(x, base, z)).is(com.stasdoto.airdefense.street.Weathered.ASPHALT_PUDDLE)) {
+						puddles++;
+					}
+				}
+			}
+			return new int[]{litter, puddles};
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT livetown_weather: leaf litter {}, puddles {}", weather[0], weather[1]);
+		server.runOnServer(s -> com.stasdoto.airdefense.nation.Seasons.force = -1);
+		server.runCommand("weather clear");
+		// The night: lamps warm and cold, televisions.
+		server.runCommand("time set 15000");
+		camera(server, tramX + 4.5, base + 9, midZ + 20.5, 180, 12);
+		ctx.waitTicks(200);
+		ctx.takeScreenshot("lt10_night");
+		// The war: the town's country at war, its windows taped; a blast in a street - cracked panes, soot.
+		server.runCommand("time set 6000");
+		int[] blast = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var town = p.settlementAt(new BlockPos(cx, base, cz));
+			if (town != null) {
+				var own = p.country(town.country);
+				for (var other : p.countries.values()) {
+					if (own != null && other != own) {
+						com.stasdoto.airdefense.nation.War.declare(l, p, own, other, net.minecraft.network.chat.Component.literal("test"));
+						break;
+					}
+				}
+			}
+			int[] w = findNear(l, tramX + 9, midZ, 40, base + 4, base + 8, st -> st.is(com.stasdoto.airdefense.street.StreetBlocks.CITY_WINDOW));
+			if (w != null) {
+				var at = new net.minecraft.world.phys.Vec3(w[0] + 0.5, w[1] - 2, w[2] + 0.5);
+				for (var d : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+					if (l.getBlockState(new BlockPos(w[0], w[1], w[2]).relative(d)).isAir()) {
+						at = at.add(d.getStepX() * 3, 0, d.getStepZ() * 3);
+						break;
+					}
+				}
+				com.stasdoto.airdefense.street.WarScars.blast(l, at, 4f);
+				return new int[]{(int) at.x, (int) at.y, (int) at.z};
+			}
+			return null;
+		});
+		ctx.waitTicks(400);
+		int[] looks = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			int[] n = new int[8];
+			BlockPos.MutableBlockPos q = new BlockPos.MutableBlockPos();
+			for (int x = cx - 60; x <= cx + 60; x++) {
+				for (int z = cz - 60; z <= cz + 60; z++) {
+					for (int y = base + 1; y <= base + 30; y++) {
+						var st = l.getBlockState(q.set(x, y, z));
+						if (st.is(com.stasdoto.airdefense.street.StreetBlocks.CITY_WINDOW)) {
+							n[st.getValue(com.stasdoto.airdefense.street.WindowLights.LOOK)]++;
+						}
+					}
+				}
+			}
+			return n;
+		});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT livetown_war: windows by look {}; cracked {}, soot {}", java.util.Arrays.toString(looks),
+				com.stasdoto.airdefense.street.WarScars.cracked, com.stasdoto.airdefense.street.WarScars.sooted);
+		if (blast != null) {
+			look(server, blast[0] - 7.5, base + 5, blast[2] - 7.5, blast[0] + 0.5, blast[1] + 2, blast[2] + 0.5);
+			ctx.waitTicks(40);
+			ctx.takeScreenshot("lt11_war");
+		}
+		// A building site rising storey by storey, then finished.
+		if (cap[7] >= 0) {
+			int siteId = cap[7];
+			float[] cam = server.computeOnServer(s -> {
+				ServerLevel l = s.overworld();
+				var c = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), com.stasdoto.airdefense.nation.Cities.terrain(l), cellX, cellZ).getFirst();
+				for (var b : c.buildings()) {
+					if (b.id == siteId) {
+						return look(b, 34, 18, c.base);
+					}
+				}
+				return null;
+			});
+			if (cam != null) {
+				shot(ctx, server, cam, "lt12_site_a", 40);
+				com.stasdoto.airdefense.nation.Growth.every = 20;
+				ctx.waitTicks(900);
+				shot(ctx, server, cam, "lt12_site_b", 40);
+				com.stasdoto.airdefense.nation.Growth.every = 600;
+			}
+		}
+		AirDefense.LOGGER.info("[airdefense-test] RESULT livetown_growth: grown {}, finished {}", com.stasdoto.airdefense.nation.Growth.grown,
+				com.stasdoto.airdefense.nation.Growth.finished);
+		com.stasdoto.airdefense.client.nation.TownTraffic.force = 0;
+		server.runCommand("gamerule randomTickSpeed 3");
+		server.runCommand("gamerule random_tick_speed 3");
+		server.runCommand("time set 1000");
 	}
 
 	/**

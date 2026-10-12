@@ -765,6 +765,10 @@ public final class CityGen {
 		if (Cities.weathered && surface != Blocks.GRASS_BLOCK.defaultBlockState() && surface.getBlock() != Blocks.COARSE_DIRT) {
 			surface = Weathering.street(c, surface == ASPHALT ? 0 : surface == MARK ? 1 : surface == KERB ? 2 : 3, x, z, surface);
 		}
+		// 1.50: the tram's rails down the middle of each lane of the main street.
+		if (p.street && Weathering.trams(c) && Math.abs(x - c.shape().gx[c.shape().ci]) == 2) {
+			surface = com.stasdoto.airdefense.street.Weathered.TRAM_TRACK.defaultBlockState();
+		}
 		shape(w, x, z, c.base, surface, g, pos);
 	}
 
@@ -1284,13 +1288,19 @@ public final class CityGen {
 	// ------------------------------------------------------------------------------------------------
 	// Buildings and details
 
+	/** 1.50: a building that has grown (see {@link Growth}): its cached plan goes. */
+	static void forgetPlan(long key) {
+		PLANS.remove(key);
+	}
+
 	private static Packed plan(Cities.City c, Building b) {
-		if (Construction.site(c, b)) {
-			// 1.41: still going up.
-			long key = c.key() * 4096 + b.id;
+		long siteKey = c.key() * 4096 + b.id;
+		if (Construction.site(c, b) && !Growth.finished(siteKey)) {
+			// 1.41: still going up (1.50: as high as it has grown).
+			long key = siteKey;
 			Packed p = PLANS.get(key);
 			if (p == null) {
-				p = new Packed(Construction.shell(b, Blueprints.placements(b, DyeColor.byId(c.color))));
+				p = new Packed(Construction.shell(b, Blueprints.placements(b, DyeColor.byId(c.color)), Growth.cut(siteKey)));
 				PLANS.put(key, p);
 			}
 			return p;

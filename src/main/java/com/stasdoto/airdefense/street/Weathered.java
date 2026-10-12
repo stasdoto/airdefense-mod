@@ -69,12 +69,16 @@ public final class Weathered {
 	public static final Block WALK_ASPHALT_CRACK = ground("walk_asphalt_crack", Blocks.POLISHED_ANDESITE);
 	public static final Block PAVING_SAND = ground("paving_sand", Blocks.POLISHED_ANDESITE);
 	public static final Block ROOF_TAR = ground("roof_tar", Blocks.CONCRETE.pick(DyeColor.GRAY));
+	/** 1.50: tram rails in the asphalt; a car park's bay (a car stands across x, or along x) - the client parks cars on them. */
+	public static final Block TRAM_TRACK = ground("tram_track", Blocks.CONCRETE.pick(DyeColor.GRAY));
+	public static final Block PARKING_X = ground("parking_x", Blocks.CONCRETE.pick(DyeColor.GRAY));
+	public static final Block PARKING_Z = ground("parking_z", Blocks.CONCRETE.pick(DyeColor.GRAY));
 
 	/** What the pedestrians walk on and cross (they knew only the plain blocks before). */
 	public static final Set<Block> WALKWAY = Set.of(KERB, PAVING_GREY, PAVING_BROKEN, PAVING_WEEDS, PAVING_BRICK, WALK_CONCRETE, WALK_ASPHALT,
 			WALK_ASPHALT_CRACK, PAVING_SAND);
 	public static final Set<Block> ROADWAY = Set.of(ASPHALT_A, ASPHALT_B, ASPHALT_CRACK, ASPHALT_PATCH, ASPHALT_POTHOLE, ASPHALT_PUDDLE, ROAD_MARK,
-			ROAD_MARK_WORN);
+			ROAD_MARK_WORN, TRAM_TRACK);
 
 	static {
 		for (DyeColor d : DyeColor.values()) {
@@ -93,7 +97,13 @@ public final class Weathered {
 	}
 
 	private static Block ground(String name, Block like) {
-		Block b = block("g_" + name, BlockBehaviour.Properties.ofFullCopy(like), false);
+		// 1.50: the street under the weather (see CityGroundBlock): which kind of street this is.
+		int kind = name.startsWith("asphalt_pothole") ? CityGroundBlock.POTHOLE : name.startsWith("asphalt_puddle") ? CityGroundBlock.PUDDLE
+				: name.startsWith("asphalt") || name.startsWith("road") || name.startsWith("tram") ? CityGroundBlock.ROAD
+				: name.equals("kerb") ? CityGroundBlock.KERB : name.startsWith("paving") || name.startsWith("walk") ? CityGroundBlock.WALK : -1;
+		ResourceKey<Block> key = ResourceKey.create(Registries.BLOCK, AirDefense.id("g_" + name));
+		BlockBehaviour.Properties props = BlockBehaviour.Properties.ofFullCopy(like).setId(key);
+		Block b = Registry.register(BuiltInRegistries.BLOCK, key, kind >= 0 ? new CityGroundBlock(props.randomTicks(), kind) : new Block(props));
 		GROUND.put(name, b);
 		return b;
 	}

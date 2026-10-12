@@ -750,7 +750,12 @@ final class CityDecor {
 			int cx = side.getX() - (alongZ ? 0 : 0);
 			int cz = side.getZ();
 			if (r.nextInt(3) > 0 && v.free(cx, cz) && v.free(alongZ ? cx + 1 : cx + 3, alongZ ? cz + 3 : cz + 1)) {
-				car(Math.min(cx, cx), Math.min(cz, cz), alongZ, CAR_COLORS[r.nextInt(CAR_COLORS.length)]);
+				DyeColor color = CAR_COLORS[r.nextInt(CAR_COLORS.length)];
+				if (Cities.weathered) {
+					force(cx, base, cz, b(alongZ ? com.stasdoto.airdefense.street.Weathered.PARKING_Z : com.stasdoto.airdefense.street.Weathered.PARKING_X));
+				} else {
+					car(cx, cz, alongZ, color);
+				}
 				use(cx, cz, alongZ ? cx + 1 : cx + 3, alongZ ? cz + 3 : cz + 1);
 			}
 			if (r.nextInt(4) == 0) {
@@ -1255,7 +1260,13 @@ final class CityDecor {
 			}
 			int cx = alongX ? x0 + s * 3 + 1 : x0 + 1;
 			int cz = alongX ? z0 + 1 : z0 + s * 3 + 1;
-			car(cx, cz, alongX, CAR_COLORS[r.nextInt(CAR_COLORS.length)]);
+			DyeColor color = CAR_COLORS[r.nextInt(CAR_COLORS.length)];
+			if (Cities.weathered) {
+				// 1.50: a bay the player's own game parks a real car on (see client.nation.TownTraffic).
+				force(cx, base, cz, b(alongX ? com.stasdoto.airdefense.street.Weathered.PARKING_Z : com.stasdoto.airdefense.street.Weathered.PARKING_X));
+			} else {
+				car(cx, cz, alongX, color);
+			}
 		}
 		put(alongX ? x0 + w : x0 - 1, base + 1, alongX ? z0 : z0 + h, b(Blocks.IRON_BARS));
 	}

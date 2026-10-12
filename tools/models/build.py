@@ -22,6 +22,7 @@ import services  # noqa: E402
 import trains  # noqa: E402
 import planes  # noqa: E402
 import civil  # noqa: E402
+import town  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 MAIN = os.path.join(ROOT, 'src/main/java/com/stasdoto/airdefense/vehicle/GenGeometry.java')
@@ -41,6 +42,7 @@ def models():
     out += trains.all_models()
     out += planes.all_models()
     out += civil.all_models()
+    out += town.all_models()
     out += handmade.all_models()
     out += artillery.all_models()
     out += armor2.all_models()

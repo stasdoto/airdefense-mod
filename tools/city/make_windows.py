@@ -131,7 +131,19 @@ def textures():
             b = glass(tone)
             curtain(b, look, tone)
             frame(b, tone)
-            save('window_%d_lit_%d' % (look, t), b)
+            if t == 2:
+                # 1.50: a television's light flickers (four frames, brighter and dimmer, a shift of blue).
+                frames = []
+                for k, f in enumerate((1.0, 0.72, 0.9, 0.6, 0.95, 0.8)):
+                    c = b.copy()
+                    inner = c[1:15, 1:15, :3]
+                    c[1:15, 1:15, :3] = inner * f + (0 if k % 2 else 6)
+                    frames.append(c)
+                save('window_%d_lit_%d' % (look, t), np.concatenate(frames, axis=0))
+                with open(os.path.join(TEX, 'window_%d_lit_%d.png.mcmeta' % (look, t)), 'w') as fh:
+                    json.dump({'animation': {'frametime': 4}}, fh)
+            else:
+                save('window_%d_lit_%d' % (look, t), b)
     e = np.zeros((16, 16, 4))
     e[..., :3] = FRAME
     e[..., 3] = 255

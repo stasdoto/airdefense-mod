@@ -27,6 +27,10 @@ public final class CityAmbience {
 	private static int horn;
 	private static int birds;
 	private static int owl;
+	private static int dog;
+	private static int radio;
+	private static int kids;
+	private static int hammer;
 	private static long lastHour = -1;
 	private static int strikesLeft;
 	private static int strikeWait;
@@ -44,7 +48,7 @@ public final class CityAmbience {
 	}
 
 	/** The town (from the atlas) whose blocks cover (x, z), or null. */
-	static AtlasClient.City townAt(double x, double z) {
+	public static AtlasClient.City townAt(double x, double z) {
 		for (AtlasClient.City c : AtlasClient.CITIES) {
 			int n = c.n();
 			if (n == 0 || x < c.gx()[0] || z < c.gz()[0] || x >= c.gx()[n] || z >= c.gz()[n]) {
@@ -118,6 +122,32 @@ public final class CityAmbience {
 		if (night && --owl <= 0) {
 			owl = 60 + RANDOM.nextInt(120);
 			play(mc, ModSounds.CITY_OWL, around(me, 30, 50).add(0, 8, 0), 0.7f, 0.9f + RANDOM.nextFloat() * 0.15f);
+		}
+		// 1.50: a dog barking in a yard; music from an open window in the evening; children in the playground; hammering
+		// on a building site.
+		long hr = (time / 1000 + 6) % 24;
+		if (hr >= 6 && hr < 23 && --dog <= 0) {
+			dog = 40 + RANDOM.nextInt(100);
+			play(mc, ModSounds.DOG_BARK, around(me, 14, 34), 0.7f, 0.85f + RANDOM.nextFloat() * 0.3f);
+		}
+		if (hr >= 17 && hr < 24 && --radio <= 0) {
+			radio = 30 + RANDOM.nextInt(60);
+			play(mc, ModSounds.WINDOW_RADIO, around(me, 6, 16).add(0, 4 + RANDOM.nextInt(10), 0), 0.45f, 0.9f + RANDOM.nextFloat() * 0.2f);
+		}
+		if (hr >= 8 && hr < 20 && --kids <= 0) {
+			kids = 14 + RANDOM.nextInt(24);
+			Vec3 play = com.stasdoto.airdefense.client.nation.Pedestrians.playgroundNear(me, 34);
+			if (play != null) {
+				play(mc, ModSounds.KIDS_PLAY, play, 0.8f, 0.95f + RANDOM.nextFloat() * 0.15f);
+			}
+		}
+		if (hr >= 7 && hr < 19 && --hammer <= 0) {
+			hammer = 8 + RANDOM.nextInt(18);
+			Vec3 site = com.stasdoto.airdefense.client.nation.Cranes.nearest(me, 90);
+			if (site != null) {
+				play(mc, ModSounds.SITE_HAMMER, site.add(RANDOM.nextInt(9) - 4, 3 + RANDOM.nextInt(12), RANDOM.nextInt(9) - 4), 1.0f,
+						0.9f + RANDOM.nextFloat() * 0.2f);
+			}
 		}
 		// The bell on the hour, from the town's middle (the town hall).
 		long hour = (time / 1000 + 6) % 24;

@@ -1004,5 +1004,80 @@
       }
     ],
     "subtitle": "subtitles.airdefense.train_clack"
+  },
+  "dog_bark": {
+    "sounds": [
+      {
+        "name": "airdefense:dog_bark_0",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "airdefense:dog_bark_1",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.airdefense.dog_bark"
+  },
+  "site_hammer": {
+    "sounds": [
+      {
+        "name": "airdefense:site_hammer_0",
+        "attenuation_distance": 64
+      },
+      {
+        "name": "airdefense:site_hammer_1",
+        "attenuation_distance": 64
+      }
+    ],
+    "subtitle": "subtitles.airdefense.site_hammer"
+  },
+  "window_radio": {
+    "sounds": [
+      {
+        "name": "airdefense:window_radio",
+        "attenuation_distance": 20
+      }
+    ],
+    "subtitle": "subtitles.airdefense.window_radio"
+  },
+  "kids_play": {
+    "sounds": [
+      {
+        "name": "airdefense:kids_play_0",
+        "attenuation_distance": 40
+      },
+      {
+        "name": "airdefense:kids_play_1",
+        "attenuation_distance": 40
+      }
+    ],
+    "subtitle": "subtitles.airdefense.kids_play"
+  },
+  "tram_bell": {
+    "sounds": [
+      {
+        "name": "airdefense:tram_bell",
+        "attenuation_distance": 64
+      }
+    ],
+    "subtitle": "subtitles.airdefense.tram_bell"
+  },
+  "tram_pass": {
+    "sounds": [
+      {
+        "name": "airdefense:tram_pass",
+        "attenuation_distance": 64
+      }
+    ],
+    "subtitle": "subtitles.airdefense.tram_pass"
+  },
+  "bus_go": {
+    "sounds": [
+      {
+        "name": "airdefense:bus_go",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.airdefense.bus_go"
   }
 }

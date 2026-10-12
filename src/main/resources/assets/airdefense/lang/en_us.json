@@ -1460,5 +1460,13 @@
   "block.airdefense.trolley_wire": "Trolleybus wires",
   "block.airdefense.trolley_span": "Span wire",
   "block.airdefense.statue": "Bronze statue",
-  "block.airdefense.produce_crate": "Crate of produce"
+  "block.airdefense.produce_crate": "Crate of produce",
+  "block.airdefense.soot": "Soot",
+  "subtitles.airdefense.dog_bark": "Dog barks",
+  "subtitles.airdefense.site_hammer": "Hammering on a building site",
+  "subtitles.airdefense.window_radio": "Music from a window",
+  "subtitles.airdefense.kids_play": "Children playing",
+  "subtitles.airdefense.tram_bell": "Tram bell",
+  "subtitles.airdefense.tram_pass": "Tram passes",
+  "subtitles.airdefense.bus_go": "Bus pulls away"
 }

@@ -101,8 +101,47 @@ public final class WindowLights {
 		return true;
 	}
 
+	/** 1.50: towns at war (by settlement id): the answer and when it was asked. */
+	private static final java.util.Map<Integer, long[]> WAR = new java.util.HashMap<>();
+
+	static boolean atWar(ServerLevel level, BlockPos p) {
+		try {
+			int town = com.stasdoto.airdefense.siren.Sirens.townOf(level, p);
+			if (town < 0) {
+				return false;
+			}
+			long now = level.getGameTime();
+			long[] c = WAR.get(town);
+			if (c == null || now - c[1] > 200) {
+				var politics = com.stasdoto.airdefense.nation.Politics.get(level.getServer());
+				var s = politics.settlements.get(town);
+				var country = s == null ? null : politics.country(s.country);
+				c = new long[]{country != null && !country.wars.isEmpty() ? 1 : 0, now};
+				WAR.put(town, c);
+			}
+			return c[0] == 1;
+		} catch (RuntimeException e) {
+			return false;
+		}
+	}
+
 	/** The random tick of a window: on or off as the hour (and the sirens) say. */
 	static void tick(BlockState state, ServerLevel level, BlockPos p) {
+		// 1.50: in a town at war people tape their windows crosswise; in peace the tape comes off, cracked panes are mended.
+		if (state.hasProperty(LOOK)) {
+			int look = state.getValue(LOOK);
+			boolean war = atWar(level, p);
+			int next = look;
+			if (war && look < 6 && flat(p.offset(55, 0, 99)) < 0.55) {
+				next = 6;
+			} else if (!war && look == 6 || !war && look == 7 && level.getRandom().nextInt(20) == 0) {
+				next = look(p);
+			}
+			if (next != look) {
+				state = state.setValue(LOOK, next);
+				level.setBlock(p, state, Block.UPDATE_CLIENTS);
+			}
+		}
 		boolean want = wanted(level, p);
 		if (state.getValue(LIT) != want) {
 			BlockState next = state.setValue(LIT, want);

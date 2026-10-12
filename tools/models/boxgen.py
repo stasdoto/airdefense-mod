@@ -124,6 +124,20 @@ STYLES = {
     'concrete': dict(kind='plain', base=0x9C9A94),
     'gravel': dict(kind='camo', base=0x7E7A74, c2=0x95918A, c3=0x5E5B57, blob=1),
     'chrome': dict(kind='plain', base=0xB9BEC2),
+    # 1.50: the town's cars, taxis, buses, trolleybuses, trams.
+    'car_white': dict(kind='plain', base=0xE6E6E2),
+    'car_red': dict(kind='plain', base=0xA3261F),
+    'car_blue': dict(kind='plain', base=0x29467E),
+    'car_green': dict(kind='plain', base=0x355E43),
+    'car_beige': dict(kind='plain', base=0xCDBE98),
+    'car_cherry': dict(kind='plain', base=0x5E1A24),
+    'car_black': dict(kind='plain', base=0x1C1D20),
+    'car_silver': dict(kind='plain', base=0xA6AAAE),
+    'taxi_yellow': dict(kind='plain', base=0xE5BE1F),
+    'bus_yellow': dict(kind='plain', base=0xD9B031),
+    'trolley_blue': dict(kind='plain', base=0x3768A6),
+    'tram_red': dict(kind='plain', base=0xB2302A),
+    'bus_cream': dict(kind='plain', base=0xE4DAC0),
     # The head-up display's combiner glass (the inside is drawn solid: a dark green tinted pane).
     'hud': dict(kind='plain', base=0x2F5240, flat=True),
 }
@@ -135,6 +149,8 @@ WEAR = {
     'stripe_yellow': 0.4, 'yellow': 0.6, 'red': 0.5, 'orange': 0.5, 'light': 0.0, 'redlight': 0.0, 'hud': 0.0,
     'radome': 0.4, 'rail_green': 0.55, 'rail_red': 0.55, 'rail_yellow': 0.55, 'tractor_red': 0.7, 'crane_yellow': 0.6,
     'concrete': 0.5, 'window': 0.0, 'coal': 0.0, 'gravel': 0.0, 'black': 0.5, 'dark': 0.6,
+    'car_white': 0.25, 'car_red': 0.25, 'car_blue': 0.25, 'car_green': 0.25, 'car_beige': 0.3, 'car_cherry': 0.3, 'car_black': 0.2,
+    'car_silver': 0.2, 'taxi_yellow': 0.3, 'bus_yellow': 0.45, 'trolley_blue': 0.45, 'tram_red': 0.45, 'bus_cream': 0.4,
 }
 # Paints that are armour: welded plates with panel seams and rivets.
 ARMOUR = {'camo', 'rgreen', 'ugreen', 'nato', 'olive', 'tan', 'sand', 'grey', 'navy', 'visby', 'deck', 'dgrey', 'steel'}

@@ -505,6 +505,92 @@ public final class SkinBaker {
 				BODY.front().fill(img, 0xFF5A4E44);
 			}
 			case "nitwit" -> outfit(img, p, 0xFF3E7A3E, 0xFF3E7A3E, 0xFF3E7A3E, shoes, 11);
+			// 1.50 "A living town": the townspeople's own clothes.
+			case "suit" -> {
+				int jacket = pick(r, 0xFF2A2E3A, 0xFF3A3A3E, 0xFF1E1E22, 0xFF4A4A52);
+				outfit(img, p, jacket, jacket, jacket, 0xFF141414, 11);
+				// The white shirt and the tie in the opening of the jacket.
+				for (int j = 0; j <= 5; j++) {
+					BODY.front().set(img, 3, j, 0xFFF0F0EC);
+					BODY.front().set(img, 4, j, j == 0 ? 0xFFF0F0EC : pick(r, 0xFF8A1E1E, 0xFF1E3A7A, 0xFF5A1E4A));
+				}
+				for (Part arm : new Part[]{RIGHT_ARM, LEFT_ARM}) {
+					arm.band(img, 11, 11, 0xFFF0F0EC);
+				}
+			}
+			case "coat" -> {
+				int coat = pick(r, 0xFF3A2A20, 0xFF1E1E24, 0xFF2A3448, 0xFF5A5A5E, 0xFF6A4A30, 0xFF5A2A2E);
+				outfit(img, p, coat, coat, pick(r, 0xFF2E2E34, 0xFF3A3A44), 0xFF1A1410, 12);
+				for (Part leg : new Part[]{RIGHT_LEG, LEFT_LEG}) {
+					leg.band(img, 0, 4, coat);
+					leg.top().fill(img, coat);
+				}
+				BODY.front().row(img, 0, pick(r, 0xFFB03030, 0xFFD8D0C0, 0xFF3A6A9A));
+				BODY.front().row(img, 1, pick(r, 0xFFB03030, 0xFFD8D0C0, 0xFF3A6A9A));
+				// A knitted hat (a fur one now and then).
+				hat(img, pick(r, 0xFFB03030, 0xFF3A6A9A, 0xFF2E2E2E, 0xFFD8D0C0, 0xFF5A3A28), r.nextInt(3) == 0 ? 2 : 1);
+			}
+			case "tracksuit" -> {
+				int suit = pick(r, 0xFF1E2A5A, 0xFF1A1A1E, 0xFF2E2E34, 0xFF5A1E1E);
+				outfit(img, p, suit, suit, suit, 0xFFE8E8E4, 12);
+				for (Part part : new Part[]{RIGHT_ARM, LEFT_ARM, RIGHT_LEG, LEFT_LEG}) {
+					Face f = part.right();
+					for (int j = 0; j < 10; j++) {
+						f.set(img, 1, j, 0xFFF0F0F0);
+						f.set(img, 3, j, 0xFFF0F0F0);
+					}
+					Face g = part.left();
+					for (int j = 0; j < 10; j++) {
+						g.set(img, 0, j, 0xFFF0F0F0);
+						g.set(img, 2, j, 0xFFF0F0F0);
+					}
+				}
+				BODY.front().set(img, 3, 0, 0xFFF0F0F0);
+				BODY.front().set(img, 4, 0, 0xFFF0F0F0);
+			}
+			case "babushka" -> {
+				int cardigan = pick(r, 0xFF6A5A4A, 0xFF5A4A6A, 0xFF4A5A4A, 0xFF7A3A3A);
+				outfit(img, p, cardigan, cardigan, pick(r, 0xFF3A2E2A, 0xFF2E2A3A, 0xFF4A3A2A), 0xFF2A201A, 12);
+				for (Part leg : new Part[]{RIGHT_LEG, LEFT_LEG}) {
+					leg.band(img, 0, 8, pick(r, 0xFF3A2E2A, 0xFF2E2A3A));
+				}
+				// The headscarf: a flowered kerchief over the hair, tied under the chin.
+				int scarf = pick(r, 0xFFB03A3A, 0xFF3A5A9A, 0xFFD8B040, 0xFF4A7A4A);
+				HEAD.top().fill(img, scarf);
+				for (Face f : HEAD.sides()) {
+					f.row(img, 0, scarf);
+					f.row(img, 1, scarf);
+				}
+				for (Face f : new Face[]{HEAD.right(), HEAD.left(), HEAD.back()}) {
+					for (int j = 2; j <= 7; j++) {
+						f.row(img, j, j % 3 == 0 ? 0xFFF0E8D8 : scarf);
+					}
+				}
+				HEAD.front().set(img, 0, 2, scarf);
+				HEAD.front().set(img, 7, 2, scarf);
+			}
+			case "school" -> {
+				outfit(img, p, 0xFFF0F0EC, pick(r, 0xFF1E2A5A, 0xFF2E2E34), pick(r, 0xFF1E2A5A, 0xFF2E2E34), 0xFF1A1A1A, 11);
+				// The backpack.
+				int bag = pick(r, 0xFFD83030, 0xFF3A7AD8, 0xFFE0C020, 0xFF3AA04A);
+				for (int j = 1; j <= 8; j++) {
+					for (int i = 1; i <= 6; i++) {
+						BODY.back().set(img, i, j, bag);
+					}
+				}
+			}
+			case "summer" -> {
+				int tee = pick(r, 0xFFF0F0EC, 0xFFD84A3A, 0xFF3A8AD8, 0xFFE0C850, 0xFF5AB05A, 0xFF2E2E34);
+				outfit(img, p, tee, tee, pick(r, 0xFF4A6A9A, 0xFFC8B890, 0xFF2E2E34), 0xFFE8E4DC, 3);
+				for (Part leg : new Part[]{RIGHT_LEG, LEFT_LEG}) {
+					// Shorts: bare legs below the knee.
+					for (Face f : leg.sides()) {
+						for (int j = 5; j <= 9; j++) {
+							f.row(img, j, p.skin());
+						}
+					}
+				}
+			}
 			default -> outfit(img, p, shirt, shirt, trousers, shoes, 7);
 		}
 	}

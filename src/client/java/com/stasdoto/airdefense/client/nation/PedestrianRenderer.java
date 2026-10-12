@@ -30,6 +30,8 @@ public class PedestrianRenderer extends HumanoidMobRenderer<PedestrianEntity, Av
 		s.setData(SoldierRenderer.SKIN, skin);
 		s.skin = SkinBaker.skin(skin);
 		s.isBaby = p.kid;
+		// 1.50: on a bench (the model's riding pose: knees bent, legs forward).
+		s.isPassenger = p.sitting;
 	}
 
 	@Override
