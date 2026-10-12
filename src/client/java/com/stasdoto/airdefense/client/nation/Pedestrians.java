@@ -177,8 +177,8 @@ public final class Pedestrians {
 		int cx = Mth.floor(me.x);
 		int cy = Mth.floor(me.y);
 		int cz = Mth.floor(me.z);
-		for (int x = cx - 30; x <= cx + 30; x++) {
-			for (int z = cz - 30; z <= cz + 30; z++) {
+		for (int x = cx - 40; x <= cx + 40; x++) {
+			for (int z = cz - 40; z <= cz + 40; z++) {
 				for (int y = cy - 6; y <= cy + 6; y++) {
 					BlockState st = level.getBlockState(q.set(x, y, z));
 					Block b = st.getBlock();
@@ -194,6 +194,9 @@ public final class Pedestrians {
 							|| b == com.stasdoto.airdefense.street.StreetBlocks.SANDBOX || b == com.stasdoto.airdefense.street.StreetBlocks.ROUNDABOUT
 							|| b == com.stasdoto.airdefense.street.StreetBlocks.CLIMBING_FRAME || b == com.stasdoto.airdefense.street.StreetBlocks.SEESAW) {
 						PLAY.add(new int[]{x, y, z, 0});
+					} else if (b == Blocks.CONCRETE.pick(DyeColor.LIME) && Math.floorMod(x, 3) == 0 && Math.floorMod(z, 3) == 0) {
+						// A yard's playground (its rubber floor).
+						PLAY.add(new int[]{x, y + 1, z, 0});
 					} else if (b == Blocks.IRON_DOOR && st.getValue(net.minecraft.world.level.block.DoorBlock.HALF)
 							== net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER) {
 						net.minecraft.core.Direction out = st.getValue(net.minecraft.world.level.block.DoorBlock.FACING).getOpposite();

@@ -24,7 +24,7 @@ public final class WarScars {
 			return;
 		}
 		int r = (int) Math.min(10, 3 + power * 1.4);
-		int soot = (int) Math.min(6, 1.5 + power * 0.6);
+		int soot = (int) Math.min(7, 2.5 + power * 0.9);
 		BlockPos c = BlockPos.containing(at);
 		BlockPos.MutableBlockPos q = new BlockPos.MutableBlockPos();
 		int marks = 0;

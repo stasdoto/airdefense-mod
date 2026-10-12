@@ -4602,7 +4602,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		camera(server, tramX + 4.5, base + 2.6, midZ + 0.5, 180, 4);
 		ctx.waitTicks(260);
 		ctx.takeScreenshot("lt1_traffic");
-		camera(server, tramX - 6.5, base + 7, z0 - 7.5, -135, 22);
+		look(server, tramX - 9.5, base + 13, z0 - 9.5, tramX + 0.5, base + 1, z0 + 0.5);
 		ctx.waitTicks(200);
 		ctx.takeScreenshot("lt2_crossing");
 		int[] seen = server.computeOnServer(s -> {
@@ -4631,7 +4631,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		});
 		// Parked cars.
 		if (seen[0] != Integer.MIN_VALUE) {
-			look(server, seen[0] - 6.5, base + 6, seen[2] - 6.5, seen[0] + 1, base + 1, seen[2] + 1);
+			look(server, seen[0] + 6.5, base + 9, seen[2] + 6.5, seen[0] + 1, base + 1, seen[2] + 1);
 			ctx.waitTicks(140);
 			ctx.takeScreenshot("lt3_parked");
 		}
@@ -4681,8 +4681,10 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 		});
 		ctx.waitTicks(400);
-		if (seen[15] != Integer.MIN_VALUE) {
-			look(server, seen[15] + 5.5, base + 3.5, seen[17] + 5.5, seen[15] + 0.5, base + 1, seen[17] + 0.5);
+		int[] leafAt = server.computeOnServer(s -> findNear(s.overworld(), tramX, midZ, 60, base + 1, base + 1,
+				st -> st.is(net.minecraft.world.level.block.Blocks.LEAF_LITTER)));
+		if (leafAt != null) {
+			look(server, leafAt[0] + 4.5, base + 3, leafAt[2] + 4.5, leafAt[0] + 0.5, base + 1, leafAt[2] + 0.5);
 			ctx.waitTicks(30);
 			ctx.takeScreenshot("lt8_autumn");
 		}
@@ -4741,7 +4743,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					}
 				}
 				com.stasdoto.airdefense.street.WarScars.blast(l, at, 4f);
-				return new int[]{(int) at.x, (int) at.y, (int) at.z};
+				int ox = (int) Math.signum(Math.round(at.x - (w[0] + 0.5)));
+				int oz = (int) Math.signum(Math.round(at.z - (w[2] + 0.5)));
+				return new int[]{w[0], w[1], w[2], ox, oz};
 			}
 			return null;
 		});
@@ -4765,7 +4769,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		AirDefense.LOGGER.info("[airdefense-test] RESULT livetown_war: windows by look {}; cracked {}, soot {}", java.util.Arrays.toString(looks),
 				com.stasdoto.airdefense.street.WarScars.cracked, com.stasdoto.airdefense.street.WarScars.sooted);
 		if (blast != null) {
-			look(server, blast[0] - 7.5, base + 5, blast[2] - 7.5, blast[0] + 0.5, blast[1] + 2, blast[2] + 0.5);
+			look(server, blast[0] + 0.5 + blast[3] * 9, blast[1] + 3, blast[2] + 0.5 + blast[4] * 9, blast[0] + 0.5, blast[1], blast[2] + 0.5);
 			ctx.waitTicks(40);
 			ctx.takeScreenshot("lt11_war");
 		}
