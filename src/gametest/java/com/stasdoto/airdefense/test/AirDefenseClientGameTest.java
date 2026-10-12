@@ -4613,8 +4613,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					|| st.is(com.stasdoto.airdefense.street.StreetBlocks.BENCH_PARK));
 			int[] stop = findNear(l, tramX, midZ, 70, base + 1, base + 1, st -> st.is(com.stasdoto.airdefense.street.StreetBlocks.BUS_STOP_SOVIET)
 					|| st.is(com.stasdoto.airdefense.street.StreetBlocks.BUS_STOP_MODERN));
-			int[] play = findNear(l, tramX, midZ, 70, base + 1, base + 1, st -> st.is(com.stasdoto.airdefense.street.StreetBlocks.SWING)
-					|| st.is(com.stasdoto.airdefense.street.StreetBlocks.SLIDE) || st.is(com.stasdoto.airdefense.street.StreetBlocks.SANDBOX));
+			int[] play = findNear(l, tramX, midZ, 70, base, base + 1, st -> st.is(com.stasdoto.airdefense.street.StreetBlocks.SWING)
+					|| st.is(com.stasdoto.airdefense.street.StreetBlocks.SLIDE) || st.is(com.stasdoto.airdefense.street.StreetBlocks.SANDBOX)
+					|| st.is(net.minecraft.world.level.block.Blocks.CONCRETE.pick(net.minecraft.world.item.DyeColor.LIME)));
 			int[] hole = findNear(l, tramX, midZ, 70, base, base, st -> st.is(com.stasdoto.airdefense.street.Weathered.ASPHALT_POTHOLE));
 			int[] tree = findNear(l, tramX, midZ, 50, base + 4, base + 6, st -> st.is(net.minecraft.tags.BlockTags.LEAVES));
 			int[] out = new int[18];
@@ -4733,15 +4734,18 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					}
 				}
 			}
-			int[] w = findNear(l, tramX + 9, midZ, 40, base + 4, base + 8, st -> st.is(com.stasdoto.airdefense.street.StreetBlocks.CITY_WINDOW));
+			int[] w = findNear(l, tramX + 8, midZ, 40, base + 3, base + 6, st -> st.is(com.stasdoto.airdefense.street.StreetBlocks.CITY_WINDOW));
 			if (w != null) {
-				var at = new net.minecraft.world.phys.Vec3(w[0] + 0.5, w[1] - 2, w[2] + 0.5);
-				for (var d : net.minecraft.core.Direction.Plane.HORIZONTAL) {
-					if (l.getBlockState(new BlockPos(w[0], w[1], w[2]).relative(d)).isAir()) {
-						at = at.add(d.getStepX() * 3, 0, d.getStepZ() * 3);
+				// The facade facing the tram street: the window's own air side towards the street.
+				for (int k = w[0] - 1; k >= tramX; k--) {
+					if (!l.getBlockState(new BlockPos(k, w[1], w[2])).isAir()) {
+						w = null;
 						break;
 					}
 				}
+			}
+			if (w != null) {
+				var at = new net.minecraft.world.phys.Vec3(w[0] - 2.5, w[1] - 2, w[2] + 0.5);
 				com.stasdoto.airdefense.street.WarScars.blast(l, at, 4f);
 				int ox = (int) Math.signum(Math.round(at.x - (w[0] + 0.5)));
 				int oz = (int) Math.signum(Math.round(at.z - (w[2] + 0.5)));
@@ -4769,7 +4773,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		AirDefense.LOGGER.info("[airdefense-test] RESULT livetown_war: windows by look {}; cracked {}, soot {}", java.util.Arrays.toString(looks),
 				com.stasdoto.airdefense.street.WarScars.cracked, com.stasdoto.airdefense.street.WarScars.sooted);
 		if (blast != null) {
-			look(server, blast[0] + 0.5 + blast[3] * 9, blast[1] + 3, blast[2] + 0.5 + blast[4] * 9, blast[0] + 0.5, blast[1], blast[2] + 0.5);
+			look(server, tramX + 0.5, base + 4, blast[2] - 6.5, blast[0] + 0.5, blast[1], blast[2] + 0.5);
 			ctx.waitTicks(40);
 			ctx.takeScreenshot("lt11_war");
 		}
