@@ -367,6 +367,9 @@ final class CityDecor {
 						flats |= Facades.isHousing(b.type);
 					}
 					if (flats || lot.district != CityShape.OUTER) {
+						if (r3.nextInt(5) < 3) {
+							desirePath(v);
+						}
 						if ((q = v.rect(4, 2)) != null) {
 							dumpsters(q[0], q[1]);
 						}
@@ -456,6 +459,26 @@ final class CityDecor {
 				put(px, base + h, pz, pole(StreetBlocks.POLE_STEEL, h == 1));
 			}
 			kerbPoles.add(BlockPos.asLong(px, 0, pz));
+		}
+	}
+
+	/** A path trodden across the yard, corner to corner, where people cut through (round whatever stands in the way). */
+	private void desirePath(View v) {
+		CityShape.Lot l = v.lot;
+		boolean flip = r3.nextBoolean();
+		int ax = l.x0;
+		int az = flip ? l.z1 : l.z0;
+		int bx = l.x1;
+		int bz = flip ? l.z0 : l.z1;
+		int n = Math.max(Math.abs(bx - ax), Math.abs(bz - az));
+		double wob = r3.nextDouble() * Math.PI * 2;
+		for (int i = 0; i <= n; i++) {
+			double f = i / (double) n;
+			int x = (int) Math.round(ax + (bx - ax) * f + Math.sin(f * Math.PI * 2 + wob) * 2);
+			int z = (int) Math.round(az + (bz - az) * f);
+			if (v.at(x, z) == FREE && !used.contains(BlockPos.asLong(x, 0, z))) {
+				force(x, base, z, b(r3.nextInt(4) == 0 ? Blocks.COARSE_DIRT : Blocks.DIRT_PATH));
+			}
 		}
 	}
 

@@ -142,8 +142,7 @@ public final class Facades {
 			int zf = ok ? c1[0] : 0;
 			if (ok) {
 				ok = (run == 0 || zf == z0) && shopWall(p.blocks.get(BlockPos.asLong(x, 1, zf))) && shopWall(p.blocks.get(BlockPos.asLong(x, 2, zf)))
-						&& !nearDoor(pairCells, x, zf) && free(p, add, pairCells, x, 1, zf - 1) && free(p, add, pairCells, x, 2, zf - 1)
-						&& free(p, add, pairCells, x, 3, zf - 1) && zf <= 1;
+						&& !nearDoor(pairCells, x, zf) && free(p, add, pairCells, x, 1, zf - 1) && free(p, add, pairCells, x, 2, zf - 1) && zf <= 1;
 			}
 			if (!ok) {
 				run = 0;
@@ -158,7 +157,7 @@ public final class Facades {
 				break;
 			}
 		}
-		if (run < 4) {
+		if (run < 3) {
 			return;
 		}
 		int step = left ? 1 : -1;
@@ -167,7 +166,21 @@ public final class Facades {
 			p.blocks.put(BlockPos.asLong(x, 1, z0), Blocks.GLASS.defaultBlockState());
 			p.blocks.put(BlockPos.asLong(x, 2, z0), Blocks.GLASS.defaultBlockState());
 		}
-		int mid = start + (run / 2) * step;
+		int mid = Integer.MIN_VALUE;
+		for (int k = run / 2; k < run && mid == Integer.MIN_VALUE; k++) {
+			if (free(p, add, pairCells, start + k * step, 3, z0 - 1)) {
+				mid = start + k * step;
+			}
+		}
+		for (int k = run / 2 - 1; k >= 0 && mid == Integer.MIN_VALUE; k--) {
+			if (free(p, add, pairCells, start + k * step, 3, z0 - 1)) {
+				mid = start + k * step;
+			}
+		}
+		if (mid == Integer.MIN_VALUE) {
+			COUNTS[4]++;
+			return;
+		}
 		boolean russian = b.style == CityStyle.SOVIET.ordinal() || b.style == CityStyle.DESERT.ordinal() || b.style == CityStyle.CLASSIC.ordinal();
 		int kind = (int) (u(seed, 5) * (russian ? FacadeBlocks.SIGNS_RU : FacadeBlocks.SIGNS - FacadeBlocks.SIGNS_RU)) + (russian ? 0 : FacadeBlocks.SIGNS_RU);
 		add.put(BlockPos.asLong(mid, 3, z0 - 1), FacadeBlocks.kind(FacadeBlocks.SHOP_SIGN, kind, p.w(Blueprints.L.FRONT)));
