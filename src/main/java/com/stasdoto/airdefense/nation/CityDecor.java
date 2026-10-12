@@ -391,6 +391,11 @@ final class CityDecor {
 						rubbish(q[0], q[1]);
 					}
 				}
+				case CityShape.INDUSTRY -> {
+					if (r3.nextInt(2) == 0 && (q = v.rect(11, 8)) != null) {
+						ruin(q[0], q[1]);
+					}
+				}
 				default -> {
 				}
 			}
@@ -533,6 +538,67 @@ final class CityDecor {
 		put(x0 + 1, base + 4, z0 + 1, st(com.stasdoto.airdefense.street.FacadeBlocks.STATUE, Direction.SOUTH));
 		put(x0 + 1, base + 2, z0 + 2, b(Blocks.RED_TULIP));
 		put(x0, base + 2, z0 + 2, b(Blocks.POPPY));
+	}
+
+	/**
+	 * An abandoned workshop: old brick walls broken in places, the windows' holes empty, half its roof fallen in, ivy
+	 * up the walls, weeds and rubbish inside, graffiti.
+	 */
+	private void ruin(int x0, int z0) {
+		var brick = com.stasdoto.airdefense.street.Weathered.of(Blocks.BRICKS);
+		int w = 11;
+		int d = 8;
+		int h = 5;
+		for (int x = x0; x < x0 + w; x++) {
+			for (int z = z0; z < z0 + d; z++) {
+				boolean edge = x == x0 || z == z0 || x == x0 + w - 1 || z == z0 + d - 1;
+				if (!edge) {
+					int k = r3.nextInt(10);
+					if (k < 2) {
+						put(x, base + 1, z, b(Blocks.SHORT_GRASS));
+					} else if (k == 2) {
+						put(x, base + 1, z, b(Blocks.COBBLESTONE));
+					} else if (k == 3) {
+						force(x, base, z, b(Blocks.COARSE_DIRT));
+					}
+					// What is left of the roof: slabs on the beams at one end.
+					if (x < x0 + w / 2 && r3.nextInt(3) > 0) {
+						put(x, base + h, z, slabTop(Blocks.STONE_SLAB));
+					}
+					continue;
+				}
+				// The wall: lower towards one corner (broken down), a window hole every third block.
+				Direction out = x == x0 ? Direction.WEST : x == x0 + w - 1 ? Direction.EAST : z == z0 ? Direction.NORTH : Direction.SOUTH;
+				int top = h - (x + z - x0 - z0 > w + d - 6 ? 2 + r3.nextInt(2) : r3.nextInt(4) == 0 ? 1 : 0);
+				for (int y = 1; y <= top; y++) {
+					boolean hole = (y == 2 || y == 3) && Math.floorMod(x + z, 3) == 0 && !(x == x0 || x == x0 + w - 1) == (z == z0 || z == z0 + d - 1);
+					if (hole) {
+						continue;
+					}
+					var look = y == 1 ? com.stasdoto.airdefense.street.Weathered.Look.GRIME
+							: r3.nextInt(4) == 0 ? com.stasdoto.airdefense.street.Weathered.Look.CRACK : com.stasdoto.airdefense.street.Weathered.Look.B;
+					put(x, base + y, z, brick.state(look, out));
+				}
+				// Ivy up the outside.
+				if (r3.nextInt(4) == 0) {
+					BlockState vine = Blocks.VINE.defaultBlockState().setValue(net.minecraft.world.level.block.VineBlock.getPropertyForFace(out.getOpposite()), true);
+					for (int y = 1; y <= top - r3.nextInt(2); y++) {
+						put(x + out.getStepX(), base + y, z + out.getStepZ(), vine);
+					}
+				}
+				if (r3.nextInt(9) == 0) {
+					put(x + out.getStepX(), base + 1 + r3.nextInt(2), z + out.getStepZ(), st(com.stasdoto.airdefense.street.FacadeBlocks.GRAFFITI, out)
+							.setValue(com.stasdoto.airdefense.street.KindBlock.KIND, r3.nextInt(com.stasdoto.airdefense.street.FacadeBlocks.GRAFFITI_KINDS)));
+				}
+			}
+		}
+		// A rusted gate: a gap in the front wall.
+		for (int y = 1; y <= 3; y++) {
+			out.blocks.computeIfAbsent(ChunkPos.pack((x0 + 5) >> 4, z0 >> 4), k -> new ArrayList<>())
+					.add(new D(x0 + 5, base + y, z0, Blocks.AIR.defaultBlockState(), true));
+		}
+		put(x0 + 4, base + 1, z0 - 1, st(com.stasdoto.airdefense.street.FacadeBlocks.BALCONY_JUNK, Direction.NORTH)
+				.setValue(com.stasdoto.airdefense.street.KindBlock.KIND, 2));
 	}
 
 	/** Rubbish dumped on the wasteland: a heap, old tyres and boxes, a broken container. */

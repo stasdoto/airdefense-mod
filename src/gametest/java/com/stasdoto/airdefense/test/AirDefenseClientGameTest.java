@@ -4798,6 +4798,14 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				com.stasdoto.airdefense.nation.Growth.every = 600;
 			}
 		}
+		// The outskirts: an abandoned workshop overgrown with ivy.
+		int[] ruin = server.computeOnServer(s -> findNear(s.overworld(), cx, cz, half + 10, base + 1, base + 3,
+				st -> st.is(net.minecraft.world.level.block.Blocks.VINE)));
+		if (ruin != null) {
+			look(server, ruin[0] + 9.5, base + 7, ruin[2] + 9.5, ruin[0] + 0.5, base + 2, ruin[2] + 0.5);
+			ctx.waitTicks(60);
+			ctx.takeScreenshot("lt13_ruin");
+		}
 		AirDefense.LOGGER.info("[airdefense-test] RESULT livetown_growth: grown {}, finished {}", com.stasdoto.airdefense.nation.Growth.grown,
 				com.stasdoto.airdefense.nation.Growth.finished);
 		com.stasdoto.airdefense.client.nation.TownTraffic.force = 0;
