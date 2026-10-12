@@ -1,0 +1,184 @@
+{
+ "variants": {
+  "facing=north,kind=0": {
+   "model": "airdefense:block/street/produce_crate_0"
+  },
+  "facing=east,kind=0": {
+   "model": "airdefense:block/street/produce_crate_0",
+   "y": 90
+  },
+  "facing=south,kind=0": {
+   "model": "airdefense:block/street/produce_crate_0",
+   "y": 180
+  },
+  "facing=west,kind=0": {
+   "model": "airdefense:block/street/produce_crate_0",
+   "y": 270
+  },
+  "facing=north,kind=1": {
+   "model": "airdefense:block/street/produce_crate_1"
+  },
+  "facing=east,kind=1": {
+   "model": "airdefense:block/street/produce_crate_1",
+   "y": 90
+  },
+  "facing=south,kind=1": {
+   "model": "airdefense:block/street/produce_crate_1",
+   "y": 180
+  },
+  "facing=west,kind=1": {
+   "model": "airdefense:block/street/produce_crate_1",
+   "y": 270
+  },
+  "facing=north,kind=2": {
+   "model": "airdefense:block/street/produce_crate_2"
+  },
+  "facing=east,kind=2": {
+   "model": "airdefense:block/street/produce_crate_2",
+   "y": 90
+  },
+  "facing=south,kind=2": {
+   "model": "airdefense:block/street/produce_crate_2",
+   "y": 180
+  },
+  "facing=west,kind=2": {
+   "model": "airdefense:block/street/produce_crate_2",
+   "y": 270
+  },
+  "facing=north,kind=3": {
+   "model": "airdefense:block/street/produce_crate_3"
+  },
+  "facing=east,kind=3": {
+   "model": "airdefense:block/street/produce_crate_3",
+   "y": 90
+  },
+  "facing=south,kind=3": {
+   "model": "airdefense:block/street/produce_crate_3",
+   "y": 180
+  },
+  "facing=west,kind=3": {
+   "model": "airdefense:block/street/produce_crate_3",
+   "y": 270
+  },
+  "facing=north,kind=4": {
+   "model": "airdefense:block/street/produce_crate_0"
+  },
+  "facing=east,kind=4": {
+   "model": "airdefense:block/street/produce_crate_0",
+   "y": 90
+  },
+  "facing=south,kind=4": {
+   "model": "airdefense:block/street/produce_crate_0",
+   "y": 180
+  },
+  "facing=west,kind=4": {
+   "model": "airdefense:block/street/produce_crate_0",
+   "y": 270
+  },
+  "facing=north,kind=5": {
+   "model": "airdefense:block/street/produce_crate_1"
+  },
+  "facing=east,kind=5": {
+   "model": "airdefense:block/street/produce_crate_1",
+   "y": 90
+  },
+  "facing=south,kind=5": {
+   "model": "airdefense:block/street/produce_crate_1",
+   "y": 180
+  },
+  "facing=west,kind=5": {
+   "model": "airdefense:block/street/produce_crate_1",
+   "y": 270
+  },
+  "facing=north,kind=6": {
+   "model": "airdefense:block/street/produce_crate_2"
+  },
+  "facing=east,kind=6": {
+   "model": "airdefense:block/street/produce_crate_2",
+   "y": 90
+  },
+  "facing=south,kind=6": {
+   "model": "airdefense:block/street/produce_crate_2",
+   "y": 180
+  },
+  "facing=west,kind=6": {
+   "model": "airdefense:block/street/produce_crate_2",
+   "y": 270
+  },
+  "facing=north,kind=7": {
+   "model": "airdefense:block/street/produce_crate_3"
+  },
+  "facing=east,kind=7": {
+   "model": "airdefense:block/street/produce_crate_3",
+   "y": 90
+  },
+  "facing=south,kind=7": {
+   "model": "airdefense:block/street/produce_crate_3",
+   "y": 180
+  },
+  "facing=west,kind=7": {
+   "model": "airdefense:block/street/produce_crate_3",
+   "y": 270
+  },
+  "facing=north,kind=8": {
+   "model": "airdefense:block/street/produce_crate_0"
+  },
+  "facing=east,kind=8": {
+   "model": "airdefense:block/street/produce_crate_0",
+   "y": 90
+  },
+  "facing=south,kind=8": {
+   "model": "airdefense:block/street/produce_crate_0",
+   "y": 180
+  },
+  "facing=west,kind=8": {
+   "model": "airdefense:block/street/produce_crate_0",
+   "y": 270
+  },
+  "facing=north,kind=9": {
+   "model": "airdefense:block/street/produce_crate_1"
+  },
+  "facing=east,kind=9": {
+   "model": "airdefense:block/street/produce_crate_1",
+   "y": 90
+  },
+  "facing=south,kind=9": {
+   "model": "airdefense:block/street/produce_crate_1",
+   "y": 180
+  },
+  "facing=west,kind=9": {
+   "model": "airdefense:block/street/produce_crate_1",
+   "y": 270
+  },
+  "facing=north,kind=10": {
+   "model": "airdefense:block/street/produce_crate_2"
+  },
+  "facing=east,kind=10": {
+   "model": "airdefense:block/street/produce_crate_2",
+   "y": 90
+  },
+  "facing=south,kind=10": {
+   "model": "airdefense:block/street/produce_crate_2",
+   "y": 180
+  },
+  "facing=west,kind=10": {
+   "model": "airdefense:block/street/produce_crate_2",
+   "y": 270
+  },
+  "facing=north,kind=11": {
+   "model": "airdefense:block/street/produce_crate_3"
+  },
+  "facing=east,kind=11": {
+   "model": "airdefense:block/street/produce_crate_3",
+   "y": 90
+  },
+  "facing=south,kind=11": {
+   "model": "airdefense:block/street/produce_crate_3",
+   "y": 180
+  },
+  "facing=west,kind=11": {
+   "model": "airdefense:block/street/produce_crate_3",
+   "y": 270
+  }
+ }
+}

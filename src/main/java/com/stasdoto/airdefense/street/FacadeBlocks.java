@@ -40,12 +40,16 @@ public final class FacadeBlocks {
 	public static final Block FLOWER_BOX = thing("flower_box", MapColor.WOOD, SoundType.WOOD, false, 1, 9, 11, 15, 16, 16);
 	public static final Block ROOF_VENT = thing("roof_vent", MapColor.METAL, SoundType.METAL, false, 4, 0, 4, 12, 11, 12);
 	public static final Block TV_AERIAL = thing("tv_aerial", MapColor.METAL, SoundType.METAL, true, 1, 0, 1, 15, 16, 15);
+	public static final Block TROLLEY_WIRE = thing("trolley_wire", MapColor.METAL, SoundType.CHAIN, true, 5, 12, 0, 11, 14, 16);
+	public static final Block TROLLEY_SPAN = thing("trolley_span", MapColor.METAL, SoundType.CHAIN, true, 0, 13, 7, 16, 15, 9);
+	public static final Block STATUE = thing("statue", MapColor.COLOR_GREEN, SoundType.METAL, false, 4, 0, 4, 12, 16, 12);
 	public static final Block DUMPSTER = thing("dumpster", MapColor.COLOR_GREEN, SoundType.METAL, false, 1, 0, 1, 15, 14, 15);
 
 	public static final Block SHOP_SIGN = kind("shop_sign", MapColor.METAL, SoundType.METAL, true, 0, 2, 13.5, 16, 14, 16);
 	public static final Block GRAFFITI = kind("graffiti", MapColor.NONE, SoundType.WOOL, true, 0, 0, 15.5, 16, 16, 16);
 	public static final Block NOTICE = kind("notice", MapColor.NONE, SoundType.WOOL, true, 0, 0, 15.5, 16, 16, 16);
 	public static final Block LAUNDRY = kind("laundry", MapColor.WOOL, SoundType.WOOL, true, 0, 0, 7.5, 16, 16, 8.5);
+	public static final Block PRODUCE_CRATE = kind("produce_crate", MapColor.WOOD, SoundType.WOOD, false, 1, 0, 1, 15, 8, 15);
 	public static final Block BALCONY_JUNK = kind("balcony_junk", MapColor.WOOD, SoundType.WOOD, false, 1, 0, 3, 15, 10, 13);
 
 	/** How many looks each comes in (the blockstates repeat them up to 12). */

@@ -20,6 +20,10 @@ NAMES = {
     'block.airdefense.notice': ('Notices', 'Объявления', 'Оголошення'),
     'block.airdefense.laundry': ('Washing on a line', 'Бельё на верёвке', 'Білизна на мотузці'),
     'block.airdefense.balcony_junk': ('Balcony junk', 'Хлам на балконе', 'Мотлох на балконі'),
+    'block.airdefense.trolley_wire': ('Trolleybus wires', 'Троллейбусные провода', 'Тролейбусні дроти'),
+    'block.airdefense.trolley_span': ('Span wire', 'Поперечная растяжка', 'Поперечна розтяжка'),
+    'block.airdefense.statue': ('Bronze statue', 'Бронзовая статуя', 'Бронзова статуя'),
+    'block.airdefense.produce_crate': ('Crate of produce', 'Ящик с овощами', 'Ящик з овочами'),
 }
 
 

@@ -209,6 +209,11 @@ def make_textures():
     save('aerial', paint((110, 112, 116), 5))
     save('dumpster', dumpster())
     save('dumpster_lid', paint((50, 74, 50), 4))
+    save('wire', paint((40, 40, 42), 2))
+    save('bronze', bronze())
+    save('crate_light', ms.wood((176, 140, 92)))
+    for k, (rgb, leaf) in enumerate([((200, 40, 40), None), ((120, 170, 80), (90, 140, 60)), ((170, 130, 80), None), ((230, 70, 40), (60, 120, 40))]):
+        save('produce_%d' % k, produce(rgb, leaf, k))
 
 
 def ac_front():
@@ -265,6 +270,34 @@ def jars():
         a[5:15, x0:x0 + 4, 3] = 230
         a[4, x0:x0 + 4, :3] = (200, 180, 60)
         a[4, x0:x0 + 4, 3] = 255
+    return a
+
+
+def bronze():
+    a = paint((92, 104, 84), 6)
+    for _ in range(20):
+        y, x = rng.integers(0, 16, 2)
+        a[y, x, :3] = (70, 120, 100)  # verdigris
+    for y in range(16):
+        a[y, :, :3] *= 0.9 + 0.2 * (y % 4 == 0)
+    return a
+
+
+def produce(rgb, leaf, k):
+    a = np.zeros((16, 16, 4))
+    r = np.random.default_rng(900 + k)
+    for _ in range(26):
+        cx, cy = r.integers(1, 15, 2)
+        rad = 1.6 if k != 1 else 2.4
+        for y in range(16):
+            for x in range(16):
+                if (x - cx) ** 2 + (y - cy) ** 2 <= rad * rad:
+                    shade = 1.0 - 0.25 * ((y - cy + rad) / (2 * rad))
+                    a[y, x, :3] = np.array(rgb, float) * shade
+                    a[y, x, 3] = 255
+        if leaf is not None:
+            a[max(0, cy - 2), cx, :3] = leaf
+            a[max(0, cy - 2), cx, 3] = 255
     return a
 
 
@@ -331,10 +364,30 @@ def models():
             box((0.5, 13, 1.5), (15.5, 14, 14.5), 'dumpster_lid', rot={'origin': [8, 13, 14], 'axis': 'x', 'angle': -22.5}),
             box((2, 0, 3), (4, 1, 5), 'tyre'), box((12, 0, 3), (14, 1, 5), 'tyre'), box((2, 0, 11), (4, 1, 13), 'tyre'), box((12, 0, 11), (14, 1, 13), 'tyre')]
     model('dumpster', dump, gui=0.7)
+    # The trolleybus wires along the street (two, a little apart), and the span wire across it from the poles.
+    model('trolley_wire', [box((5.8, 13, 0), (6.2, 13.4, 16), 'wire'), box((9.8, 13, 0), (10.2, 13.4, 16), 'wire')], gui=0.8)
+    model('trolley_span', [box((0, 14.2, 7.8), (16, 14.6, 8.2), 'wire'), box((5.6, 13.4, 7.6), (6.4, 14.2, 8.4), 'wire'),
+                           box((9.6, 13.4, 7.6), (10.4, 14.2, 8.4), 'wire')], gui=0.8)
+    # A bronze figure in a long coat, one hand forward, on its own (the pedestal is built of blocks under it).
+    fig = [box((5, 0, 6), (11, 2, 10), 'bronze'),
+           box((4.5, 2, 5.5), (11.5, 14, 10.5), 'bronze'),  # the coat
+           box((5, 14, 6), (11, 22, 10), 'bronze'),  # chest
+           box((3, 14, 6.5), (5, 21, 9.5), 'bronze'), box((11, 14, 6.5), (13, 21, 9.5), 'bronze'),
+           box((11, 20, 1), (13, 22, 7), 'bronze'),  # the arm forward
+           box((6.5, 22, 6.5), (9.5, 23, 9.5), 'bronze'), box((6, 23, 6), (10, 27.5, 10), 'bronze'),
+           box((5.5, 27.5, 5.5), (10.5, 28.5, 10.5), 'bronze')]
+    model('statue', fig, gui=0.5)
+    for k in range(4):
+        model('produce_crate_%d' % k, [box((1, 0, 1), (15, 6, 15), {'north': 'crate_light', 'south': 'crate_light', 'east': 'crate_light',
+                                                                       'west': 'crate_light', 'down': 'crate_light'}),
+                                       box((1.5, 6, 1.5), (14.5, 8, 14.5), {'up': 'produce_%d' % k, 'north': 'produce_%d' % k,
+                                                                             'south': 'produce_%d' % k, 'east': 'produce_%d' % k,
+                                                                             'west': 'produce_%d' % k})], gui=0.8)
 
 
-SIMPLE = ['ac_unit', 'sat_dish', 'drainpipe', 'drainpipe_top', 'drainpipe_bottom', 'flower_box', 'roof_vent', 'tv_aerial', 'dumpster']
-KINDS = {'shop_sign': len(SIGNS), 'graffiti': 6, 'notice': 3, 'laundry': 3, 'balcony_junk': 3}
+SIMPLE = ['ac_unit', 'sat_dish', 'drainpipe', 'drainpipe_top', 'drainpipe_bottom', 'flower_box', 'roof_vent', 'tv_aerial', 'dumpster',
+          'trolley_wire', 'trolley_span', 'statue']
+KINDS = {'shop_sign': len(SIGNS), 'graffiti': 6, 'notice': 3, 'laundry': 3, 'balcony_junk': 3, 'produce_crate': 4}
 
 
 def blockstates():

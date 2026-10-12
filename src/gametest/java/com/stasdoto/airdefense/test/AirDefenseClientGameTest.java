@@ -4450,6 +4450,15 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		long s0 = com.stasdoto.airdefense.nation.Weathering.streak;
 		long k0 = com.stasdoto.airdefense.nation.Weathering.crack;
 		long r0 = com.stasdoto.airdefense.nation.Weathering.roofs;
+		// Every town planned with its style first (building one plans its neighbours' cells for the roads).
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			for (int k = 0; k < all.length; k++) {
+				com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = all[k];
+				com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), com.stasdoto.airdefense.nation.Cities.terrain(l), 140 + k * 2, 140);
+			}
+			com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = null;
+		});
 		for (int k = 0; k < all.length; k++) {
 			var style = all[k];
 			int cellX = 140 + k * 2;

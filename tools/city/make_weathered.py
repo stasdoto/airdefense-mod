@@ -160,8 +160,12 @@ def write_png(name, a):
 def panel_set(name, rgb):
     r = rng_for(name)
     faded = np.minimum(255, np.array(rgb, float) * 0.86 + np.array((176, 174, 168)) * 0.14 + 6)
-    plain = base_layer(r, faded, 3.5, 0.10)
-    pits(plain, r, 5)
+    if name.endswith('_white'):
+        faded = np.array((222, 222, 216), float)
+    elif name.endswith('_light_gray'):
+        faded = np.array((176, 176, 170), float)
+    plain = base_layer(r, faded, 3.0, 0.08)
+    pits(plain, r, 3, 0.86)
     b = plain.copy()
     # Panel joints: the sealed seam along the bottom and one side, here and there gone dark.
     b[15, :, :3] *= 0.84

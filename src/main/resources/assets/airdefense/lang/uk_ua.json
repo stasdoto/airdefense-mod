@@ -1456,5 +1456,9 @@
   "block.airdefense.graffiti": "Графіті",
   "block.airdefense.notice": "Оголошення",
   "block.airdefense.laundry": "Білизна на мотузці",
-  "block.airdefense.balcony_junk": "Мотлох на балконі"
+  "block.airdefense.balcony_junk": "Мотлох на балконі",
+  "block.airdefense.trolley_wire": "Тролейбусні дроти",
+  "block.airdefense.trolley_span": "Поперечна розтяжка",
+  "block.airdefense.statue": "Бронзова статуя",
+  "block.airdefense.produce_crate": "Ящик з овочами"
 }

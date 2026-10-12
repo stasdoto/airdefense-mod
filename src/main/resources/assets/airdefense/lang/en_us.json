@@ -1456,5 +1456,9 @@
   "block.airdefense.graffiti": "Graffiti",
   "block.airdefense.notice": "Notices",
   "block.airdefense.laundry": "Washing on a line",
-  "block.airdefense.balcony_junk": "Balcony junk"
+  "block.airdefense.balcony_junk": "Balcony junk",
+  "block.airdefense.trolley_wire": "Trolleybus wires",
+  "block.airdefense.trolley_span": "Span wire",
+  "block.airdefense.statue": "Bronze statue",
+  "block.airdefense.produce_crate": "Crate of produce"
 }
