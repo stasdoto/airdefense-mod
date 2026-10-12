@@ -27,6 +27,20 @@ public class PedestrianEntity extends PathfinderMob {
 	public boolean hurry;
 	public int hurryTicks;
 	public double speed = 0.08;
+	/**
+	 * 1.50 "A living town": what he is doing (0 walking, 1 sitting on a bench, 2 waiting at a bus stop, 3 a child at play,
+	 * 4 standing by a door - a smoke, a chat), for how long yet, where (the spot), and the dog he walks.
+	 */
+	public int activity;
+	public int activityTicks;
+	public boolean sitting;
+	public long spot = Long.MIN_VALUE;
+	public int homeX;
+	public int homeZ;
+	public float faceYaw;
+	public boolean smoker;
+	@org.jetbrains.annotations.Nullable
+	public net.minecraft.world.entity.Entity pet;
 	/** Set by the client: walks him one tick. */
 	public static java.util.function.Consumer<PedestrianEntity> clientTick;
 

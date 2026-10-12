@@ -367,7 +367,9 @@ final class CityDecor {
 						flats |= Facades.isHousing(b.type);
 					}
 					if (flats || lot.district != CityShape.OUTER) {
-						if (r3.nextInt(5) < 3) {
+						if (lot.merged() && lot.district != CityShape.OUTER) {
+							alley(v);
+						} else if (r3.nextInt(5) < 3) {
 							desirePath(v);
 						}
 						if ((q = v.rect(4, 2)) != null) {
@@ -389,6 +391,11 @@ final class CityDecor {
 				case CityShape.VACANT -> {
 					if ((q = v.rect(5, 4)) != null) {
 						rubbish(q[0], q[1]);
+					}
+				}
+				case CityShape.INDUSTRY -> {
+					if (r3.nextInt(2) == 0 && (q = v.rect(11, 8)) != null) {
+						ruin(q[0], q[1]);
 					}
 				}
 				default -> {
@@ -459,6 +466,44 @@ final class CityDecor {
 				put(px, base + h, pz, pole(StreetBlocks.POLE_STEEL, h == 1));
 			}
 			kerbPoles.add(BlockPos.asLong(px, 0, pz));
+		}
+	}
+
+	/**
+	 * A lane through a big block between two streets: paved, two blocks wide, lamps and a bench along it (only where
+	 * nothing stands; it stops at a building).
+	 */
+	private void alley(View v) {
+		CityShape.Lot l = v.lot;
+		boolean alongX = l.width() >= l.depth();
+		int mid = alongX ? (l.z0 + l.z1) / 2 : (l.x0 + l.x1) / 2;
+		int from = alongX ? l.x0 - 2 : l.z0 - 2;
+		int to = alongX ? l.x1 + 2 : l.z1 + 2;
+		BlockState paving = b(look() == CityStyle.SOVIET ? com.stasdoto.airdefense.street.Weathered.WALK_ASPHALT
+				: look() == CityStyle.DESERT ? com.stasdoto.airdefense.street.Weathered.PAVING_SAND : com.stasdoto.airdefense.street.Weathered.PAVING_GREY);
+		List<int[]> cells = new ArrayList<>();
+		for (int a = from; a <= to; a++) {
+			for (int k = 0; k <= 1; k++) {
+				int x = alongX ? a : mid + k;
+				int z = alongX ? mid + k : a;
+				int at = v.at(x, z);
+				if (at == BUILDING || at == FRONT && a > from + 2 && a < to - 2) {
+					return;
+				}
+				cells.add(new int[]{x, z});
+			}
+		}
+		for (int[] c : cells) {
+			force(c[0], base, c[1], paving);
+			used.add(BlockPos.asLong(c[0], 0, c[1]));
+		}
+		for (int a = from + 5; a <= to - 5; a += 9) {
+			int x = alongX ? a : mid - 1;
+			int z = alongX ? mid - 1 : a;
+			lamp(x, z, alongX ? Direction.SOUTH : Direction.EAST);
+			int bx = alongX ? a + 3 : mid + 2;
+			int bz = alongX ? mid + 2 : a + 3;
+			put(bx, base + 1, bz, st(bench(), alongX ? Direction.NORTH : Direction.WEST));
 		}
 	}
 
@@ -533,6 +578,67 @@ final class CityDecor {
 		put(x0 + 1, base + 4, z0 + 1, st(com.stasdoto.airdefense.street.FacadeBlocks.STATUE, Direction.SOUTH));
 		put(x0 + 1, base + 2, z0 + 2, b(Blocks.RED_TULIP));
 		put(x0, base + 2, z0 + 2, b(Blocks.POPPY));
+	}
+
+	/**
+	 * An abandoned workshop: old brick walls broken in places, the windows' holes empty, half its roof fallen in, ivy
+	 * up the walls, weeds and rubbish inside, graffiti.
+	 */
+	private void ruin(int x0, int z0) {
+		var brick = com.stasdoto.airdefense.street.Weathered.of(Blocks.BRICKS);
+		int w = 11;
+		int d = 8;
+		int h = 5;
+		for (int x = x0; x < x0 + w; x++) {
+			for (int z = z0; z < z0 + d; z++) {
+				boolean edge = x == x0 || z == z0 || x == x0 + w - 1 || z == z0 + d - 1;
+				if (!edge) {
+					int k = r3.nextInt(10);
+					if (k < 2) {
+						put(x, base + 1, z, b(Blocks.SHORT_GRASS));
+					} else if (k == 2) {
+						put(x, base + 1, z, b(Blocks.COBBLESTONE));
+					} else if (k == 3) {
+						force(x, base, z, b(Blocks.COARSE_DIRT));
+					}
+					// What is left of the roof: slabs on the beams at one end.
+					if (x < x0 + w / 2 && r3.nextInt(3) > 0) {
+						put(x, base + h, z, slabTop(Blocks.STONE_SLAB));
+					}
+					continue;
+				}
+				// The wall: lower towards one corner (broken down), a window hole every third block.
+				Direction out = x == x0 ? Direction.WEST : x == x0 + w - 1 ? Direction.EAST : z == z0 ? Direction.NORTH : Direction.SOUTH;
+				int top = h - (x + z - x0 - z0 > w + d - 6 ? 2 + r3.nextInt(2) : r3.nextInt(4) == 0 ? 1 : 0);
+				for (int y = 1; y <= top; y++) {
+					boolean hole = (y == 2 || y == 3) && Math.floorMod(x + z, 3) == 0 && !(x == x0 || x == x0 + w - 1) == (z == z0 || z == z0 + d - 1);
+					if (hole) {
+						continue;
+					}
+					var look = y == 1 ? com.stasdoto.airdefense.street.Weathered.Look.GRIME
+							: r3.nextInt(4) == 0 ? com.stasdoto.airdefense.street.Weathered.Look.CRACK : com.stasdoto.airdefense.street.Weathered.Look.B;
+					put(x, base + y, z, brick.state(look, out));
+				}
+				// Ivy up the outside.
+				if (r3.nextInt(4) == 0) {
+					BlockState vine = Blocks.VINE.defaultBlockState().setValue(net.minecraft.world.level.block.VineBlock.getPropertyForFace(out.getOpposite()), true);
+					for (int y = 1; y <= top - r3.nextInt(2); y++) {
+						put(x + out.getStepX(), base + y, z + out.getStepZ(), vine);
+					}
+				}
+				if (r3.nextInt(9) == 0) {
+					put(x + out.getStepX(), base + 1 + r3.nextInt(2), z + out.getStepZ(), st(com.stasdoto.airdefense.street.FacadeBlocks.GRAFFITI, out)
+							.setValue(com.stasdoto.airdefense.street.KindBlock.KIND, r3.nextInt(com.stasdoto.airdefense.street.FacadeBlocks.GRAFFITI_KINDS)));
+				}
+			}
+		}
+		// A rusted gate: a gap in the front wall.
+		for (int y = 1; y <= 3; y++) {
+			out.blocks.computeIfAbsent(ChunkPos.pack((x0 + 5) >> 4, z0 >> 4), k -> new ArrayList<>())
+					.add(new D(x0 + 5, base + y, z0, Blocks.AIR.defaultBlockState(), true));
+		}
+		put(x0 + 4, base + 1, z0 - 1, st(com.stasdoto.airdefense.street.FacadeBlocks.BALCONY_JUNK, Direction.NORTH)
+				.setValue(com.stasdoto.airdefense.street.KindBlock.KIND, 2));
 	}
 
 	/** Rubbish dumped on the wasteland: a heap, old tyres and boxes, a broken container. */
@@ -750,7 +856,12 @@ final class CityDecor {
 			int cx = side.getX() - (alongZ ? 0 : 0);
 			int cz = side.getZ();
 			if (r.nextInt(3) > 0 && v.free(cx, cz) && v.free(alongZ ? cx + 1 : cx + 3, alongZ ? cz + 3 : cz + 1)) {
-				car(Math.min(cx, cx), Math.min(cz, cz), alongZ, CAR_COLORS[r.nextInt(CAR_COLORS.length)]);
+				DyeColor color = CAR_COLORS[r.nextInt(CAR_COLORS.length)];
+				if (Cities.weathered) {
+					force(cx, base, cz, b(alongZ ? com.stasdoto.airdefense.street.Weathered.PARKING_Z : com.stasdoto.airdefense.street.Weathered.PARKING_X));
+				} else {
+					car(cx, cz, alongZ, color);
+				}
 				use(cx, cz, alongZ ? cx + 1 : cx + 3, alongZ ? cz + 3 : cz + 1);
 			}
 			if (r.nextInt(4) == 0) {
@@ -1255,7 +1366,13 @@ final class CityDecor {
 			}
 			int cx = alongX ? x0 + s * 3 + 1 : x0 + 1;
 			int cz = alongX ? z0 + 1 : z0 + s * 3 + 1;
-			car(cx, cz, alongX, CAR_COLORS[r.nextInt(CAR_COLORS.length)]);
+			DyeColor color = CAR_COLORS[r.nextInt(CAR_COLORS.length)];
+			if (Cities.weathered) {
+				// 1.50: a bay the player's own game parks a real car on (see client.nation.TownTraffic).
+				force(cx, base, cz, b(alongX ? com.stasdoto.airdefense.street.Weathered.PARKING_Z : com.stasdoto.airdefense.street.Weathered.PARKING_X));
+			} else {
+				car(cx, cz, alongX, color);
+			}
 		}
 		put(alongX ? x0 + w : x0 - 1, base + 1, alongX ? z0 : z0 + h, b(Blocks.IRON_BARS));
 	}

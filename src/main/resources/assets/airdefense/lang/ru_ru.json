@@ -1460,5 +1460,13 @@
   "block.airdefense.trolley_wire": "Троллейбусные провода",
   "block.airdefense.trolley_span": "Поперечная растяжка",
   "block.airdefense.statue": "Бронзовая статуя",
-  "block.airdefense.produce_crate": "Ящик с овощами"
+  "block.airdefense.produce_crate": "Ящик с овощами",
+  "block.airdefense.soot": "Копоть",
+  "subtitles.airdefense.dog_bark": "Лает собака",
+  "subtitles.airdefense.site_hammer": "Стучат на стройке",
+  "subtitles.airdefense.window_radio": "Музыка из окна",
+  "subtitles.airdefense.kids_play": "Играют дети",
+  "subtitles.airdefense.tram_bell": "Звонит трамвай",
+  "subtitles.airdefense.tram_pass": "Проезжает трамвай",
+  "subtitles.airdefense.bus_go": "Отъезжает автобус"
 }

@@ -67,7 +67,9 @@ public class PropRenderer extends EntityRenderer<PropEntity, PropRenderer.State>
 
 	public PropRenderer(EntityRendererProvider.Context context) {
 		super(context);
-		for (String id : IDS) {
+		java.util.List<String> all = new java.util.ArrayList<>(java.util.List.of(IDS));
+		all.addAll(TownTraffic.models());
+		for (String id : all) {
 			models.put(id, new PropModel(GenModels.layer(id).bakeRoot(), GenModels.paths(id)));
 			textures.put(id, AirDefense.id("textures/entity/vehicle/" + id + ".png"));
 		}
@@ -92,7 +94,8 @@ public class PropRenderer extends EntityRenderer<PropEntity, PropRenderer.State>
 
 	@Override
 	protected AABB getBoundingBoxForCulling(PropEntity p, float partialTick) {
-		return p.model.equals("tower_crane") ? p.getBoundingBox().inflate(48, 50, 48) : p.getBoundingBox().inflate(6, 3, 6);
+		return p.model.equals("tower_crane") ? p.getBoundingBox().inflate(48, 50, 48) : p.model.equals("tram") || p.model.contains("bus")
+				? p.getBoundingBox().inflate(9, 8, 9) : p.getBoundingBox().inflate(6, 3, 6);
 	}
 
 	@Override

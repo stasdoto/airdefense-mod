@@ -38,6 +38,7 @@ public final class NationClient {
 		CountryClient.init();
 		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(mc -> {
 			Traffic.tick(mc);
+			TownTraffic.tick(mc);
 			Cranes.tick(mc);
 			Farms.tick(mc);
 			SeasonColors.tick(mc);

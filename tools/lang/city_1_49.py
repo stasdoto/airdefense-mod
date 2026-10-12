@@ -24,6 +24,14 @@ NAMES = {
     'block.airdefense.trolley_span': ('Span wire', 'Поперечная растяжка', 'Поперечна розтяжка'),
     'block.airdefense.statue': ('Bronze statue', 'Бронзовая статуя', 'Бронзова статуя'),
     'block.airdefense.produce_crate': ('Crate of produce', 'Ящик с овощами', 'Ящик з овочами'),
+    'block.airdefense.soot': ('Soot', 'Копоть', 'Кіптява'),
+    'subtitles.airdefense.dog_bark': ('Dog barks', 'Лает собака', 'Гавкає собака'),
+    'subtitles.airdefense.site_hammer': ('Hammering on a building site', 'Стучат на стройке', 'Стукають на будові'),
+    'subtitles.airdefense.window_radio': ('Music from a window', 'Музыка из окна', 'Музика з вікна'),
+    'subtitles.airdefense.kids_play': ('Children playing', 'Играют дети', 'Граються діти'),
+    'subtitles.airdefense.tram_bell': ('Tram bell', 'Звонит трамвай', 'Дзвонить трамвай'),
+    'subtitles.airdefense.tram_pass': ('Tram passes', 'Проезжает трамвай', 'Проїжджає трамвай'),
+    'subtitles.airdefense.bus_go': ('Bus pulls away', 'Отъезжает автобус', 'Від\'їжджає автобус'),
 }
 
 

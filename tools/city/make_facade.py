@@ -147,6 +147,21 @@ def graffiti_tex(k):
     return a
 
 
+def soot_tex(k):
+    """Soot blown up a wall by a blast: black at the heart, ragged and thinning out, more upwards."""
+    r = np.random.default_rng(850 + k)
+    a = np.zeros((16, 16, 4))
+    cx, cy = 7.5 + r.normal(0, 1), 10.5
+    for y in range(16):
+        for x in range(16):
+            d = math.hypot((x - cx) * 1.0, (y - cy) * (0.7 if y < cy else 1.3))
+            v = 1.0 - d / 8.5 + r.normal(0, 0.18)
+            if v > 0.05:
+                a[y, x, :3] = 20 + 30 * (1 - min(1, v))
+                a[y, x, 3] = 255 if v > 0.25 else 0
+    return a
+
+
 def notice_tex(k):
     r = np.random.default_rng(800 + k)
     a = np.zeros((16, 16, 4))
@@ -196,6 +211,8 @@ def make_textures():
         save('shop_sign_%d' % k, sign_tex(k))
     for k in range(6):
         save('graffiti_%d' % k, graffiti_tex(k))
+    for k in range(2):
+        save('soot_%d' % k, soot_tex(k))
     for k in range(3):
         save('notice_%d' % k, notice_tex(k))
         save('laundry_%d' % k, laundry_tex(k))
@@ -334,9 +351,12 @@ def models():
         e = [box((-16, 2, 13.5), (32, 14, 15.5), {'north': 'shop_sign_%d' % k, 'south': 'pipe', 'up': 'pipe', 'down': 'pipe', 'east': 'pipe', 'west': 'pipe'},
                  uv={'north': [0, 2, 16, 14]}),
              box((-12, 7, 15.5), (-11, 9, 16), 'pipe'), box((27, 7, 15.5), (28, 9, 16), 'pipe')]
+        e[0]['light_emission'] = 9
         model('shop_sign_%d' % k, e, gui=0.4, extra_tex={'shop_sign_%d' % k: 'airdefense:block/street/shop_sign_%d' % k})
     for k in range(6):
         model('graffiti_%d' % k, [box((0, 0, 15.9), (16, 16, 15.95), {'north': 'graffiti_%d' % k})], gui=0.8)
+    for k in range(2):
+        model('soot_%d' % k, [box((-4, -4, 15.9), (20, 20, 15.95), {'north': 'soot_%d' % k})], gui=0.6)
     for k in range(3):
         model('notice_%d' % k, [box((0, 0, 15.9), (16, 16, 15.95), {'north': 'notice_%d' % k})], gui=0.8)
         model('laundry_%d' % k, [box((0, 0, 8), (16, 16, 8.05), {'north': 'laundry_%d' % k, 'south': 'laundry_%d' % k}),
@@ -387,7 +407,7 @@ def models():
 
 SIMPLE = ['ac_unit', 'sat_dish', 'drainpipe', 'drainpipe_top', 'drainpipe_bottom', 'flower_box', 'roof_vent', 'tv_aerial', 'dumpster',
           'trolley_wire', 'trolley_span', 'statue']
-KINDS = {'shop_sign': len(SIGNS), 'graffiti': 6, 'notice': 3, 'laundry': 3, 'balcony_junk': 3, 'produce_crate': 4}
+KINDS = {'shop_sign': len(SIGNS), 'graffiti': 6, 'notice': 3, 'laundry': 3, 'balcony_junk': 3, 'produce_crate': 4, 'soot': 2}
 
 
 def blockstates():

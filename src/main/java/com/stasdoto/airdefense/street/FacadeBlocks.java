@@ -45,7 +45,10 @@ public final class FacadeBlocks {
 	public static final Block STATUE = thing("statue", MapColor.COLOR_GREEN, SoundType.METAL, false, 4, 0, 4, 12, 16, 12);
 	public static final Block DUMPSTER = thing("dumpster", MapColor.COLOR_GREEN, SoundType.METAL, false, 1, 0, 1, 15, 14, 15);
 
-	public static final Block SHOP_SIGN = kind("shop_sign", MapColor.METAL, SoundType.METAL, true, 0, 2, 13.5, 16, 14, 16);
+	public static final Block SHOP_SIGN = register("shop_sign", p -> new KindBlock(p, new double[]{0, 2, 13.5, 16, 14, 16}),
+			props(MapColor.METAL, SoundType.METAL, true).lightLevel(st -> 6));
+	/** 1.50: soot blown up a wall by a blast. */
+	public static final Block SOOT = kind("soot", MapColor.COLOR_BLACK, SoundType.WOOL, true, 0, 0, 15.5, 16, 16, 16);
 	public static final Block GRAFFITI = kind("graffiti", MapColor.NONE, SoundType.WOOL, true, 0, 0, 15.5, 16, 16, 16);
 	public static final Block NOTICE = kind("notice", MapColor.NONE, SoundType.WOOL, true, 0, 0, 15.5, 16, 16, 16);
 	public static final Block LAUNDRY = kind("laundry", MapColor.WOOL, SoundType.WOOL, true, 0, 0, 7.5, 16, 16, 8.5);
@@ -59,6 +62,7 @@ public final class FacadeBlocks {
 	public static final int NOTICE_KINDS = 3;
 	public static final int LAUNDRY_KINDS = 3;
 	public static final int JUNK_KINDS = 3;
+	public static final int SOOT_KINDS = 2;
 
 	public static final ResourceKey<CreativeModeTab> TAB_KEY = ResourceKey.create(Registries.CREATIVE_MODE_TAB, AirDefense.id("city"));
 	public static final CreativeModeTab TAB = net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab.builder()

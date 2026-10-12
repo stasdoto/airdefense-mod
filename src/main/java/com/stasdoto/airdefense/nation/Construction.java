@@ -59,6 +59,30 @@ public final class Construction {
 
 	/** The building's blocks as a site: the shell up to part of its height, no windows, rods on top, scaffolding round it. */
 	static List<Blueprints.Placement> shell(Building b, List<Blueprints.Placement> full) {
+		return shell(b, full, Integer.MIN_VALUE);
+	}
+
+	/** The top of the building's design (absolute y), or the origin's height for a low one. */
+	static int top(Building b, List<Blueprints.Placement> full) {
+		int top = b.origin.getY();
+		for (Blueprints.Placement p : full) {
+			if (!p.state().isAir() && p.pos().getY() > b.origin.getY()) {
+				top = Math.max(top, p.pos().getY());
+			}
+		}
+		return top;
+	}
+
+	/** How high the shell stood when the town was built (absolute y). */
+	static int firstCut(Building b, List<Blueprints.Placement> full) {
+		int base = b.origin.getY();
+		int top = top(b, full);
+		double f = 0.35 + Math.floorMod(mix(b.id * 31L + b.origin.asLong()), 35) / 100.0;
+		return base + 3 + (int) ((top - base - 3) * f);
+	}
+
+	/** 1.50: the shell up to {@code cutAt} (absolute y; MIN_VALUE: as it stood when the town was built). */
+	static List<Blueprints.Placement> shell(Building b, List<Blueprints.Placement> full, int cutAt) {
 		int base = b.origin.getY();
 		int top = base;
 		int x0 = Integer.MAX_VALUE;
@@ -78,7 +102,7 @@ public final class Construction {
 			return full;
 		}
 		double f = 0.35 + Math.floorMod(mix(b.id * 31L + b.origin.asLong()), 35) / 100.0;
-		int cut = base + 3 + (int) ((top - base - 3) * f);
+		int cut = cutAt != Integer.MIN_VALUE ? cutAt : base + 3 + (int) ((top - base - 3) * f);
 		int cx = (x0 + x1) / 2;
 		int cz = (z0 + z1) / 2;
 		List<Blueprints.Placement> out = new ArrayList<>(full.size());

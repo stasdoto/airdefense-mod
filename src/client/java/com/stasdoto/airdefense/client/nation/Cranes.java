@@ -80,6 +80,21 @@ public final class Cranes {
 		return CRANES.size();
 	}
 
+	/** 1.50: the foot of the nearest crane within {@code r}, or null (for the hammering on its site). */
+	public static Vec3 nearest(Vec3 me, double r) {
+		Vec3 best = null;
+		double bd = r;
+		for (long l : CRANES.keySet()) {
+			BlockPos p = BlockPos.of(l);
+			double d = Math.hypot(p.getX() + 0.5 - me.x, p.getZ() + 0.5 - me.z);
+			if (d < bd) {
+				bd = d;
+				best = new Vec3(p.getX() + 0.5, p.getY(), p.getZ() + 0.5);
+			}
+		}
+		return best;
+	}
+
 	public static void tick(Minecraft mc) {
 		ClientLevel level = mc.level;
 		if (level != lastLevel) {

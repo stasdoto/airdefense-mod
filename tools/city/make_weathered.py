@@ -332,6 +332,19 @@ def ground_set():
             ps[i, :, :3] *= 0.8
             ps[:, i, :3] *= 0.8
     put('paving_sand', ps)
+    # 1.50: tram rails set in the asphalt (two steel rails, the grooves beside them), a car park's bay.
+    tr = asphalt(r)
+    for x in (3, 12):
+        tr[:, x, :3] = (150, 150, 152)
+        tr[:, x + 1, :3] = (110, 108, 106)
+        tr[:, x - 1, :3] = (36, 36, 38)
+    put('tram_track', tr)
+    pk = asphalt(r)
+    pk[:, 0, :3] = pk[:, 0, :3] * 0.3 + np.array((220, 218, 208)) * 0.7
+    put('parking_x', pk)
+    pz = asphalt(r)
+    pz[0, :, :3] = pz[0, :, :3] * 0.3 + np.array((220, 218, 208)) * 0.7
+    put('parking_z', pz)
     # The tar of a flat roof: black, patched, bubbled, gravel.
     rt = base_layer(r, (52, 50, 50), 4, 0.2)
     for _ in range(20):
@@ -393,7 +406,7 @@ def main():
     write_models_states('sandstone', made, 'minecraft:smooth_sandstone')
     names += ['brick', 'silicate', 'sandstone']
     ground = ground_set()
-    drops = {'asphalt': 'minecraft:gray_concrete', 'road': 'minecraft:white_concrete', 'kerb': 'minecraft:smooth_stone',
+    drops = {'asphalt': 'minecraft:gray_concrete', 'road': 'minecraft:white_concrete', 'kerb': 'minecraft:smooth_stone', 'tram': 'minecraft:gray_concrete', 'parking': 'minecraft:gray_concrete',
              'roof': 'minecraft:gray_concrete'}
     for g in ground:
         os.makedirs(MODELS, exist_ok=True)

@@ -37,21 +37,7 @@ public final class Facades {
 		Building b = p.b;
 		double age = Weathering.age(b);
 		long seed = CityGen.mix(b.origin.asLong() ^ 0xFACADEL);
-		Map<Long, int[]> rows = new HashMap<>();
-		Map<Long, int[]> cols = new HashMap<>();
-		Map<Long, Integer> tops = new HashMap<>();
-		for (Map.Entry<Long, BlockState> e : p.blocks.entrySet()) {
-			if (e.getValue().isAir()) {
-				continue;
-			}
-			long k = e.getKey();
-			int x = BlockPos.getX(k);
-			int y = BlockPos.getY(k);
-			int z = BlockPos.getZ(k);
-			rows.merge(key(y, z), new int[]{x, x}, (a, n) -> new int[]{Math.min(a[0], n[0]), Math.max(a[1], n[1])});
-			cols.merge(key(y, x), new int[]{z, z}, (a, n) -> new int[]{Math.min(a[0], n[0]), Math.max(a[1], n[1])});
-			tops.merge(key(x, z), y, Math::max);
-		}
+		Outline o = new Outline(p.blocks);
 		Set<Long> pairCells = new HashSet<>();
 		for (Map.Entry<Long, Object[]> e : p.pairs.entrySet()) {
 			pairCells.add(e.getKey());
@@ -61,12 +47,12 @@ public final class Facades {
 		boolean housing = isHousing(b.type);
 		// A shop in the ground floor of a block of flats, its sign over the shop windows.
 		if (housing && u(seed, 1) < 0.45) {
-			shopFront(p, b, seed, cols, pairCells, add);
+			shopFront(p, b, seed, o, pairCells, add);
 		}
 		// Drainpipes down the front and back corners.
 		if (u(seed, 2) < 0.8) {
 			for (Blueprints.L side : new Blueprints.L[]{Blueprints.L.FRONT, Blueprints.L.BACK}) {
-				drainpipes(p, side, cols, pairCells, add);
+				drainpipes(p, side, o, pairCells, add);
 			}
 		}
 		for (Map.Entry<Long, BlockState> e : p.blocks.entrySet()) {
@@ -78,7 +64,7 @@ public final class Facades {
 			int x = BlockPos.getX(k);
 			int y = BlockPos.getY(k);
 			int z = BlockPos.getZ(k);
-			Blueprints.L out = outward(x, y, z, rows, cols);
+			Blueprints.L out = o.outward(x, y, z);
 			if (out == null || y < 1) {
 				continue;
 			}
@@ -112,7 +98,7 @@ public final class Facades {
 			}
 		}
 		// The roof: vents, aerials, the lift's housing on the tall blocks.
-		roof(p, b, seed, tops, add);
+		roof(p, b, seed, add);
 		for (Map.Entry<Long, BlockState> e : add.entrySet()) {
 			// (Outside the footprint's box is fine: the plan's own blocks are all placed; the box only says what is cleared.)
 			p.blocks.put(e.getKey(), e.getValue());
@@ -127,7 +113,7 @@ public final class Facades {
 		};
 	}
 
-	private static void shopFront(Blueprints.Plan p, Building b, long seed, Map<Long, int[]> cols, Set<Long> pairCells, Map<Long, BlockState> add) {
+	private static void shopFront(Blueprints.Plan p, Building b, long seed, Outline o, Set<Long> pairCells, Map<Long, BlockState> add) {
 		int run = 0;
 		int start = 0;
 		int z0 = Integer.MIN_VALUE;
@@ -136,10 +122,10 @@ public final class Facades {
 		boolean left = u(seed, 4) < 0.5;
 		for (int i = 0; i <= hi - lo; i++) {
 			int x = left ? lo + i : hi - i;
-			int[] c1 = cols.get(key(1, x));
-			int[] c2 = cols.get(key(2, x));
-			boolean ok = c1 != null && c2 != null && c1[0] == c2[0];
-			int zf = ok ? c1[0] : 0;
+			int c1 = o.colMin(1, x);
+			int c2 = o.colMin(2, x);
+			boolean ok = c1 != Outline.NONE && c1 == c2;
+			int zf = ok ? c1 : 0;
 			if (ok) {
 				ok = (run == 0 || zf == z0) && shopWall(p.blocks.get(BlockPos.asLong(x, 1, zf))) && shopWall(p.blocks.get(BlockPos.asLong(x, 2, zf)))
 						&& !nearDoor(pairCells, x, zf) && free(p, add, pairCells, x, 1, zf - 1) && free(p, add, pairCells, x, 2, zf - 1) && zf <= 1;
@@ -200,13 +186,13 @@ public final class Facades {
 		return false;
 	}
 
-	private static void drainpipes(Blueprints.Plan p, Blueprints.L side, Map<Long, int[]> cols, Set<Long> pairCells, Map<Long, BlockState> add) {
+	private static void drainpipes(Blueprints.Plan p, Blueprints.L side, Outline o, Set<Long> pairCells, Map<Long, BlockState> add) {
 		// The two ends of this face at the ground floor.
 		int xa = Integer.MAX_VALUE;
 		int xb = Integer.MIN_VALUE;
 		for (int x = p.minX; x <= p.maxX; x++) {
-			int[] c = cols.get(key(1, x));
-			if (c != null && wall(p.blocks.get(BlockPos.asLong(x, 1, side == Blueprints.L.FRONT ? c[0] : c[1])))) {
+			int cz = side == Blueprints.L.FRONT ? o.colMin(1, x) : o.colMax(1, x);
+			if (cz != Outline.NONE && wall(p.blocks.get(BlockPos.asLong(x, 1, cz)))) {
 				xa = Math.min(xa, x);
 				xb = Math.max(xb, x);
 			}
@@ -215,8 +201,7 @@ public final class Facades {
 			return;
 		}
 		for (int x : new int[]{xa, xb}) {
-			int[] c = cols.get(key(1, x));
-			int z = side == Blueprints.L.FRONT ? c[0] : c[1];
+			int z = side == Blueprints.L.FRONT ? o.colMin(1, x) : o.colMax(1, x);
 			int oz = z + side.dz;
 			int y = 1;
 			while (wall(p.blocks.get(BlockPos.asLong(x, y, z))) && free(p, add, pairCells, x, y, oz) && y < 80) {
@@ -235,7 +220,7 @@ public final class Facades {
 		}
 	}
 
-	private static void roof(Blueprints.Plan p, Building b, long seed, Map<Long, Integer> tops, Map<Long, BlockState> add) {
+	private static void roof(Blueprints.Plan p, Building b, long seed, Map<Long, BlockState> add) {
 		BlockState tar = Weathered.ROOF_TAR.defaultBlockState();
 		int roofY = Integer.MIN_VALUE;
 		for (Map.Entry<Long, BlockState> e : p.blocks.entrySet()) {
@@ -284,24 +269,6 @@ public final class Facades {
 			add.put(BlockPos.asLong(cx, roofY + 2, cz - 1), Blocks.IRON_BLOCK.defaultBlockState());
 			COUNTS[7]++;
 		}
-	}
-
-	private static Blueprints.L outward(int x, int y, int z, Map<Long, int[]> rows, Map<Long, int[]> cols) {
-		int[] r = rows.get(key(y, z));
-		int[] c = cols.get(key(y, x));
-		if (c != null && c[0] == z) {
-			return Blueprints.L.FRONT;
-		}
-		if (r != null && r[0] == x) {
-			return Blueprints.L.LEFT;
-		}
-		if (r != null && r[1] == x) {
-			return Blueprints.L.RIGHT;
-		}
-		if (c != null && c[1] == z) {
-			return Blueprints.L.BACK;
-		}
-		return null;
 	}
 
 	private static boolean free(Blueprints.Plan p, Map<Long, BlockState> add, Set<Long> pairCells, int x, int y, int z) {
