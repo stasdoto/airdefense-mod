@@ -20,13 +20,13 @@ import com.stasdoto.airdefense.street.Weathered;
  * that look out get dirt splashed up at the bottom, streaks under the windows, here and there a crack or peeled
  * plaster; how much depends on the building's age (a few are new or just done up). Flat roofs are tar.
  */
-final class Weathering {
+public final class Weathering {
 	/** For the tests: walls weathered and how (plain, grime, streak, crack, roof). */
-	static volatile long plain;
-	static volatile long grime;
-	static volatile long streak;
-	static volatile long crack;
-	static volatile long roofs;
+	public static volatile long plain;
+	public static volatile long grime;
+	public static volatile long streak;
+	public static volatile long crack;
+	public static volatile long roofs;
 
 	private Weathering() {
 	}
