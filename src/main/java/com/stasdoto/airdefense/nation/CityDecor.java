@@ -367,7 +367,9 @@ final class CityDecor {
 						flats |= Facades.isHousing(b.type);
 					}
 					if (flats || lot.district != CityShape.OUTER) {
-						if (r3.nextInt(5) < 3) {
+						if (lot.merged() && lot.district != CityShape.OUTER) {
+							alley(v);
+						} else if (r3.nextInt(5) < 3) {
 							desirePath(v);
 						}
 						if ((q = v.rect(4, 2)) != null) {
@@ -464,6 +466,44 @@ final class CityDecor {
 				put(px, base + h, pz, pole(StreetBlocks.POLE_STEEL, h == 1));
 			}
 			kerbPoles.add(BlockPos.asLong(px, 0, pz));
+		}
+	}
+
+	/**
+	 * A lane through a big block between two streets: paved, two blocks wide, lamps and a bench along it (only where
+	 * nothing stands; it stops at a building).
+	 */
+	private void alley(View v) {
+		CityShape.Lot l = v.lot;
+		boolean alongX = l.width() >= l.depth();
+		int mid = alongX ? (l.z0 + l.z1) / 2 : (l.x0 + l.x1) / 2;
+		int from = alongX ? l.x0 - 2 : l.z0 - 2;
+		int to = alongX ? l.x1 + 2 : l.z1 + 2;
+		BlockState paving = b(look() == CityStyle.SOVIET ? com.stasdoto.airdefense.street.Weathered.WALK_ASPHALT
+				: look() == CityStyle.DESERT ? com.stasdoto.airdefense.street.Weathered.PAVING_SAND : com.stasdoto.airdefense.street.Weathered.PAVING_GREY);
+		List<int[]> cells = new ArrayList<>();
+		for (int a = from; a <= to; a++) {
+			for (int k = 0; k <= 1; k++) {
+				int x = alongX ? a : mid + k;
+				int z = alongX ? mid + k : a;
+				int at = v.at(x, z);
+				if (at == BUILDING || at == FRONT && a > from + 2 && a < to - 2) {
+					return;
+				}
+				cells.add(new int[]{x, z});
+			}
+		}
+		for (int[] c : cells) {
+			force(c[0], base, c[1], paving);
+			used.add(BlockPos.asLong(c[0], 0, c[1]));
+		}
+		for (int a = from + 5; a <= to - 5; a += 9) {
+			int x = alongX ? a : mid - 1;
+			int z = alongX ? mid - 1 : a;
+			lamp(x, z, alongX ? Direction.SOUTH : Direction.EAST);
+			int bx = alongX ? a + 3 : mid + 2;
+			int bz = alongX ? mid + 2 : a + 3;
+			put(bx, base + 1, bz, st(bench(), alongX ? Direction.NORTH : Direction.WEST));
 		}
 	}
 
