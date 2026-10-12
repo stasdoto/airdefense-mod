@@ -1,0 +1,1 @@
+{"ambientocclusion": false, "textures": {"pane": "airdefense:block/city/window_5_lit_1", "edge": "airdefense:block/city/window_edge", "particle": "airdefense:block/city/window_5_lit_1"}, "elements": [{"from": [7, 0, 7], "to": [9, 16, 9], "light_emission": 12, "faces": {"south": {"uv": [7, 0, 9, 16], "texture": "#pane"}}}]}

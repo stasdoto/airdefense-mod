@@ -142,7 +142,9 @@ final class SovietStyle {
 					p.set(x1, y0 + 3, -1, slab(Blocks.SMOOTH_STONE_SLAB, false));
 				} else if (r.nextInt(3) == 0) {
 					// Washing on a line.
-					p.set(x0, y0 + 2, -1, StyleKit.wool(r.nextBoolean() ? DyeColor.WHITE : DyeColor.LIGHT_BLUE));
+					p.set(x0, y0 + 2, -1, Cities.weathered
+							? com.stasdoto.airdefense.street.FacadeBlocks.kind(com.stasdoto.airdefense.street.FacadeBlocks.LAUNDRY, r.nextInt(3), p.w(L.FRONT))
+							: StyleKit.wool(r.nextBoolean() ? DyeColor.WHITE : DyeColor.LIGHT_BLUE));
 				}
 				if (r.nextInt(4) == 0) {
 					p.set(x1 + 1, y0 + 2, -1, StyleKit.shutter(p, Blocks.IRON_TRAPDOOR, L.FRONT));

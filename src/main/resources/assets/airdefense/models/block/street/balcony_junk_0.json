@@ -1,0 +1,274 @@
+{
+ "parent": "minecraft:block/block",
+ "ambientocclusion": false,
+ "textures": {
+  "crate": "airdefense:block/street/crate",
+  "jar": "airdefense:block/street/jar",
+  "particle": "airdefense:block/street/crate"
+ },
+ "elements": [
+  {
+   "from": [
+    1,
+    0,
+    6
+   ],
+   "to": [
+    8,
+    6,
+    13
+   ],
+   "faces": {
+    "north": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      7,
+      6
+     ]
+    },
+    "south": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      7,
+      6
+     ]
+    },
+    "east": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      7,
+      6
+     ]
+    },
+    "west": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      7,
+      6
+     ]
+    },
+    "up": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      7,
+      7
+     ]
+    },
+    "down": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      7,
+      7
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    2,
+    6,
+    7
+   ],
+   "to": [
+    7,
+    10,
+    12
+   ],
+   "faces": {
+    "north": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      5,
+      4
+     ]
+    },
+    "south": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      5,
+      4
+     ]
+    },
+    "east": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      5,
+      4
+     ]
+    },
+    "west": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      5,
+      4
+     ]
+    },
+    "up": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      5,
+      5
+     ]
+    },
+    "down": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      5,
+      5
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    9,
+    0,
+    7
+   ],
+   "to": [
+    15,
+    7,
+    7.05
+   ],
+   "faces": {
+    "north": {
+     "texture": "#jar",
+     "uv": [
+      0,
+      0,
+      6,
+      7
+     ]
+    }
+   }
+  }
+ ],
+ "display": {
+  "gui": {
+   "rotation": [
+    30,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0.0,
+    0
+   ],
+   "scale": [
+    0.8,
+    0.8,
+    0.8
+   ]
+  },
+  "ground": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    3,
+    0
+   ],
+   "scale": [
+    0.25,
+    0.25,
+    0.25
+   ]
+  },
+  "fixed": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.6400000000000001,
+    0.6400000000000001,
+    0.6400000000000001
+   ]
+  },
+  "thirdperson_righthand": {
+   "rotation": [
+    75,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    2.5,
+    0
+   ],
+   "scale": [
+    0.48,
+    0.48,
+    0.48
+   ]
+  },
+  "firstperson_righthand": {
+   "rotation": [
+    0,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.512,
+    0.512,
+    0.512
+   ]
+  },
+  "firstperson_lefthand": {
+   "rotation": [
+    0,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.512,
+    0.512,
+    0.512
+   ]
+  }
+ }
+}

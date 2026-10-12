@@ -1441,5 +1441,20 @@
   "item.airdefense.revetment_kit": "Капонір для техніки",
   "item.airdefense.fort_kit.hint": "Правий клік по землі — буде викопано й збудовано там, передом туди, куди ви дивитесь.",
   "message.airdefense.fort.built": "%s готовий(а)",
-  "message.airdefense.fort.no_room": "Тут не збудувати (вода або немає місця)"
+  "message.airdefense.fort.no_room": "Тут не збудувати (вода або немає місця)",
+  "itemGroup.airdefense.city": "Життя міста",
+  "block.airdefense.ac_unit": "Кондиціонер",
+  "block.airdefense.sat_dish": "Супутникова тарілка",
+  "block.airdefense.drainpipe": "Водостічна труба",
+  "block.airdefense.drainpipe_top": "Лійка водостоку",
+  "block.airdefense.drainpipe_bottom": "Коліно водостоку",
+  "block.airdefense.flower_box": "Ящик з квітами",
+  "block.airdefense.roof_vent": "Вентиляція на даху",
+  "block.airdefense.tv_aerial": "Телеантена",
+  "block.airdefense.dumpster": "Сміттєвий контейнер",
+  "block.airdefense.shop_sign": "Вивіска крамниці",
+  "block.airdefense.graffiti": "Графіті",
+  "block.airdefense.notice": "Оголошення",
+  "block.airdefense.laundry": "Білизна на мотузці",
+  "block.airdefense.balcony_junk": "Мотлох на балконі"
 }

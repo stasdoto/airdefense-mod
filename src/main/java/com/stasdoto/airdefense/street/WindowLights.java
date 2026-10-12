@@ -15,6 +15,12 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
  */
 public final class WindowLights {
 	public static final BooleanProperty LIT = BlockStateProperties.LIT;
+	/** 1.49: what hangs in the window (0 bare, 1 tulle, 2 drapes, 3 red, 4 green curtains, 5 blinds; 6 taped, 7 cracked in a war). */
+	public static final net.minecraft.world.level.block.state.properties.IntegerProperty LOOK = net.minecraft.world.level.block.state.properties.IntegerProperty
+			.create("look", 0, 7);
+	/** 1.49: the light of a lit window: a warm lamp, a cold one, a television. */
+	public static final net.minecraft.world.level.block.state.properties.IntegerProperty TONE = net.minecraft.world.level.block.state.properties.IntegerProperty
+			.create("tone", 0, 2);
 	/** How much light a lit window gives (a room's lamp seen from the street). */
 	public static final int LIGHT = 11;
 
@@ -58,6 +64,18 @@ public final class WindowLights {
 		return (h >>> 11) * 0x1.0p-53;
 	}
 
+	/** A flat's curtains (the windows of one flat alike), chosen when the town is built. */
+	public static int look(BlockPos p) {
+		double u = flat(p.offset(7919, 0, 104729));
+		return u < 0.2 ? 0 : u < 0.5 ? 1 : u < 0.68 ? 2 : u < 0.78 ? 3 : u < 0.88 ? 4 : 5;
+	}
+
+	/** A flat's light: mostly warm lamps, some cold, a television here and there. */
+	static int tone(BlockPos p) {
+		double u = flat(p.offset(-31337, 0, 2711));
+		return u < 0.62 ? 0 : u < 0.86 ? 1 : 2;
+	}
+
 	/** Should the window at {@code p} be lit now? */
 	static boolean wanted(ServerLevel level, BlockPos p) {
 		if (flat(p) >= share(level.getOverworldClockTime())) {
@@ -87,7 +105,11 @@ public final class WindowLights {
 	static void tick(BlockState state, ServerLevel level, BlockPos p) {
 		boolean want = wanted(level, p);
 		if (state.getValue(LIT) != want) {
-			level.setBlock(p, state.setValue(LIT, want), Block.UPDATE_CLIENTS);
+			BlockState next = state.setValue(LIT, want);
+			if (want && next.hasProperty(TONE)) {
+				next = next.setValue(TONE, tone(p));
+			}
+			level.setBlock(p, next, Block.UPDATE_CLIENTS);
 		}
 	}
 }

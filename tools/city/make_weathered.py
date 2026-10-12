@@ -159,7 +159,7 @@ def write_png(name, a):
 
 def panel_set(name, rgb):
     r = rng_for(name)
-    faded = np.array(rgb, float) * 0.78 + np.array((150, 148, 142)) * 0.22
+    faded = np.minimum(255, np.array(rgb, float) * 0.86 + np.array((176, 174, 168)) * 0.14 + 6)
     plain = base_layer(r, faded, 3.5, 0.10)
     pits(plain, r, 5)
     b = plain.copy()

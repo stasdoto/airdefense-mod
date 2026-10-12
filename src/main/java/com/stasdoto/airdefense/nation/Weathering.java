@@ -79,7 +79,8 @@ public final class Weathering {
 			int z = BlockPos.getZ(k);
 			double u = (CityGen.mix(seed ^ k) >>> 11) * 0x1.0p-53;
 			// Flat roofs: the top of a column in grey concrete, high up.
-			if (s.getBlock() == Blocks.CONCRETE.pick(DyeColor.GRAY) && y >= 3 && tops.get(key(x, z)) == y) {
+			if (y >= 3 && tops.get(key(x, z)) == y && roofable(s.getBlock()) && tops.getOrDefault(key(x - 1, z), -1) == y
+					&& tops.getOrDefault(key(x + 1, z), -1) == y && tops.getOrDefault(key(x, z - 1), -1) == y && tops.getOrDefault(key(x, z + 1), -1) == y) {
 				e.setValue(Weathered.ROOF_TAR.defaultBlockState());
 				roofs++;
 				continue;
@@ -105,7 +106,7 @@ public final class Weathering {
 				} else if (window(p.blocks.get(BlockPos.asLong(x, y + 1, z))) && v < 0.15 + 0.6 * age) {
 					look = Weathered.Look.STREAK;
 					streak++;
-				} else if (v > 1 - (0.012 + 0.06 * age)) {
+				} else if (v > 1 - (0.004 + 0.022 * age)) {
 					look = Weathered.Look.CRACK;
 					crack++;
 				} else {
@@ -168,6 +169,11 @@ public final class Weathering {
 				return plain;
 			}
 		}
+	}
+
+	/** The flat roofs' concrete (the parapets round them stay as the walls). */
+	private static boolean roofable(Block b) {
+		return b == Blocks.CONCRETE.pick(DyeColor.GRAY) || b == Blocks.CONCRETE.pick(DyeColor.LIGHT_GRAY) || b == Blocks.CONCRETE.pick(DyeColor.WHITE);
 	}
 
 	private static boolean window(BlockState s) {

@@ -1441,5 +1441,20 @@
   "item.airdefense.revetment_kit": "Капонир для техники",
   "item.airdefense.fort_kit.hint": "Правый клик по земле — будет вырыто и построено там, передом туда, куда вы смотрите.",
   "message.airdefense.fort.built": "%s готов(а)",
-  "message.airdefense.fort.no_room": "Здесь не построить (вода или нет места)"
+  "message.airdefense.fort.no_room": "Здесь не построить (вода или нет места)",
+  "itemGroup.airdefense.city": "Жизнь города",
+  "block.airdefense.ac_unit": "Кондиционер",
+  "block.airdefense.sat_dish": "Спутниковая тарелка",
+  "block.airdefense.drainpipe": "Водосточная труба",
+  "block.airdefense.drainpipe_top": "Воронка водостока",
+  "block.airdefense.drainpipe_bottom": "Колено водостока",
+  "block.airdefense.flower_box": "Ящик с цветами",
+  "block.airdefense.roof_vent": "Вентиляция на крыше",
+  "block.airdefense.tv_aerial": "Телеантенна",
+  "block.airdefense.dumpster": "Мусорный контейнер",
+  "block.airdefense.shop_sign": "Вывеска магазина",
+  "block.airdefense.graffiti": "Граффити",
+  "block.airdefense.notice": "Объявления",
+  "block.airdefense.laundry": "Бельё на верёвке",
+  "block.airdefense.balcony_junk": "Хлам на балконе"
 }

@@ -453,10 +453,11 @@ public final class CityGen {
 	}
 
 	/** 1.36: the towns' glass is the kind that lights up at night (same look by day). */
-	static BlockState window(BlockState s) {
+	static BlockState window(BlockState s, BlockPos p) {
 		Block b = s.getBlock();
 		if (b == Blocks.GLASS_PANE) {
 			return com.stasdoto.airdefense.street.StreetBlocks.CITY_WINDOW.defaultBlockState()
+					.setValue(com.stasdoto.airdefense.street.WindowLights.LOOK, Cities.weathered ? com.stasdoto.airdefense.street.WindowLights.look(p) : 0)
 					.setValue(BlockStateProperties.NORTH, s.getValue(BlockStateProperties.NORTH))
 					.setValue(BlockStateProperties.EAST, s.getValue(BlockStateProperties.EAST))
 					.setValue(BlockStateProperties.SOUTH, s.getValue(BlockStateProperties.SOUTH))
@@ -1436,7 +1437,7 @@ public final class CityGen {
 		}
 
 		void set(BlockPos p, BlockState s) {
-			s = window(s);
+			s = window(s, p);
 			if (capture != null) {
 				if (box.isInside(p)) {
 					capture.put(p.asLong(), s);

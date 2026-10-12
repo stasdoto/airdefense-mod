@@ -1,0 +1,224 @@
+{
+ "parent": "minecraft:block/block",
+ "ambientocclusion": false,
+ "textures": {
+  "tyre": "airdefense:block/street/tyre",
+  "crate": "airdefense:block/street/crate",
+  "particle": "airdefense:block/street/tyre"
+ },
+ "elements": [
+  {
+   "from": [
+    1,
+    0,
+    9
+   ],
+   "to": [
+    15,
+    14,
+    10
+   ],
+   "faces": {
+    "north": {
+     "texture": "#tyre",
+     "uv": [
+      0,
+      0,
+      14,
+      14
+     ]
+    },
+    "south": {
+     "texture": "#tyre",
+     "uv": [
+      0,
+      0,
+      14,
+      14
+     ]
+    }
+   },
+   "rotation": {
+    "origin": [
+     8,
+     7,
+     9.5
+    ],
+    "axis": "x",
+    "angle": -22.5
+   }
+  },
+  {
+   "from": [
+    3,
+    0,
+    3
+   ],
+   "to": [
+    9,
+    5,
+    9
+   ],
+   "faces": {
+    "north": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      6,
+      5
+     ]
+    },
+    "south": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      6,
+      5
+     ]
+    },
+    "east": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      6,
+      5
+     ]
+    },
+    "west": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      6,
+      5
+     ]
+    },
+    "up": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      6,
+      6
+     ]
+    },
+    "down": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      6,
+      6
+     ]
+    }
+   }
+  }
+ ],
+ "display": {
+  "gui": {
+   "rotation": [
+    30,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0.0,
+    0
+   ],
+   "scale": [
+    0.8,
+    0.8,
+    0.8
+   ]
+  },
+  "ground": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    3,
+    0
+   ],
+   "scale": [
+    0.25,
+    0.25,
+    0.25
+   ]
+  },
+  "fixed": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.6400000000000001,
+    0.6400000000000001,
+    0.6400000000000001
+   ]
+  },
+  "thirdperson_righthand": {
+   "rotation": [
+    75,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    2.5,
+    0
+   ],
+   "scale": [
+    0.48,
+    0.48,
+    0.48
+   ]
+  },
+  "firstperson_righthand": {
+   "rotation": [
+    0,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.512,
+    0.512,
+    0.512
+   ]
+  },
+  "firstperson_lefthand": {
+   "rotation": [
+    0,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.512,
+    0.512,
+    0.512
+   ]
+  }
+ }
+}

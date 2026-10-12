@@ -1,0 +1,387 @@
+{
+ "parent": "minecraft:block/block",
+ "ambientocclusion": false,
+ "textures": {
+  "ski": "airdefense:block/street/ski",
+  "crate": "airdefense:block/street/crate",
+  "particle": "airdefense:block/street/ski"
+ },
+ "elements": [
+  {
+   "from": [
+    2,
+    0,
+    12
+   ],
+   "to": [
+    3,
+    15,
+    13
+   ],
+   "faces": {
+    "north": {
+     "texture": "#ski",
+     "uv": [
+      0,
+      0,
+      1,
+      15
+     ]
+    },
+    "south": {
+     "texture": "#ski",
+     "uv": [
+      0,
+      0,
+      1,
+      15
+     ]
+    },
+    "east": {
+     "texture": "#ski",
+     "uv": [
+      0,
+      0,
+      1,
+      15
+     ]
+    },
+    "west": {
+     "texture": "#ski",
+     "uv": [
+      0,
+      0,
+      1,
+      15
+     ]
+    },
+    "up": {
+     "texture": "#ski",
+     "uv": [
+      0,
+      0,
+      1,
+      1
+     ]
+    },
+    "down": {
+     "texture": "#ski",
+     "uv": [
+      0,
+      0,
+      1,
+      1
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    4,
+    0,
+    12.5
+   ],
+   "to": [
+    5,
+    15,
+    13.5
+   ],
+   "faces": {
+    "north": {
+     "texture": "#ski",
+     "uv": [
+      0,
+      0,
+      1,
+      15
+     ]
+    },
+    "south": {
+     "texture": "#ski",
+     "uv": [
+      0,
+      0,
+      1,
+      15
+     ]
+    },
+    "east": {
+     "texture": "#ski",
+     "uv": [
+      0,
+      0,
+      1.0,
+      15
+     ]
+    },
+    "west": {
+     "texture": "#ski",
+     "uv": [
+      0,
+      0,
+      1.0,
+      15
+     ]
+    },
+    "up": {
+     "texture": "#ski",
+     "uv": [
+      0,
+      0,
+      1,
+      1.0
+     ]
+    },
+    "down": {
+     "texture": "#ski",
+     "uv": [
+      0,
+      0,
+      1,
+      1.0
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    7,
+    0,
+    6
+   ],
+   "to": [
+    14,
+    4,
+    12
+   ],
+   "faces": {
+    "north": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      7,
+      4
+     ]
+    },
+    "south": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      7,
+      4
+     ]
+    },
+    "east": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      6,
+      4
+     ]
+    },
+    "west": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      6,
+      4
+     ]
+    },
+    "up": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      7,
+      6
+     ]
+    },
+    "down": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      7,
+      6
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    8,
+    4,
+    7
+   ],
+   "to": [
+    13,
+    7,
+    11
+   ],
+   "faces": {
+    "north": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      5,
+      3
+     ]
+    },
+    "south": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      5,
+      3
+     ]
+    },
+    "east": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      4,
+      3
+     ]
+    },
+    "west": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      4,
+      3
+     ]
+    },
+    "up": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      5,
+      4
+     ]
+    },
+    "down": {
+     "texture": "#crate",
+     "uv": [
+      0,
+      0,
+      5,
+      4
+     ]
+    }
+   }
+  }
+ ],
+ "display": {
+  "gui": {
+   "rotation": [
+    30,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0.0,
+    0
+   ],
+   "scale": [
+    0.8,
+    0.8,
+    0.8
+   ]
+  },
+  "ground": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    3,
+    0
+   ],
+   "scale": [
+    0.25,
+    0.25,
+    0.25
+   ]
+  },
+  "fixed": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.6400000000000001,
+    0.6400000000000001,
+    0.6400000000000001
+   ]
+  },
+  "thirdperson_righthand": {
+   "rotation": [
+    75,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    2.5,
+    0
+   ],
+   "scale": [
+    0.48,
+    0.48,
+    0.48
+   ]
+  },
+  "firstperson_righthand": {
+   "rotation": [
+    0,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.512,
+    0.512,
+    0.512
+   ]
+  },
+  "firstperson_lefthand": {
+   "rotation": [
+    0,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.512,
+    0.512,
+    0.512
+   ]
+  }
+ }
+}

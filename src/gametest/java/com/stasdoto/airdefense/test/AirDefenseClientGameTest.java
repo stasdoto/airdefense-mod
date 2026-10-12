@@ -4452,8 +4452,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		long r0 = com.stasdoto.airdefense.nation.Weathering.roofs;
 		for (int k = 0; k < all.length; k++) {
 			var style = all[k];
-			int cellX = 90 + k * 2;
-			int cellZ = 90;
+			int cellX = 140 + k * 2;
+			int cellZ = 140;
 			float[] cap = server.computeOnServer(s -> {
 				ServerLevel l = s.overworld();
 				com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = style;
@@ -4463,6 +4463,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 					return null;
 				}
 				var c = list.getFirst();
+				AirDefense.LOGGER.info("[airdefense-test] RESULT oldtown_city: forced {} got {} kind {} of {} towns", style, c.style, c.kind, list.size());
 				var sh = c.shape();
 				int i = Math.min(sh.gx.length - 2, sh.ci + 1);
 				int j = Math.min(sh.gz.length - 2, sh.cj + 1);
@@ -4509,6 +4510,8 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				com.stasdoto.airdefense.nation.Weathering.plain - w0, com.stasdoto.airdefense.nation.Weathering.grime - g0,
 				com.stasdoto.airdefense.nation.Weathering.streak - s0, com.stasdoto.airdefense.nation.Weathering.crack - k0,
 				com.stasdoto.airdefense.nation.Weathering.roofs - r0);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT oldtown_facades: conditioners, dishes, flower boxes, pipes, shops, graffiti, notices, roof things {}",
+				java.util.Arrays.toString(com.stasdoto.airdefense.nation.Facades.COUNTS));
 	}
 
 	/**
