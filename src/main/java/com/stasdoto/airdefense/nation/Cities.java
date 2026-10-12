@@ -135,6 +135,8 @@ public final class Cities {
 	public static volatile boolean airports = true;
 	/** 1.41: building sites in the towns, with their cranes (worlds started since). */
 	public static volatile boolean growth = true;
+	/** 1.49: towns built of weathered materials, with balconies, signs and clutter of lived-in places (worlds started since). */
+	public static volatile boolean weathered = true;
 	/**
 	 * 1.46: the great cities (worlds started since): each capital is a city of districts 2-2.6 km across - the centre,
 	 * a ring of high-rise housing estates, a ring of mixed districts with industry, the private houses at the edge - and

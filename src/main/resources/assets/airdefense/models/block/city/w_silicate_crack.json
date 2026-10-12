@@ -1,0 +1,1 @@
+{"parent": "minecraft:block/cube", "textures": {"particle": "airdefense:block/city/silicate_a", "north": "airdefense:block/city/silicate_crack", "south": "airdefense:block/city/silicate_a", "east": "airdefense:block/city/silicate_a", "west": "airdefense:block/city/silicate_a", "up": "airdefense:block/city/silicate_a", "down": "airdefense:block/city/silicate_a"}}

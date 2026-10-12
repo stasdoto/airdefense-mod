@@ -756,6 +756,13 @@ public final class CityGen {
 			surface = Math.min(p.dv, p.dh) == Cities.STREET_HALF + 1 ? KERB : WALKWAY;
 		} else {
 			surface = Blocks.GRASS_BLOCK.defaultBlockState();
+			// 1.49: trodden ground at the edge of the pavement.
+			if (Cities.weathered && !p.street && Math.min(p.dv, p.dh) <= Cities.STREET_HALF + CityShape.WALK + 2) {
+				surface = Weathering.street(c, 4, x, z, surface);
+			}
+		}
+		if (Cities.weathered && surface != Blocks.GRASS_BLOCK.defaultBlockState() && surface.getBlock() != Blocks.COARSE_DIRT) {
+			surface = Weathering.street(c, surface == ASPHALT ? 0 : surface == MARK ? 1 : surface == KERB ? 2 : 3, x, z, surface);
 		}
 		shape(w, x, z, c.base, surface, g, pos);
 	}
@@ -1312,7 +1319,16 @@ public final class CityGen {
 				pos.set(b.x(), b.y(), b.z());
 				BlockState cur = w.get(pos);
 				if (b.force() || cur.isAir() || cur.canBeReplaced()) {
-					w.set(pos, b.s());
+					BlockState st = b.s();
+					if (Cities.weathered && b.force() && b.y() == c.base) {
+						// 1.49: car parks and yards in the same worn asphalt as the streets.
+						if (st == ASPHALT) {
+							st = Weathering.street(c, 0, b.x(), b.z(), st);
+						} else if (st == MARK) {
+							st = Weathering.street(c, 1, b.x(), b.z(), st);
+						}
+					}
+					w.set(pos, st);
 				}
 			}
 		}

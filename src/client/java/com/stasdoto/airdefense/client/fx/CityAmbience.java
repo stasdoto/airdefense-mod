@@ -149,7 +149,8 @@ public final class CityAmbience {
 				if (b instanceof com.stasdoto.airdefense.street.StreetBlock || b instanceof com.stasdoto.airdefense.street.StreetPoleBlock
 						|| b instanceof com.stasdoto.airdefense.street.CityWindowBlock || b instanceof com.stasdoto.airdefense.street.CityGlassBlock) {
 					score += 2;
-				} else if (b == ASPHALT || b == net.minecraft.world.level.block.Blocks.POLISHED_ANDESITE) {
+				} else if (b == ASPHALT || b == net.minecraft.world.level.block.Blocks.POLISHED_ANDESITE
+						|| com.stasdoto.airdefense.street.Weathered.ROADWAY.contains(b) || com.stasdoto.airdefense.street.Weathered.WALKWAY.contains(b)) {
 					score++;
 				}
 			}

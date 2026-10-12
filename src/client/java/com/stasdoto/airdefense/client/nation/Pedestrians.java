@@ -202,13 +202,13 @@ public final class Pedestrians {
 	/** Pavement (or a kerb) to stand on at feet height {@code y}. */
 	private static boolean walkable(ClientLevel level, int x, int y, int z) {
 		Block g = level.getBlockState(new BlockPos(x, y - 1, z)).getBlock();
-		return g == WALKWAY || g == KERB;
+		return g == WALKWAY || g == KERB || com.stasdoto.airdefense.street.Weathered.WALKWAY.contains(g);
 	}
 
 	private static boolean road(ClientLevel level, int x, int y, int z) {
 		Block g = level.getBlockState(new BlockPos(x, y - 1, z)).getBlock();
 		Block s = level.getBlockState(new BlockPos(x, y, z)).getBlock();
-		return g == ASPHALT || g == MARK || s == ASPHALT_SLAB || s == MARK_SLAB;
+		return g == ASPHALT || g == MARK || s == ASPHALT_SLAB || s == MARK_SLAB || com.stasdoto.airdefense.street.Weathered.ROADWAY.contains(g);
 	}
 
 	private static boolean feetFree(ClientLevel level, int x, int y, int z) {
@@ -332,7 +332,8 @@ public final class Pedestrians {
 	private static boolean zebraNear(ClientLevel level, int x, int y, int z) {
 		for (int dx = -1; dx <= 1; dx++) {
 			for (int dz = -1; dz <= 1; dz++) {
-				if (level.getBlockState(new BlockPos(x + dx, y - 1, z + dz)).getBlock() == MARK) {
+				Block m = level.getBlockState(new BlockPos(x + dx, y - 1, z + dz)).getBlock();
+				if (m == MARK || m == com.stasdoto.airdefense.street.Weathered.ROAD_MARK || m == com.stasdoto.airdefense.street.Weathered.ROAD_MARK_WORN) {
 					return true;
 				}
 			}
