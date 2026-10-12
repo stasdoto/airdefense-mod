@@ -135,6 +135,8 @@ public final class Cities {
 	public static volatile boolean airports = true;
 	/** 1.41: building sites in the towns, with their cranes (worlds started since). */
 	public static volatile boolean growth = true;
+	/** 1.49: towns built of weathered materials, with balconies, signs and clutter of lived-in places (worlds started since). */
+	public static volatile boolean weathered = true;
 	/**
 	 * 1.46: the great cities (worlds started since): each capital is a city of districts 2-2.6 km across - the centre,
 	 * a ring of high-rise housing estates, a ring of mixed districts with industry, the private houses at the edge - and
@@ -566,7 +568,7 @@ public final class Cities {
 
 	/** The plan's key: the seed and the world's flags (the plan depends on them). */
 	private static long keyOf(long seed) {
-		return (styles ? seed : ~seed) ^ (shapes ? 0L : 0x5EED_F04DL) ^ (metro ? 0x4D45_5452_4FL : 0L);
+		return (styles ? seed : ~seed) ^ (shapes ? 0L : 0x5EED_F04DL) ^ (metro ? 0x4D45_5452_4FL : 0L) ^ (weathered ? 0x0057_4541_5448L : 0L);
 	}
 
 	private static void checkSeed(long seed) {
@@ -1213,8 +1215,32 @@ public final class Cities {
 	private static final Object[] METRO_CENTRE = {BuildingType.TOWER, 5, BuildingType.OFFICE, 4, BuildingType.PANEL9, 2, BuildingType.SHOP, 2};
 	private static final Object[] DESERT_CENTRE = {BuildingType.OFFICE, 4, BuildingType.TOWER, 3, BuildingType.PANEL9, 2, BuildingType.SHOP, 3};
 
+	// 1.49: in the weathered towns the middle districts mix the old with the new: older blocks of flats and the private
+	// houses that were there before the panel blocks went up.
+	private static final Object[] SOVIET_MID_OLD = {BuildingType.PANEL5, 5, BuildingType.PANEL9, 2, BuildingType.APARTMENTS, 2, BuildingType.SHOP, 1,
+			BuildingType.HOUSE, 1, BuildingType.SMALL_HOUSE, 1};
+	private static final Object[] EURO_MID_OLD = {BuildingType.PANEL5, 3, BuildingType.APARTMENTS, 4, BuildingType.PANEL9, 1, BuildingType.SHOP, 2,
+			BuildingType.HOUSE, 1};
+	private static final Object[] US_MID_OLD = {BuildingType.APARTMENTS, 3, BuildingType.PANEL5, 2, BuildingType.SHOP, 3, BuildingType.PANEL9, 1,
+			BuildingType.HOUSE, 2};
+
 	/** 1.46: the mix for a lot of this district, minding what the great city's district is mostly made of. */
 	private static Object[] mix(City c, int district) {
+		if (weathered && district == CityShape.MID && c.kind != KIND_ESTATES) {
+			switch (c.style) {
+				case SOVIET -> {
+					return SOVIET_MID_OLD;
+				}
+				case EUROPEAN -> {
+					return EURO_MID_OLD;
+				}
+				case AMERICAN, CLASSIC -> {
+					return US_MID_OLD;
+				}
+				default -> {
+				}
+			}
+		}
 		if (c.kind == KIND_ESTATES && district != CityShape.OUTER) {
 			return switch (c.style) {
 				case SOVIET -> SOVIET_ESTATES;

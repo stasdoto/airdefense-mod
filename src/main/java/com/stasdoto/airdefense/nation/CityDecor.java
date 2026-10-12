@@ -60,11 +60,16 @@ final class CityDecor {
 
 	/** 1.35: for the new street furniture's own choices (the old {@link #r} keeps its sequence: old towns stay the same). */
 	private final Random r2;
+	/** 1.49: the weathered towns' own choices (trees of many kinds, the yards' clutter, wires). */
+	private final Random r3;
+	/** 1.49: the poles already at the kerb (lamps, signs), so that the trolleybus wires' poles keep off them. */
+	private final Set<Long> kerbPoles = new HashSet<>();
 
 	private CityDecor(Cities.City c) {
 		this.c = c;
 		this.r = new Random(c.seed ^ 0xDEC0L);
 		this.r2 = new Random(c.seed ^ 0x57EE7_F00DL);
+		this.r3 = new Random(c.seed ^ 0x01D_7041L);
 		this.base = c.base;
 	}
 
@@ -81,6 +86,7 @@ final class CityDecor {
 
 	/** A pole of {@code h} blocks from the ground up, with {@code top} (facing {@code f}) on it. */
 	private void onPole(int x, int z, Block pole, int h, Block top, Direction f) {
+		kerbPoles.add(BlockPos.asLong(x, 0, z));
 		for (int y = 1; y <= h; y++) {
 			put(x, base + y, z, pole(pole, y == 1));
 		}
@@ -339,6 +345,213 @@ final class CityDecor {
 			}
 		}
 		manholes(sh);
+		if (Cities.weathered) {
+			extras(sh, buildings);
+		}
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// 1.49 "A town with a past": wires over the main streets, the yards' clutter, a monument, rubbish on the wasteland
+
+	private void extras(CityShape sh, List<Building> buildings) {
+		if (c.size != Cities.Size.SMALL && (look() == CityStyle.SOVIET || look() == CityStyle.EUROPEAN)) {
+			trolleyLines(sh);
+		}
+		for (CityShape.Lot lot : sh.lots) {
+			View v = new View(lot, buildings);
+			int[] q;
+			switch (lot.district) {
+				case CityShape.DOWNTOWN, CityShape.MID, CityShape.OUTER -> {
+					boolean flats = false;
+					for (Building b : v.here) {
+						flats |= Facades.isHousing(b.type);
+					}
+					if (flats || lot.district != CityShape.OUTER) {
+						if (r3.nextInt(5) < 3) {
+							desirePath(v);
+						}
+						if ((q = v.rect(4, 2)) != null) {
+							dumpsters(q[0], q[1]);
+						}
+						if (r3.nextInt(3) > 0 && (q = v.rect(3, 1)) != null) {
+							pullUpBar(q[0], q[1]);
+						}
+						if (r3.nextInt(2) == 0 && (q = v.rect(5, 1)) != null) {
+							washingLine(q[0], q[1]);
+						}
+					}
+				}
+				case CityShape.HALL -> {
+					if ((q = v.rect(3, 3)) != null) {
+						monument(q[0], q[1]);
+					}
+				}
+				case CityShape.VACANT -> {
+					if ((q = v.rect(5, 4)) != null) {
+						rubbish(q[0], q[1]);
+					}
+				}
+				default -> {
+				}
+			}
+		}
+	}
+
+	/** Two wires over each lane of the streets round the centre, span wires across from poles every so often. */
+	private void trolleyLines(CityShape sh) {
+		int edge = Cities.STREET_HALF + CityShape.WALK + 3;
+		int y = base + 7;
+		int[] vk = {sh.ci, sh.ci + 1};
+		int[] hl = {sh.cj, sh.cj + 1};
+		for (int k : vk) {
+			for (int j = 0; j < sh.n; j++) {
+				if (!sh.segV(k, j)) {
+					continue;
+				}
+				int x = sh.gx[k];
+				for (int z = sh.gz[j] + edge; z <= sh.gz[j + 1] - edge; z++) {
+					put(x - 2, y, z, st(com.stasdoto.airdefense.street.FacadeBlocks.TROLLEY_WIRE, Direction.NORTH));
+					put(x + 2, y, z, st(com.stasdoto.airdefense.street.FacadeBlocks.TROLLEY_WIRE, Direction.NORTH));
+					if (Math.floorMod(z - sh.gz[j], 18) == 9) {
+						span(x, z, true, y);
+					}
+				}
+			}
+		}
+		for (int l : hl) {
+			for (int i = 0; i < sh.n; i++) {
+				if (!sh.segH(l, i)) {
+					continue;
+				}
+				int z = sh.gz[l];
+				for (int x = sh.gx[i] + edge; x <= sh.gx[i + 1] - edge; x++) {
+					put(x, y, z - 2, st(com.stasdoto.airdefense.street.FacadeBlocks.TROLLEY_WIRE, Direction.EAST));
+					put(x, y, z + 2, st(com.stasdoto.airdefense.street.FacadeBlocks.TROLLEY_WIRE, Direction.EAST));
+					if (Math.floorMod(x - sh.gx[i], 18) == 9) {
+						span(x, z, false, y);
+					}
+				}
+			}
+		}
+	}
+
+	/** A span wire across the street at {@code (x, z)} (the street runs along z if {@code alongZ}), on poles at the kerbs. */
+	private void span(int x, int z, boolean alongZ, int y) {
+		int kerb = Cities.STREET_HALF + 1;
+		for (int s = -1; s <= 1; s += 2) {
+			int px = alongZ ? x + s * kerb : x;
+			int pz = alongZ ? z : z + s * kerb;
+			for (int d = -1; d <= 1; d++) {
+				if (kerbPoles.contains(BlockPos.asLong(alongZ ? px : px + d, 0, alongZ ? pz + d : pz))) {
+					return;
+				}
+			}
+		}
+		for (int a = -Cities.STREET_HALF; a <= Cities.STREET_HALF; a++) {
+			int wx = alongZ ? x + a : x;
+			int wz = alongZ ? z : z + a;
+			put(wx, y + 1, wz, st(com.stasdoto.airdefense.street.FacadeBlocks.TROLLEY_SPAN, alongZ ? Direction.NORTH : Direction.EAST));
+		}
+		for (int s = -1; s <= 1; s += 2) {
+			int px = alongZ ? x + s * kerb : x;
+			int pz = alongZ ? z : z + s * kerb;
+			for (int h = 1; h <= 8; h++) {
+				put(px, base + h, pz, pole(StreetBlocks.POLE_STEEL, h == 1));
+			}
+			kerbPoles.add(BlockPos.asLong(px, 0, pz));
+		}
+	}
+
+	/** A path trodden across the yard, corner to corner, where people cut through (round whatever stands in the way). */
+	private void desirePath(View v) {
+		CityShape.Lot l = v.lot;
+		boolean flip = r3.nextBoolean();
+		int ax = l.x0;
+		int az = flip ? l.z1 : l.z0;
+		int bx = l.x1;
+		int bz = flip ? l.z0 : l.z1;
+		int n = Math.max(Math.abs(bx - ax), Math.abs(bz - az));
+		double wob = r3.nextDouble() * Math.PI * 2;
+		for (int i = 0; i <= n; i++) {
+			double f = i / (double) n;
+			int x = (int) Math.round(ax + (bx - ax) * f + Math.sin(f * Math.PI * 2 + wob) * 2);
+			int z = (int) Math.round(az + (bz - az) * f);
+			if (v.at(x, z) == FREE && !used.contains(BlockPos.asLong(x, 0, z))) {
+				force(x, base, z, b(r3.nextInt(4) == 0 ? Blocks.COARSE_DIRT : Blocks.DIRT_PATH));
+			}
+		}
+	}
+
+	/** The yard's rubbish containers on their concrete pad, a low wall behind. */
+	private void dumpsters(int x0, int z0) {
+		for (int x = x0; x < x0 + 4; x++) {
+			force(x, base, z0, c(DyeColor.GRAY));
+			force(x, base, z0 + 1, c(DyeColor.GRAY));
+			put(x, base + 1, z0 - 1, b(Blocks.STONE_BRICK_WALL));
+		}
+		int n = 2 + r3.nextInt(2);
+		for (int k = 0; k < n; k++) {
+			put(x0 + k, base + 1, z0, st(com.stasdoto.airdefense.street.FacadeBlocks.DUMPSTER, Direction.SOUTH));
+		}
+		if (r3.nextInt(2) == 0) {
+			put(x0 + 3, base + 1, z0 + 1, st(com.stasdoto.airdefense.street.FacadeBlocks.BALCONY_JUNK, Direction.SOUTH)
+					.setValue(com.stasdoto.airdefense.street.KindBlock.KIND, r3.nextInt(3)));
+		}
+	}
+
+	/** A pull-up bar: two posts, the bar across. */
+	private void pullUpBar(int x0, int z0) {
+		for (int y = 1; y <= 3; y++) {
+			put(x0, base + y, z0, b(Blocks.ANDESITE_WALL));
+			put(x0 + 2, base + y, z0, b(Blocks.ANDESITE_WALL));
+		}
+		put(x0 + 1, base + 3, z0, b(Blocks.IRON_BARS));
+		force(x0 + 1, base, z0, b(Blocks.SAND));
+	}
+
+	/** Posts with the washing hung between them. */
+	private void washingLine(int x0, int z0) {
+		for (int y = 1; y <= 2; y++) {
+			put(x0, base + y, z0, b(Blocks.DARK_OAK_FENCE));
+			put(x0 + 4, base + y, z0, b(Blocks.DARK_OAK_FENCE));
+		}
+		for (int x = x0 + 1; x <= x0 + 3; x++) {
+			put(x, base + 2, z0, st(com.stasdoto.airdefense.street.FacadeBlocks.LAUNDRY, Direction.NORTH)
+					.setValue(com.stasdoto.airdefense.street.KindBlock.KIND, r3.nextInt(3)));
+		}
+	}
+
+	/** A monument on the square: a granite pedestal, a bronze figure, flowers laid at its foot. */
+	private void monument(int x0, int z0) {
+		for (int dx = 0; dx < 3; dx++) {
+			for (int dz = 0; dz < 3; dz++) {
+				put(x0 + dx, base + 1, z0 + dz, b(Blocks.POLISHED_GRANITE));
+			}
+		}
+		put(x0 + 1, base + 2, z0 + 1, b(Blocks.POLISHED_GRANITE));
+		put(x0 + 1, base + 3, z0 + 1, b(Blocks.POLISHED_GRANITE));
+		put(x0 + 1, base + 4, z0 + 1, st(com.stasdoto.airdefense.street.FacadeBlocks.STATUE, Direction.SOUTH));
+		put(x0 + 1, base + 2, z0 + 2, b(Blocks.RED_TULIP));
+		put(x0, base + 2, z0 + 2, b(Blocks.POPPY));
+	}
+
+	/** Rubbish dumped on the wasteland: a heap, old tyres and boxes, a broken container. */
+	private void rubbish(int x0, int z0) {
+		for (int dx = 0; dx < 5; dx++) {
+			for (int dz = 0; dz < 4; dz++) {
+				int k = r3.nextInt(8);
+				if (k < 3) {
+					put(x0 + dx, base + 1, z0 + dz, b(k == 0 ? Blocks.GRAVEL : Blocks.COARSE_DIRT));
+				} else if (k == 3) {
+					put(x0 + dx, base + 1, z0 + dz, st(com.stasdoto.airdefense.street.FacadeBlocks.BALCONY_JUNK, Direction.from2DDataValue(r3.nextInt(4)))
+							.setValue(com.stasdoto.airdefense.street.KindBlock.KIND, r3.nextInt(3)));
+				} else if (k == 4) {
+					put(x0 + dx, base + 1, z0 + dz, b(Blocks.DEAD_BUSH));
+				}
+			}
+		}
+		put(x0 + 2, base + 2, z0 + 1, b(Blocks.COARSE_DIRT));
+		put(x0 + 4, base + 1, z0 + 3, st(com.stasdoto.airdefense.street.FacadeBlocks.DUMPSTER, Direction.WEST));
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -711,7 +924,7 @@ final class CityDecor {
 			BlockState s = (y / 3) % 2 == 0 ? c(DyeColor.RED) : c(DyeColor.WHITE);
 			put(x, base + y, z, s);
 		}
-		put(x, base + h + 1, z, b(Blocks.CAMPFIRE));
+		put(x, base + h + 1, z, Cities.weathered ? b(Blocks.CAMPFIRE).setValue(BlockStateProperties.SIGNAL_FIRE, true) : b(Blocks.CAMPFIRE));
 		put(x + 1, base + h, z, b(Blocks.SEA_LANTERN));
 	}
 
@@ -901,6 +1114,32 @@ final class CityDecor {
 		};
 		BlockState l = leaves.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, true);
 		int h = small ? 3 : 4;
+		// 1.49: the weathered towns' trees are of many kinds and ages: tall poplars, broad old chestnuts and limes, young
+		// saplings, bushes (the old random sequence untouched: these choices are r3's).
+		if (Cities.weathered) {
+			int shape = r3.nextInt(10);
+			if (shape < 2 && !small) {
+				poplar(x, z, l);
+			} else if (shape < 4 && !small) {
+				broadTree(x, z, kind == 0 ? Blocks.BIRCH_LOG : Blocks.DARK_OAK_LOG, kind == 0 ? l
+						: Blocks.DARK_OAK_LEAVES.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, true));
+			} else if (shape == 4) {
+				bush(x, z);
+			} else {
+				h += r3.nextInt(3) - (shape == 5 ? 1 : 0);
+				h = Math.max(2, h);
+			}
+			if (shape < 5 && !small) {
+				flowersRound(x, z);
+				used.add(BlockPos.asLong(x, 0, z));
+				return;
+			}
+			if (shape == 4) {
+				used.add(BlockPos.asLong(x, 0, z));
+				flowersRound(x, z);
+				return;
+			}
+		}
 		for (int y = 1; y <= h; y++) {
 			tree(x, base + y, z, b(log));
 		}
@@ -915,14 +1154,73 @@ final class CityDecor {
 				}
 			}
 		}
-		// A ring of flowers round the trunk.
+		flowersRound(x, z);
+		used.add(BlockPos.asLong(x, 0, z));
+	}
+
+	/** A ring of flowers round the trunk. */
+	private void flowersRound(int x, int z) {
 		Block[] flowers = {Blocks.POPPY, Blocks.DANDELION, Blocks.CORNFLOWER, Blocks.AZURE_BLUET, Blocks.ALLIUM, Blocks.OXEYE_DAISY};
 		for (Direction d : Direction.Plane.HORIZONTAL) {
 			if (r.nextInt(2) == 0) {
 				put(x + d.getStepX(), base + 1, z + d.getStepZ(), b(flowers[r.nextInt(flowers.length)]));
 			}
 		}
-		used.add(BlockPos.asLong(x, 0, z));
+	}
+
+	/** 1.49: a poplar: a tall trunk, a narrow column of leaves. */
+	private void poplar(int x, int z, BlockState leaves) {
+		int h = 7 + r3.nextInt(4);
+		for (int y = 1; y <= h; y++) {
+			tree(x, base + y, z, b(Blocks.BIRCH_LOG));
+		}
+		for (int y = 3; y <= h + 2; y++) {
+			int rr = y <= 4 || y >= h + 1 ? 0 : 1;
+			for (int dx = -rr; dx <= rr; dx++) {
+				for (int dz = -rr; dz <= rr; dz++) {
+					if (!(dx == 0 && dz == 0 && y <= h) && Math.abs(dx) + Math.abs(dz) <= 1 + (y % 3 == 0 ? 1 : 0)) {
+						tree(x + dx, base + y, z + dz, leaves);
+					}
+				}
+			}
+			if (y > h) {
+				tree(x, base + y, z, leaves);
+			}
+		}
+	}
+
+	/** 1.49: an old broad tree (a chestnut, a lime): a thick crown three blocks round. */
+	private void broadTree(int x, int z, Block log, BlockState leaves) {
+		int h = 5 + r3.nextInt(2);
+		for (int y = 1; y <= h; y++) {
+			tree(x, base + y, z, b(log));
+		}
+		// Two branches.
+		Direction d1 = Direction.from2DDataValue(r3.nextInt(4));
+		tree(x + d1.getStepX(), base + h - 1, z + d1.getStepZ(), b(log));
+		for (int y = h - 2; y <= h + 3; y++) {
+			double rad = y == h + 3 ? 1.5 : y == h - 2 ? 2.2 : 3.2;
+			for (int dx = -3; dx <= 3; dx++) {
+				for (int dz = -3; dz <= 3; dz++) {
+					if (dx * dx + dz * dz <= rad * rad && !(dx == 0 && dz == 0 && y <= h) && r3.nextInt(9) > 0) {
+						tree(x + dx, base + y, z + dz, leaves);
+					}
+				}
+			}
+		}
+	}
+
+	/** 1.49: a bush by the pavement. */
+	private void bush(int x, int z) {
+		BlockState l = (r3.nextBoolean() ? Blocks.AZALEA_LEAVES : Blocks.OAK_LEAVES).defaultBlockState().setValue(BlockStateProperties.PERSISTENT, true);
+		for (int dx = -1; dx <= 1; dx++) {
+			for (int dz = -1; dz <= 1; dz++) {
+				if (Math.abs(dx) + Math.abs(dz) <= 1 || r3.nextInt(3) == 0) {
+					tree(x + dx, base + 1, z + dz, l);
+				}
+			}
+		}
+		tree(x, base + 2, z, l);
 	}
 
 	/** A bus stop on the pavement: glass back, roof with a light, a bench, the sign, an advert. */

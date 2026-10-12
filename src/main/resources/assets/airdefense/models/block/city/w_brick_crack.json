@@ -1,0 +1,1 @@
+{"parent": "minecraft:block/cube", "textures": {"particle": "airdefense:block/city/brick_a", "north": "airdefense:block/city/brick_crack", "south": "airdefense:block/city/brick_a", "east": "airdefense:block/city/brick_a", "west": "airdefense:block/city/brick_a", "up": "airdefense:block/city/brick_a", "down": "airdefense:block/city/brick_a"}}

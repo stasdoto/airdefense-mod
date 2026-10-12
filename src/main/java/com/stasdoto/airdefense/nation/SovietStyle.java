@@ -142,10 +142,17 @@ final class SovietStyle {
 					p.set(x1, y0 + 3, -1, slab(Blocks.SMOOTH_STONE_SLAB, false));
 				} else if (r.nextInt(3) == 0) {
 					// Washing on a line.
-					p.set(x0, y0 + 2, -1, StyleKit.wool(r.nextBoolean() ? DyeColor.WHITE : DyeColor.LIGHT_BLUE));
+					p.set(x0, y0 + 2, -1, Cities.weathered
+							? com.stasdoto.airdefense.street.FacadeBlocks.kind(com.stasdoto.airdefense.street.FacadeBlocks.LAUNDRY, r.nextInt(3), p.w(L.FRONT))
+							: StyleKit.wool(r.nextBoolean() ? DyeColor.WHITE : DyeColor.LIGHT_BLUE));
 				}
 				if (r.nextInt(4) == 0) {
 					p.set(x1 + 1, y0 + 2, -1, StyleKit.shutter(p, Blocks.IRON_TRAPDOOR, L.FRONT));
+				}
+				// 1.49: pots of flowers on the open balconies' rails.
+				if (Cities.weathered && kind < 2 && !p.has(x1, y0 + 2, -1) && Math.floorMod(x0 * 31 + y0 * 7 + variant, 3) == 0) {
+					Block[] pots = {Blocks.POTTED_RED_TULIP, Blocks.POTTED_POPPY, Blocks.POTTED_FERN, Blocks.POTTED_DANDELION, Blocks.POTTED_AZURE_BLUET};
+					p.set(x1, y0 + 2, -1, b(pots[Math.floorMod(x0 + y0 + variant, pots.length)]));
 				}
 			}
 		}

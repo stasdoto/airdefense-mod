@@ -51,7 +51,7 @@ public final class Politics extends SavedData {
 	public final int shapes;
 
 	public Politics() {
-		this(List.of(), List.of(), 1, List.of(), 1, 7, List.of());
+		this(List.of(), List.of(), 1, List.of(), 1, 8, List.of());
 	}
 
 	private Politics(List<Country> countries, List<Settlement> settlements, int nextId, List<Integer> pending, int styles, int shapes,

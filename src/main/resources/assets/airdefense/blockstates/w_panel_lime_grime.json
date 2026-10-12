@@ -1,0 +1,1 @@
+{"variants": {"facing=north": {"model": "airdefense:block/city/w_panel_lime_grime"}, "facing=east": {"model": "airdefense:block/city/w_panel_lime_grime", "y": 90}, "facing=south": {"model": "airdefense:block/city/w_panel_lime_grime", "y": 180}, "facing=west": {"model": "airdefense:block/city/w_panel_lime_grime", "y": 270}}}

@@ -1,0 +1,1 @@
+{"parent": "minecraft:block/cube", "textures": {"particle": "airdefense:block/city/panel_red_a", "north": "airdefense:block/city/panel_red_streak", "south": "airdefense:block/city/panel_red_a", "east": "airdefense:block/city/panel_red_a", "west": "airdefense:block/city/panel_red_a", "up": "airdefense:block/city/panel_red_a", "down": "airdefense:block/city/panel_red_a"}}

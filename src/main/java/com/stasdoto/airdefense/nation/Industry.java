@@ -328,7 +328,11 @@ final class Industry {
 						continue;
 					}
 					p.set(front, 1, z, b(Blocks.BARREL));
-					p.set(front, 2, z, b(g[k % g.length]));
+					// 1.49: the food stalls show crates of apples, cabbages, potatoes, tomatoes on the counter.
+					boolean food = (stall + variant) % goods.length != 2 && (stall + variant) % goods.length != 4;
+					p.set(front, 2, z, Cities.weathered && food ? com.stasdoto.airdefense.street.FacadeBlocks.kind(
+							com.stasdoto.airdefense.street.FacadeBlocks.PRODUCE_CRATE, (stall * 2 + k) % 4, p.w(side < 0 ? L.RIGHT : L.LEFT))
+							: b(g[k % g.length]));
 					p.set(back - side, 1, z, b(g[(k + 1) % g.length]));
 				}
 				p.set(front + side, 3, zs + 1, hanging());

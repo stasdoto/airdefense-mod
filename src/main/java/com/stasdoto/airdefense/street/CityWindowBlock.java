@@ -12,13 +12,13 @@ import net.minecraft.world.level.block.state.StateDefinition;
 public class CityWindowBlock extends IronBarsBlock {
 	public CityWindowBlock(Properties p) {
 		super(p);
-		registerDefaultState(defaultBlockState().setValue(WindowLights.LIT, false));
+		registerDefaultState(defaultBlockState().setValue(WindowLights.LIT, false).setValue(WindowLights.LOOK, 0).setValue(WindowLights.TONE, 0));
 	}
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) {
 		super.createBlockStateDefinition(b);
-		b.add(WindowLights.LIT);
+		b.add(WindowLights.LIT, WindowLights.LOOK, WindowLights.TONE);
 	}
 
 	@Override

@@ -690,6 +690,8 @@ public final class Blueprints {
 	/** The design as the builders put it up: the site cleared first (top down), then from the foundation up. */
 	public static List<Placement> placements(Building b, DyeColor flag) {
 		Plan p = design(b, flag);
+		Weathering.apply(p);
+		Facades.dress(p);
 		List<Placement> out = new ArrayList<>();
 		for (int y = p.top + 1; y >= 1; y--) {
 			for (int x = p.minX - 1; x <= p.maxX + 1; x++) {

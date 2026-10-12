@@ -1,0 +1,454 @@
+{
+ "parent": "minecraft:block/block",
+ "ambientocclusion": false,
+ "textures": {
+  "aerial": "airdefense:block/street/aerial",
+  "particle": "airdefense:block/street/aerial"
+ },
+ "elements": [
+  {
+   "from": [
+    7.5,
+    0,
+    7.5
+   ],
+   "to": [
+    8.5,
+    16,
+    8.5
+   ],
+   "faces": {
+    "north": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      1.0,
+      16
+     ]
+    },
+    "south": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      1.0,
+      16
+     ]
+    },
+    "east": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      1.0,
+      16
+     ]
+    },
+    "west": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      1.0,
+      16
+     ]
+    },
+    "up": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      1.0,
+      1.0
+     ]
+    },
+    "down": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      1.0,
+      1.0
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    1,
+    9,
+    7.6
+   ],
+   "to": [
+    15,
+    9.6,
+    8.4
+   ],
+   "faces": {
+    "north": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      14,
+      0.6
+     ]
+    },
+    "south": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      14,
+      0.6
+     ]
+    },
+    "east": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      0.8,
+      0.6
+     ]
+    },
+    "west": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      0.8,
+      0.6
+     ]
+    },
+    "up": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      14,
+      0.8
+     ]
+    },
+    "down": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      14,
+      0.8
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    1,
+    12,
+    7.6
+   ],
+   "to": [
+    15,
+    12.6,
+    8.4
+   ],
+   "faces": {
+    "north": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      14,
+      0.6
+     ]
+    },
+    "south": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      14,
+      0.6
+     ]
+    },
+    "east": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      0.8,
+      0.6
+     ]
+    },
+    "west": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      0.8,
+      0.6
+     ]
+    },
+    "up": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      14,
+      0.8
+     ]
+    },
+    "down": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      14,
+      0.8
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    1,
+    15,
+    7.6
+   ],
+   "to": [
+    15,
+    15.6,
+    8.4
+   ],
+   "faces": {
+    "north": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      14,
+      0.6
+     ]
+    },
+    "south": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      14,
+      0.6
+     ]
+    },
+    "east": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      0.8,
+      0.6
+     ]
+    },
+    "west": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      0.8,
+      0.6
+     ]
+    },
+    "up": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      14,
+      0.8
+     ]
+    },
+    "down": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      14,
+      0.8
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    7.6,
+    13,
+    1
+   ],
+   "to": [
+    8.4,
+    13.6,
+    15
+   ],
+   "faces": {
+    "north": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      0.8,
+      0.6
+     ]
+    },
+    "south": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      0.8,
+      0.6
+     ]
+    },
+    "east": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      14,
+      0.6
+     ]
+    },
+    "west": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      14,
+      0.6
+     ]
+    },
+    "up": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      0.8,
+      14
+     ]
+    },
+    "down": {
+     "texture": "#aerial",
+     "uv": [
+      0,
+      0,
+      0.8,
+      14
+     ]
+    }
+   }
+  }
+ ],
+ "display": {
+  "gui": {
+   "rotation": [
+    30,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0.0,
+    0
+   ],
+   "scale": [
+    0.8,
+    0.8,
+    0.8
+   ]
+  },
+  "ground": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    3,
+    0
+   ],
+   "scale": [
+    0.25,
+    0.25,
+    0.25
+   ]
+  },
+  "fixed": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.6400000000000001,
+    0.6400000000000001,
+    0.6400000000000001
+   ]
+  },
+  "thirdperson_righthand": {
+   "rotation": [
+    75,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    2.5,
+    0
+   ],
+   "scale": [
+    0.48,
+    0.48,
+    0.48
+   ]
+  },
+  "firstperson_righthand": {
+   "rotation": [
+    0,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.512,
+    0.512,
+    0.512
+   ]
+  },
+  "firstperson_lefthand": {
+   "rotation": [
+    0,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.512,
+    0.512,
+    0.512
+   ]
+  }
+ }
+}

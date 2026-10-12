@@ -508,7 +508,8 @@ public final class Economy {
 					}
 				} else {
 					BlockState ground = level.getBlockState(at);
-					if (ground.is(Blocks.CONCRETE.pick(DyeColor.GRAY)) || ground.is(Blocks.CONCRETE.pick(DyeColor.WHITE))) {
+					if (ground.is(Blocks.CONCRETE.pick(DyeColor.GRAY)) || ground.is(Blocks.CONCRETE.pick(DyeColor.WHITE))
+							|| com.stasdoto.airdefense.street.Weathered.isRoad(ground)) {
 						return false;
 					}
 				}

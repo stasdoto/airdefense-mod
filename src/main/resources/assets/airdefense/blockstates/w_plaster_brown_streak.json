@@ -1,0 +1,1 @@
+{"variants": {"facing=north": {"model": "airdefense:block/city/w_plaster_brown_streak"}, "facing=east": {"model": "airdefense:block/city/w_plaster_brown_streak", "y": 90}, "facing=south": {"model": "airdefense:block/city/w_plaster_brown_streak", "y": 180}, "facing=west": {"model": "airdefense:block/city/w_plaster_brown_streak", "y": 270}}}

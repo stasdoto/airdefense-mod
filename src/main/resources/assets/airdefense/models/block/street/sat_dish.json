@@ -1,0 +1,360 @@
+{
+ "parent": "minecraft:block/block",
+ "ambientocclusion": false,
+ "textures": {
+  "pipe": "airdefense:block/street/pipe",
+  "dish": "airdefense:block/street/dish",
+  "particle": "airdefense:block/street/pipe"
+ },
+ "elements": [
+  {
+   "from": [
+    7,
+    3,
+    12
+   ],
+   "to": [
+    9,
+    5,
+    16
+   ],
+   "faces": {
+    "north": {
+     "texture": "#pipe",
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ]
+    },
+    "south": {
+     "texture": "#pipe",
+     "uv": [
+      0,
+      0,
+      2,
+      2
+     ]
+    },
+    "east": {
+     "texture": "#pipe",
+     "uv": [
+      0,
+      0,
+      4,
+      2
+     ]
+    },
+    "west": {
+     "texture": "#pipe",
+     "uv": [
+      0,
+      0,
+      4,
+      2
+     ]
+    },
+    "up": {
+     "texture": "#pipe",
+     "uv": [
+      0,
+      0,
+      2,
+      4
+     ]
+    },
+    "down": {
+     "texture": "#pipe",
+     "uv": [
+      0,
+      0,
+      2,
+      4
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    7.5,
+    3.5,
+    6
+   ],
+   "to": [
+    8.5,
+    4.5,
+    12
+   ],
+   "faces": {
+    "north": {
+     "texture": "#pipe",
+     "uv": [
+      0,
+      0,
+      1.0,
+      1.0
+     ]
+    },
+    "south": {
+     "texture": "#pipe",
+     "uv": [
+      0,
+      0,
+      1.0,
+      1.0
+     ]
+    },
+    "east": {
+     "texture": "#pipe",
+     "uv": [
+      0,
+      0,
+      6,
+      1.0
+     ]
+    },
+    "west": {
+     "texture": "#pipe",
+     "uv": [
+      0,
+      0,
+      6,
+      1.0
+     ]
+    },
+    "up": {
+     "texture": "#pipe",
+     "uv": [
+      0,
+      0,
+      1.0,
+      6
+     ]
+    },
+    "down": {
+     "texture": "#pipe",
+     "uv": [
+      0,
+      0,
+      1.0,
+      6
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    2,
+    2,
+    4
+   ],
+   "to": [
+    14,
+    14,
+    5
+   ],
+   "faces": {
+    "north": {
+     "texture": "#dish",
+     "uv": [
+      0,
+      0,
+      12,
+      12
+     ]
+    },
+    "south": {
+     "texture": "#dish",
+     "uv": [
+      0,
+      0,
+      12,
+      12
+     ]
+    }
+   },
+   "rotation": {
+    "origin": [
+     8,
+     8,
+     4.5
+    ],
+    "axis": "x",
+    "angle": -22.5
+   }
+  },
+  {
+   "from": [
+    7.5,
+    7.5,
+    0
+   ],
+   "to": [
+    8.5,
+    8.5,
+    4
+   ],
+   "faces": {
+    "north": {
+     "texture": "#pipe",
+     "uv": [
+      0,
+      0,
+      1.0,
+      1.0
+     ]
+    },
+    "south": {
+     "texture": "#pipe",
+     "uv": [
+      0,
+      0,
+      1.0,
+      1.0
+     ]
+    },
+    "east": {
+     "texture": "#pipe",
+     "uv": [
+      0,
+      0,
+      4,
+      1.0
+     ]
+    },
+    "west": {
+     "texture": "#pipe",
+     "uv": [
+      0,
+      0,
+      4,
+      1.0
+     ]
+    },
+    "up": {
+     "texture": "#pipe",
+     "uv": [
+      0,
+      0,
+      1.0,
+      4
+     ]
+    },
+    "down": {
+     "texture": "#pipe",
+     "uv": [
+      0,
+      0,
+      1.0,
+      4
+     ]
+    }
+   }
+  }
+ ],
+ "display": {
+  "gui": {
+   "rotation": [
+    30,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0.0,
+    0
+   ],
+   "scale": [
+    0.8,
+    0.8,
+    0.8
+   ]
+  },
+  "ground": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    3,
+    0
+   ],
+   "scale": [
+    0.25,
+    0.25,
+    0.25
+   ]
+  },
+  "fixed": {
+   "rotation": [
+    0,
+    0,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.6400000000000001,
+    0.6400000000000001,
+    0.6400000000000001
+   ]
+  },
+  "thirdperson_righthand": {
+   "rotation": [
+    75,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    2.5,
+    0
+   ],
+   "scale": [
+    0.48,
+    0.48,
+    0.48
+   ]
+  },
+  "firstperson_righthand": {
+   "rotation": [
+    0,
+    45,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.512,
+    0.512,
+    0.512
+   ]
+  },
+  "firstperson_lefthand": {
+   "rotation": [
+    0,
+    225,
+    0
+   ],
+   "translation": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.512,
+    0.512,
+    0.512
+   ]
+  }
+ }
+}

@@ -218,6 +218,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("styles")) {
 				styles(ctx, server);
 			}
+			if (scene("oldtown")) {
+				oldTown(ctx, server);
+			}
 			if (scene("port")) {
 				port(ctx, server);
 			}
@@ -4428,6 +4431,96 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			}
 		}
 		AirDefense.LOGGER.info("[airdefense-test] RESULT styles: {}", report);
+	}
+
+	/**
+	 * 1.49 "A town with a past": a town of each style built of the weathered materials, looked at from the street - its
+	 * facades close by, the pavement and the asphalt underfoot, a yard, the roofs.
+	 */
+	private void oldTown(ClientGameTestContext ctx, TestServerContext server) {
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 5000");
+		server.runCommand("difficulty peaceful");
+		language(ctx, "ru_ru");
+		com.stasdoto.airdefense.nation.CityStyle[] all = {com.stasdoto.airdefense.nation.CityStyle.SOVIET,
+				com.stasdoto.airdefense.nation.CityStyle.EUROPEAN, com.stasdoto.airdefense.nation.CityStyle.AMERICAN,
+				com.stasdoto.airdefense.nation.CityStyle.DESERT};
+		long w0 = com.stasdoto.airdefense.nation.Weathering.plain;
+		long g0 = com.stasdoto.airdefense.nation.Weathering.grime;
+		long s0 = com.stasdoto.airdefense.nation.Weathering.streak;
+		long k0 = com.stasdoto.airdefense.nation.Weathering.crack;
+		long r0 = com.stasdoto.airdefense.nation.Weathering.roofs;
+		// Every town planned with its style first (building one plans its neighbours' cells for the roads).
+		server.runOnServer(s -> {
+			ServerLevel l = s.overworld();
+			for (int k = 0; k < all.length; k++) {
+				com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = all[k];
+				com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), com.stasdoto.airdefense.nation.Cities.terrain(l), 140 + k * 2, 140);
+			}
+			com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = null;
+		});
+		for (int k = 0; k < all.length; k++) {
+			var style = all[k];
+			int cellX = 140 + k * 2;
+			int cellZ = 140;
+			float[] cap = server.computeOnServer(s -> {
+				ServerLevel l = s.overworld();
+				com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = style;
+				var list = com.stasdoto.airdefense.nation.Cities.cities(l.getSeed(), com.stasdoto.airdefense.nation.Cities.terrain(l), cellX, cellZ);
+				com.stasdoto.airdefense.nation.Cities.FORCE_STYLE = null;
+				if (list.isEmpty()) {
+					return null;
+				}
+				var c = list.getFirst();
+				AirDefense.LOGGER.info("[airdefense-test] RESULT oldtown_city: forced {} got {} kind {} of {} towns", style, c.style, c.kind, list.size());
+				var sh = c.shape();
+				int i = Math.min(sh.gx.length - 2, sh.ci + 1);
+				int j = Math.min(sh.gz.length - 2, sh.cj + 1);
+				return new float[]{c.x, c.z, c.half(), c.base, sh.gx[i], sh.gz[j], sh.gx[Math.max(0, sh.ci - 1)], sh.gz[Math.max(0, sh.cj - 1)]};
+			});
+			if (cap == null) {
+				continue;
+			}
+			int cx = (int) cap[0];
+			int cz = (int) cap[1];
+			int half = (int) cap[2];
+			int base = (int) cap[3];
+			float sx = cap[4];
+			float sz = cap[5];
+			camera(server, cx + 0.5, base + 80, cz + half + 80, 180, 35);
+			ctx.waitTicks(40);
+			int m = half + 12;
+			generateCity(server, cx - m, cz - m, cx + m, cz + m);
+			ctx.waitTicks(100);
+			ctx.runOnClient(mc -> mc.gui.hud.getChat().clearMessages(false));
+			String tag = "ot" + k + "_" + style.name().toLowerCase(java.util.Locale.ROOT);
+			shot(ctx, server, new float[]{cx + half * 0.5f, base + 28, cz + half * 0.4f, 150, 24}, tag + "_aerial_low", 60);
+			// Down a street at eye height (on the pavement), and across it.
+			shot(ctx, server, new float[]{sx + 5.5f, base + 1.7f, sz - 2.5f, 180, 3}, tag + "_street", 40);
+			shot(ctx, server, new float[]{sx + 0.5f, base + 2.2f, sz + 12.5f, 160, 6}, tag + "_street_b", 30);
+			// What is underfoot.
+			shot(ctx, server, new float[]{sx + 0.5f, base + 2.6f, sz + 20.5f, 90, 55}, tag + "_ground", 20);
+			com.stasdoto.airdefense.nation.BuildingType[] types = {com.stasdoto.airdefense.nation.BuildingType.PANEL5,
+					com.stasdoto.airdefense.nation.BuildingType.PANEL9, com.stasdoto.airdefense.nation.BuildingType.APARTMENTS,
+					com.stasdoto.airdefense.nation.BuildingType.SHOP, com.stasdoto.airdefense.nation.BuildingType.HOUSE};
+			int n = 0;
+			for (var t : types) {
+				float[] cam = facingIn(server, cellX, cellZ, t, 0, 8, 2.2, 4);
+				if (cam != null && n < 3) {
+					shot(ctx, server, cam, tag + "_facade_" + t.id, 25);
+					n++;
+				}
+			}
+			// A yard from a balcony's height, and the roofs.
+			shot(ctx, server, new float[]{cap[6] + 6.5f, base + 11, cap[7] + 6.5f, 135, 40}, tag + "_yard", 25);
+			shot(ctx, server, new float[]{cx + 0.5f, base + 50, cz + 0.5f, 0, 70}, tag + "_roofs", 25);
+		}
+		AirDefense.LOGGER.info("[airdefense-test] RESULT oldtown_weathering: plain {}, grime {}, streaks {}, cracks {}, tar roofs {}",
+				com.stasdoto.airdefense.nation.Weathering.plain - w0, com.stasdoto.airdefense.nation.Weathering.grime - g0,
+				com.stasdoto.airdefense.nation.Weathering.streak - s0, com.stasdoto.airdefense.nation.Weathering.crack - k0,
+				com.stasdoto.airdefense.nation.Weathering.roofs - r0);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT oldtown_facades: conditioners, dishes, flower boxes, pipes, shops, graffiti, notices, roof things {}",
+				java.util.Arrays.toString(com.stasdoto.airdefense.nation.Facades.COUNTS));
 	}
 
 	/**
