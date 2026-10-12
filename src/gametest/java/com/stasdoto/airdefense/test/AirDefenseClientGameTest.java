@@ -4644,8 +4644,11 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (seen[i] == Integer.MIN_VALUE) {
 				continue;
 			}
-			look(server, seen[i] + 7.5, base + 3.5, seen[i + 2] + 7.5, seen[i] + 0.5, base + 1.2, seen[i + 2] + 0.5);
+			// Looking away first (nobody appears in front of the eyes), then at the place.
+			look(server, seen[i] + 7.5, base + 5, seen[i + 2] + 7.5, seen[i] + 20.5, base + 5, seen[i + 2] + 20.5);
 			ctx.waitTicks(240);
+			look(server, seen[i] + 7.5, base + 5, seen[i + 2] + 7.5, seen[i] + 0.5, base + 1.2, seen[i + 2] + 0.5);
+			ctx.waitTicks(20);
 			ctx.takeScreenshot(names[k]);
 		}
 		AirDefense.LOGGER.info("[airdefense-test] RESULT livetown_people: sat, waited, played, stood, dogs, boarded {}; about now {}",
@@ -4735,14 +4738,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				}
 			}
 			int[] w = findNear(l, tramX + 8, midZ, 40, base + 3, base + 6, st -> st.is(com.stasdoto.airdefense.street.StreetBlocks.CITY_WINDOW));
-			if (w != null) {
-				// The facade facing the tram street: the window's own air side towards the street.
-				for (int k = w[0] - 1; k >= tramX; k--) {
-					if (!l.getBlockState(new BlockPos(k, w[1], w[2])).isAir()) {
-						w = null;
-						break;
-					}
-				}
+			if (w != null && !(l.getBlockState(new BlockPos(w[0] - 1, w[1], w[2])).isAir() && l.getBlockState(new BlockPos(w[0] - 2, w[1], w[2])).isAir())) {
+				// The facade facing the tram street: the window's open side towards the street.
+				w = findNear(l, tramX + 8, midZ + 20, 40, base + 3, base + 6, st -> st.is(com.stasdoto.airdefense.street.StreetBlocks.CITY_WINDOW));
 			}
 			if (w != null) {
 				var at = new net.minecraft.world.phys.Vec3(w[0] - 2.5, w[1] - 2, w[2] + 0.5);
