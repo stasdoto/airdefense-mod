@@ -260,6 +260,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("people")) {
 				people(ctx, server);
 			}
+			if (scene("meshcar")) {
+				meshCar(ctx, server);
+			}
 			if (scene("services")) {
 				services(ctx, server);
 			}
@@ -8281,6 +8284,154 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	private static void selectSlot(ClientGameTestContext ctx, int slot) {
 		ctx.getInput().pressKey(options -> options.keyHotbarSlots[slot]);
 		ctx.waitTicks(3);
+	}
+
+	// --- 2.0: meshes ---------------------------------------------------------------------------------
+
+	/** A camera at (x, y, z) (feet) looking at a point (yaw, pitch from the eye). */
+	private static float[] lookEye(double x, double y, double z, double tx, double ty, double tz) {
+		double dx = tx - x;
+		double dz = tz - z;
+		double dy = ty - (y + 1.62);
+		float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+		float pitch = (float) -Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)));
+		return new float[]{(float) x, (float) y, (float) z, yaw, pitch};
+	}
+
+	private static final int MESH_PROP_ID = -7_300_000;
+
+	/** Puts a prop (a town car) down on the client only, as the town traffic does. */
+	private static int meshProp(ClientGameTestContext ctx, int n, String model, double x, double y, double z, double yaw) {
+		int id = MESH_PROP_ID - n;
+		ctx.runOnClient(mc -> {
+			var p = new com.stasdoto.airdefense.nation.PropEntity(com.stasdoto.airdefense.registry.ModEntities.PROP, mc.level);
+			p.setId(id);
+			p.model = model;
+			p.move(x, y, z, yaw, 0);
+			p.poseO = p.pose;
+			p.wheelRoll = 0;
+			p.wheelRollO = 0;
+			p.steerVis = 0;
+			p.steerVisO = 0;
+			p.setOldPosAndRot();
+			mc.level.addEntity(p);
+		});
+		return id;
+	}
+
+	private static void removeMeshProps(ClientGameTestContext ctx, int count) {
+		ctx.runOnClient(mc -> {
+			for (int i = 0; i < count; i++) {
+				var e = mc.level.getEntity(MESH_PROP_ID - i);
+				if (e != null) {
+					mc.level.removeEntity(e.getId(), Entity.RemovalReason.DISCARDED);
+				}
+			}
+		});
+	}
+
+	/** Average frames per second over {@code ticks}, and the mean frame time (ms). */
+	private static float[] frameRate(ClientGameTestContext ctx, int ticks) {
+		float fps = 0;
+		double ft = 0;
+		int n = 0;
+		ctx.waitTicks(25);
+		for (int i = 0; i < ticks; i++) {
+			ctx.waitTick();
+			if (i % 5 == 0) {
+				fps += ctx.computeOnClient(mc -> mc.getFps());
+				ft += ctx.computeOnClient(mc -> mc.getFrameTimeNs()) / 1e6;
+				n++;
+			}
+		}
+		return new float[]{fps / n, (float) (ft / n)};
+	}
+
+	/**
+	 * 2.0: the test car's baked mesh (car_saloon) drawn as a town car prop and as a vehicle (the police car drawn with it):
+	 * from the front, side, back and above, the eight paints, wheels turned and rolled, at night, far away; and the frame
+	 * rate of thirty of them against the box models.
+	 */
+	private void meshCar(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 175000;
+		int g = ground;
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 6000");
+		server.runCommand("weather clear");
+		camera(server, x + 0.5, g + 2, -8, 0, 10);
+		ctx.waitTicks(80);
+		var mesh = ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.vehicle.MeshLoader.get("car_saloon"));
+		AirDefense.LOGGER.info("[airdefense-test] RESULT meshcar: car_saloon mesh {} ({} parts, {} vertices, {} quads, texture {}x{})",
+				mesh != null ? "loaded" : "MISSING", mesh != null ? mesh.parts.length : 0, mesh != null ? mesh.vertices : 0,
+				mesh != null ? mesh.quads : 0, mesh != null ? mesh.texWidth : 0, mesh != null ? mesh.texHeight : 0);
+		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.vehicle.MeshLoader.alias("police_car", "car_saloon"));
+		int vid = spawnVehicle(server, VehicleType.POLICE_CAR, x + 8, 0, 0);
+		int n = 0;
+		double cx = x + 0.5;
+		meshProp(ctx, n++, "car_saloon_red", cx, g, 0.5, 0);
+		ctx.waitTicks(20);
+		ctx.runOnClient(mc -> mc.gui.hud.getChat().clearMessages(false));
+		shot(ctx, server, lookEye(cx + 3.5, g, 5.5, cx, g + 0.7, 0.5), "mesh1_front", 20);
+		shot(ctx, server, lookEye(cx - 6, g, 0.5, cx, g + 0.7, 0.5), "mesh2_side", 20);
+		shot(ctx, server, lookEye(cx - 3.5, g, -5, cx, g + 0.7, 0.5), "mesh3_rear", 20);
+		shot(ctx, server, lookEye(cx + 2.5, g + 3.5, 3, cx, g + 0.6, 0.5), "mesh4_above", 20);
+		// The vehicle path (the police car drawn with the test mesh), close by: the cab's inside through the glass.
+		shot(ctx, server, lookEye(x + 8.5 + 3, g + 0.2, 3.5, x + 8.5, g + 1.0, 0.5), "mesh5_vehicle", 30);
+		// Turning: the front wheels steer, the wheels roll (driven round a bend for a second).
+		int mover = meshProp(ctx, n++, "car_saloon_green", cx - 8, g, 0.5, 0);
+		for (int t = 0; t < 24; t++) {
+			int tt = t;
+			ctx.runOnClient(mc -> {
+				if (mc.level.getEntity(mover) instanceof com.stasdoto.airdefense.nation.PropEntity p) {
+					double yaw = -tt * 2.5;
+					double r = Math.toRadians(yaw);
+					p.move(p.pose[0] - Math.sin(r) * 0.12, p.pose[1], p.pose[2] + Math.cos(r) * 0.12, yaw, 0);
+				}
+			});
+			ctx.waitTick();
+		}
+		float[] wheel = ctx.computeOnClient(mc -> mc.level.getEntity(mover) instanceof com.stasdoto.airdefense.nation.PropEntity p
+				? new float[]{p.wheelRoll, p.steerVis} : new float[2]);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT meshcar_turn: wheel roll {} m, steer {} deg", wheel[0], wheel[1]);
+		float[] mpos = ctx.computeOnClient(mc -> mc.level.getEntity(mover) instanceof com.stasdoto.airdefense.nation.PropEntity p
+				? new float[]{(float) p.getX(), (float) p.getZ()} : new float[]{(float) cx - 8, 0.5f});
+		shot(ctx, server, lookEye(mpos[0] + 3.0, g, mpos[1] + 3.5, mpos[0], g + 0.4, mpos[1]), "mesh6_steer", 15);
+		// The eight paints of the tinted car in a row, and a hatchback with no mesh yet (its box model).
+		String[] paints = {"white", "red", "blue", "green", "beige", "cherry", "black", "silver"};
+		for (int i = 0; i < paints.length; i++) {
+			meshProp(ctx, n++, "car_saloon_" + paints[i], cx - 10 + i * 2.6, g, 14.5, 180);
+		}
+		meshProp(ctx, n++, "car_hatch_blue", cx + 12, g, 14.5, 180);
+		shot(ctx, server, lookEye(cx + 1, g + 1.5, 6, cx + 1, g + 0.6, 14.5), "mesh7_paints", 30);
+		// By night.
+		server.runCommand("time set 18000");
+		shot(ctx, server, lookEye(cx + 3.5, g, 5.5, cx, g + 0.7, 0.5), "mesh8_night", 30);
+		server.runCommand("time set 6000");
+		// Far away: 40 and 90 blocks.
+		shot(ctx, server, lookEye(cx + 14, g + 4, -36, cx, g + 0.7, 0.5), "mesh9_far40", 30);
+		shot(ctx, server, lookEye(cx + 30, g + 8, -84, cx, g + 0.7, 0.5), "mesh9_far90", 40);
+		// Thirty town cars together: the frame rate with the meshes and with the box models.
+		for (int i = 0; i < 30; i++) {
+			meshProp(ctx, n++, "car_saloon_" + paints[i % paints.length], cx - 14 + (i % 6) * 5.5, g, 30.5 + (i / 6) * 6.5, i * 37 % 360);
+		}
+		camera(server, cx, g + 5, 16, 0, 22);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("mesh10_thirty");
+		float[] withMesh = frameRate(ctx, 100);
+		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.vehicle.MeshLoader.disable(true));
+		float[] withBoxes = frameRate(ctx, 100);
+		ctx.takeScreenshot("mesh10_thirty_boxes");
+		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.vehicle.MeshLoader.disable(false));
+		AirDefense.LOGGER.info("[airdefense-test] RESULT meshcar_perf: 30 cars with meshes {} fps ({} ms a frame), box models {} fps ({} ms)",
+				withMesh[0], withMesh[1], withBoxes[0], withBoxes[1]);
+		removeMeshProps(ctx, n);
+		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.vehicle.MeshLoader.alias("police_car", null));
+		server.runOnServer(s -> {
+			Entity e = s.overworld().getEntity(vid);
+			if (e != null) {
+				e.discard();
+			}
+		});
 	}
 
 	// --- helpers -----------------------------------------------------------------------------------

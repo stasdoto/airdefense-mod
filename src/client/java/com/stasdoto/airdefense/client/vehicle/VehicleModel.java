@@ -27,6 +27,12 @@ public class VehicleModel extends EntityModel<VehicleRenderState> {
 	private final ModelPart[] railParts;
 	/** The steering wheel in the cab (1.26), turning with the front wheels. */
 	private final ModelPart steeringWheel;
+	/** 2.0: drawn from a baked mesh (its own rolling and steering parts, tint, tracks, near parts), or null for boxes. */
+	private MeshModel mesh;
+	/** The colour a burnt-out vehicle's mesh is drawn in (instead of the box models' _wreck texture). */
+	public static final int WRECK_SHADE = 0xFF2E2A26;
+	/** The paint of a tinted mesh (-1 = white as baked). */
+	public int tint = -1;
 
 	public VehicleModel(ModelPart root, Map<String, String> paths, VehicleGeometry.Geometry g) {
 		// Back faces culled: from the driver's seat you look out through the cab instead of at its inside.
@@ -58,6 +64,22 @@ public class VehicleModel extends EntityModel<VehicleRenderState> {
 		}
 	}
 
+	/** 2.0: one layer of a baked mesh (see {@link MeshModel}), animated like the box model by its parts' names. */
+	public static VehicleModel ofMesh(MeshModel mesh, VehicleGeometry.Geometry g, Function<Identifier, RenderType> renderType) {
+		VehicleModel m = new VehicleModel(mesh.root, mesh.paths, g, renderType);
+		m.mesh = mesh;
+		return m;
+	}
+
+	/** The names of the parts the geometry animates as wheels (the mesh leaves them to the model). */
+	public static java.util.Set<String> wheelNames(VehicleGeometry.Geometry g) {
+		java.util.Set<String> out = new java.util.HashSet<>();
+		for (VehicleGeometry.Wheel w : g.wheels()) {
+			out.add(w.part());
+		}
+		return out;
+	}
+
 	private static ModelPart find(ModelPart root, Map<String, String> paths, String name) {
 		String path = paths.get(name);
 		if (path == null) {
@@ -76,6 +98,15 @@ public class VehicleModel extends EntityModel<VehicleRenderState> {
 	@Override
 	public void setupAnim(VehicleRenderState s) {
 		super.setupAnim(s);
+		if (mesh != null) {
+			MeshState ms = mesh.state;
+			ms.distance = (float) Math.sqrt(s.distanceToCameraSq);
+			ms.shade = s.wreck ? WRECK_SHADE : -1;
+			ms.tint = tint;
+			ms.trackLeft = s.wheelRoll + s.trackTurn;
+			ms.trackRight = s.wheelRoll - s.trackTurn;
+			mesh.animate(s.wheelRoll, s.steer);
+		}
 		for (Wheel w : wheels) {
 			w.part.xRot = -s.wheelRoll / w.radius;
 			if (w.steer) {
