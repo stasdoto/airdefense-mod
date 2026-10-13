@@ -36,6 +36,8 @@ public final class NationClient {
 		Farms.init();
 		// 1.43: choosing the country to play for.
 		CountryClient.init();
+		// 2.0: commanding any country from the map.
+		CommandClient.init();
 		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(mc -> {
 			Traffic.tick(mc);
 			TownTraffic.tick(mc);

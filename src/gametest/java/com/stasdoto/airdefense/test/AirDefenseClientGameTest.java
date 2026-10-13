@@ -263,6 +263,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("services")) {
 				services(ctx, server);
 			}
+			if (scene("commandother")) {
+				commandOther(ctx, server);
+			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
 		}
@@ -3432,6 +3435,193 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	 * 1.32.1: a country of ten villages at war with the player's town: its strikes come in waves (one to three launch
 	 * sites, one warning), not ten villages each on its own.
 	 */
+	/**
+	 * 2.0 "command any country": the player's country with a Gepard put down by hand in its town (it belongs to the
+	 * country now) and a Patriot it was ordered to put up; on the map the player takes command of a foreign country,
+	 * orders it to put up two Iskanders and a Shahed launcher near its border, declares war on his own country in its
+	 * name and strikes his own town. The missiles fly under the foreign flag: his own air defence shoots at them.
+	 */
+	private void commandOther(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 200000;
+		server.runCommand("gamemode creative @a");
+		camera(server, x + 40.5, ground + 30, 60.5, 150, 25);
+		ctx.waitTicks(60);
+		int[] ids = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var mine = com.stasdoto.airdefense.nation.Nations.countryOf(l, p, pl, true);
+			int id = p.newId();
+			BlockPos at = new BlockPos(x, ground, 0);
+			var town = new com.stasdoto.airdefense.nation.Settlement(id, "Родное", at, at.above(2), -1, java.util.Optional.empty(), 0,
+					java.util.Map.of(), List.of(), List.of());
+			p.settlements.put(id, town);
+			town.country = mine.id;
+			int fid = p.newId();
+			BlockPos fat = new BlockPos(x + 1500, ground, 0);
+			var foreign = new com.stasdoto.airdefense.nation.Settlement(fid, "Чужбина", fat, fat.above(2), -1, java.util.Optional.empty(), 0,
+					java.util.Map.of(), List.of(), List.of());
+			p.settlements.put(fid, foreign);
+			var them = com.stasdoto.airdefense.nation.Nations.newWorldCountry(p, fid);
+			foreign.country = them.id;
+			p.setDirty();
+			return new int[]{id, mine.id, fid, them.id};
+		});
+		server.runCommand("clear @a");
+		server.runCommand("item replace entity @a hotbar.0 with airdefense:designator");
+		ctx.waitTicks(5);
+		selectSlot(ctx, 0);
+		ctx.waitTicks(20);
+		// A Gepard put down by hand in the player's own town: it belongs to his country now.
+		int[] gepard = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			VehicleEntity v = VehicleEntity.spawn(l, VehicleType.GEPARD, new Vec3(x + 20.5, ground, 30.5), 90);
+			com.stasdoto.airdefense.nation.Command.claimPlaced(l, pl, v);
+			return new int[]{v.getId(), v.country};
+		});
+		// A Patriot his country is ordered to put up (command mode on his own country, from the server's handler).
+		server.runOnServer(s -> {
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			com.stasdoto.airdefense.nation.Command.handle(pl, new com.stasdoto.airdefense.nation.CommandActionPayload(
+					com.stasdoto.airdefense.nation.CommandActionPayload.TAKE, ids[1], 0, 0, 0, 0));
+			com.stasdoto.airdefense.nation.Command.handle(pl, new com.stasdoto.airdefense.nation.CommandActionPayload(
+					com.stasdoto.airdefense.nation.CommandActionPayload.PLACE, ids[1], VehicleType.PATRIOT.ordinal(), 1, x - 25, 40));
+			com.stasdoto.airdefense.nation.Command.handle(pl, new com.stasdoto.airdefense.nation.CommandActionPayload(
+					com.stasdoto.airdefense.nation.CommandActionPayload.RELEASE, ids[1], 0, 0, 0, 0));
+		});
+		ctx.waitTicks(100);
+		int[] patriot = server.computeOnServer(s -> {
+			for (VehicleEntity v : s.overworld().getEntitiesOfClass(VehicleEntity.class, new net.minecraft.world.phys.AABB(x - 60, ground - 10, -20, x + 10, ground + 20, 90),
+					v -> v.isAlive() && v.getVehicleType() == VehicleType.PATRIOT)) {
+				return new int[]{v.getId(), v.country, v.garrison ? 1 : 0, v.getAmmo()};
+			}
+			return new int[]{-1, -9, 0, 0};
+		});
+		int gepardAmmo0 = server.computeOnServer(s -> s.overworld().getEntity(gepard[0]) instanceof VehicleEntity v ? v.getAmmo() : -1);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT commandother_own: gepard by hand belongs to country {} (own {}), patriot by order: entity {} country {} garrison {} ammo {}",
+				gepard[1], ids[1], patriot[0], patriot[1], patriot[2], patriot[3]);
+		// The map: the foreign town picked on the army tab - the "Command this country" button.
+		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT);
+		ctx.waitForScreen(com.stasdoto.airdefense.client.map.TacticalMapScreen.class);
+		ctx.waitTicks(40);
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				m.setTab(1);
+				m.selectVillage(ids[2]);
+				m.centerOn(x + 750, 0, 5);
+			}
+		});
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("co1_command_button");
+		boolean commandClicked = ctx.tryClickScreenButton("Command this country");
+		int waited = waitUntil(ctx, () -> com.stasdoto.airdefense.client.nation.CommandClient.commanded() == ids[3], 100);
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("co2_command_panel");
+		// War on the player's own country, in its name.
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				m.pickOther(ids[1]);
+				m.pressCommand(4);
+			}
+		});
+		ctx.waitTicks(20);
+		// Launchers near its border: two Iskanders and a Shahed launcher where the map is clicked.
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				m.pressCommand(1);
+				m.pickPoint(x + 1300, 20);
+			}
+		});
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("co3_place_launchers");
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				m.pressCommand(2);
+				m.pickPoint(x + 1310, -20);
+				m.pressCommand(2);
+			}
+		});
+		ctx.waitTicks(10);
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				// The Shahed launcher (next in the list after the Iskander).
+				m.pickPoint(x + 1290, 50);
+				int i = com.stasdoto.airdefense.nation.CommandKit.of(com.stasdoto.airdefense.nation.CommandKit.LAUNCHERS).indexOf(VehicleType.SHAHED);
+				int k = com.stasdoto.airdefense.nation.CommandKit.of(com.stasdoto.airdefense.nation.CommandKit.LAUNCHERS).indexOf(VehicleType.ISKANDER);
+				int size = com.stasdoto.airdefense.nation.CommandKit.of(com.stasdoto.airdefense.nation.CommandKit.LAUNCHERS).size();
+				for (int n = 0; n < Math.floorMod(i - k, Math.max(1, size)); n++) {
+					m.cycleForTest(0, 1);
+				}
+				m.pressCommand(2);
+				m.pressCommand(5);
+			}
+		});
+		ctx.waitTicks(30);
+		// The strike: the player's own town, eight rounds from any launcher.
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				m.pressCommand(3);
+				m.cycleForTest(1, 1);
+				m.pickPoint(x, 0);
+				m.centerOn(x + 650, 0, 5);
+			}
+		});
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("co4_strike_panel");
+		int[] before = counters();
+		int sent0 = com.stasdoto.airdefense.nation.Command.roundsSent;
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				m.pressCommand(3);
+			}
+		});
+		ctx.waitTicks(20);
+		int sent = com.stasdoto.airdefense.nation.Command.roundsSent - sent0;
+		String state = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var them = p.country(ids[3]);
+			var ar = com.stasdoto.airdefense.nation.Arsenals.get(s).arsenals.get(ids[2]);
+			int ordered = 0;
+			if (ar != null) {
+				for (var u : ar.units) {
+					if (u.pos != null) {
+						ordered++;
+					}
+				}
+			}
+			return "at war " + (them != null && them.atWarWith(ids[1])) + ", foreign units ordered " + ordered;
+		});
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		ctx.waitTicks(5);
+		// Watch the sky over the town.
+		look(server, x - 60, ground + 12, 70, x + 120, ground + 70, 0);
+		ctx.waitTicks(120);
+		ctx.takeScreenshot("co5_sky");
+		ctx.waitTicks(200);
+		ctx.takeScreenshot("co6_sky_later");
+		ctx.waitTicks(500);
+		int[] now = counters();
+		int[] ammo = server.computeOnServer(s -> new int[]{
+				s.overworld().getEntity(patriot[0]) instanceof VehicleEntity v ? v.getAmmo() : -1,
+				s.overworld().getEntity(gepard[0]) instanceof VehicleEntity v ? v.getAmmo() : -1});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT commandother: command button {} (taken after {} ticks), {}, rounds ordered {} | launched={} intercepted={} hits={}"
+						+ " interceptors={} decoys={} | patriot ammo {} -> {}, gepard ammo {} -> {} | orders: taken {} placed {} wars {} claimed {}",
+				commandClicked, waited, state, sent, now[0] - before[0], now[1] - before[1], now[2] - before[2], now[3] - before[3], now[5] - before[5],
+				patriot[3], ammo[0], gepardAmmo0, ammo[1], com.stasdoto.airdefense.nation.Command.taken, com.stasdoto.airdefense.nation.Command.placed,
+				com.stasdoto.airdefense.nation.Command.wars, com.stasdoto.airdefense.nation.Command.claimed);
+		// Back to his own country; peace again.
+		server.runOnServer(s -> {
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			com.stasdoto.airdefense.nation.Command.handle(pl, new com.stasdoto.airdefense.nation.CommandActionPayload(
+					com.stasdoto.airdefense.nation.CommandActionPayload.PEACE, ids[3], ids[1], 0, 0, 0));
+			com.stasdoto.airdefense.nation.Command.handle(pl, new com.stasdoto.airdefense.nation.CommandActionPayload(
+					com.stasdoto.airdefense.nation.CommandActionPayload.RELEASE, ids[3], 0, 0, 0, 0));
+		});
+		server.runCommand("clear @a");
+		server.runCommand("gamemode spectator @a");
+	}
+
 	private void strikeWave(ClientGameTestContext ctx, TestServerContext server) {
 		int x = 140000;
 		server.runCommand("gamemode spectator @a");

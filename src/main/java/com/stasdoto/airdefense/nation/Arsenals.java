@@ -58,6 +58,9 @@ public final class Arsenals extends SavedData {
 		public boolean lost;
 		/** Shots on board while it is only in the books (launchers: missiles on the rails). */
 		public int ammo;
+		/** 2.0: where it was ordered to stand (command mode), or null for its usual place round the town. */
+		@Nullable
+		public BlockPos pos;
 
 		Unit(VehicleType type, @Nullable UUID entity, boolean lost, int ammo) {
 			this.type = type;
@@ -70,8 +73,13 @@ public final class Arsenals extends SavedData {
 				Codec.STRING.fieldOf("type").forGetter(u -> u.type.id),
 				UUIDUtil.CODEC.optionalFieldOf("entity").forGetter(u -> Optional.ofNullable(u.entity)),
 				Codec.BOOL.optionalFieldOf("lost", false).forGetter(u -> u.lost),
-				Codec.INT.optionalFieldOf("ammo", 0).forGetter(u -> u.ammo)
-		).apply(i, (t, e, l, a) -> new Unit(VehicleType.byName(t), e.orElse(null), l, a)));
+				Codec.INT.optionalFieldOf("ammo", 0).forGetter(u -> u.ammo),
+				BlockPos.CODEC.optionalFieldOf("pos").forGetter(u -> Optional.ofNullable(u.pos))
+		).apply(i, (t, e, l, a, at) -> {
+			Unit u = new Unit(VehicleType.byName(t), e.orElse(null), l, a);
+			u.pos = at.orElse(null);
+			return u;
+		}));
 	}
 
 	public static final class Arsenal {
@@ -388,7 +396,7 @@ public final class Arsenals extends SavedData {
 				a.drones(p, s, ar);
 			}
 			boolean near = level.isLoaded(s.center) && level.getNearestPlayer(s.center.getX(), s.center.getY(), s.center.getZ(), 240,
-					pl -> true) != null;
+					pl -> true) != null || placedNear(level, ar);
 			if ((sec + s.id) % 2 == 0 && incoming(level, s)) {
 				ar.alertUntil = now + 600;
 			}
@@ -437,6 +445,17 @@ public final class Arsenals extends SavedData {
 			a.war(level, p);
 			com.stasdoto.airdefense.util.Perf.over("arsenals' war", m0);
 		}
+	}
+
+	/** 2.0: somebody is by one of the town's units ordered to stand somewhere of its own (command mode). */
+	private static boolean placedNear(ServerLevel level, Arsenal ar) {
+		for (Unit u : ar.units) {
+			if (u.pos != null && !u.lost && level.isLoaded(u.pos)
+					&& level.getNearestPlayer(u.pos.getX(), u.pos.getY(), u.pos.getZ(), 200, pl -> true) != null) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Missiles of another side flying at this town (its air defence wakes up for them). */
@@ -615,7 +634,8 @@ public final class Arsenals extends SavedData {
 			if (!near && !u.type.isDefense()) {
 				continue;
 			}
-			BlockPos at = u.type.isShip() || u.type.isCoastal() ? navalSpot(level, s, i, u.type.isShip()) : spot(level, s, i, u.type.isLauncher());
+			BlockPos at = u.pos != null ? u.pos
+					: u.type.isShip() || u.type.isCoastal() ? navalSpot(level, s, i, u.type.isShip()) : spot(level, s, i, u.type.isLauncher());
 			if (at == null) {
 				continue;
 			}
@@ -1212,6 +1232,114 @@ public final class Arsenals extends SavedData {
 		setDirty();
 		tellStrike(level, p, target, from, true, salvo, salvo - hits);
 		AirDefense.LOGGER.info("[airdefense] {} -> {}: {} x{}, {} shot down (out of sight)", from.name, target.name, m, salvo, salvo - hits);
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// 2.0: command mode - the player gives a country's arsenal its orders (see Command)
+
+	/** Most units a town keeps (its own kit and what it was ordered). */
+	public static final int MAX_UNITS = 48;
+
+	/**
+	 * A unit of this kind joins the town's arsenal, to stand at {@code at} (or its usual place round the town when null),
+	 * loaded, with a load of spare missiles in the stores. Where its ground is loaded it rolls out at once.
+	 */
+	@Nullable
+	public VehicleEntity orderUnit(ServerLevel level, Politics p, Settlement s, VehicleType t, @Nullable BlockPos at, boolean free) {
+		Arsenal ar = of(p, s);
+		Unit u = new Unit(t, null, false, t.isLauncher() ? t.strikeLoad() : t.magazine());
+		u.pos = at;
+		ar.units.add(u);
+		MissileType m = missileOf(t);
+		if (m != null) {
+			ar.add(m, t.isLauncher() ? t.strikeLoad() : Math.max(1, t.magazine()));
+		}
+		setDirty();
+		ordered++;
+		if (at == null || !level.isLoaded(at)) {
+			return null;
+		}
+		int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, at.getX(), at.getZ());
+		float yaw = (float) Math.toDegrees(Math.atan2(-(s.center.getX() - at.getX()), s.center.getZ() - at.getZ())) + 180f;
+		VehicleEntity v = VehicleEntity.spawn(level, t, new Vec3(at.getX() + 0.5, y, at.getZ() + 0.5), yaw);
+		v.country = side(s);
+		v.home = s.id;
+		v.garrison = true;
+		v.setUnlimited(free);
+		u.entity = v.getUUID();
+		spawned++;
+		return v;
+	}
+
+	/** For the tests and the command panel: units ordered, rounds sent by order. */
+	public static int ordered;
+	public static int orderedRounds;
+
+	/** Where a unit is now: its vehicle, the place it was ordered to, or its town. */
+	public static Vec3 where(ServerLevel level, Settlement s, Unit u) {
+		VehicleEntity v = entity(level, u);
+		if (v != null) {
+			return v.position();
+		}
+		return Vec3.atBottomCenterOf(u.pos != null ? u.pos : s.center);
+	}
+
+	/**
+	 * The country's launchers (of one kind, or any) fire {@code count} rounds at a point between them, the nearest
+	 * first, each as far as its range allows - through the same strike the country's own war uses (the vehicle itself
+	 * where it stands in the world, else the missiles turn up on their way in, else worked out by chance). In creative
+	 * ({@code free}) they are loaded again first. Returns the rounds sent, or -1 when none of them reaches.
+	 */
+	public int orderStrike(ServerLevel level, Politics p, Country c, @Nullable VehicleType kind, int count, BlockPos aim, boolean free) {
+		Settlement target = p.settlementAt(aim);
+		List<Settlement> towns = new ArrayList<>(p.settlementsOf(c.id));
+		towns.sort(java.util.Comparator.comparingDouble(t -> t.center.distSqr(aim)));
+		int left = count;
+		int sent = 0;
+		boolean reach = false;
+		for (Settlement s : towns) {
+			Arsenal ar = of(p, s);
+			for (Unit u : List.copyOf(ar.units)) {
+				if (left <= 0) {
+					break;
+				}
+				if (u.lost || !u.type.isLauncher() || u.type.isDroneLauncher() || u.type.isShip() || kind != null && u.type != kind) {
+					continue;
+				}
+				Vec3 from = where(level, s, u);
+				double d = Math.sqrt(Mth.square(from.x - aim.getX() - 0.5) + Mth.square(from.z - aim.getZ() - 0.5));
+				if (d > u.type.launcher.maxRange || d < Math.max(VehicleEntity.MIN_STRIKE_DISTANCE, u.type.launcher.minRange)) {
+					continue;
+				}
+				reach = true;
+				VehicleEntity v = entity(level, u);
+				MissileType m = missileOf(u.type);
+				if (free) {
+					u.ammo = u.type.strikeLoad();
+					if (v != null) {
+						v.setUnlimited(true);
+					}
+				} else if (u.ammo == 0 && m != null && ar.stock(m) > 0) {
+					int n = Math.min(u.type.strikeLoad(), ar.stock(m));
+					ar.add(m, -n);
+					u.ammo = n;
+				}
+				int loaded = v != null ? v.loadedRounds() : u.ammo;
+				if (loaded <= 0) {
+					continue;
+				}
+				int n = Math.min(left, loaded);
+				fire(level, p, s, ar, u, v, target, aim, n);
+				left -= n;
+				sent += n;
+				setDirty();
+			}
+			if (left <= 0) {
+				break;
+			}
+		}
+		orderedRounds += sent;
+		return reach ? sent : -1;
 	}
 
 	// ------------------------------------------------------------------------------------------------
