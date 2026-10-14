@@ -391,4 +391,7 @@ def models():
     import m_west
     for k in ('leopard2', 'abrams', 'challenger2'):
         out.append(m_west.west_mbt(B[k], k))
+    import m_ifv
+    for k in ('bmp2', 'bmp3', 'bradley', 'cv90', 'm113'):
+        out.append(m_ifv.ifv(B[k], k))
     return out
