@@ -27,4 +27,8 @@ public class VehicleRenderState extends EntityRenderState {
 	public int variant;
 	/** 2.0: headlights on. */
 	public boolean lights;
+	/** 2.0: its lights - which are on (VehicleLights' bits), how dark it is, the clock the indicators blink by. */
+	public int lamps;
+	public float dark;
+	public long clock;
 }

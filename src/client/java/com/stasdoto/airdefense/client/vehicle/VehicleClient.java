@@ -40,6 +40,9 @@ public final class VehicleClient {
 			new KeyMapping("key.airdefense.lights", InputConstants.KEY_L, CATEGORY));
 	public static final KeyMapping CRUISE = KeyMappingHelper.registerKeyMapping(
 			new KeyMapping("key.airdefense.cruise", InputConstants.KEY_J, CATEGORY));
+	/** 2.0: the mod's settings (traffic, people, model detail, lights, smoke, chase camera). */
+	public static final KeyMapping SETTINGS = KeyMappingHelper.registerKeyMapping(
+			new KeyMapping("key.airdefense.settings", InputConstants.KEY_O, CATEGORY));
 	private static int lastDriven = -1;
 	private static final java.util.Map<Integer, Integer> HORNS = new java.util.HashMap<>();
 	private static java.lang.reflect.Method hornHook;
@@ -88,6 +91,11 @@ public final class VehicleClient {
 			com.stasdoto.airdefense.client.weapon.GunClient.tick(mc);
 		}
 		horns(mc);
+		while (SETTINGS.consumeClick()) {
+			if (mc.screen == null) {
+				mc.setScreen(new com.stasdoto.airdefense.client.ui.SettingsScreen(null));
+			}
+		}
 		if (player != null && !(player.getVehicle() instanceof VehicleEntity)) {
 			takeParkedCar(mc, player);
 		}

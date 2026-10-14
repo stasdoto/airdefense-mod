@@ -41,6 +41,11 @@ public class PropRenderer extends EntityRenderer<PropEntity, PropRenderer.State>
 		int tint = -1;
 		float wheelRoll;
 		float steer;
+		/** 2.0: its lights (VehicleLights' bits), how dark it is, the clock, where its lamps are. */
+		int lamps;
+		float dark;
+		long clock;
+		com.stasdoto.airdefense.client.vehicle.VehicleLights.Lamps spec;
 	}
 
 	/** 2.0: a prop drawn from a baked mesh: one model per layer, sharing the mesh's state. */
@@ -198,6 +203,19 @@ public class PropRenderer extends EntityRenderer<PropEntity, PropRenderer.State>
 		s.wheelRoll = Mth.lerp(partialTick, p.wheelRollO, p.wheelRoll);
 		s.steer = Mth.lerp(partialTick, p.steerVisO, p.steerVis);
 		s.lightCoords = LightCoordsUtil.getLightCoords(p.level(), BlockPos.containing(p.getX(), p.getY() + 2, p.getZ()));
+		s.lamps = 0;
+		if (!s.tall && com.stasdoto.airdefense.client.ClientSettings.vehicleLights()) {
+			s.spec = com.stasdoto.airdefense.client.vehicle.VehicleLights.ofModel(p.model);
+			s.dark = com.stasdoto.airdefense.client.vehicle.VehicleLights.darkness(p.level());
+			s.clock = p.level().getGameTime();
+			s.lamps = TownTraffic.lamps(p, s.dark);
+			if (s.lamps < 0) {
+				// Not the town's traffic (a lorry on the highway, a tractor): lit at dusk while it moves.
+				boolean moving = Math.abs(p.pose[0] - p.poseO[0]) + Math.abs(p.pose[2] - p.poseO[2]) > 0.01;
+				s.lamps = moving && s.dark > 0.2f ? com.stasdoto.airdefense.client.vehicle.VehicleLights.HEAD
+						| com.stasdoto.airdefense.client.vehicle.VehicleLights.TAIL : 0;
+			}
+		}
 	}
 
 	@Override
@@ -230,6 +248,10 @@ public class PropRenderer extends EntityRenderer<PropEntity, PropRenderer.State>
 			poseStack.scale(-1, -1, 1);
 			collector.submitModel(m, s, poseStack, textures.get(s.model), s.lightCoords, OverlayTexture.NO_OVERLAY, s.outlineColor);
 			poseStack.popPose();
+			if (s.lamps != 0 && s.spec != null) {
+				com.stasdoto.airdefense.client.vehicle.VehicleLights.submit(poseStack, collector, camera.orientation, s.distanceToCameraSq, s.yaw, 0,
+						s.spec, s.lamps, s.dark, s.clock);
+			}
 		}
 		super.submit(s, poseStack, collector, camera);
 	}

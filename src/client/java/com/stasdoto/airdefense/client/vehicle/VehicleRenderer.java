@@ -40,6 +40,8 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 	private VehicleModel meshCutout;
 	private VehicleModel meshGlass;
 	private Identifier meshTexture;
+	/** 2.0: where its lamps are. */
+	private final VehicleLights.Lamps lamps;
 	/** Within this distance (blocks) the cab's inside is drawn and the glass is see-through. */
 	private static final double INSIDE_RANGE = 18;
 	/** 2.0: a civilian car's models and paints, by its variant. */
@@ -180,6 +182,7 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 			inside = null;
 			insideTexture = null;
 		}
+		this.lamps = VehicleLights.of(type.geometry);
 		this.shadowRadius = type.geometry.width() * 0.55f;
 		this.shadowStrength = 0.9f;
 	}
@@ -242,6 +245,9 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		s.flash = v.tickCount;
 		s.variant = v.getVariant();
 		s.lights = v.lightsOn() && v.isAlive();
+		s.dark = VehicleLights.darkness(v.level());
+		s.lamps = VehicleFx.flags(v, s.dark);
+		s.clock = v.level().getGameTime();
 	}
 
 	@Override
@@ -284,8 +290,8 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 			if (s.beacons && !s.wreck) {
 				beacons(s, poseStack, collector, camera);
 			}
-			if (s.lights && !s.hidden) {
-				headlights(s, poseStack, collector, camera);
+			if (s.lamps != 0 && !s.wreck) {
+				VehicleLights.submit(poseStack, collector, camera.orientation, s.distanceToCameraSq, s.yaw, s.lift, lamps, s.lamps, s.dark, s.clock);
 			}
 			super.submit(s, poseStack, collector, camera);
 			return;
@@ -317,8 +323,8 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		if (s.beacons && !s.wreck) {
 			beacons(s, poseStack, collector, camera);
 		}
-		if (s.lights && !s.hidden) {
-			headlights(s, poseStack, collector, camera);
+		if (s.lamps != 0 && !s.wreck) {
+			VehicleLights.submit(poseStack, collector, camera.orientation, s.distanceToCameraSq, s.yaw, s.lift, lamps, s.lamps, s.dark, s.clock);
 		}
 		super.submit(s, poseStack, collector, camera);
 	}

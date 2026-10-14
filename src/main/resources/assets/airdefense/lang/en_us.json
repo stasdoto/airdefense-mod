@@ -1566,5 +1566,6 @@
   "hud.airdefense.drive.lights_on": "Headlights on",
   "hud.airdefense.drive.lights_off": "Headlights off",
   "hud.airdefense.drive.cruise_on": "Cruise control on",
-  "hud.airdefense.drive.cruise_off": "Cruise control off"
+  "hud.airdefense.drive.cruise_off": "Cruise control off",
+  "key.airdefense.settings": "Mod settings"
 }

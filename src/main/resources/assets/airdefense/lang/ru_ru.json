@@ -1566,5 +1566,6 @@
   "hud.airdefense.drive.lights_on": "Фары включены",
   "hud.airdefense.drive.lights_off": "Фары выключены",
   "hud.airdefense.drive.cruise_on": "Круиз-контроль включён",
-  "hud.airdefense.drive.cruise_off": "Круиз-контроль выключен"
+  "hud.airdefense.drive.cruise_off": "Круиз-контроль выключен",
+  "key.airdefense.settings": "Настройки мода"
 }

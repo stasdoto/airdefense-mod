@@ -272,6 +272,16 @@ public class VehicleEntity extends LivingEntity {
 	}
 
 	// ------------------------------------------------------------------------------------------------
+	// 2.0 extras: what the client's lights and damage effects read (see client.vehicle.VehicleLights, VehicleFx).
+	// TODO(2.0 physics): replace with the driving model's own light switch, brake and throttle state when it lands.
+
+	/** Set by the client each tick from how its speed changes (where no driving model says so). */
+	public boolean brakingSeen;
+
+	/** 2.0: the client's per-tick effects of a vehicle (lights, damage smoke, the burning wreck); set by the client. */
+	public static java.util.function.Consumer<VehicleEntity> clientFx;
+
+	// ------------------------------------------------------------------------------------------------
 	// 1.38: the towns' emergency services on a call (see nation.Services)
 
 	/** The call: 1 a fire, 2 the injured, 3 the police (to a blast, or a patrol when {@link #serviceAt} is null). */
@@ -3827,6 +3837,9 @@ public class VehicleEntity extends LivingEntity {
 		updateTilt();
 		if (!isAlive()) {
 			wreckEffects();
+		}
+		if (clientFx != null) {
+			clientFx.accept(this);
 		}
 	}
 
