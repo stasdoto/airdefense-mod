@@ -397,12 +397,12 @@ def models():
     jobs += [(k, (lambda k=k: m_wheeled.wheeled(B[k], k))) for k in ('btr82',)]
     conv = ('msta_s', 'm109', 'tos1', 'brem1', 'm88', 'maxxpro', 'kozak', 'tigr', 'hmmwv', 'tor', 'buk', 'shilka', 'tunguska', 'strela10')
     hand = {}
-    for modname in ('m_arty', 'm_sam', 'm_wheel2', 'm_wheel3'):
+    for modname in ('m_arty', 'm_sam', 'm_wheel2', 'm_wheel3', 'm_gepard'):
         try:
             mod = importlib.import_module(modname)
         except ImportError:
             continue
         hand.update(mod.JOBS)
-    jobs += [(k, (lambda k=k: hand[k](B[k]))) for k in hand]
+    jobs += [(k, (lambda k=k: hand[k](B.get(k)))) for k in hand]
     jobs += [(k, (lambda k=k: convert.convert(B[k]))) for k in conv if k not in hand]
     return [fn() for k, fn in jobs if not only or k in only]
