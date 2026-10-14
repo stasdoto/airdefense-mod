@@ -19,6 +19,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.AABB;
 
 import com.stasdoto.airdefense.AirDefense;
+import com.stasdoto.airdefense.vehicle.CivilCars;
 import com.stasdoto.airdefense.vehicle.VehicleEntity;
 import com.stasdoto.airdefense.vehicle.VehicleType;
 
@@ -35,6 +36,9 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 	private final Identifier insideTexture;
 	/** Within this distance (blocks) the cab's inside is drawn and the glass is see-through. */
 	private static final double INSIDE_RANGE = 18;
+	/** 2.0: a civilian car's models and paints, by its variant. */
+	private final VehicleModel[] variants;
+	private final Identifier[] variantTextures;
 
 	private static final net.minecraft.client.renderer.rendertype.RenderType GLOW = RenderTypes.entityTranslucentEmissive(
 			AirDefense.id("textures/misc/glow_dot.png"));
@@ -94,7 +98,7 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 			case IRIS_T -> VehicleModels.iris_t();
 			case NASAMS -> VehicleModels.nasams();
 			case GEPARD -> VehicleModels.gepard();
-			default -> GenModels.layer(type.id);
+			default -> GenModels.layer(type.isCivil() ? CivilCars.MODELS[0] : type.id);
 		};
 		Map<String, String> paths = switch (type) {
 			case ISKANDER -> VehicleModels.iskanderPaths();
@@ -105,12 +109,26 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 			case IRIS_T -> VehicleModels.iris_tPaths();
 			case NASAMS -> VehicleModels.nasamsPaths();
 			case GEPARD -> VehicleModels.gepardPaths();
-			default -> GenModels.paths(type.id);
+			default -> GenModels.paths(type.isCivil() ? CivilCars.MODELS[0] : type.id);
 		};
 		ModelPart root = layer.bakeRoot();
 		this.model = new VehicleModel(root, paths, type.geometry);
-		this.texture = AirDefense.id("textures/entity/vehicle/" + type.id + ".png");
-		this.wreckTexture = AirDefense.id("textures/entity/vehicle/" + type.id + "_wreck.png");
+		this.texture = AirDefense.id("textures/entity/vehicle/" + (type.isCivil() ? CivilCars.MODELS[0] : type.id) + ".png");
+		this.wreckTexture = type.isCivil() ? AirDefense.id("textures/entity/vehicle/car_saloon_black.png")
+				: AirDefense.id("textures/entity/vehicle/" + type.id + "_wreck.png");
+		if (type.isCivil()) {
+			// 2.0: a town car taken from its bay - each model and paint of the town's traffic (the mesh pass may replace these).
+			variants = new VehicleModel[CivilCars.MODELS.length];
+			variantTextures = new Identifier[CivilCars.MODELS.length];
+			for (int i = 0; i < variants.length; i++) {
+				String id = CivilCars.MODELS[i];
+				variants[i] = new VehicleModel(GenModels.layer(id).bakeRoot(), GenModels.paths(id), type.geometry);
+				variantTextures[i] = AirDefense.id("textures/entity/vehicle/" + id + ".png");
+			}
+		} else {
+			variants = null;
+			variantTextures = null;
+		}
 		String gid = type.id + "_glass";
 		if (GenModels.has(gid)) {
 			glass = new VehicleModel(GenModels.layer(gid).bakeRoot(), GenModels.paths(gid), type.geometry, RenderTypes::entityTranslucentCull);
@@ -154,6 +172,7 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		s.hidden = GunnerSight.hides(v);
 		s.beacons = type.isService() && v.beaconsOn();
 		s.flash = v.tickCount;
+		s.variant = v.getVariant();
 	}
 
 	@Override
@@ -182,7 +201,17 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 			light = 0xF000F0;
 			overlay = OverlayTexture.pack(0.78f, false);
 		}
-		collector.submitModel(model, s, poseStack, tex, light, overlay, s.outlineColor);
+		VehicleModel body = model;
+		if (variants != null) {
+			int i = Math.floorMod(s.variant, variants.length);
+			body = variants[i];
+			tex = variantTextures[i];
+			if (s.wreck) {
+				// Burnt out: its own paint, but black with soot.
+				light = 0x100010;
+			}
+		}
+		collector.submitModel(body, s, poseStack, tex, light, overlay, s.outlineColor);
 		if (inside != null && near) {
 			// The inside is modelled at twice the detail (32 units a metre): drawn at half scale.
 			poseStack.pushPose();
