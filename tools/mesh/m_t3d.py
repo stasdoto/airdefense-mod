@@ -11,7 +11,7 @@ from m_trucks3 import *
 from m_t3c import western_front, shelter, landing_gear
 
 
-def light_truck(b, zf=4.8, zcowl=3.2, zrear=1.25, y_bot=0.82, hood=1.18, roof=1.98, w=1.02, bed=(0.3, 1.25), open_bed=0.0):
+def light_truck(b, zf=4.8, zcowl=3.2, zrear=1.25, y_bot=0.82, hood=1.18, roof=1.98, w=1.02, bed=(0.3, 1.25), open_bed=0.0, bed_w=None, deck_y=1.15):
     """A Humvee/JLTV-class 4x4: one wide shell (hood, cowl, cab), flared arches, grille and lamps, a flat bed behind."""
     body = b.body
     yb = hood + 0.12
@@ -52,6 +52,9 @@ def light_truck(b, zf=4.8, zcowl=3.2, zrear=1.25, y_bot=0.82, hood=1.18, roof=1.
             g.extend(K.rbox((s_ * w - (0.0 if s_ > 0 else 0.07), 0.95, bed[0]), (s_ * w + (0.07 if s_ > 0 else 0.0), 0.7 + open_bed, bed[1]), 'paint', r=0.015))
         g.extend(K.rbox((-w, 0.95, bed[0]), (w, 0.7 + open_bed, bed[0] + 0.07), 'paint', r=0.015))
         g.extend(box((-w + 0.07, 0.95, bed[0] + 0.07), (w - 0.07, 0.96, bed[1]), 'grating', faces=('top',)))
+    elif bed_w:
+        g.extend(K.rbox((-bed_w, 0.7, bed[0]), (bed_w, deck_y - 0.1, bed[1]), 'paint', r=0.03))
+        g.extend(K.rbox((-w, deck_y - 0.1, bed[0]), (w, deck_y, bed[1]), 'paint', r=0.03))
     else:
         g.extend(K.rbox((-1.0, 0.7, bed[0]), (1.0, 1.15, bed[1]), 'paint', r=0.03))
     for s in (-1, 1):
