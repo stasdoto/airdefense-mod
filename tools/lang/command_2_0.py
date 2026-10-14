@@ -75,6 +75,31 @@ S = {
     'screen.airdefense.map.cmd.other_war': ('At war with %s', 'Воюет со страной %s', 'Воює з країною %s'),
     'screen.airdefense.map.cmd.pick_other': ('Click a town of another country', 'Нажмите на город другой страны',
                                              'Натисніть на місто іншої країни'),
+    # The pause and the strike planner.
+    'screen.airdefense.map.plan.pause': ('Pause', 'Пауза', 'Пауза'),
+    'screen.airdefense.map.plan.pause_on': ('Paused', 'На паузе', 'На паузі'),
+    'screen.airdefense.map.plan.pause_mp': ('No pause', 'Без паузы', 'Без паузи'),
+    'screen.airdefense.map.plan.open_short': ('Plan strike', 'План удара', 'План удару'),
+    'screen.airdefense.map.plan.open': ('Plan a massed strike', 'Спланировать массированный удар', 'Спланувати масований удар'),
+    'screen.airdefense.map.plan.title': ('MASSED STRIKE PLAN', 'ПЛАН МАССИРОВАННОГО УДАРА', 'ПЛАН МАСОВАНОГО УДАРУ'),
+    'screen.airdefense.map.plan.hint': ('Pick launchers in the list, then click their point', 'Выберите пусковые в списке и нажмите их точку на карте',
+                                        'Виберіть пускові у списку й натисніть їхню точку на мапі'),
+    'screen.airdefense.map.plan.paused': ('Game paused: plan calmly', 'Игра на паузе: планируйте спокойно', 'Гра на паузі: плануйте спокійно'),
+    'screen.airdefense.map.plan.none': ('No launchers: place some first', 'Пусковых нет — сначала поставьте', 'Пускових немає — спершу поставте'),
+    'screen.airdefense.map.plan.out': ('out of range', 'не достаёт', 'не дістає'),
+    'screen.airdefense.map.plan.salvo_usual': ('Salvo: usual', 'Залп: обычный', 'Залп: звичайний'),
+    'screen.airdefense.map.plan.salvo': ('Salvo: %s', 'Залп: %s', 'Залп: %s'),
+    'screen.airdefense.map.plan.all_one': ('All on one point', 'Все по одной точке', 'Усі по одній точці'),
+    'screen.airdefense.map.plan.clear': ('Clear the plan', 'Сбросить план', 'Скинути план'),
+    'screen.airdefense.map.plan.launch': ('Launch (%s)', 'Пуск (%s)', 'Пуск (%s)'),
+    'screen.airdefense.map.plan.pick_all': ('Pick all', 'Выбрать все', 'Вибрати всі'),
+    'screen.airdefense.map.plan.pick_none': ('Unpick all', 'Снять выбор', 'Зняти вибір'),
+    'nation.airdefense.command.plan_launched': (
+        '%s: massed strike - %s launchers fire %s rounds (%s out of reach)', '%s: массированный удар — %s пусковых выпускают %s ракет (не достают: %s)',
+        '%s: масований удар — %s пускових випускають %s ракет (не дістають: %s)'),
+    'nation.airdefense.command.plan_none': (
+        '%s: nothing fired (%s launchers, %s rounds; %s out of reach)', '%s: ничего не выпущено (%s пусковых, %s ракет; не достают: %s)',
+        '%s: нічого не випущено (%s пускових, %s ракет; не дістають: %s)'),
     # The game rule.
     'gamerule.airdefense.command_any_country': (
         'Air Defense: players may command any country from the map', 'ПВО: игроки могут управлять любой страной с карты',

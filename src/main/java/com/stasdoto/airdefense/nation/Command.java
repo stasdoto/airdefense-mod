@@ -68,6 +68,8 @@ public final class Command {
 		PayloadTypeRegistry.serverboundPlay().register(CommandActionPayload.TYPE, CommandActionPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(CommandStatePayload.TYPE, CommandStatePayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(CommandActionPayload.TYPE, (payload, context) -> handle(context.player(), payload));
+		PayloadTypeRegistry.serverboundPlay().register(StrikePlanPayload.TYPE, StrikePlanPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(StrikePlanPayload.TYPE, (payload, context) -> launchPlan(context.player(), payload));
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> COMMANDING.remove(handler.getPlayer().getUUID()));
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> COMMANDING.clear());
 	}
@@ -308,6 +310,69 @@ public final class Command {
 		}
 	}
 
+	/** For the tests: planned strikes launched, launchers in them, rounds they sent. */
+	public static int plans;
+	public static int planLaunchers;
+	public static int planRounds;
+
+	/**
+	 * 2.0: the strike planner's "Launch": every launcher fires at the point it was given, all at once - each checked
+	 * here (it is the commanded country's, it is a launcher, the point is in its reach) and fired the same way as any
+	 * other order of the country.
+	 */
+	public static void launchPlan(ServerPlayer player, StrikePlanPayload plan) {
+		ServerLevel level = player.level();
+		Politics p = Politics.get(level.getServer());
+		if (!allowed(player) || DesignatorItem.held(player) == null) {
+			player.sendOverlayMessage(Component.translatable("nation.airdefense.command.not_allowed"));
+			return;
+		}
+		Country c = p.country(commanding(player));
+		if (c == null || c.id != plan.country() || plan.shots().size() > StrikePlanPayload.MAX_SHOTS) {
+			return;
+		}
+		Arsenals ars = Arsenals.get(level.getServer());
+		boolean free = free(player);
+		int launchers = 0;
+		int rounds = 0;
+		int out = 0;
+		java.util.Set<Long> used = new java.util.HashSet<>();
+		for (StrikePlanPayload.Shot shot : plan.shots()) {
+			Settlement s = p.settlements.get(shot.town());
+			if (s == null || s.country != c.id || !used.add(((long) shot.town() << 20) | (shot.index() & 0xFFFFF))) {
+				continue;
+			}
+			Arsenals.Arsenal ar = ars.arsenals.get(s.id);
+			if (ar == null || shot.index() < 0 || shot.index() >= ar.units.size()) {
+				continue;
+			}
+			Arsenals.Unit u = ar.units.get(shot.index());
+			if (!CommandKit.canStrikeWith(u.type)) {
+				continue;
+			}
+			BlockPos aim = MapServer.ground(level, shot.x(), MapActionPayload.Y_UNKNOWN, shot.z());
+			int salvo = shot.salvo() <= 0 ? u.type.launcher.salvo : Math.min(shot.salvo(), CommandActionPayload.MAX_ROUNDS);
+			int n = ars.fireUnit(level, p, s, ar, u, p.settlementAt(aim), aim, salvo, free);
+			if (n < 0) {
+				out++;
+			} else if (n > 0) {
+				launchers++;
+				rounds += n;
+			}
+		}
+		Arsenals.orderedRounds += rounds;
+		if (launchers > 0) {
+			plans++;
+			planLaunchers += launchers;
+			planRounds += rounds;
+			roundsSent += rounds;
+		}
+		player.sendSystemMessage(Component.translatable(launchers > 0 ? "nation.airdefense.command.plan_launched" : "nation.airdefense.command.plan_none",
+				c.name, launchers, rounds, out));
+		AirDefense.LOGGER.info("[airdefense] planned strike of {}: {} launchers, {} rounds, {} out of reach", c.name, launchers, rounds, out);
+		send(level, player);
+	}
+
 	// ------------------------------------------------------------------------------------------------
 	// Vehicles put down by hand
 
@@ -374,14 +439,15 @@ public final class Command {
 			if (ar == null) {
 				continue;
 			}
-			for (Arsenals.Unit u : ar.units) {
+			for (int i = 0; i < ar.units.size(); i++) {
+				Arsenals.Unit u = ar.units.get(i);
 				if (u.lost || units.size() >= 240 || CommandKit.kindOf(u.type) < 0) {
 					continue;
 				}
 				VehicleEntity v = u.entity == null ? null : level.getEntity(u.entity) instanceof VehicleEntity ve && ve.isAlive() ? ve : null;
 				Vec3 at = Arsenals.where(level, s, u);
 				int ammo = v != null ? (u.type.isLauncher() ? v.loadedRounds() : v.getAmmo()) : u.ammo;
-				units.add(new CommandStatePayload.Unit(u.type.ordinal(), (int) Math.floor(at.x), (int) Math.floor(at.z), ammo, v != null));
+				units.add(new CommandStatePayload.Unit(u.type.ordinal(), (int) Math.floor(at.x), (int) Math.floor(at.z), ammo, v != null, s.id, i));
 			}
 		}
 		return new CommandStatePayload(allowed, c.id, free(player), new ArrayList<>(c.wars), wood, stone, iron, units);

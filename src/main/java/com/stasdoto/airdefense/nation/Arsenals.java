@@ -1306,33 +1306,13 @@ public final class Arsenals extends SavedData {
 				if (u.lost || !u.type.isLauncher() || u.type.isDroneLauncher() || u.type.isShip() || kind != null && u.type != kind) {
 					continue;
 				}
-				Vec3 from = where(level, s, u);
-				double d = Math.sqrt(Mth.square(from.x - aim.getX() - 0.5) + Mth.square(from.z - aim.getZ() - 0.5));
-				if (d > u.type.launcher.maxRange || d < Math.max(VehicleEntity.MIN_STRIKE_DISTANCE, u.type.launcher.minRange)) {
+				int n = fireUnit(level, p, s, ar, u, target, aim, left, free);
+				if (n < 0) {
 					continue;
 				}
 				reach = true;
-				VehicleEntity v = entity(level, u);
-				MissileType m = missileOf(u.type);
-				if (free) {
-					u.ammo = u.type.strikeLoad();
-					if (v != null) {
-						v.setUnlimited(true);
-					}
-				} else if (u.ammo == 0 && m != null && ar.stock(m) > 0) {
-					int n = Math.min(u.type.strikeLoad(), ar.stock(m));
-					ar.add(m, -n);
-					u.ammo = n;
-				}
-				int loaded = v != null ? v.loadedRounds() : u.ammo;
-				if (loaded <= 0) {
-					continue;
-				}
-				int n = Math.min(left, loaded);
-				fire(level, p, s, ar, u, v, target, aim, n);
 				left -= n;
 				sent += n;
-				setDirty();
 			}
 			if (left <= 0) {
 				break;
@@ -1340,6 +1320,41 @@ public final class Arsenals extends SavedData {
 		}
 		orderedRounds += sent;
 		return reach ? sent : -1;
+	}
+
+	/**
+	 * One launcher of a town fires up to {@code most} rounds at a point (its usual salvo when the vehicle stands in the
+	 * world). Returns the rounds sent, or -1 when the point is out of its reach (or it is no launcher).
+	 */
+	public int fireUnit(ServerLevel level, Politics p, Settlement s, Arsenal ar, Unit u, @Nullable Settlement target, BlockPos aim, int most, boolean free) {
+		if (u.lost || !u.type.isLauncher() || u.type.isDroneLauncher() || u.type.isShip()) {
+			return -1;
+		}
+		Vec3 from = where(level, s, u);
+		double d = Math.sqrt(Mth.square(from.x - aim.getX() - 0.5) + Mth.square(from.z - aim.getZ() - 0.5));
+		if (d > u.type.launcher.maxRange || d < Math.max(VehicleEntity.MIN_STRIKE_DISTANCE, u.type.launcher.minRange)) {
+			return -1;
+		}
+		VehicleEntity v = entity(level, u);
+		MissileType m = missileOf(u.type);
+		if (free) {
+			u.ammo = u.type.strikeLoad();
+			if (v != null) {
+				v.setUnlimited(true);
+			}
+		} else if (u.ammo == 0 && m != null && ar.stock(m) > 0) {
+			int n = Math.min(u.type.strikeLoad(), ar.stock(m));
+			ar.add(m, -n);
+			u.ammo = n;
+		}
+		int loaded = v != null ? v.loadedRounds() : u.ammo;
+		if (loaded <= 0 || most <= 0) {
+			return 0;
+		}
+		int n = Math.min(most, loaded);
+		fire(level, p, s, ar, u, v, target, aim, n);
+		setDirty();
+		return n;
 	}
 
 	// ------------------------------------------------------------------------------------------------

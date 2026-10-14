@@ -18,7 +18,8 @@ import com.stasdoto.airdefense.AirDefense;
  */
 public record CommandStatePayload(boolean allowed, int country, boolean free, List<Integer> wars, int wood, int stone, int iron,
 		List<Unit> units) implements CustomPacketPayload {
-	public record Unit(int type, int x, int z, int ammo, boolean present) {
+	/** A unit: its type, where it is, rounds aboard, in the world now, and which it is (its town and place in the town's arsenal). */
+	public record Unit(int type, int x, int z, int ammo, boolean present, int town, int index) {
 	}
 
 	public static final Type<CommandStatePayload> TYPE = new Type<>(AirDefense.id("command_state"));
@@ -39,7 +40,8 @@ public record CommandStatePayload(boolean allowed, int country, boolean free, Li
 			int m = ByteBufCodecs.VAR_INT.decode(b);
 			List<Unit> units = new ArrayList<>();
 			for (int i = 0; i < m; i++) {
-				units.add(new Unit(ByteBufCodecs.VAR_INT.decode(b), b.readInt(), b.readInt(), ByteBufCodecs.VAR_INT.decode(b), b.readBoolean()));
+				units.add(new Unit(ByteBufCodecs.VAR_INT.decode(b), b.readInt(), b.readInt(), ByteBufCodecs.VAR_INT.decode(b), b.readBoolean(),
+						b.readInt(), ByteBufCodecs.VAR_INT.decode(b)));
 			}
 			return new CommandStatePayload(allowed, country, free, wars, wood, stone, iron, units);
 		}
@@ -63,6 +65,8 @@ public record CommandStatePayload(boolean allowed, int country, boolean free, Li
 				b.writeInt(u.z);
 				ByteBufCodecs.VAR_INT.encode(b, Math.max(0, u.ammo));
 				b.writeBoolean(u.present);
+				b.writeInt(u.town);
+				ByteBufCodecs.VAR_INT.encode(b, u.index);
 			}
 		}
 	};

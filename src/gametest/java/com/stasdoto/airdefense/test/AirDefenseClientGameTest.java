@@ -3610,6 +3610,63 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 				commandClicked, waited, state, sent, now[0] - before[0], now[1] - before[1], now[2] - before[2], now[3] - before[3], now[5] - before[5],
 				patriot[3], ammo[0], gepardAmmo0, ammo[1], com.stasdoto.airdefense.nation.Command.taken, com.stasdoto.airdefense.nation.Command.placed,
 				com.stasdoto.airdefense.nation.Command.wars, com.stasdoto.airdefense.nation.Command.claimed);
+		// The strike planner: the game paused, the two Iskanders picked and given one point, launched together.
+		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT);
+		ctx.waitForScreen(com.stasdoto.airdefense.client.map.TacticalMapScreen.class);
+		ctx.waitTicks(40);
+		int planned = ctx.computeOnClient(mc -> {
+			if (!(mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m)) {
+				return -1;
+			}
+			m.plannerForTest();
+			m.setPaused(true);
+			var st = com.stasdoto.airdefense.client.nation.CommandClient.state();
+			int row = 0;
+			int n = 0;
+			if (st != null) {
+				for (var u : st.units()) {
+					VehicleType t = VehicleType.byId(u.type());
+					if (!com.stasdoto.airdefense.nation.CommandKit.canStrikeWith(t)) {
+						continue;
+					}
+					if (t == VehicleType.ISKANDER && n < 2) {
+						m.pickLauncherForTest(row);
+						n++;
+					}
+					row++;
+				}
+			}
+			m.pickPoint(x + 10, 10);
+			m.pressCommand(1);
+			m.centerOn(x + 650, 0, 5);
+			return n;
+		});
+		long tick0 = server.computeOnServer(s -> s.overworld().getGameTime());
+		ctx.waitTicks(30);
+		long tick1 = server.computeOnServer(s -> s.overworld().getGameTime());
+		boolean pausedOk = ctx.computeOnClient(mc -> mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m && m.paused());
+		int[] counts = ctx.computeOnClient(mc -> mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m ? m.plannerCounts() : new int[]{-1, -1});
+		ctx.takeScreenshot("co7_strike_planner");
+		int[] before2 = counters();
+		int planL0 = com.stasdoto.airdefense.nation.Command.planLaunchers;
+		int planR0 = com.stasdoto.airdefense.nation.Command.planRounds;
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				m.pressCommand(3);
+			}
+		});
+		ctx.waitTicks(20);
+		boolean resumed = ctx.computeOnClient(mc -> !(mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) || !m.paused());
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		look(server, x - 60, ground + 12, 70, x + 120, ground + 70, 0);
+		ctx.waitTicks(100);
+		ctx.takeScreenshot("co8_planned_strike_sky");
+		ctx.waitTicks(300);
+		int[] now2 = counters();
+		AirDefense.LOGGER.info("[airdefense-test] RESULT commandother_plan: launchers picked {}, planner rows {} plan {}, paused {} (server ticks while paused {}),"
+						+ " resumed {} | planned launchers fired {} rounds {} | launched={} intercepted={} hits={}",
+				planned, counts[0], counts[1], pausedOk, tick1 - tick0, resumed, com.stasdoto.airdefense.nation.Command.planLaunchers - planL0,
+				com.stasdoto.airdefense.nation.Command.planRounds - planR0, now2[0] - before2[0], now2[1] - before2[1], now2[2] - before2[2]);
 		// Back to his own country; peace again.
 		server.runOnServer(s -> {
 			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
