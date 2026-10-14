@@ -150,6 +150,25 @@ def kamaz_cab(b, part, w, z0, zf, y0, y1, seats, bumper_y, bonnet_front=0.08):
     return cab
 
 
+def wheels(b, names=None, n=12, bolts=None, rim='paint', width=None):
+    """Military wheels on every wheel part of the reference (fewer nuts when there are many wheels)."""
+    cnt = len(b.r.wheels)
+    if bolts is None:
+        bolts = 6 if cnt <= 6 else (3 if cnt <= 8 else 0)
+    for name, R, steer in b.r.wheels:
+        if names is not None and name not in names:
+            continue
+        rp = b.r.by[name]
+        piv = np.array(rp.pivot)
+        bb = rp.bounds()
+        w = width if width is not None else (bb[1][0] - bb[0][0]) - 0.06
+        r = min(R, piv[1] + 0.015)
+        side = -1 if piv[0] < 0 else 1
+        b.m.tyre_half = w / 2
+        b.m.tyre_lugs = n
+        b.p[name].add(K.mil_wheel(piv, side, r, w, rim=rim, n=n, rim_ratio=0.5, lugs=n, bolts=bolts, ctis=False))
+
+
 def western_cab(b, z0, z1, y0, y1, w, dash=0.85):
     """The FMTV/HEMTT-class cab of the western trucks, with its inside."""
     cab = T.fmtv_cab(b, b.body, z0, z1, y0, y1, w, b.r.seats)
@@ -162,7 +181,7 @@ def western_cab(b, z0, z1, y0, y1, w, dash=0.85):
 
 
 def chassis(b, deck, zrear, zdeck_front, w=1.15, tanks=True, jacks='stowed', front_fenders=True, rear_guards=True,
-            bar_bumper=True, deck_plate=True, lamps=True, cross_to=None, zfront=None, wn=12):
+            bar_bumper=True, deck_plate=True, lamps=True, cross_to=None, zfront=None, wn=12, bolts=None):
     """Frame, the load deck (a plate on the frame, optional), mudguards, tanks, rear lamps and bumper, jacks, axles and
     wheels. deck = (y0, y1) of the load deck: y0 = under it, y1 = the loading surface."""
     body = b.body
@@ -203,4 +222,4 @@ def chassis(b, deck, zrear, zdeck_front, w=1.15, tanks=True, jacks='stowed', fro
             g.extend(stowed_jack(s * (w - 0.18), zrear + 0.25, d0, s))
     body.add(g)
     b.axles()
-    b.wheels(rim='paint', n=wn, lugs=wn)
+    wheels(b, n=wn, bolts=bolts)
