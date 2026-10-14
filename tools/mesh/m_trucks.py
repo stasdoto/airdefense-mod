@@ -297,6 +297,8 @@ def iris_t():
     lg.extend(K.rbox((-0.94, 1.62, -3.05), (0.94, 2.56, -2.9), 'paint', r=0.02))
     la.add(lg)
     for n_, *_ in b.r.rails:
+        if n_ not in b.r.by:
+            continue
         rp = b.r.by[n_]
         lo, hi = rp.bounds()
         pg = Geo(30)
@@ -317,6 +319,8 @@ def nasams():
     lg.extend(K.rbox((-1.0, 1.62, -3.75), (1.0, 1.75, 0.69), 'paint', r=0.03))
     la.add(lg)
     for n_, *_ in b.r.rails:
+        if n_ not in b.r.by:
+            continue
         rp = b.r.by[n_]
         lo, hi = rp.bounds()
         pg = Geo(30)
@@ -370,6 +374,8 @@ def kalibr():
         eg.extend(K.rbox((-0.94, 2.06, z - 0.06), (0.94, 3.81, z + 0.06), 'paint', r=0.02))
     er.add(eg)
     for n_, *_ in b.r.rails:
+        if n_ not in b.r.by:
+            continue
         rp = b.r.by[n_]
         lo, hi = rp.bounds()
         c = ((lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2)
@@ -392,6 +398,8 @@ def shahed():
         rg.extend(K.rbox((-1.0, y, -3.69), (1.0, y + 0.07, -3.56), 'paint', r=0.01))
     r.add(rg)
     for n_, *_ in b.r.rails:
+        if n_ not in b.r.by:
+            continue
         rp = b.r.by[n_]
         lo, hi = rp.bounds()
         y = lo[1]
@@ -436,6 +444,8 @@ def s300():
         eg.extend(K.rbox((-1.2, 1.9, z - 0.15), (1.2, 2.12, z + 0.15), 'paint', r=0.03))
     er.add(eg)
     for n_, *_ in b.r.rails:
+        if n_ not in b.r.by:
+            continue
         rp = b.r.by[n_]
         lo, hi = rp.bounds()
         pg = Geo(40)
@@ -491,6 +501,8 @@ def pantsir():
             wg.extend(cyl((xx, 2.05, 0.18), (xx, 2.05, 0.3), 0.06, 'metal_dark', n=8))
     w.add(wg)
     for n_, *_ in b.r.rails:
+        if n_ not in b.r.by:
+            continue
         rp = b.r.by[n_]
         lo, hi = rp.bounds()
         pg = Geo(30)
