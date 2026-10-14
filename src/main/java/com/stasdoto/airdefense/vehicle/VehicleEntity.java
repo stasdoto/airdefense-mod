@@ -2011,17 +2011,35 @@ public class VehicleEntity extends LivingEntity {
 		double baseY = getY() + maxUpStep() + 0.05;
 		double topY = getY() + Math.min(2.4, vtype.geometry.height() - 0.4);
 		BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
+		// The ground may rise toward the nose as far as a climbable slope goes (block hills come in steps): only what
+		// stands higher than that is a wall.
+		double climb = maxUpStep() + 0.05 + (half + ahead) * 0.75;
 		for (double side : new double[]{-w, 0, w}) {
 			double px = getX() + f.x * dir * (half + ahead) + r.x * side;
 			double pz = getZ() + f.z * dir * (half + ahead) + r.z * side;
-			for (int y = Mth.floor(baseY); y <= Mth.floor(topY); y++) {
+			// The top of the ground under the probe: solid blocks stacked up from the vehicle's own level.
+			double surface = getY();
+			for (int y = Mth.floor(getY()); y <= Mth.floor(topY + climb); y++) {
+				m.set(Mth.floor(px), y, Mth.floor(pz));
+				BlockState s = level().getBlockState(m);
+				VoxelShape shape = s.isAir() ? null : s.getCollisionShape(level(), m);
+				if (shape == null || shape.isEmpty()) {
+					break;
+				}
+				surface = y + shape.max(Direction.Axis.Y);
+			}
+			if (surface - getY() > climb) {
+				return true;
+			}
+			// Something overhanging (a beam, a branch) at the hull's height over that ground.
+			for (int y = Mth.floor(Math.max(baseY, surface + 0.05)); y <= Mth.floor(Math.max(topY, surface + 1.5)); y++) {
 				m.set(Mth.floor(px), y, Mth.floor(pz));
 				BlockState s = level().getBlockState(m);
 				if (s.isAir()) {
 					continue;
 				}
 				VoxelShape shape = s.getCollisionShape(level(), m);
-				if (!shape.isEmpty() && y + shape.max(Direction.Axis.Y) > baseY) {
+				if (!shape.isEmpty() && y + shape.min(Direction.Axis.Y) > surface + 0.05 && y + shape.min(Direction.Axis.Y) < surface + 1.6) {
 					return true;
 				}
 			}
