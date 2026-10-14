@@ -184,13 +184,25 @@ def deck_y(stations, z):
 # T-72B3
 
 
-def t72_like(bm, t90=False):
+def louvres(x0, x1, y, z0, z1, pitch=0.1):
+    """An engine deck grille: a dark recess with slats across it."""
+    g = Geo(30)
+    g.extend(K.chbox((x0, y - 0.005, z0), (x1, y + 0.012, z1), 'black', 0.004))
+    n = int((z1 - z0) / pitch)
+    for k in range(n):
+        za = z0 + 0.012 + k * pitch
+        g.extend(K.chbox((x0 + 0.02, y + 0.01, za), (x1 - 0.02, y + 0.03, za + pitch * 0.55), 'armour', 0.006))
+    return g
+
+
+def t72_like(bm, kind='t72'):
+    t90 = kind != 't72'
     m = new_model(bm)
     body = m.part('body', (0, 0, 0))
     g = Geo(25)
     # Hull: rear plate leaning back, flat deck, the upper glacis at 22 degrees down to the nose, the lower glacis. The
     # upper hull is only a little wider than the lower one: the fenders over the tracks are shelves outside it.
-    W = 0.08 if t90 else 0.0
+    W = abs(bpart(bm, 'road_0_l').pivot[0]) - 1.51
     hw_up = 1.3 + W
     hw_low = 1.2 + W
     fx = 1.83 + W
@@ -239,7 +251,7 @@ def t72_like(bm, t90=False):
                 d.extend(K.chbox((x - 0.012, 0.55, za), (x + 0.012, 1.0, zb), 'armour_dark', 0.004))
     # Engine deck: two louvred grilles, the transmission access panel, lifting eyes.
     for s in (-1, 1):
-        d.extend(K.chbox((min(s * 0.12, s * 1.12), 1.55, -3.05), (max(s * 0.12, s * 1.12), 1.575, -1.85), 'deck_grille', 0.006))
+        d.extend(louvres(min(s * 0.12, s * 1.12), max(s * 0.12, s * 1.12), 1.55, -3.05, -1.85))
     d.extend(K.chbox((-0.9, 1.55, -1.7), (0.9, 1.565, -0.95), 'armour', 0.005))
     for x in (-1.15, 1.15):
         d.extend(tube([(x - 0.05, 1.55, -3.25), (x - 0.05, 1.63, -3.25), (x + 0.05, 1.63, -3.25), (x + 0.05, 1.55, -3.25)], 0.012, 'metal_dark', n=4))
@@ -272,22 +284,39 @@ def t72_like(bm, t90=False):
     for s in (-1, 1):
         d.extend(tube([(s * 1.15, 1.9, -3.7), (s * 1.15, 2.22, -3.72), (s * 1.15, 2.22, -3.98), (s * 1.15, 1.9, -4.0)], 0.012, 'metal_dark', n=4, caps=False))
     body.add(d)
-    running_gear(m, bm, Gear(rollers=[(-1.95, 0.76, 0.1), (-0.05, 0.76, 0.1), (1.9, 0.76, 0.1)], drive='rear', pitch=0.15, thick=0.06))
+    rl = [(-2.0, 0.76, 0.1), (-0.8, 0.76, 0.1), (0.4, 0.76, 0.1), (1.7, 0.76, 0.1)] if kind == 't80' else [(-1.95, 0.76, 0.1), (-0.05, 0.76, 0.1), (1.9, 0.76, 0.1)]
+    running_gear(m, bm, Gear(rollers=rl, drive='rear', pitch=0.15, thick=0.06))
 
     # Turret: a cast dome, Kontakt-5 "horseshoe" on the front, the commander's cupola with the machine gun, sights,
     # smoke grenade launchers, the snorkel and stowage at the back.
     tp = mirror_part(m, bm, 'turret')
     cz = -0.3
+    dz = tp.pivot[2] + 0.3
     T = Geo(50)
     levels = []
     for y, rx, f, b in ((1.55, 1.0, 1.1, 1.08), (1.64, 1.1, 1.24, 1.2), (1.8, 1.09, 1.22, 1.2), (1.98, 1.02, 1.12, 1.13), (2.14, 0.9, 0.95, 1.02),
                         (2.27, 0.74, 0.74, 0.88), (2.35, 0.6, 0.56, 0.74)):
-        levels.append((y, K.superellipse(28, rx, 1.0, e=2.3, cz=cz, front=f, back=b)))
+        levels.append((y, K.superellipse(28, rx, 1.0, e=(3.6 if kind == 't90' else 2.3), cz=cz, front=f, back=b)))
     T.extend(K.plan_loft(levels, 'armour', smooth=55))
-    tp.add(T)
+    tp.add(T.transform(np.eye(3), np.array([0, 0, dz])))
     t = Geo(30)
     # Kontakt-5 blocks round the front: on each side four boxes following the outline, leaning out.
-    for s in (-1, 1):
+    if kind == 't90':
+        # The welded turret's front: two big Kontakt-5 wedge packs either side of the gun, angled out, over the cheeks.
+        for s in (-1, 1):
+            for k in range(2):
+                ang = s * (24 + k * 4)
+                blk = K.chbox((-0.3, -0.2, -0.1), (0.3, 0.2, 0.12), 'era', 0.02)
+                blk.transform(K.rot_x(-8))
+                a = math.radians(ang)
+                R = K.rot_y(ang)
+                t.extend(blk.transform(R, np.array([s * (0.5 + 0.5 * k) + s * 0.1, 2.05 + k * 0.0, cz + 1.18 - k * 0.12 - 0.0])))
+            for k in range(2):
+                t.extend(K.chbox((s * (0.25 + 0.3 * k) - 0.13, 2.3, 0.0 + k * 0.12), (s * (0.25 + 0.3 * k) + 0.13, 2.38, 0.5 + k * 0.1), 'era', 0.012))
+            # Shtora-1 optronic jammers: a dark box with a red lens beside the gun.
+            t.extend(K.chbox((s * 0.78 - 0.13, 2.02, 1.0), (s * 0.78 + 0.13, 2.3, 1.2), 'black', 0.02))
+            t.extend(panel((s * 0.78, 2.16, 1.202), 0.16, 0.12, (-1, 0, 0), (0, 1, 0), 'beacon_red'))
+    for s in ((-1, 1) if not t90 else ()):
         for k in range(4):
             th = math.radians(14 + k * 17)
             rr_x, rr_z = 1.06, 1.16
@@ -299,7 +328,7 @@ def t72_like(bm, t90=False):
             blk = K.chbox((-0.2, -0.17, -0.05), (0.2, 0.17, 0.22), 'era', 0.015)
             blk.transform(K.rot_x(-12))
             t.extend(blk.transform(R, np.array([x, 2.02, z]) + out * 0.02))
-        # Roof ERA plates on the front of the roof.
+    for s in ((-1, 1) if not t90 else ()):
         t.extend(K.chbox((min(s * 0.05, s * 0.38), 2.33, 0.05), (max(s * 0.05, s * 0.38), 2.39, 0.4), 'era', 0.01))
     # The commander's cupola (right) with its hatch, periscopes and the Kord machine gun; the gunner's hatch (left).
     cx, czc = 0.5, -0.55
@@ -335,18 +364,18 @@ def t72_like(bm, t90=False):
     # Lifting hooks on the roof.
     for x, z in ((-0.8, -0.3), (0.85, -0.25), (0.0, -1.05)):
         t.extend(tube([(x - 0.04, 2.3, z), (x, 2.36, z), (x + 0.04, 2.3, z)], 0.012, 'metal_dark', n=4))
-    tp.add(t)
+    tp.add(t.transform(np.eye(3), np.array([0, 0, dz])))
 
     # The gun: 2A46M-5 in its canvas mantlet boot; the barrel ends where the box model's does.
     gp = mirror_part(m, bm, 'gun', tp)
     piv = np.array(gp.pivot)
     mz = muzzle_abs(bm)
     gg = Geo(40)
-    gg.extend(lathe((0, piv[1], 0.75), (0, piv[1], 1.45), [(0.0, 0.34, 'canvas'), (0.1, 0.33, 'canvas'), (0.25, 0.3, 'canvas'), (0.4, 0.26, 'canvas'),
+    gg.extend(lathe((0, piv[1], piv[2] - 0.35), (0, piv[1], piv[2] + 0.35), [(0.0, 0.34, 'canvas'), (0.1, 0.33, 'canvas'), (0.25, 0.3, 'canvas'), (0.4, 0.26, 'canvas'),
                                                           (0.55, 0.18, 'canvas'), (0.7, 0.13, 'canvas'), (0.7, 0.0, 'canvas')], 'canvas', 14, 60))
-    z0 = 1.2
+    z0 = piv[2] + 0.1
     L = mz[2] - z0
-    prof = K.tank_gun_profile(L, 0.078, extractor=(3.79 - z0, 4.57 - z0, 0.145), sleeves=(0.9, 1.75, 3.75, 4.6),
+    prof = K.tank_gun_profile(L, 0.078, extractor=(L * 0.475, L * 0.618, 0.145), sleeves=(0.9, 1.75, L * 0.69, L * 0.84),
                               muzzle='collar')
     gg.extend(K.barrel((0, piv[1], z0), (0, piv[1], mz[2]), prof))
     gp.add(gg)
@@ -357,4 +386,6 @@ def models():
     B = box_models()
     out = []
     out.append(t72_like(B['t72']))
+    out.append(t72_like(B['t90'], 't90'))
+    out.append(t72_like(B['t80bvm'], 't80'))
     return out
