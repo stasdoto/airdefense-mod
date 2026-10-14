@@ -130,6 +130,7 @@ public final class DriveState {
 		boolean wasAirborne = airborne;
 		airborne = !v.onGround() && gap > 0.45 && !v.isInWater();
 		airTicks = airborne ? airTicks + 1 : 0;
+		maxAirTicks = Math.max(maxAirTicks, airTicks);
 		boolean grounded = !airborne;
 		if (v.isInWater()) {
 			mu = Math.min(mu, Surface.WATER.mu);
@@ -180,7 +181,9 @@ public final class DriveState {
 			}
 		}
 		if (!engineOn) {
+			// Nobody at the wheel (or a dry tank): the parking brake holds it, on a hill too.
 			wantThrottle = 0;
+			wantBrake = 1;
 		}
 		// Ramps: the throttle opens over about half a second and closes faster; the brakes bite in a few ticks.
 		throttle += Mth.clamp(wantThrottle - throttle, -0.2f, s.car ? 0.11f : 0.08f);
@@ -478,12 +481,17 @@ public final class DriveState {
 				impact = (float) (fall * 0.55);
 			}
 			landing = (float) Math.max(landing, fall);
+			hardestLanding = (float) Math.max(hardestLanding, fall);
 		}
 		lastVy = v.getDeltaMovement().y;
 		if (before < 1e-4 && Math.hypot(vx, vz) < 1e-4) {
 			vx = vz = 0;
 		}
 	}
+
+	/** For the tests: the longest time any vehicle was in the air (ticks), the hardest landing (m/s). */
+	public static int maxAirTicks;
+	public static float hardestLanding;
 
 	/** How hard it last landed (m/s down), for the suspension; cleared by whoever reads it. */
 	public float landing;

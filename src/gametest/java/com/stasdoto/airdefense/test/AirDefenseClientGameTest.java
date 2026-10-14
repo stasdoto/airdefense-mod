@@ -140,6 +140,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("drive")) {
 				drive(ctx, server);
 			}
+			if (scene("physics")) {
+				physics(ctx, server);
+			}
 			if (scene("map")) {
 				tabletMap(ctx, server);
 			}
@@ -5584,6 +5587,147 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
 		server.runCommand("gamemode spectator @a");
 		server.runOnServer(s -> forVehicles(s.overworld(), ids, Entity::discard));
+	}
+
+	// --- 2.0: vehicle physics -----------------------------------------------------------------------------
+
+	/** What the local driver's vehicle is doing (from his client, where it is simulated). */
+	private static String driveLog(ClientGameTestContext ctx) {
+		return ctx.computeOnClient(mc -> mc.player != null && mc.player.getVehicle() instanceof VehicleEntity v
+				? String.format(java.util.Locale.ROOT, "speed %.1f km/h, rpm %.0f, gear %d, throttle %.2f, brake %s, skid %.2f, yaw rate %.1f deg/s, surface %s, y %.2f",
+						Math.abs(v.getSpeed()) * 72, v.getEngineRpm(), v.getGear(), v.getThrottle(), v.isBraking(), v.getSkid(),
+						Math.toDegrees(v.driveState().omega), v.driveState().surface, v.getY())
+				: "no vehicle");
+	}
+
+	private static float driveKmh(ClientGameTestContext ctx) {
+		return ctx.computeOnClient(mc -> mc.player != null && mc.player.getVehicle() instanceof VehicleEntity v ? Math.abs(v.getSpeed()) * 72 : -1f);
+	}
+
+	private int mountNew(ClientGameTestContext ctx, TestServerContext server, VehicleType type, double x, double z, float yaw) {
+		int id = server.computeOnServer(s -> {
+			ServerPlayer p = s.getPlayerList().getPlayers().getFirst();
+			p.stopRiding();
+			VehicleEntity v = VehicleEntity.spawn(s.overworld(), type, new Vec3(x, ground, z), yaw);
+			p.startRiding(v);
+			return v.getId();
+		});
+		ctx.waitTicks(15);
+		return id;
+	}
+
+	/**
+	 * 2.0 physics: a car pulls away through its gears, brakes to a stop and backs up (automatic reverse), a handbrake
+	 * turn, a jump off a ramp and the landing, a tank climbing a slope. RESULT lines: speeds, revs, gears, yaw rate, slide.
+	 */
+	private void physics(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 14000;
+		server.runCommand("gamemode creative @a");
+		camera(server, x + 40, ground + 4, 0, -90, 10);
+		ctx.waitTicks(40);
+		// A long paved strip, cleared above.
+		for (int seg = 0; seg < 4; seg++) {
+			int a = x + seg * 80;
+			server.runCommand(String.format("fill %d %d -8 %d %d 8 minecraft:gray_concrete", a, ground - 1, a + 79, ground - 1));
+			server.runCommand(String.format("fill %d %d -8 %d %d 8 minecraft:air", a, ground, a + 79, ground + 6));
+		}
+		ctx.waitTicks(10);
+		int car = mountNew(ctx, server, VehicleType.CIVIL_CAR, x + 4.5, 0.5, -90);
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_BACK));
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("phys_01_car_seated");
+		// Pulling away: speed, revs and the gear every second.
+		ctx.getInput().holdKey(o -> o.keyUp);
+		int maxGear = 0;
+		for (int t = 1; t <= 8; t++) {
+			ctx.waitTicks(20);
+			maxGear = Math.max(maxGear, ctx.computeOnClient(mc -> mc.player.getVehicle() instanceof VehicleEntity v ? v.getGear() : 0));
+			AirDefense.LOGGER.info("[airdefense-test] RESULT physics accel t={}s: {}", t, driveLog(ctx));
+			if (t == 3) {
+				ctx.takeScreenshot("phys_02_car_accel");
+			}
+		}
+		AirDefense.LOGGER.info("[airdefense-test] RESULT physics accel: top gear reached {}, synced on server rpm {}", maxGear,
+				server.computeOnServer(s -> s.overworld().getEntity(car) instanceof VehicleEntity v ? v.getEngineRpm() : -1f));
+		// Braking to a stop, then holding the brake backs it up.
+		ctx.getInput().releaseKey(o -> o.keyUp);
+		float before = driveKmh(ctx);
+		ctx.getInput().holdKey(o -> o.keyDown);
+		int stop = waitUntil(ctx, () -> driveKmh(ctx) < 1f, 200);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT physics brake: from {} km/h to a stop in {} ticks", String.format("%.1f", before), stop);
+		ctx.waitTicks(40);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT physics reverse: {}", driveLog(ctx));
+		ctx.getInput().releaseKey(o -> o.keyDown);
+		// Handbrake turn: up to speed, then left and Space.
+		ctx.getInput().holdKey(o -> o.keyUp);
+		ctx.waitTicks(60);
+		ctx.getInput().releaseKey(o -> o.keyUp);
+		ctx.getInput().holdKey(o -> o.keyLeft);
+		ctx.getInput().holdKey(o -> o.keyJump);
+		float maxSkid = 0;
+		double maxRate = 0;
+		for (int i = 0; i < 6; i++) {
+			ctx.waitTicks(4);
+			maxSkid = Math.max(maxSkid, ctx.computeOnClient(mc -> mc.player.getVehicle() instanceof VehicleEntity v ? v.getSkid() : 0f));
+			maxRate = Math.max(maxRate, ctx.computeOnClient(mc -> mc.player.getVehicle() instanceof VehicleEntity v ? Math.abs(Math.toDegrees(v.driveState().omega)) : 0.0));
+			if (i == 2) {
+				ctx.takeScreenshot("phys_03_handbrake_turn");
+			}
+		}
+		AirDefense.LOGGER.info("[airdefense-test] RESULT physics handbrake: max yaw rate {} deg/s, max skid {}, {}", String.format("%.0f", maxRate),
+				String.format("%.2f", maxSkid), driveLog(ctx));
+		ctx.getInput().releaseKey(o -> o.keyLeft);
+		ctx.getInput().releaseKey(o -> o.keyJump);
+		ctx.waitTicks(40);
+
+		// A jump: a run-up, a ramp four blocks high, then the drop.
+		int rx = x + 120;
+		for (int i = 0; i < 8; i++) {
+			int h = i / 2;
+			server.runCommand(String.format("fill %d %d -3 %d %d 3 minecraft:stone", rx + 60 + i, ground, rx + 60 + i, ground + h));
+		}
+		DriveStateReset.reset();
+		mountNew(ctx, server, VehicleType.CIVIL_CAR, rx + 0.5, 0.5, -90);
+		ctx.getInput().holdKey(o -> o.keyUp);
+		int up = waitUntil(ctx, () -> ctx.computeOnClient(mc -> mc.player.getVehicle() instanceof VehicleEntity v && v.driveState().airborne), 260);
+		ctx.takeScreenshot("phys_04_jump");
+		ctx.waitTicks(30);
+		ctx.getInput().releaseKey(o -> o.keyUp);
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("phys_05_landed");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT physics jump: airborne after {} ticks, longest air time {} ticks, landing {} m/s, crashes {}, {}",
+				up, com.stasdoto.airdefense.vehicle.DriveState.maxAirTicks, String.format("%.1f", com.stasdoto.airdefense.vehicle.DriveState.hardestLanding),
+				VehicleEntity.crashes, driveLog(ctx));
+
+		// A tank on a slope: one block up for every two along, ten blocks high.
+		int tx = x + 240;
+		for (int i = 0; i < 20; i++) {
+			server.runCommand(String.format("fill %d %d -4 %d %d 4 minecraft:dirt", tx + 20 + i, ground, tx + 20 + i, ground + i / 2));
+		}
+		mountNew(ctx, server, VehicleType.T72, tx + 0.5, 0.5, -90);
+		ctx.getInput().holdKey(o -> o.keyUp);
+		ctx.waitTicks(80);
+		float flat = driveKmh(ctx);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT physics tank flat: {}", driveLog(ctx));
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("phys_06_tank_slope");
+		ctx.waitTicks(20);
+		float slope = driveKmh(ctx);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT physics tank slope: {} km/h on the flat, {} km/h on the slope; {}", String.format("%.1f", flat),
+				String.format("%.1f", slope), driveLog(ctx));
+		ctx.getInput().releaseKey(o -> o.keyUp);
+		ctx.waitTicks(10);
+		server.runOnServer(s -> s.getPlayerList().getPlayers().getFirst().stopRiding());
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
+		server.runCommand("gamemode spectator @a");
+	}
+
+	/** Clears the physics counters between parts of the scene. */
+	private static final class DriveStateReset {
+		static void reset() {
+			com.stasdoto.airdefense.vehicle.DriveState.maxAirTicks = 0;
+			com.stasdoto.airdefense.vehicle.DriveState.hardestLanding = 0;
+		}
 	}
 
 	private void unopposedIskander(ClientGameTestContext ctx, TestServerContext server) {
