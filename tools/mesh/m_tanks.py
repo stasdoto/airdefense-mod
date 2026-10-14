@@ -388,4 +388,7 @@ def models():
     out.append(t72_like(B['t72']))
     out.append(t72_like(B['t90'], 't90'))
     out.append(t72_like(B['t80bvm'], 't80'))
+    import m_west
+    for k in ('leopard2', 'abrams', 'challenger2'):
+        out.append(m_west.west_mbt(B[k], k))
     return out
