@@ -8822,6 +8822,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	private void gallery(ClientGameTestContext ctx, TestServerContext server) {
 		int x0 = 182000;
 		int g = ground;
+		ctx.runOnClient(mc -> mc.gui.setScreen(null));
 		server.runCommand("gamemode spectator @a");
 		server.runCommand("time set 6000");
 		server.runCommand("weather clear");
