@@ -383,18 +383,17 @@ def t72_like(bm, kind='t72'):
 
 
 def models():
+    """All the models. MESH_ONLY=id,id limits what is built (the rest is skipped, which saves minutes)."""
     B = box_models()
-    out = []
-    out.append(t72_like(B['t72']))
-    out.append(t72_like(B['t90'], 't90'))
-    out.append(t72_like(B['t80bvm'], 't80'))
-    import m_west
-    for k in ('leopard2', 'abrams', 'challenger2'):
-        out.append(m_west.west_mbt(B[k], k))
+    only = set(filter(None, os.environ.get('MESH_ONLY', '').split(',')))
+    import convert
     import m_ifv
-    for k in ('bmp2', 'bmp3', 'bradley', 'cv90', 'm113'):
-        out.append(m_ifv.ifv(B[k], k))
+    import m_west
     import m_wheeled
-    for k in ('btr82', 'btr4', 'stryker'):
-        out.append(m_wheeled.wheeled(B[k], k))
-    return out
+    jobs = [('t72', lambda: t72_like(B['t72'])), ('t90', lambda: t72_like(B['t90'], 't90')), ('t80bvm', lambda: t72_like(B['t80bvm'], 't80'))]
+    jobs += [(k, (lambda k=k: m_west.west_mbt(B[k], k))) for k in ('leopard2', 'abrams', 'challenger2')]
+    jobs += [(k, (lambda k=k: m_ifv.ifv(B[k], k))) for k in ('bmp2', 'bmp3', 'bradley', 'cv90', 'm113')]
+    jobs += [(k, (lambda k=k: m_wheeled.wheeled(B[k], k))) for k in ('btr82', 'btr4', 'stryker')]
+    jobs += [(k, (lambda k=k: convert.convert(B[k]))) for k in ('msta_s', 'm109', 'tos1', 'brem1', 'm88', 'maxxpro', 'kozak', 'tigr', 'hmmwv', 'tor', 'buk',
+                                                                'shilka', 'tunguska', 'strela10')]
+    return [fn() for k, fn in jobs if not only or k in only]
