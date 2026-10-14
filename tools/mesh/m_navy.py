@@ -143,7 +143,7 @@ def portholes(body, side, x, z0, z1, y, n, r=0.16, mat='glass_dark', frame='a_fr
     """A row of small dark windows (single quads) on a side wall at x facing {side}."""
     g = Geo(30)
     for z in np.linspace(z0, z1, n):
-        g.extend(geom.panel((x + side * 0.012, y, z), r * 2.0, r * 1.5, (0, 0, side), (0, 1, 0), mat))
+        g.extend(geom.panel((x + side * 0.012, y, z), r * 2.0, r * 1.5, (0, 0, -side), (0, 1, 0), mat))
     body.add(g)
 
 
@@ -414,7 +414,7 @@ def buyan_m():
         portholes(body, s, s * 4.0 - s * 0.05 * 0, 0.0, 11.0, deck + 4.2, 8, r=0.18)
         portholes(body, s, s * 4.4 - s * 0.05 * 0, -2.0, 11.5, deck + 1.9, 9, r=0.18)
         body.add(geom.rbox((s * 4.4 - 0.35 if s > 0 else s * 4.4 - 0.05, deck + 0.0, -3.9), (s * 4.4 + 0.05 if s > 0 else s * 4.4 + 0.35, deck + 2.0, -3.2), 'skin', r=0.03))
-    windows_band(body, (0, deck + 3.8, 12.0 - 0.4), 7.4, 1.1, (-1, 0, 0), (0, 1, 0.08))
+    windows_band(body, (0, deck + 3.8, 12.0 - 0.4), 7.4, 1.1, (1, 0, 0), (0, 1, 0.08))
     # The pyramid mast with the radars.
     for hw, y0, y1, za, zz in ((2.4, 7.6, 9.8, 2.2, 7.8), (1.8, 9.8, 12.2, 2.9, 7.1), (1.2, 12.2, 14.6, 3.6, 6.4), (0.6, 14.6, 17.6, 4.3, 5.7)):
         body.add(block(-hw, hw, deck + y0 - 0.0, deck + y1, za, zz, dx=hw * 0.15, dzf=0.2, dzb=0.2))
@@ -491,10 +491,10 @@ def visby():
     body.add(block(-4.0, 4.0, deck, deck + 6.2, -6.0, 18.0, dx=1.1, dzf=4.8, dzb=4.2))
     fy = 5.0
     zfront = lambda y: 18.0 - 4.8 * y / 6.2
-    body.add(geom.panel((0, deck + fy + 0.5, (zfront(fy) + zfront(fy + 1.0)) / 2 + 0.03), 5.4, 1.2, (-1, 0, 0), (0, 6.2, -4.8), 'glass_dark', double=True))
+    body.add(geom.panel((0, deck + fy + 0.5, (zfront(fy) + zfront(fy + 1.0)) / 2 + 0.03), 5.4, 1.2, (1, 0, 0), (0, 6.2, -4.8), 'glass_dark', double=True))
     for s in (-1, 1):
         xs_ = lambda y: 4.0 - 1.1 * y / 6.2
-        body.add(geom.panel((s * (xs_(fy + 0.5) + 0.03), deck + fy + 0.5, 5.7), 14.0, 1.0, (0, 0, 1), (-s * 1.1, 6.2, 0), 'glass_dark', double=True))
+        body.add(geom.panel((s * (xs_(fy + 0.5) + 0.03), deck + fy + 0.5, 5.7), 14.0, 1.0, (0, 0, -s), (-s * 1.1, 6.2, 0), 'glass_dark', double=True))
     for s in (-1, 1):
         portholes(body, s, s * 4.0 - s * 0.0, -3.5, 14.0, deck + 1.5, 6, r=0.16)
     body.add(block(-2.2, 2.2, deck + 6.2, deck + 7.4, 2.0, 10.0, dx=0.5, dzf=0.8, dzb=0.8))
@@ -506,8 +506,8 @@ def visby():
     # The helicopter deck aft: a ring and a bar.
     body.add(geom.cyl((0, deck + 0.0, -21.0), (0, deck + 0.012, -21.0), 3.0, 'a_yellow', n=24, caps=True))
     body.add(geom.cyl((0, deck + 0.0, -21.0), (0, deck + 0.02, -21.0), 2.75, 'a_deck', n=24, caps=True))
-    body.add(geom.panel((0, deck + 0.03, -21.0), 0.3, 3.0, (1, 0, 0), (0, 0, 1), 'a_white'))
-    body.add(geom.panel((0, deck + 0.03, -21.0), 2.2, 0.3, (1, 0, 0), (0, 0, 1), 'a_white'))
+    body.add(geom.panel((0, deck + 0.03, -21.0), 0.3, 3.0, (0, 0, 1), (1, 0, 0), 'a_white'))
+    body.add(geom.panel((0, deck + 0.03, -21.0), 2.2, 0.3, (0, 0, 1), (1, 0, 0), 'a_white'))
     body.add(geom.rbox((-2.0, deck, -11.0), (2.0, deck + 1.2, -7.6), 'skin', r=0.1))
     # The RBS15 hatches amidships (flush: two rows of four).
     body.add(geom.panel((0, deck + 0.006, -6.0 - 0.0), 2.2, 4.4, (0, 0, 1), (1, 0, 0), 'a_vls'))

@@ -457,7 +457,7 @@ def star_img(px=64, fill=(190, 30, 30), edge=(240, 240, 240), edge2=None):
 
 def models():
     out = [mi8(), mi24()]
-    for mod in ('m_heli2', 'm_jets', 'm_navy'):
+    for mod in ('m_heli2', 'm_jets', 'm_navy', 'm_planes'):
         try:
             import importlib
             out += importlib.import_module(mod).models()
