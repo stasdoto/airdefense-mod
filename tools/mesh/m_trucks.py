@@ -13,7 +13,7 @@ import kit_trucks as K
 from core import Geo, Model, rot_x, rot_y, rot_z
 from kit_trucks import V, box, rbox, cbox, cyl, tube, bar
 
-DENSITY = 22
+DENSITY = 19
 QUANT = 5
 
 
