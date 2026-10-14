@@ -28,11 +28,11 @@ def S(z, **kw):
 
 
 def main_rotor(body, pivot, radius, blades, chord, droop=0.3, hub_r=0.42, name='rotor', blade_prefix=None, cw=True, mast_h=0.5,
-               model=None, mat='a_blade'):
+               model=None, mat='a_blade', rot=0.0, hub_mat=None):
     """The main rotor: the hub (swashplate, hinges, dampers) in the part {name} (the spinner) and each blade its own part
     (named like the box model's) turned about the mast."""
     x, y, z = pivot
-    r = body.part(name, pivot)
+    r = body.part(name, pivot, (0, rot, 0)) if rot else body.part(name, pivot)
     g = Geo(45)
     # Mast, swashplate, hub plates.
     g.extend(geom.cyl((x, y - mast_h, z), (x, y + 0.1, z), 0.12, 'a_hub', n=8, caps=False))
@@ -425,5 +425,43 @@ def mi24():
     return m
 
 
+def star_img(px=64, fill=(190, 30, 30), edge=(240, 240, 240), edge2=None):
+    """A five point star (the Russian one: red, with a light edge) as an RGBA image."""
+    img = np.zeros((px, px, 4))
+    yy, xx = np.mgrid[0:px, 0:px]
+    x = (xx - px / 2 + 0.5) / (px / 2)
+    y = -(yy - px / 2 + 0.5) / (px / 2)
+
+    def inside(R, r):
+        pts = []
+        for k in range(10):
+            a = math.pi / 2 + k * math.pi / 5
+            rr = R if k % 2 == 0 else r
+            pts.append((rr * math.cos(a), rr * math.sin(a)))
+        m = np.zeros(x.shape, dtype=bool)
+        j = len(pts) - 1
+        for i in range(len(pts)):
+            xi, yi = pts[i]
+            xj, yj = pts[j]
+            cond = ((yi > y) != (yj > y)) & (x < (xj - xi) * (y - yi) / (yj - yi + 1e-12) + xi)
+            m ^= cond
+            j = i
+        return m
+    big = inside(0.98, 0.4)
+    img[big, :3] = edge
+    img[big, 3] = 255
+    sm = inside(0.82, 0.33)
+    img[sm, :3] = fill
+    return img
+
+
 def models():
-    return [mi8(), mi24()]
+    out = [mi8(), mi24()]
+    for mod in ('m_heli2', 'm_jets', 'm_navy'):
+        try:
+            import importlib
+            out += importlib.import_module(mod).models()
+        except ImportError as e:
+            if mod not in str(e):
+                raise
+    return out
