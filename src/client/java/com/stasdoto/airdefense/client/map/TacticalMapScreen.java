@@ -166,11 +166,11 @@ public class TacticalMapScreen extends Screen {
 				.bounds(px0 + 4, my1 - 20, pw, 20).build());
 		clearButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.clear"), b -> clearTarget())
 				.bounds(px0 + 4, my1 - 42, pw / 2 - 1, 20).build());
-		addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.to_radar"), b -> minecraft.gui.setScreen(new RadarScreen()))
-				.bounds(mx0 + (int) (font.width(title) * 1.25f) + 8, 2, 70, 13).build());
+		UiButton radarButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.to_radar"),
+				b -> minecraft.gui.setScreen(new RadarScreen())).bounds(mx0 + (int) (font.width(title) * 1.25f) + 8, 2, 70, 13).build());
 		massButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.mass_strike"), b -> massStrike())
 				.bounds(mx0 + (int) (font.width(title) * 1.25f) + 82, 2, 110, 13).build());
-		addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.sirens"),
+		UiButton sirenButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.sirens"),
 						b -> minecraft.gui.setScreen(new com.stasdoto.airdefense.client.siren.SirenScreen()))
 				.bounds(mx0 + (int) (font.width(title) * 1.25f) + 196, 2, 80, 13).build());
 		planButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.plan"), b -> openPlan())
@@ -192,6 +192,10 @@ public class TacticalMapScreen extends Screen {
 				.bounds(mx0 + (int) (font.width(title) * 1.25f) + 280, 2, 62, 13).build());
 		plannerButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.plan.open_short"), b -> openPlanner())
 				.bounds(mx0 + (int) (font.width(title) * 1.25f) + 346, 2, 70, 13).build());
+		layoutHeader(new UiButton[]{radarButton, massButton, sirenButton, pauseButton, plannerButton},
+				new String[][]{{"screen.airdefense.map.to_radar"}, {"screen.airdefense.map.mass_strike"}, {"screen.airdefense.map.sirens"},
+						{"screen.airdefense.map.plan.pause", "screen.airdefense.map.plan.pause_on", "screen.airdefense.map.plan.pause_mp"},
+						{"screen.airdefense.map.plan.open_short"}});
 		commandButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.cmd.command"), b -> takeCommand())
 				.bounds(px0 + 4, my1 - 64, pw, 20).style(UiButton.Style.PRIMARY).build());
 		for (int i = 0; i < cmd.length; i++) {
@@ -1220,7 +1224,11 @@ public class TacticalMapScreen extends Screen {
 		}
 	}
 
+	/** 2.0: the vehicle labels already drawn this frame (x0, y0, x1, y1) - the next one moves down or is left out. */
+	private final java.util.List<int[]> labelRects = new java.util.ArrayList<>();
+
 	private void drawVehicles(GuiGraphicsExtractor g) {
+		labelRects.clear();
 		for (MapStatusPayload.Entry e : entries()) {
 			VehicleType type = typeOf(e);
 			double sx = toScreenX(e.x());
@@ -1247,7 +1255,24 @@ public class TacticalMapScreen extends Screen {
 			g.fill(-wid / 2, len - len / 2 - Math.max(2, len / 4), wid - wid / 2, len - len / 2, 0xFF20282E);
 			g.pose().popMatrix();
 			String label = Component.translatable("map.airdefense.short." + type.id).getString();
-			small(g, label, (int) sx + Math.max(len, wid) / 2 + 3, (int) sy - 3, sel ? 0xFFFFFFFF : 0xFFE6E9EC);
+			int lx = (int) sx + Math.max(len, wid) / 2 + 3;
+			int ly = (int) sy - 3;
+			int lw = (int) (font.width(label) * 0.75f);
+			boolean place = false;
+			for (int tries = 0; tries < 4 && !place; tries++) {
+				place = true;
+				for (int[] r : labelRects) {
+					if (lx < r[2] && lx + lw > r[0] && ly < r[3] && ly + 7 > r[1]) {
+						place = false;
+						ly = r[3] + 1;
+						break;
+					}
+				}
+			}
+			if (place || sel) {
+				labelRects.add(new int[]{lx, ly, lx + lw, ly + 7});
+				small(g, label, lx, ly, sel ? 0xFFFFFFFF : 0xFFE6E9EC);
+			}
 			if (e.firing()) {
 				int blink = (System.currentTimeMillis() / 250) % 2 == 0 ? 0xFFFF5A3A : 0xFFFFD24A;
 				circle(g, sx, sy, Math.max(len, wid) * 0.8 + 3, blink, 0);
@@ -1520,6 +1545,38 @@ public class TacticalMapScreen extends Screen {
 		small(g, step + " " + Component.translatable("screen.airdefense.map.blocks").getString(), x, y - 9, 0xFFFFFFFF);
 	}
 
+	/**
+	 * 2.0: the header's buttons side by side after the title, each as wide as its longest label (in the player's
+	 * language), squeezed evenly when the screen is narrow - none over another or over the side panel.
+	 */
+	private void layoutHeader(UiButton[] buttons, String[][] keys) {
+		int x = mx0 + (int) (font.width(title) * 1.25f) + 8;
+		int right = width - 4;
+		int gap = 3;
+		int[] w = new int[buttons.length];
+		int total = 0;
+		for (int i = 0; i < buttons.length; i++) {
+			int m = 30;
+			for (String k : keys[i]) {
+				m = Math.max(m, font.width(Component.translatable(k)) + 12);
+			}
+			w[i] = m;
+			total += m + gap;
+		}
+		float k = total > right - x ? (right - x) / (float) total : 1f;
+		for (int i = 0; i < buttons.length; i++) {
+			int bw = Math.max(24, (int) (w[i] * k));
+			buttons[i].setX(x);
+			buttons[i].setY(2);
+			buttons[i].setWidth(bw);
+			x += bw + gap;
+		}
+		headerEnd = x;
+	}
+
+	/** Where the header's buttons end (the coordinates go under the map when there is no room for them up there). */
+	private int headerEnd;
+
 	private void drawHeader(GuiGraphicsExtractor g, int mouseX, int mouseY) {
 		com.stasdoto.airdefense.client.ui.Ui.big(g, font, title, mx0, 3, 1.25f, com.stasdoto.airdefense.client.ui.Ui.TEXT);
 		String info;
@@ -1530,9 +1587,17 @@ public class TacticalMapScreen extends Screen {
 		} else {
 			info = "";
 		}
-		g.text(font, info, mx1 - font.width(info), 5, C_DIM);
 		Component hint = Component.translatable("screen.airdefense.map.hint");
-		small(g, hint.getString(), mx0, height - 11, C_DIM);
+		if (mx1 - font.width(info) > headerEnd + 4) {
+			g.text(font, info, mx1 - font.width(info), 5, C_DIM);
+			small(g, hint.getString(), mx0, height - 11, C_DIM);
+		} else {
+			// No room up top: the coordinates at the bottom right of the map, the hint left of them.
+			g.text(font, info, mx1 - font.width(info), height - 12, C_DIM);
+			if (info.isEmpty()) {
+				small(g, hint.getString(), mx0, height - 11, C_DIM);
+			}
+		}
 	}
 
 	private void drawPanel(GuiGraphicsExtractor g, int mouseX, int mouseY) {
@@ -2322,9 +2387,25 @@ public class TacticalMapScreen extends Screen {
 	// Primitives
 
 	private void small(GuiGraphicsExtractor g, String text, int x, int y, int color) {
+		// 2.0: in the side panel a long line is made smaller, then cut short, so it never runs past the panel's edge.
+		float scale = 0.75f;
+		if (x >= px0 && x < px0 + PANEL_W) {
+			int room = px0 + PANEL_W - 5 - x;
+			int w = font.width(text);
+			if (w * scale > room) {
+				scale = Math.max(0.6f, room / (float) w);
+				if (w * scale > room) {
+					String cut = text;
+					while (cut.length() > 1 && (font.width(cut) + font.width("…")) * scale > room) {
+						cut = cut.substring(0, cut.length() - 1);
+					}
+					text = cut + "…";
+				}
+			}
+		}
 		g.pose().pushMatrix();
 		g.pose().translate(x, y);
-		g.pose().scale(0.75f, 0.75f);
+		g.pose().scale(scale, scale);
 		g.text(font, text, 0, 0, color);
 		g.pose().popMatrix();
 	}
