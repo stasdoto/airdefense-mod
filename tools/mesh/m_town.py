@@ -84,5 +84,46 @@ def taxi():
     return m
 
 
+def side_canvas(s, B, side, y_c=0.7, h=1.2):
+    hw = B.hw
+    zc = (s.zf + s.zr) / 2
+    L = s.zf - s.zr
+    return K.Canvas((side * hw, y_c, zc), (0, 0, -side * L), (0, h, 0), ppm=220), side * hw, zc, L
+
+
+def police_extra(m, s, B, C, body, inside):
+    # The light bar on the roof (lamps at +-0.48 m, y ~1.6, z -0.1 as the game flashes them).
+    zc = -0.1
+    y = B.gh_y(zc) + s.crown - 0.005
+    body.add(K.light_bar((0.0, y, zc), 1.3, depth=0.3, h=0.15))
+    blue = (20, 62, 150, 255)
+    white = (245, 245, 245, 255)
+    for side in (-1, 1):
+        cv, x, zc2, L = side_canvas(s, B, side)
+        # A blue band under the windows with the lettering, running round the arches.
+        zf0, zr0 = s.front_axle - 0.1, s.rear_axle + 0.1
+        cv.rect((x, 0.78, zf0), (x, 0.52, zr0), blue)
+        cv.rect((x, 0.52, zf0 + 0.1), (x, 0.47, zr0 - 0.1), white)
+        cv.text((x, 0.65, (s.b_z + s.cowl_z) / 2 - 0.1), 1.25, 0.2, 'ПОЛІЦІЯ', white[:3])
+        cv.text((x, 0.65, s.rear_axle + 0.55), 0.5, 0.15, '102', white[:3])
+        m.decals.append(cv.decal(depth=0.3, region=lambda P: (P[:, 1] > 0.4) & (P[:, 1] < 0.85)))
+    # The bonnet: a blue chevron stripe; the boot lid: text.
+    cv = K.Canvas((0, 1.0, (s.cowl_z + s.zf) / 2), (-B.hw * 2.2, 0, 0), (0, 0, s.zf - s.cowl_z + 0.2), ppm=220)
+    cv.rect((-0.18, 1.0, s.zf), (0.18, 1.0, s.cowl_z + 0.15), blue)
+    d = cv.decal(depth=0.8, region=lambda P: (P[:, 2] > s.cowl_z - 0.02) & (P[:, 1] < s.belt_f + 0.03))
+    d.n = np.array([0, 1.0, 0])
+    m.decals.append(d)
+
+
+def police():
+    """The police saloon (drivable): the box model's size and axles, a light bar over the roof, the livery."""
+    s = TC.CarSpec(
+        id='police_car', zf=2.46, zr=-2.29, width=1.85, front_axle=1.4, rear_axle=-1.4, wheel_r=0.33, tyre_w=0.22, track=0.79,
+        cowl_z=0.85, ws_top_z=-0.08, roof_end_z=-1.0, deck_z=-1.65, b_z=-0.42, c_z=-1.12, nose_len=0.55,
+        wheel_names=('wheel_1_l', 'wheel_1_r', 'wheel_2_l', 'wheel_2_r'), tinted=False, dirt=0.1, rear_seat_z=-0.95, paint=0xF2F3F4,
+        roof=1.45, steering=((-0.4, 0.9, 0.15), (-24.0, 0.0, 0.0)), driver=(-0.4, 0.52, 0.1), seat_mat='seat', plate_text=None)
+    return TC.build_car(s, extra=police_extra)
+
+
 def models():
-    return [saloon(), hatch(), boxy(), suv(), taxi()]
+    return [saloon(), hatch(), boxy(), suv(), taxi(), police()]

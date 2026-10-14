@@ -282,6 +282,7 @@ class Canvas:
         a = (np.clip(m, 0, 1) * 255).astype(np.uint8)
         im = Image.new('RGBA', (w, h), tuple(int(x) for x in rgb) + (0,))
         im.putalpha(Image.fromarray(a))
+        im = im.transpose(Image.FLIP_LEFT_RIGHT)  # the canvases are seen from outside in the game's mirrored x
         x, y = self.px(c)
         self.img.alpha_composite(im, (int(x - w / 2), int(y - h / 2)))
 
