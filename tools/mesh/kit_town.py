@@ -226,6 +226,19 @@ def taper_shape(top0, top1, bot0=0.0, bot1=0.0, round_=0.0):
 # Decals drawn with lines (shut lines, creases, stripes)
 
 
+class RegionDecal(materials.Decal):
+    """A decal that only lands where region(pos) is true (so a bonnet's lines do not smear up over the roof)."""
+
+    def __init__(self, c, u, v, img, region, depth=0.6, facing=None, double=False):
+        super().__init__(c, u, v, img, depth, facing, double)
+        self.region = region
+
+    def apply(self, rgb, pos, nrm):
+        out = super().apply(rgb, pos, nrm)
+        ok = self.region(pos)
+        return np.where(ok[:, None], out, rgb)
+
+
 class Canvas:
     """A picture to lay on the paint from a direction: world points map to pixels."""
 
@@ -272,8 +285,10 @@ class Canvas:
         x, y = self.px(c)
         self.img.alpha_composite(im, (int(x - w / 2), int(y - h / 2)))
 
-    def decal(self, depth=0.5, double=False):
+    def decal(self, depth=0.5, double=False, region=None):
         arr = np.asarray(self.img, dtype=np.float64)
+        if region is not None:
+            return RegionDecal(self.c, self.u, self.v, arr, region, depth=depth, double=double)
         return materials.Decal(self.c, self.u, self.v, arr, depth=depth, double=double)
 
 

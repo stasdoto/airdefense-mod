@@ -191,16 +191,16 @@ class Chart:
                          (v[:, self.va] - self.vmin) * self.density + self.y + PAD], axis=1)
 
 
-def make_charts(flat, density):
+def make_charts(flat, density, by_mat=False):
     polys = [p for p in flat.polys]
     groups = {}
     for i, p in enumerate(polys):
         fn = p['fn']
         ax = int(np.argmax(np.abs(fn)))
         d = ax * 2 + (0 if fn[ax] >= 0 else 1)
-        groups.setdefault((p['geo'], d), []).append(i)
+        groups.setdefault((p['geo'], d, p['mat'] if by_mat else None), []).append(i)
     charts = []
-    for (geo, d), idxs in groups.items():
+    for (geo, d, _m), idxs in groups.items():
         # Connected pieces (sharing an edge).
         parent = {i: i for i in idxs}
 
@@ -348,7 +348,7 @@ def texel_attrs(owner, bary, tri_of):
 def bake(model, verbose=True):
     flat = Flat(model)
     scheme = model.scheme or materials.Scheme()
-    charts = make_charts(flat, model.density)
+    charts = make_charts(flat, model.density, getattr(model, 'chart_by_mat', False))
     # Tiny pieces (bolts, thin edges) share one swatch of their material and get their shading per corner instead.
     for c in charts:
         if c.w * c.h <= 4 and all(DENSITY.get(p['mat'], 1.0) <= 1.3 for p in c.polys):

@@ -709,17 +709,17 @@ def shut_lines(s, B, model):
     zc = (s.zf + s.zr) / 2
     L = s.zf - s.zr
     for side in (-1, 1):
-        cv = K.Canvas((side * hw, 0.7, zc), (0, 0, -side * L), (0, 1.2, 0), ppm=110)
+        cv = K.Canvas((side * hw, 0.7, zc), (0, 0, -side * L), (0, 1.2, 0), ppm=220)
         if side < 0:
-            cv = K.Canvas((side * hw, 0.7, zc), (0, 0, L), (0, 1.2, 0), ppm=110)
+            cv = K.Canvas((side * hw, 0.7, zc), (0, 0, L), (0, 1.2, 0), ppm=220)
         x = side * hw
         y_low = s.sill + 0.03
         # Front door: its front edge just behind the front arch, up to the belt.
         zf_d = min(s.cowl_z - 0.08, s.front_axle - B.Ra - 0.08)
         top = s.belt_f - 0.005
-        cv.line([(x, top, zf_d + 0.02), (x, top - 0.1, zf_d), (x, y_low + 0.05, zf_d), (x, y_low, zf_d - 0.04)], dark, 2, light)
-        cv.line([(x, y_low, zf_d - 0.04), (x, y_low, s.b_z + 0.02)], dark, 2)
-        cv.line([(x, y_low, s.b_z), (x, B.belt(s.b_z), s.b_z)], dark, 2, light)
+        cv.line([(x, top, zf_d + 0.02), (x, top - 0.1, zf_d), (x, y_low + 0.05, zf_d), (x, y_low, zf_d - 0.04)], dark, 4, light)
+        cv.line([(x, y_low, zf_d - 0.04), (x, y_low, s.b_z + 0.02)], dark, 4)
+        cv.line([(x, y_low, s.b_z), (x, B.belt(s.b_z), s.b_z)], dark, 4, light)
         if s.doors == 4:
             zr_d = s.c_z - 0.02 if s.q_z is None else s.c_z - 0.08
             ra = s.rear_axle
@@ -732,52 +732,52 @@ def shut_lines(s, B, model):
                 pts.append((x, y_low, ra + B.Ra + 0.035))
             else:
                 pts.append((x, y_low, zr_d))
-            cv.line(pts, dark, 2, light)
-            cv.line([(x, y_low, pts[-1][2]), (x, y_low, s.b_z - 0.02)], dark, 2)
+            cv.line(pts, dark, 4, light)
+            cv.line([(x, y_low, pts[-1][2]), (x, y_low, s.b_z - 0.02)], dark, 4)
         # The front wing / bonnet line along the shoulder.
         # The fuel flap on the right rear wing.
         if side > 0:
             zfl = s.rear_axle + B.Ra + 0.25 if not s.hatch else s.rear_axle - 0.05
             yfl = s.belt_r - 0.12
             cv.line([(x, yfl - 0.07, zfl - 0.08), (x, yfl - 0.07, zfl + 0.08), (x, yfl + 0.07, zfl + 0.08), (x, yfl + 0.07, zfl - 0.08),
-                     (x, yfl - 0.07, zfl - 0.08)], dark, 2)
+                     (x, yfl - 0.07, zfl - 0.08)], dark, 4)
         # A subtle crease: a highlight along the swage line.
         yc = s.belt_f - 0.17
-        cv.line([(x, yc, s.zf - 0.4), (x, yc + 0.03, s.zr + 0.5)], (255, 255, 255, 28), 3)
-        cv.line([(x, yc - 0.03, s.zf - 0.4), (x, yc, s.zr + 0.5)], (0, 0, 0, 30), 2)
+        cv.line([(x, yc, s.zf - 0.4), (x, yc + 0.03, s.zr + 0.5)], (255, 255, 255, 28), 6)
+        cv.line([(x, yc - 0.03, s.zf - 0.4), (x, yc, s.zr + 0.5)], (0, 0, 0, 30), 4)
         d = cv.decal(depth=0.35)
         out.append(d)
     # Bonnet: along the shoulders and across the cowl, seen from above.
-    cv = K.Canvas((0, 1.0, (s.cowl_z + s.zf) / 2), (-hw * 2.2, 0, 0), (0, 0, s.zf - s.cowl_z + 0.2), ppm=110)
+    cv = K.Canvas((0, 1.0, (s.cowl_z + s.zf) / 2), (-hw * 2.2, 0, 0), (0, 0, s.zf - s.cowl_z + 0.2), ppm=220)
     xb = B.xb(s.cowl_z + 0.3) + 0.01
     zz = np.linspace(s.cowl_z + 0.1, s.zf, 12)
     for side in (-1, 1):
-        pts = [(side * min(xb, B.xb(z) + 0.01), 1.0, z) for z in zz]
-        cv.line(pts, dark, 2)
-    cv.line([(-xb, 1.0, s.cowl_z + 0.1), (xb, 1.0, s.cowl_z + 0.1)], dark, 2)
-    d = cv.decal(depth=0.8)
+        pts = [(side * min(xb, B.xb(z) + 0.01) * 0.93, 1.0, z) for z in zz]
+        cv.line(pts, dark, 4)
+    cv.line([(-xb, 1.0, s.cowl_z + 0.1), (xb, 1.0, s.cowl_z + 0.1)], dark, 4)
+    d = cv.decal(depth=0.8, region=lambda P: (P[:, 2] > s.cowl_z - 0.02) & (P[:, 1] < s.belt_f + 0.03))
     d.n = np.array([0, 1.0, 0])
     out.append(d)
     if not s.hatch:
         # The boot lid.
-        cv = K.Canvas((0, 1.0, (s.gh_end + s.zr) / 2), (hw * 2.2, 0, 0), (0, 0, s.gh_end - s.zr + 0.2), ppm=110)
-        cv.line([(-xb, 1.0, s.gh_end - 0.03), (xb, 1.0, s.gh_end - 0.03)], dark, 2)
+        cv = K.Canvas((0, 1.0, (s.gh_end + s.zr) / 2), (hw * 2.2, 0, 0), (0, 0, s.gh_end - s.zr + 0.2), ppm=220)
+        cv.line([(-xb, 1.0, s.gh_end - 0.03), (xb, 1.0, s.gh_end - 0.03)], dark, 4)
         for side in (-1, 1):
             zz = np.linspace(s.gh_end - 0.03, s.zr + 0.08, 8)
-            cv.line([(side * min(xb, B.xb(z) - 0.02), 1.0, z) for z in zz], dark, 2)
-        d = cv.decal(depth=0.8)
+            cv.line([(side * min(xb, B.xb(z) - 0.02) * 0.93, 1.0, z) for z in zz], dark, 4)
+        d = cv.decal(depth=0.8, region=lambda P: (P[:, 2] < s.gh_end + 0.02) & (P[:, 1] < s.belt_r + 0.03))
         d.n = np.array([0, 1.0, 0])
         out.append(d)
-        cv = K.Canvas((0, s.tail_top - 0.1, s.zr), (hw * 2.2, 0, 0), (0, 0.4, 0), ppm=110)
-        cv.line([(-hw * 0.82, s.tail_top - 0.22, s.zr), (hw * 0.82, s.tail_top - 0.22, s.zr)], dark, 2)
+        cv = K.Canvas((0, s.tail_top - 0.1, s.zr), (hw * 2.2, 0, 0), (0, 0.4, 0), ppm=220)
+        cv.line([(-hw * 0.82, s.tail_top - 0.22, s.zr), (hw * 0.82, s.tail_top - 0.22, s.zr)], dark, 4)
         d = cv.decal(depth=0.4)
         d.n = np.array([0, 0, -1.0])
         out.append(d)
     else:
         # The tailgate's edges on the back.
-        cv = K.Canvas((0, (s.belt_r + 0.3) / 2, s.zr), (hw * 2.2, 0, 0), (0, s.belt_r, 0), ppm=110)
+        cv = K.Canvas((0, (s.belt_r + 0.3) / 2, s.zr), (hw * 2.2, 0, 0), (0, s.belt_r, 0), ppm=220)
         yb = 0.45
-        cv.line([(-hw * 0.72, yb, s.zr), (hw * 0.72, yb, s.zr)], dark, 2)
+        cv.line([(-hw * 0.72, yb, s.zr), (hw * 0.72, yb, s.zr)], dark, 4)
         d = cv.decal(depth=0.5)
         d.n = np.array([0, 0, -1.0])
         out.append(d)
@@ -867,6 +867,7 @@ def interior(s, B, lower, gh, model):
 def build_car(s, extra=None):
     scheme = materials.Scheme(base=s.paint, dirt=s.dirt, wear=0.08, seed=abs(hash(s.id)) % 997, gloss=0.9)
     m = Model(s.id, scheme, density=60, tex_width=512)
+    m.chart_by_mat = True
     m.tinted = s.tinted
     m.tl_dims = {}
     if s.plate_text:
