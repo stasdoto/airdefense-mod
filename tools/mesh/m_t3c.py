@@ -139,7 +139,7 @@ def trailer_guards(g, z_axles, x, r, y):
 
 def landing_gear(g, z, y_top, x=0.9):
     for s in (-1, 1):
-        g.extend(box((s * x - 0.07, 0.35, z - 0.07), (s * x + 0.07, y_top, z + 0.07), 'metal_dark'))
+        g.extend(box((s * x - 0.07, 0.05, z - 0.07), (s * x + 0.07, y_top, z + 0.07), 'metal_dark'))
         g.extend(box((s * x - 0.2, 0.0, z - 0.14), (s * x + 0.2, 0.06, z + 0.14), 'chassis'))
     g.extend(box((-x, 0.7, z - 0.03), (x, 0.76, z + 0.03), 'metal_dark'))
 

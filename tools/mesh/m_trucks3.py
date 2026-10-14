@@ -19,7 +19,7 @@ BUILDERS = {}
 def load_parts():
     """The vehicle builders live in m_t3a, m_t3b, ... (imported here, after the shared helpers above exist)."""
     import importlib
-    for n in ('m_t3a', 'm_t3b', 'm_t3c'):
+    for n in ('m_t3a', 'm_t3b', 'm_t3c', 'm_t3d', 'm_t3e', 'm_t3f'):
         try:
             mod = importlib.import_module(n)
         except ModuleNotFoundError as e:
