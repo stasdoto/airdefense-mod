@@ -88,6 +88,7 @@ class CarSpec:
         self.paint = 0xEDEDED
         self.dirt = 0.18
         self.near = 24.0
+        self.density = 46
         self.doors = 4
         self.hatch = False
         self.seat_mat = 'seat'
@@ -865,7 +866,7 @@ def interior(s, B, lower, gh, model):
 
 def build_car(s, extra=None):
     scheme = materials.Scheme(base=s.paint, dirt=s.dirt, wear=0.08, seed=abs(hash(s.id)) % 997, gloss=0.9)
-    m = Model(s.id, scheme, density=60, tex_width=512)
+    m = Model(s.id, scheme, density=s.density, tex_width=512)
     m.chart_by_mat = True
     m.tinted = s.tinted
     m.tl_dims = {}

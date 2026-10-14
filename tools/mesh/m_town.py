@@ -193,7 +193,7 @@ def tram():
     cells = [(6.35, 5.1, 'w'), (5.1, 3.0, 'w'), (3.0, 1.6, 'd'), (1.6, 0.0, 'w'), (0.0, -1.6, 'w'), (-1.6, -3.0, 'd'), (-3.0, -5.1, 'w'),
              (-5.1, -6.35, 'w')]
     s = TB.TransitSpec(id='tram', zf=7.0, zr=-7.0, paint=0xB3261E, second=0xE9DFC5, cells=cells, ybot=0.3, belt_lo=1.0, win_lo=1.05,
-                       win_hi=2.5, top_hi=2.68, roof=3.1, floor=0.7, hw=1.25, driver=(-0.6, 5.7), ac=False,
+                       win_hi=2.5, top_hi=2.68, roof=3.1, floor=0.7, hw=1.25, driver=(-0.6, 5.7), ac=False, nose_len=0.8, lean_f=0.22, nose_p=3.2,
                        wheels=[(4.6, 0.42, 0.75, 0.24, False), (3.4, 0.42, 0.75, 0.24, False), (-3.4, 0.42, 0.75, 0.24, False),
                                (-4.6, 0.42, 0.75, 0.24, False)],
                        seat_rows=seat_rows([-5.8, -5.0, -4.2, -2.4, -0.8, 0.0], cells))
