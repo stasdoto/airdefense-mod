@@ -558,3 +558,8 @@ def models():
         only = sys.argv[sys.argv.index('--only') + 1]
     ids = only.split(',') if only else list(BUILDERS)
     return [BUILDERS[i]() for i in ids if i in BUILDERS]
+
+
+import m_trucks3  # noqa: E402  (hand-built replacements of converted vehicles)
+m_trucks3.load_parts()
+BUILDERS.update(m_trucks3.BUILDERS)
