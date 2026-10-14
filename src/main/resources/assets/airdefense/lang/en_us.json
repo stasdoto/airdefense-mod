@@ -1468,5 +1468,18 @@
   "subtitles.airdefense.kids_play": "Children playing",
   "subtitles.airdefense.tram_bell": "Tram bell",
   "subtitles.airdefense.tram_pass": "Tram passes",
-  "subtitles.airdefense.bus_go": "Bus pulls away"
+  "subtitles.airdefense.bus_go": "Bus pulls away",
+  "entity.airdefense.civil_car": "Car",
+  "item.airdefense.civil_car": "Car",
+  "map.airdefense.short.civil_car": "CAR",
+  "key.airdefense.horn": "Horn",
+  "key.airdefense.lights": "Headlights",
+  "key.airdefense.cruise": "Cruise control",
+  "hud.airdefense.vehicle.civil": "Town car",
+  "hud.airdefense.vehicle.keys_drive": "[Space] handbrake  [%s] horn  [%s] lights  [%s] cruise  [%s] seat",
+  "hud.airdefense.drive.kmh": "km/h",
+  "hud.airdefense.drive.lights_on": "Headlights on",
+  "hud.airdefense.drive.lights_off": "Headlights off",
+  "hud.airdefense.drive.cruise_on": "Cruise control on",
+  "hud.airdefense.drive.cruise_off": "Cruise control off"
 }

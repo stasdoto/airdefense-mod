@@ -1468,5 +1468,18 @@
   "subtitles.airdefense.kids_play": "Граються діти",
   "subtitles.airdefense.tram_bell": "Дзвонить трамвай",
   "subtitles.airdefense.tram_pass": "Проїжджає трамвай",
-  "subtitles.airdefense.bus_go": "Від'їжджає автобус"
+  "subtitles.airdefense.bus_go": "Від'їжджає автобус",
+  "entity.airdefense.civil_car": "Легковий автомобіль",
+  "item.airdefense.civil_car": "Легковий автомобіль",
+  "map.airdefense.short.civil_car": "АВТО",
+  "key.airdefense.horn": "Сигнал",
+  "key.airdefense.lights": "Фари",
+  "key.airdefense.cruise": "Круїз-контроль",
+  "hud.airdefense.vehicle.civil": "Міська машина",
+  "hud.airdefense.vehicle.keys_drive": "[Пробіл] ручник  [%s] сигнал  [%s] фари  [%s] круїз  [%s] пересісти",
+  "hud.airdefense.drive.kmh": "км/год",
+  "hud.airdefense.drive.lights_on": "Фари увімкнено",
+  "hud.airdefense.drive.lights_off": "Фари вимкнено",
+  "hud.airdefense.drive.cruise_on": "Круїз-контроль увімкнено",
+  "hud.airdefense.drive.cruise_off": "Круїз-контроль вимкнено"
 }

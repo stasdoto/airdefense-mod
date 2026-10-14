@@ -1468,5 +1468,18 @@
   "subtitles.airdefense.kids_play": "Играют дети",
   "subtitles.airdefense.tram_bell": "Звонит трамвай",
   "subtitles.airdefense.tram_pass": "Проезжает трамвай",
-  "subtitles.airdefense.bus_go": "Отъезжает автобус"
+  "subtitles.airdefense.bus_go": "Отъезжает автобус",
+  "entity.airdefense.civil_car": "Легковой автомобиль",
+  "item.airdefense.civil_car": "Легковой автомобиль",
+  "map.airdefense.short.civil_car": "АВТО",
+  "key.airdefense.horn": "Сигнал",
+  "key.airdefense.lights": "Фары",
+  "key.airdefense.cruise": "Круиз-контроль",
+  "hud.airdefense.vehicle.civil": "Городская машина",
+  "hud.airdefense.vehicle.keys_drive": "[Пробел] ручник  [%s] сигнал  [%s] фары  [%s] круиз  [%s] пересесть",
+  "hud.airdefense.drive.kmh": "км/ч",
+  "hud.airdefense.drive.lights_on": "Фары включены",
+  "hud.airdefense.drive.lights_off": "Фары выключены",
+  "hud.airdefense.drive.cruise_on": "Круиз-контроль включён",
+  "hud.airdefense.drive.cruise_off": "Круиз-контроль выключен"
 }
