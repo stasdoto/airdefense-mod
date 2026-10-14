@@ -278,7 +278,9 @@ public final class DriveState {
 		double ayAcc = 0;
 		double delta = Math.toRadians(steer);
 		double brakeForce = brake * mu * weight * 0.9;
-		double gSlopeLong = -DriveSpec.G * Math.sin(Math.toRadians(slopePitch));
+		// Minecraft's hills are block steps (45 degrees where a real hill would be gentler): the pull of the slope is
+		// eased so that tanks and lorries can still crawl up a block-stepped hillside.
+		double gSlopeLong = -DriveSpec.G * Math.sin(Math.toRadians(slopePitch)) * 0.5;
 		double gSlopeLat = DriveSpec.G * Math.sin(Math.toRadians(slopeRoll)) * 0.6;
 		double yawNow = yaw;
 		for (int i = 0; i < SUBSTEPS; i++) {

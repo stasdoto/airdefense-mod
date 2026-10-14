@@ -213,6 +213,47 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		meshTexture = m.texture;
 	}
 
+	/** 2.0: a town car taken from its bay: the mesh of its kind (car_saloon, ...) and its paint; null if none. */
+	private final java.util.Map<String, Object[]> civilMeshes = new java.util.HashMap<>();
+	private int civilGeneration = -1;
+
+	private static final java.util.Map<String, Integer> CAR_PAINTS = java.util.Map.of("white", 0xE6E6E2, "red", 0xA3261F, "blue", 0x29467E,
+			"green", 0x355E43, "beige", 0xCDBE98, "cherry", 0x5E1A24, "black", 0x1C1D20, "silver", 0xA6AAAE);
+
+	private Object[] civilMesh(String model) {
+		int g = MeshLoader.generation();
+		if (g != civilGeneration) {
+			civilGeneration = g;
+			civilMeshes.clear();
+		}
+		return civilMeshes.computeIfAbsent(model, k -> {
+			String id = k;
+			int tint = -1;
+			int cut = k.lastIndexOf('_');
+			if (cut > 4 && CAR_PAINTS.containsKey(k.substring(cut + 1))) {
+				id = k.substring(0, cut);
+				tint = 0xFF000000 | CAR_PAINTS.get(k.substring(cut + 1));
+			}
+			MeshLoader.Mesh m = MeshLoader.get(id);
+			if (m == null) {
+				return new Object[0];
+			}
+			MeshState st = new MeshState();
+			java.util.Set<String> wheels = VehicleModel.wheelNames(type.geometry);
+			VehicleModel solid = VehicleModel.ofMesh(MeshModel.bake(m, MeshLoader.SOLID, st, wheels), type.geometry, RenderTypes::entityCutoutCull);
+			VehicleModel cut2 = m.has(MeshLoader.CUTOUT)
+					? VehicleModel.ofMesh(MeshModel.bake(m, MeshLoader.CUTOUT, st, wheels), type.geometry, RenderTypes::entityCutout) : null;
+			VehicleModel glassM = m.has(MeshLoader.GLASS)
+					? VehicleModel.ofMesh(MeshModel.bake(m, MeshLoader.GLASS, st, wheels), type.geometry, RenderTypes::entityTranslucentCull) : null;
+			for (VehicleModel vm : new VehicleModel[]{solid, cut2, glassM}) {
+				if (vm != null) {
+					vm.tint = tint;
+				}
+			}
+			return new Object[]{solid, cut2, glassM, m.texture};
+		});
+	}
+
 	/** Is this type drawn from a baked mesh (for the tests)? */
 	public boolean hasMesh() {
 		resolveMesh();
@@ -277,14 +318,27 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 			overlay = OverlayTexture.pack(0.78f, false);
 		}
 		resolveMesh();
-		if (meshSolid != null) {
-			// 2.0: the baked mesh (a wreck drawn dark by the model's shade); its inside is a part drawn only near.
-			collector.submitModel(meshSolid, s, poseStack, meshTexture, light, overlay, s.outlineColor);
-			if (meshCutout != null) {
-				collector.submitModel(meshCutout, s, poseStack, meshTexture, light, overlay, s.outlineColor);
+		VehicleModel mSolid = meshSolid;
+		VehicleModel mCutout = meshCutout;
+		VehicleModel mGlass = meshGlass;
+		Identifier mTex = meshTexture;
+		if (type.isCivil()) {
+			Object[] set = civilMesh(CivilCars.model(s.variant));
+			if (set.length > 0) {
+				mSolid = (VehicleModel) set[0];
+				mCutout = (VehicleModel) set[1];
+				mGlass = (VehicleModel) set[2];
+				mTex = (Identifier) set[3];
 			}
-			if (meshGlass != null) {
-				collector.submitModel(meshGlass, s, poseStack, meshTexture, light, overlay, s.outlineColor);
+		}
+		if (mSolid != null) {
+			// 2.0: the baked mesh (a wreck drawn dark by the model's shade); its inside is a part drawn only near.
+			collector.submitModel(mSolid, s, poseStack, mTex, light, overlay, s.outlineColor);
+			if (mCutout != null) {
+				collector.submitModel(mCutout, s, poseStack, mTex, light, overlay, s.outlineColor);
+			}
+			if (mGlass != null) {
+				collector.submitModel(mGlass, s, poseStack, mTex, light, overlay, s.outlineColor);
 			}
 			poseStack.popPose();
 			if (s.beacons && !s.wreck) {

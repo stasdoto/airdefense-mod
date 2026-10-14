@@ -26,6 +26,11 @@ public class MeshCube extends ModelPart.Cube {
 	private static float[] pn = new float[3 * 1024];
 	private static float[] pv = new float[1024];
 	private static int[] pc = new int[1024];
+	/** Which corners are turned already in this draw (stamped with the draw's number). */
+	private static int[] stamp = new int[1024];
+	private static int draw;
+	/** Quads smaller than about a pixel and a half are left out: (blocks per pixel at one block away x 1.5)^2. */
+	private static final float PIXEL = 0.0013f * 1.5f;
 
 	private final MeshLoader.Layer layer;
 	private final MeshState state;
@@ -45,6 +50,7 @@ public class MeshCube extends ModelPart.Cube {
 			pn = new float[m * 3];
 			pv = new float[m];
 			pc = new int[m];
+			stamp = new int[m];
 		}
 	}
 
@@ -97,7 +103,38 @@ public class MeshCube extends ModelPart.Cube {
 			float links = travel / MeshState.TRACK_PITCH;
 			shift = (links - (float) Math.floor(links)) * l.period;
 		}
-		for (int i = 0, i3 = 0; i < n; i++, i3 += 3) {
+		int[] q = l.quads;
+		// Level of detail: the quads are sorted biggest first; far away the small ones (bolts, handles, thin edges) go.
+		int count = q.length;
+		float minArea = dist * PIXEL;
+		minArea *= minArea;
+		float[] areas = l.areas;
+		if (minArea > 0 && areas.length > 0 && areas[areas.length - 1] < minArea) {
+			int lo = 0;
+			int hi = areas.length;
+			while (lo < hi) {
+				int mid = (lo + hi) >>> 1;
+				if (areas[mid] >= minArea) {
+					lo = mid + 1;
+				} else {
+					hi = mid;
+				}
+			}
+			count = lo * 4;
+		}
+		if (++draw == Integer.MAX_VALUE) {
+			draw = 1;
+			java.util.Arrays.fill(stamp, 0);
+		}
+		int[] st = stamp;
+		int stampNow = draw;
+		for (int k = 0; k < count; k++) {
+			int i = q[k];
+			if (st[i] == stampNow) {
+				continue;
+			}
+			st[i] = stampNow;
+			int i3 = i * 3;
 			float x = pos[i3];
 			float y = pos[i3 + 1];
 			float z = pos[i3 + 2];
@@ -130,8 +167,7 @@ public class MeshCube extends ModelPart.Cube {
 			tc[i] = v;
 			tv[i] = (f & MeshLoader.FLAG_TRACK) != 0 ? uv[i * 2 + 1] + shift : uv[i * 2 + 1];
 		}
-		int[] q = l.quads;
-		for (int k = 0; k < q.length; k++) {
+		for (int k = 0; k < count; k++) {
 			int i = q[FLIP ? k ^ 3 : k];
 			int i3 = i * 3;
 			vc.addVertex(tx[i3], tx[i3 + 1], tx[i3 + 2], tc[i], uv[i * 2], tv[i], overlay, light, tn[i3], tn[i3 + 1], tn[i3 + 2]);

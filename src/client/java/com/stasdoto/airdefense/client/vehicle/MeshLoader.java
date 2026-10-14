@@ -28,6 +28,42 @@ public final class MeshLoader {
 	public static final int FLAG_TRACK = 2;
 
 	/** One draw layer of a part: its vertices (unique corners) and quads (indices, 4 each). */
+	private static float quadArea(int[] q, int k, float[] p) {
+		int a = q[k] * 3;
+		int b = q[k + 1] * 3;
+		int c = q[k + 2] * 3;
+		int d = q[k + 3] * 3;
+		// Half the cross product of the diagonals.
+		float ux = p[c] - p[a], uy = p[c + 1] - p[a + 1], uz = p[c + 2] - p[a + 2];
+		float vx = p[d] - p[b], vy = p[d + 1] - p[b + 1], vz = p[d + 2] - p[b + 2];
+		float cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
+		return 0.5f * (float) Math.sqrt(cx * cx + cy * cy + cz * cz);
+	}
+
+	static int[] sortBySize(int[] q, float[] p) {
+		int n = q.length / 4;
+		Integer[] order = new Integer[n];
+		float[] area = new float[n];
+		for (int i = 0; i < n; i++) {
+			order[i] = i;
+			area[i] = quadArea(q, i * 4, p);
+		}
+		java.util.Arrays.sort(order, (x, y) -> Float.compare(area[y], area[x]));
+		int[] out = new int[q.length];
+		for (int i = 0; i < n; i++) {
+			System.arraycopy(q, order[i] * 4, out, i * 4, 4);
+		}
+		return out;
+	}
+
+	static float[] areasOf(int[] q, float[] p) {
+		float[] a = new float[q.length / 4];
+		for (int i = 0; i < a.length; i++) {
+			a[i] = quadArea(q, i * 4, p);
+		}
+		return a;
+	}
+
 	public static final class Layer {
 		public final int type;
 		/** Drawn only within this distance (blocks); 0 = always. */
@@ -45,6 +81,8 @@ public final class MeshLoader {
 		public final float radius;
 		public final boolean anyTint;
 		public final boolean anyTrack;
+		/** 2.0 level of detail: each quad's area (square blocks), the quads sorted from the biggest down. */
+		public final float[] areas;
 
 		Layer(int type, float near, float period, float[] pos, float[] nrm, float[] uv, int[] col, byte[] flags, int[] quads) {
 			this.type = type;
@@ -56,7 +94,8 @@ public final class MeshLoader {
 			this.uv = uv;
 			this.col = col;
 			this.flags = flags;
-			this.quads = quads;
+			this.quads = sortBySize(quads, pos);
+			this.areas = areasOf(this.quads, pos);
 			float r = 0;
 			boolean t = false;
 			boolean k = false;
@@ -241,7 +280,7 @@ public final class MeshLoader {
 			throw new IllegalArgumentException("not a mesh");
 		}
 		int version = b.getInt();
-		if (version != 1) {
+		if (version != 1 && version != 2) {
 			throw new IllegalArgumentException("mesh version " + version);
 		}
 		int texW = b.getInt();
@@ -274,27 +313,64 @@ public final class MeshLoader {
 				float[] uv = new float[nv * 2];
 				int[] col = new int[nv];
 				byte[] fl = new byte[nv];
-				for (int i = 0; i < nv; i++) {
-					// Vehicle space (y up) -> the part's Minecraft space (y down); metres are blocks.
-					pos[i * 3] = b.getShort() * scale;
-					pos[i * 3 + 1] = -b.getShort() * scale;
-					pos[i * 3 + 2] = b.getShort() * scale;
-					nrm[i * 3] = b.get() / 127f;
-					nrm[i * 3 + 1] = -b.get() / 127f;
-					nrm[i * 3 + 2] = b.get() / 127f;
-					uv[i * 2] = (b.getShort() & 0xFFFF) / 65535f;
-					uv[i * 2 + 1] = (b.getShort() & 0xFFFF) / 65535f;
-					col[i] = b.getInt();
-					fl[i] = b.get();
-				}
 				int[] quads = new int[nq * 4];
-				boolean big = nv > 65535;
-				for (int i = 0; i < quads.length; i++) {
-					int k = big ? b.getInt() : b.getShort() & 0xFFFF;
+				if (version == 1) {
+					for (int i = 0; i < nv; i++) {
+						// Vehicle space (y up) -> the part's Minecraft space (y down); metres are blocks.
+						pos[i * 3] = b.getShort() * scale;
+						pos[i * 3 + 1] = -b.getShort() * scale;
+						pos[i * 3 + 2] = b.getShort() * scale;
+						nrm[i * 3] = b.get() / 127f;
+						nrm[i * 3 + 1] = -b.get() / 127f;
+						nrm[i * 3 + 2] = b.get() / 127f;
+						uv[i * 2] = (b.getShort() & 0xFFFF) / 65535f;
+						uv[i * 2 + 1] = (b.getShort() & 0xFFFF) / 65535f;
+						col[i] = b.getInt();
+						fl[i] = b.get();
+					}
+					boolean big = nv > 65535;
+					for (int i = 0; i < quads.length; i++) {
+						quads[i] = big ? b.getInt() : b.getShort() & 0xFFFF;
+					}
+				} else {
+					// Version 2: each field for all the vertices in turn, positions and uvs as steps from the one before.
+					for (int c = 0; c < 3; c++) {
+						int acc = 0;
+						float sign = c == 1 ? -scale : scale;
+						for (int i = 0; i < nv; i++) {
+							acc = (short) (acc + b.getShort());
+							pos[i * 3 + c] = acc * sign;
+						}
+					}
+					for (int c = 0; c < 3; c++) {
+						float sign = c == 1 ? -1 / 127f : 1 / 127f;
+						for (int i = 0; i < nv; i++) {
+							nrm[i * 3 + c] = b.get() * sign;
+						}
+					}
+					for (int c = 0; c < 2; c++) {
+						int acc = 0;
+						for (int i = 0; i < nv; i++) {
+							acc = (acc + (b.getShort() & 0xFFFF)) & 0xFFFF;
+							uv[i * 2 + c] = acc / 65535f;
+						}
+					}
+					for (int i = 0; i < nv; i++) {
+						int g = b.get() & 0xFF;
+						col[i] = 0xFF000000 | g << 16 | g << 8 | g;
+					}
+					b.get(fl);
+					int acc = 0;
+					boolean big = nv > 32767;
+					for (int i = 0; i < quads.length; i++) {
+						acc += big ? b.getInt() : b.getShort();
+						quads[i] = acc;
+					}
+				}
+				for (int k : quads) {
 					if (k < 0 || k >= nv) {
 						throw new IllegalArgumentException("index out of range in " + name);
 					}
-					quads[i] = k;
 				}
 				layers[li] = new Layer(type, near, Math.max(0, reserved), pos, nrm, uv, col, fl, quads);
 			}

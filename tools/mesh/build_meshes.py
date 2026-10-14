@@ -18,12 +18,24 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, '..', 'models'))
 import bake  # noqa: E402
+import meshv2  # noqa: E402
 import render  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 MESHES = os.path.join(ROOT, 'src/main/resources/assets/airdefense/meshes')
 TEX = os.path.join(ROOT, 'src/main/resources/assets/airdefense/textures/entity/mesh')
 MODULES = ['m_town', 'm_tanks', 'm_trucks', 'm_air']
+
+
+def save_png(arr, path):
+    """The texture as a 256-colour PNG (libimagequant: no visible loss, about a third of the size)."""
+    im = Image.fromarray(arr, 'RGBA')
+    try:
+        import imagequant
+        im = imagequant.quantize_pil_image(im, dithering_level=0.6, max_quality=95, min_quality=60)
+    except ImportError:
+        pass
+    im.save(path, optimize=True)
 
 
 def main():
@@ -44,8 +56,11 @@ def main():
                 continue
             t = time.time()
             flat, img, W, H = bake.bake(m)
-            Image.fromarray(np.clip(img, 0, 255).astype(np.uint8), 'RGBA').save(os.path.join(TEX, m.id + '.png'), optimize=True)
-            v, q = bake.export(m, flat, W, H, os.path.join(MESHES, m.id + '.mesh'))
+            save_png(np.clip(img, 0, 255).astype(np.uint8), os.path.join(TEX, m.id + '.png'))
+            mp = os.path.join(MESHES, m.id + '.mesh')
+            v, q = bake.export(m, flat, W, H, mp)
+            data = open(mp, 'rb').read()
+            open(mp, 'wb').write(meshv2.write_v2(*meshv2.read_v1(data)))
             print('  %-18s verts %6d quads %6d  mesh %4d KB  png %4d KB  %.1fs' % (
                 m.id, v, q, os.path.getsize(os.path.join(MESHES, m.id + '.mesh')) // 1024,
                 os.path.getsize(os.path.join(TEX, m.id + '.png')) // 1024, time.time() - t))

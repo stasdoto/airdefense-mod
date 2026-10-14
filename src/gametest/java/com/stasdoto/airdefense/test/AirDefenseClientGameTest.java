@@ -269,6 +269,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("meshcar")) {
 				meshCar(ctx, server);
 			}
+			if (scene("gallery")) {
+				gallery(ctx, server);
+			}
 			if (scene("services")) {
 				services(ctx, server);
 			}
@@ -8812,6 +8815,56 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	 * from the front, side, back and above, the eight paints, wheels turned and rolled, at night, far away; and the frame
 	 * rate of thirty of them against the box models.
 	 */
+	/**
+	 * 2.0: every vehicle that has a baked mesh, one by one, from the front three-quarter (then a few from behind and the
+	 * town props: buses, trolleybus, tram).
+	 */
+	private void gallery(ClientGameTestContext ctx, TestServerContext server) {
+		int x0 = 182000;
+		int g = ground;
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 6000");
+		server.runCommand("weather clear");
+		camera(server, x0 + 0.5, g + 2, -8, 0, 10);
+		ctx.waitTicks(40);
+		int shown = 0;
+		int missing = 0;
+		int i = 0;
+		StringBuilder miss = new StringBuilder();
+		for (VehicleType type : VehicleType.values()) {
+			String mid = type.isCivil() ? "car_saloon" : type.id;
+			boolean has = ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.vehicle.MeshLoader.get(mid) != null);
+			if (!has) {
+				missing++;
+				miss.append(type.id).append(' ');
+				continue;
+			}
+			int x = x0 + (i % 8) * 70;
+			int z = (i / 8) * 70;
+			i++;
+			spawnVehicle(server, type, x, z, 0);
+			float len = type.geometry.length();
+			float r = Math.max(4f, len * 0.85f);
+			double cx = x + 0.5;
+			double cz = z + 0.5;
+			double h = type.geometry.height();
+			if (type.isAir() || type.boat || type.isShip()) {
+				ctx.waitTicks(10);
+			}
+			shot(ctx, server, lookEye(cx + r * 0.75, g + h * 0.35, cz + r * 0.85, cx, g + h * 0.45, cz), "gal_" + type.id, 25);
+			shown++;
+		}
+		String[] props = {"town_bus", "trolleybus", "tram", "car_hatch_red", "car_boxy_beige", "car_suv_black", "car_taxi"};
+		for (int k = 0; k < props.length; k++) {
+			double px = x0 + k * 30 + 0.5;
+			double pz = -60.5;
+			meshProp(ctx, k, props[k], px, g, pz, 0);
+			double r = props[k].startsWith("car") ? 5.5 : 12;
+			shot(ctx, server, lookEye(px + r * 0.75, g + 1, pz + r * 0.85, px, g + 1.2, pz), "gal_" + props[k], 25);
+		}
+		AirDefense.LOGGER.info("[airdefense-test] RESULT gallery: shown {} vehicles with meshes, {} without: {}", shown, missing, miss);
+	}
+
 	private void meshCar(ClientGameTestContext ctx, TestServerContext server) {
 		int x = 175000;
 		int g = ground;
@@ -8824,7 +8877,6 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		AirDefense.LOGGER.info("[airdefense-test] RESULT meshcar: car_saloon mesh {} ({} parts, {} vertices, {} quads, texture {}x{})",
 				mesh != null ? "loaded" : "MISSING", mesh != null ? mesh.parts.length : 0, mesh != null ? mesh.vertices : 0,
 				mesh != null ? mesh.quads : 0, mesh != null ? mesh.texWidth : 0, mesh != null ? mesh.texHeight : 0);
-		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.vehicle.MeshLoader.alias("police_car", "car_saloon"));
 		int vid = spawnVehicle(server, VehicleType.POLICE_CAR, x + 8, 0, 0);
 		int n = 0;
 		double cx = x + 0.5;
