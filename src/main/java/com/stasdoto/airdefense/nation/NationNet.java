@@ -31,6 +31,8 @@ public final class NationNet {
 		PayloadTypeRegistry.clientboundPlay().register(DialoguePayload.TYPE, DialoguePayload.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(DialogueActionPayload.TYPE, DialogueActionPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(DialogueActionPayload.TYPE, (payload, context) -> Dialogue.handle(context.player(), payload));
+		// 2.0: commanding any country from the map.
+		Command.init();
 		// Shift + right click on a villager: the village's affairs (trading is a plain right click).
 		UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
 			if (entity instanceof Villager villager && !player.isShiftKeyDown() && !player.isSpectator()

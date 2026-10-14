@@ -1079,5 +1079,497 @@
       }
     ],
     "subtitle": "subtitles.airdefense.bus_go"
+  },
+  "veh_petrol_idle": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_petrol_idle",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_engine"
+  },
+  "veh_petrol_mid_on": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_petrol_mid_on",
+        "attenuation_distance": 40
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_engine"
+  },
+  "veh_petrol_mid_off": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_petrol_mid_off",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_engine"
+  },
+  "veh_petrol_high_on": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_petrol_high_on",
+        "attenuation_distance": 56
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_engine"
+  },
+  "veh_petrol_high_off": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_petrol_high_off",
+        "attenuation_distance": 40
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_engine"
+  },
+  "veh_diesel_idle": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_diesel_idle",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_diesel"
+  },
+  "veh_diesel_mid_on": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_diesel_mid_on",
+        "attenuation_distance": 56
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_diesel"
+  },
+  "veh_diesel_mid_off": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_diesel_mid_off",
+        "attenuation_distance": 40
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_diesel"
+  },
+  "veh_diesel_high_on": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_diesel_high_on",
+        "attenuation_distance": 72
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_diesel"
+  },
+  "veh_diesel_high_off": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_diesel_high_off",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_diesel"
+  },
+  "veh_v12_idle": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_v12_idle",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_tank_engine"
+  },
+  "veh_v12_mid_on": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_v12_mid_on",
+        "attenuation_distance": 80
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_tank_engine"
+  },
+  "veh_v12_mid_off": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_v12_mid_off",
+        "attenuation_distance": 56
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_tank_engine"
+  },
+  "veh_v12_high_on": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_v12_high_on",
+        "attenuation_distance": 96
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_tank_engine"
+  },
+  "veh_v12_high_off": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_v12_high_off",
+        "attenuation_distance": 64
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_tank_engine"
+  },
+  "veh_turbine_idle": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_turbine_idle",
+        "attenuation_distance": 56
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_turbine"
+  },
+  "veh_turbine_mid": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_turbine_mid",
+        "attenuation_distance": 80
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_turbine"
+  },
+  "veh_turbine_high": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_turbine_high",
+        "attenuation_distance": 100
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_turbine"
+  },
+  "veh_electric_low": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_electric_low",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_electric"
+  },
+  "veh_electric_high": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_electric_high",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_electric"
+  },
+  "veh_rotor_main": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_rotor_main",
+        "attenuation_distance": 220
+      }
+    ],
+    "subtitle": "subtitles.airdefense.rotor"
+  },
+  "veh_rotor_coax": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_rotor_coax",
+        "attenuation_distance": 220
+      }
+    ],
+    "subtitle": "subtitles.airdefense.rotor"
+  },
+  "veh_rotor_apache": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_rotor_apache",
+        "attenuation_distance": 220
+      }
+    ],
+    "subtitle": "subtitles.airdefense.rotor"
+  },
+  "veh_heli_turbine": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_heli_turbine",
+        "attenuation_distance": 96
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_turbine"
+  },
+  "veh_jet_idle": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_jet_idle",
+        "attenuation_distance": 120
+      }
+    ],
+    "subtitle": "subtitles.airdefense.jet"
+  },
+  "veh_jet_mid": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_jet_mid",
+        "attenuation_distance": 240
+      }
+    ],
+    "subtitle": "subtitles.airdefense.jet"
+  },
+  "veh_jet_high": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_jet_high",
+        "attenuation_distance": 320
+      }
+    ],
+    "subtitle": "subtitles.airdefense.jet"
+  },
+  "veh_tracks_slow": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_tracks_slow",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.airdefense.tracks"
+  },
+  "veh_tracks_fast": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_tracks_fast",
+        "attenuation_distance": 64
+      }
+    ],
+    "subtitle": "subtitles.airdefense.tracks"
+  },
+  "veh_road": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_road",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_road"
+  },
+  "veh_road_knobby": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_road_knobby",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_road"
+  },
+  "veh_tyre_squeal": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_tyre_squeal",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_tyre_squeal"
+  },
+  "veh_reverse_beep": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_reverse_beep",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_reverse_beep"
+  },
+  "veh_shift": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_shift_0",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "airdefense:veh_shift_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "airdefense:veh_shift_2",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_shift"
+  },
+  "veh_turbo": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_turbo_0",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "airdefense:veh_turbo_1",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_turbo"
+  },
+  "veh_brake_squeal": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_brake_squeal_0",
+        "attenuation_distance": 40
+      },
+      {
+        "name": "airdefense:veh_brake_squeal_1",
+        "attenuation_distance": 40
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_brake_squeal"
+  },
+  "veh_air_brake": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_air_brake_0",
+        "attenuation_distance": 40
+      },
+      {
+        "name": "airdefense:veh_air_brake_1",
+        "attenuation_distance": 40
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_air_brake"
+  },
+  "veh_horn_car": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_horn_car",
+        "attenuation_distance": 72
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_horn"
+  },
+  "veh_horn_truck": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_horn_truck",
+        "attenuation_distance": 120
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_horn"
+  },
+  "veh_horn_bus": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_horn_bus",
+        "attenuation_distance": 80
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_horn"
+  },
+  "veh_door_open": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_door_open",
+        "attenuation_distance": 16
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_door_open"
+  },
+  "veh_door_close": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_door_close",
+        "attenuation_distance": 20
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_door_close"
+  },
+  "veh_bus_door": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_bus_door",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_bus_door"
+  },
+  "veh_thump": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_thump_0",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "airdefense:veh_thump_1",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_thump"
+  },
+  "veh_start_petrol": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_start_petrol",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_start"
+  },
+  "veh_start_diesel": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_start_diesel",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_start"
+  },
+  "veh_start_tank": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_start_tank",
+        "attenuation_distance": 72
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_start"
+  },
+  "veh_start_turbine": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_start_turbine",
+        "attenuation_distance": 80
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_start"
+  },
+  "veh_stop_petrol": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_stop_petrol",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_stop"
+  },
+  "veh_stop_diesel": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_stop_diesel",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_stop"
+  },
+  "veh_stop_tank": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_stop_tank",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_stop"
+  },
+  "veh_stop_turbine": {
+    "sounds": [
+      {
+        "name": "airdefense:veh_stop_turbine",
+        "attenuation_distance": 64
+      }
+    ],
+    "subtitle": "subtitles.airdefense.veh_stop"
   }
 }

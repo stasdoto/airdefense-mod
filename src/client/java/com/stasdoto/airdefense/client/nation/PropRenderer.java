@@ -24,6 +24,9 @@ import net.minecraft.world.phys.AABB;
 
 import com.stasdoto.airdefense.AirDefense;
 import com.stasdoto.airdefense.client.vehicle.GenModels;
+import com.stasdoto.airdefense.client.vehicle.MeshLoader;
+import com.stasdoto.airdefense.client.vehicle.MeshModel;
+import com.stasdoto.airdefense.client.vehicle.MeshState;
 import com.stasdoto.airdefense.nation.PropEntity;
 
 /** 1.41: draws a prop (a lorry, a tractor, a tower crane) at its pose; a crane's top turns ('spin'). */
@@ -34,6 +37,113 @@ public class PropRenderer extends EntityRenderer<PropEntity, PropRenderer.State>
 		float pitch;
 		float spin;
 		boolean tall;
+		/** 2.0: for a mesh - the paint colour of a town car (-1 = as baked), its wheels' roll and steering. */
+		int tint = -1;
+		float wheelRoll;
+		float steer;
+		/** 2.0: its lights (VehicleLights' bits), how dark it is, the clock, where its lamps are. */
+		int lamps;
+		float dark;
+		long clock;
+		com.stasdoto.airdefense.client.vehicle.VehicleLights.Lamps spec;
+	}
+
+	/** 2.0: a prop drawn from a baked mesh: one model per layer, sharing the mesh's state. */
+	private static final class MeshPropModel extends EntityModel<State> {
+		private final MeshModel mesh;
+		private final ModelPart spin;
+
+		MeshPropModel(MeshModel mesh, java.util.function.Function<Identifier, net.minecraft.client.renderer.rendertype.RenderType> type) {
+			super(mesh.root, type);
+			this.mesh = mesh;
+			this.spin = find(mesh.root, mesh.paths, "spin");
+		}
+
+		@Override
+		public void setupAnim(State s) {
+			super.setupAnim(s);
+			MeshState ms = mesh.state;
+			ms.distance = (float) Math.sqrt(s.distanceToCameraSq);
+			ms.tint = s.tint;
+			ms.shade = -1;
+			ms.trackLeft = s.wheelRoll;
+			ms.trackRight = s.wheelRoll;
+			mesh.animate(s.wheelRoll, s.steer);
+			if (spin != null) {
+				spin.yRot = -s.spin * Mth.DEG_TO_RAD;
+			}
+		}
+	}
+
+	/** A mesh's layers (solid, cutout, glass: any may be null) and texture. */
+	private record MeshSet(MeshPropModel solid, MeshPropModel cutout, MeshPropModel glass, Identifier texture) {
+	}
+
+	/** Which mesh a prop model id is drawn with, and in what paint. */
+	private record Kind(String mesh, int tint) {
+	}
+
+	/** The town cars' paints (tools/models/boxgen.py STYLES car_*), for the tinted meshes. */
+	private static final Map<String, Integer> PAINTS = Map.of("white", 0xE6E6E2, "red", 0xA3261F, "blue", 0x29467E, "green", 0x355E43,
+			"beige", 0xCDBE98, "cherry", 0x5E1A24, "black", 0x1C1D20, "silver", 0xA6AAAE);
+	private static final Map<String, Kind> KINDS = new HashMap<>();
+	private final Map<String, MeshSet> meshes = new HashMap<>();
+	private static final MeshSet NONE = new MeshSet(null, null, null, null);
+	private int meshGeneration = -1;
+
+	/** "car_saloon_red" -> the car_saloon mesh painted red; anything else -> the mesh of its own id. */
+	static Kind kind(String model) {
+		Kind k = KINDS.get(model);
+		if (k == null) {
+			k = new Kind(model, -1);
+			int cut = model.lastIndexOf('_');
+			if (model.startsWith("car_") && cut > 4) {
+				Integer paint = PAINTS.get(model.substring(cut + 1));
+				if (paint != null) {
+					k = new Kind(model.substring(0, cut), 0xFF000000 | paint);
+				}
+			}
+			KINDS.put(model, k);
+		}
+		return k;
+	}
+
+	private MeshSet meshFor(String meshId) {
+		int g = MeshLoader.generation();
+		if (g != meshGeneration) {
+			meshGeneration = g;
+			meshes.clear();
+		}
+		MeshSet set = meshes.get(meshId);
+		if (set == null) {
+			MeshLoader.Mesh m = MeshLoader.get(meshId);
+			if (m == null) {
+				set = NONE;
+			} else {
+				MeshState st = new MeshState();
+				set = new MeshSet(new MeshPropModel(MeshModel.bake(m, MeshLoader.SOLID, st, null), RenderTypes::entityCutoutCull),
+						m.has(MeshLoader.CUTOUT) ? new MeshPropModel(MeshModel.bake(m, MeshLoader.CUTOUT, st, null), RenderTypes::entityCutout) : null,
+						m.has(MeshLoader.GLASS) ? new MeshPropModel(MeshModel.bake(m, MeshLoader.GLASS, st, null), RenderTypes::entityTranslucentCull) : null,
+						m.texture);
+			}
+			meshes.put(meshId, set);
+		}
+		return set == NONE ? null : set;
+	}
+
+	private static ModelPart find(ModelPart root, Map<String, String> paths, String name) {
+		String path = paths.get(name);
+		if (path == null) {
+			return null;
+		}
+		ModelPart p = root;
+		for (String step : path.split("/")) {
+			if (!p.hasChild(step)) {
+				return null;
+			}
+			p = p.getChild(step);
+		}
+		return p;
 	}
 
 	private static final class PropModel extends EntityModel<State> {
@@ -89,7 +199,23 @@ public class PropRenderer extends EntityRenderer<PropEntity, PropRenderer.State>
 		s.pitch = (float) Mth.lerp(partialTick, p.poseO[4], p.pose[4]);
 		s.spin = Mth.rotLerp(partialTick, p.spinO, p.spin);
 		s.tall = p.model.equals("tower_crane");
+		s.tint = kind(p.model).tint;
+		s.wheelRoll = Mth.lerp(partialTick, p.wheelRollO, p.wheelRoll);
+		s.steer = Mth.lerp(partialTick, p.steerVisO, p.steerVis);
 		s.lightCoords = LightCoordsUtil.getLightCoords(p.level(), BlockPos.containing(p.getX(), p.getY() + 2, p.getZ()));
+		s.lamps = 0;
+		if (!s.tall && com.stasdoto.airdefense.client.ClientSettings.vehicleLights()) {
+			s.spec = com.stasdoto.airdefense.client.vehicle.VehicleLights.ofModel(p.model);
+			s.dark = com.stasdoto.airdefense.client.vehicle.VehicleLights.darkness(p.level());
+			s.clock = p.level().getGameTime();
+			s.lamps = TownTraffic.lamps(p, s.dark);
+			if (s.lamps < 0) {
+				// Not the town's traffic (a lorry on the highway, a tractor): lit at dusk while it moves.
+				boolean moving = Math.abs(p.pose[0] - p.poseO[0]) + Math.abs(p.pose[2] - p.poseO[2]) > 0.01;
+				s.lamps = moving && s.dark > 0.2f ? com.stasdoto.airdefense.client.vehicle.VehicleLights.HEAD
+						| com.stasdoto.airdefense.client.vehicle.VehicleLights.TAIL : 0;
+			}
+		}
 	}
 
 	@Override
@@ -100,14 +226,32 @@ public class PropRenderer extends EntityRenderer<PropEntity, PropRenderer.State>
 
 	@Override
 	public void submit(State s, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
+		MeshSet mesh = meshFor(kind(s.model).mesh);
 		PropModel m = models.get(s.model);
-		if (m != null) {
+		if (mesh != null) {
+			poseStack.pushPose();
+			poseStack.mulPose(new Matrix4f().rotation(Axis.YP.rotationDegrees(-s.yaw)));
+			poseStack.mulPose(new Matrix4f().rotation(Axis.XP.rotationDegrees(-s.pitch)));
+			poseStack.scale(-1, -1, 1);
+			collector.submitModel(mesh.solid, s, poseStack, mesh.texture, s.lightCoords, OverlayTexture.NO_OVERLAY, s.outlineColor);
+			if (mesh.cutout != null) {
+				collector.submitModel(mesh.cutout, s, poseStack, mesh.texture, s.lightCoords, OverlayTexture.NO_OVERLAY, s.outlineColor);
+			}
+			if (mesh.glass != null) {
+				collector.submitModel(mesh.glass, s, poseStack, mesh.texture, s.lightCoords, OverlayTexture.NO_OVERLAY, s.outlineColor);
+			}
+			poseStack.popPose();
+		} else if (m != null) {
 			poseStack.pushPose();
 			poseStack.mulPose(new Matrix4f().rotation(Axis.YP.rotationDegrees(-s.yaw)));
 			poseStack.mulPose(new Matrix4f().rotation(Axis.XP.rotationDegrees(-s.pitch)));
 			poseStack.scale(-1, -1, 1);
 			collector.submitModel(m, s, poseStack, textures.get(s.model), s.lightCoords, OverlayTexture.NO_OVERLAY, s.outlineColor);
 			poseStack.popPose();
+			if (s.lamps != 0 && s.spec != null) {
+				com.stasdoto.airdefense.client.vehicle.VehicleLights.submit(poseStack, collector, camera.orientation, s.distanceToCameraSq, s.yaw, 0,
+						s.spec, s.lamps, s.dark, s.clock);
+			}
 		}
 		super.submit(s, poseStack, collector, camera);
 	}

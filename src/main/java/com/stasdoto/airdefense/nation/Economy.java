@@ -971,6 +971,7 @@ public final class Economy {
 			case SWITCHBLADE -> new int[]{20, 25, 90, 60};
 			case BORISOGLEBSK -> new int[]{25, 50, 160, 95};
 			case BUKOVEL -> new int[]{15, 20, 80, 50};
+			case CIVIL_CAR -> new int[]{5, 5, 25, 20};
 		};
 	}
 

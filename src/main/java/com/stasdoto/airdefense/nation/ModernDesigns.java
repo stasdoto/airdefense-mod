@@ -1,5 +1,7 @@
 package com.stasdoto.airdefense.nation;
 
+import static com.stasdoto.airdefense.nation.Architecture.b;
+
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -242,45 +244,88 @@ final class ModernDesigns {
 	// Fuel and logistics
 
 	/** Gas station: a canopy on columns over two pumps, a small shop at the back, the price board. */
+	/**
+	 * 2.0: a filling station: a forecourt under a canopy (its fascia in the brand's colour, lamps underneath), an island
+	 * of two pumps the cars pull up beside, the little shop at the back with its glass front, lit sign, a drinks machine
+	 * and a bin by the door, and the price board on its pole at the corner by the street. (The 1.49 pass weathers it.)
+	 */
 	private static void gasStation(Plan p, int variant) {
 		int hw = p.b.type.halfWidth();
 		int d = p.b.type.depth - 1;
 		DyeColor brand = new DyeColor[]{DyeColor.GREEN, DyeColor.RED, DyeColor.YELLOW, DyeColor.BLUE}[Math.floorMod(variant, 4)];
 		p.fill(-hw, -1, 0, hw, -1, d, concrete(DyeColor.GRAY));
 		p.fill(-hw, 0, 0, hw, 0, d, concrete(DyeColor.LIGHT_GRAY));
-		// Canopy.
-		for (int[] c : new int[][]{{-4, 2}, {4, 2}, {-4, 5}, {4, 5}}) {
+		// Oil stains where the cars stand, the lanes painted either side of the island.
+		for (int x = -5; x <= 5; x++) {
+			if (Math.floorMod(x * 7 + variant, 5) == 0) {
+				p.set(x, 0, 2, concrete(DyeColor.GRAY));
+				p.set(-x, 0, 6, concrete(DyeColor.GRAY));
+			}
+			if ((x & 1) == 0) {
+				p.set(x, 0, 1, concrete(DyeColor.WHITE));
+				p.set(x, 0, 7, concrete(DyeColor.WHITE));
+			}
+		}
+		// The island: a raised kerb with the two pumps (and a bin between them).
+		for (int x = -4; x <= 4; x++) {
+			p.set(x, 0, 4, b(Blocks.SMOOTH_STONE));
+		}
+		p.set(-4, 0, 4, concrete(DyeColor.YELLOW));
+		p.set(4, 0, 4, concrete(DyeColor.YELLOW));
+		p.set(-2, 1, 4, p.facing(com.stasdoto.airdefense.street.StreetBlocks.FUEL_PUMP, L.FRONT));
+		p.set(2, 1, 4, p.facing(com.stasdoto.airdefense.street.StreetBlocks.FUEL_PUMP, L.FRONT));
+		p.set(0, 1, 4, p.facing(com.stasdoto.airdefense.street.StreetBlocks.BIN_MODERN, L.FRONT));
+		// The canopy on four columns: a white underside with lamps, the fascia round it in the brand's colour.
+		for (int[] c : new int[][]{{-5, 4}, {5, 4}}) {
 			for (int y = 1; y <= 4; y++) {
 				p.set(c[0], y, c[1], concrete(DyeColor.WHITE));
 			}
 		}
-		p.fill(-6, 5, 0, 6, 5, 7, concrete(DyeColor.WHITE));
-		p.ring(-6, 0, 6, 7, 5, concrete(brand));
-		p.set(0, 4, 3, Blocks.SEA_LANTERN.defaultBlockState());
-		p.set(0, 4, 5, Blocks.SEA_LANTERN.defaultBlockState());
-		// Pumps.
-		for (int x : new int[]{-2, 2}) {
-			p.set(x, 1, 3, Blocks.IRON_BLOCK.defaultBlockState());
-			p.set(x, 2, 3, concrete(brand));
-			p.set(x, 1, 4, Blocks.IRON_BLOCK.defaultBlockState());
-			p.set(x, 2, 4, concrete(brand));
-			p.set(x, 3, 3, Blocks.IRON_CHAIN.defaultBlockState());
+		p.fill(-6, 5, 0, 6, 5, 8, concrete(DyeColor.WHITE));
+		p.ring(-6, 0, 6, 8, 5, concrete(brand));
+		p.ring(-6, 0, 6, 8, 6, concrete(brand));
+		p.fill(-5, 6, 1, 5, 6, 7, b(Blocks.SMOOTH_STONE_SLAB));
+		for (int x = -3; x <= 3; x += 3) {
+			p.set(x, 5, 2, Blocks.SEA_LANTERN.defaultBlockState());
+			p.set(x, 5, 6, Blocks.SEA_LANTERN.defaultBlockState());
 		}
-		// The shop.
-		p.fill(-hw, 1, 8, hw, 3, d, concrete(DyeColor.WHITE));
-		p.fill(-hw + 1, 1, 9, hw - 1, 2, d - 1, Blocks.AIR.defaultBlockState());
-		for (int x = -4; x <= 4; x++) {
-			p.set(x, 2, 8, Blocks.GLASS.defaultBlockState());
+		// The brand's name on the fascia, lit (glass in its colour, a lamp behind).
+		Architecture.lightbox(p, -2, 2, 6, 0, brand, true);
+		// The shop at the back: a glass front to the pumps, a door, its roof with a parapet.
+		int z0 = 9;
+		for (int y = 1; y <= 3; y++) {
+			p.ring(-hw, z0, 3, d, y, concrete(DyeColor.WHITE));
 		}
-		p.fill(-hw, 4, 8, hw, 4, d, concrete(brand));
-		p.door(0, 1, 8, Blocks.BIRCH_DOOR, L.BACK);
-		p.set(-4, 1, 9, Blocks.BARREL.defaultBlockState());
-		// Price board on a pole.
-		for (int y = 1; y <= 5; y++) {
-			p.set(-hw, y, 0, Blocks.IRON_BARS.defaultBlockState());
+		p.fill(-hw + 1, 1, z0 + 1, 2, 3, d - 1, Blocks.AIR.defaultBlockState());
+		p.fill(-hw + 1, 0, z0 + 1, 2, 0, d - 1, b(Blocks.POLISHED_ANDESITE));
+		for (int x = -hw + 1; x <= 2; x++) {
+			p.set(x, 2, z0, Blocks.GLASS_PANE.defaultBlockState());
+			p.set(x, 1, z0, x == -1 ? b(Blocks.AIR) : concrete(DyeColor.GRAY));
 		}
-		p.set(-hw, 6, 0, concrete(brand));
-		p.set(-hw, 7, 0, concrete(DyeColor.WHITE));
+		p.door(-1, 1, z0, Blocks.IRON_DOOR, L.BACK);
+		p.fill(-hw, 4, z0, 3, 4, d, concrete(DyeColor.LIGHT_GRAY));
+		p.ring(-hw, z0, 3, d, 5, concrete(brand));
+		Architecture.lightbox(p, -5, 1, 3, z0 - 0, brand, true);
+		// Inside: the counter, shelves, the fridge.
+		for (int x = -hw + 1; x <= -3; x++) {
+			p.set(x, 1, d - 1, b(Blocks.BARREL));
+		}
+		p.set(1, 1, z0 + 1, b(Blocks.SMOOTH_STONE_SLAB));
+		p.set(2, 1, z0 + 1, b(Blocks.SMOOTH_STONE_SLAB));
+		p.set(2, 1, d - 1, b(Blocks.IRON_BLOCK));
+		p.set(2, 2, d - 1, b(Blocks.IRON_TRAPDOOR));
+		p.set(0, 3, z0 + 2, Blocks.SEA_LANTERN.defaultBlockState());
+		// By the shop: the drinks machine, the air and water post, a tyre stack.
+		p.set(4, 1, z0 + 1, p.facing(com.stasdoto.airdefense.street.StreetBlocks.VENDING, L.FRONT));
+		p.set(5, 1, z0 + 1, b(Blocks.IRON_BARS));
+		p.set(5, 2, z0 + 1, b(Blocks.IRON_BARS));
+		p.set(6, 1, d, b(Blocks.BARREL));
+		// The price board on its pole at the corner by the street.
+		for (int y = 1; y <= 2; y++) {
+			p.set(hw, y, 0, com.stasdoto.airdefense.street.StreetBlocks.POLE_STEEL.defaultBlockState()
+					.setValue(com.stasdoto.airdefense.street.StreetPoleBlock.BOTTOM, y == 1));
+		}
+		p.set(hw, 3, 0, p.facing(com.stasdoto.airdefense.street.StreetBlocks.FUEL_PRICE, L.FRONT));
 		p.top = 8;
 	}
 

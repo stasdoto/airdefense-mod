@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -24,6 +25,9 @@ import net.minecraft.world.phys.AABB;
 
 import com.stasdoto.airdefense.AirDefense;
 import com.stasdoto.airdefense.client.vehicle.GenModels;
+import com.stasdoto.airdefense.client.vehicle.MeshLoader;
+import com.stasdoto.airdefense.client.vehicle.MeshModel;
+import com.stasdoto.airdefense.client.vehicle.MeshState;
 import com.stasdoto.airdefense.nation.TrainEntity;
 
 /** 1.39: draws a train - each car at its own place on the rails, turned along them and tilted on the grades. */
@@ -40,6 +44,54 @@ public class TrainRenderer extends EntityRenderer<TrainEntity, TrainRenderer.Sta
 		CarModel(ModelPart root) {
 			super(root, RenderTypes::entityCutoutCull);
 		}
+	}
+
+	/** 2.0: a car drawn from a baked mesh: one model per layer sharing the mesh's state. */
+	private static final class MeshCarModel extends EntityModel<State> {
+		private final MeshModel mesh;
+
+		MeshCarModel(MeshModel mesh, java.util.function.Function<Identifier, RenderType> type) {
+			super(mesh.root, type);
+			this.mesh = mesh;
+		}
+
+		@Override
+		public void setupAnim(State s) {
+			super.setupAnim(s);
+			mesh.state.distance = (float) Math.sqrt(s.distanceToCameraSq);
+			mesh.state.tint = -1;
+			mesh.state.shade = -1;
+		}
+	}
+
+	private record MeshSet(MeshCarModel solid, MeshCarModel cutout, MeshCarModel glass, Identifier texture) {
+	}
+
+	private static final MeshSet NONE = new MeshSet(null, null, null, null);
+	private final Map<String, MeshSet> meshes = new HashMap<>();
+	private int meshGeneration = -1;
+
+	private MeshSet meshFor(String id) {
+		int g = MeshLoader.generation();
+		if (g != meshGeneration) {
+			meshGeneration = g;
+			meshes.clear();
+		}
+		MeshSet set = meshes.get(id);
+		if (set == null) {
+			MeshLoader.Mesh m = MeshLoader.get(id);
+			if (m == null) {
+				set = NONE;
+			} else {
+				MeshState st = new MeshState();
+				set = new MeshSet(new MeshCarModel(MeshModel.bake(m, MeshLoader.SOLID, st, null), RenderTypes::entityCutoutCull),
+						m.has(MeshLoader.CUTOUT) ? new MeshCarModel(MeshModel.bake(m, MeshLoader.CUTOUT, st, null), RenderTypes::entityCutout) : null,
+						m.has(MeshLoader.GLASS) ? new MeshCarModel(MeshModel.bake(m, MeshLoader.GLASS, st, null), RenderTypes::entityTranslucentCull) : null,
+						m.texture);
+			}
+			meshes.put(id, set);
+		}
+		return set == NONE ? null : set;
 	}
 
 	private static final String[] IDS = {"emu_head", "emu_car", "loco", "boxcar", "tank_car", "gondola"};
@@ -117,7 +169,18 @@ public class TrainRenderer extends EntityRenderer<TrainEntity, TrainRenderer.Sta
 			poseStack.mulPose(new Matrix4f().rotation(Axis.YP.rotationDegrees(-p[3] + (s.flip[i] ? 180 : 0))));
 			poseStack.mulPose(new Matrix4f().rotation(Axis.XP.rotationDegrees(s.flip[i] ? p[4] : -p[4])));
 			poseStack.scale(-1, -1, 1);
-			collector.submitModel(m, s, poseStack, textures.get(s.cars[i]), s.light[i], OverlayTexture.NO_OVERLAY, s.outlineColor);
+			MeshSet mesh = meshFor(s.cars[i]);
+			if (mesh != null) {
+				collector.submitModel(mesh.solid, s, poseStack, mesh.texture, s.light[i], OverlayTexture.NO_OVERLAY, s.outlineColor);
+				if (mesh.cutout != null) {
+					collector.submitModel(mesh.cutout, s, poseStack, mesh.texture, s.light[i], OverlayTexture.NO_OVERLAY, s.outlineColor);
+				}
+				if (mesh.glass != null) {
+					collector.submitModel(mesh.glass, s, poseStack, mesh.texture, s.light[i], OverlayTexture.NO_OVERLAY, s.outlineColor);
+				}
+			} else {
+				collector.submitModel(m, s, poseStack, textures.get(s.cars[i]), s.light[i], OverlayTexture.NO_OVERLAY, s.outlineColor);
+			}
 			poseStack.popPose();
 		}
 		super.submit(s, poseStack, collector, camera);
