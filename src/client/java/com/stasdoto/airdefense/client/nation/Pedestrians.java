@@ -120,6 +120,8 @@ public final class Pedestrians {
 		boolean alert = SirenClient.alertHeard() || forceAlert;
 		long hour = (Math.floorMod(level.getOverworldClockTime(), 24000L) / 1000 + 6) % 24;
 		int target = !CityAmbience.inTown || alert ? 0 : wanted(hour);
+		// 2.0: the player's setting (0..200 %).
+		target = Math.round(target * com.stasdoto.airdefense.client.ClientSettings.pedestrianDensity());
 		for (PedestrianEntity p : ALL) {
 			double d = p.position().distanceTo(me);
 			if (d > 48 || Math.abs(p.getY() - me.y) > 40) {
@@ -666,11 +668,17 @@ public final class Pedestrians {
 	/** One tick of one passer-by: on to the next block; at its middle, which way next. */
 	private static void step(PedestrianEntity p) {
 		ClientLevel level = (ClientLevel) p.level();
+		// 2.0 LOD: far from the player (beyond 32 blocks) a passer-by is moved every other tick, twice as far.
+		Minecraft mc = Minecraft.getInstance();
+		boolean far = mc.player != null && p.distanceToSqr(mc.player) > 32 * 32;
+		if (far && ((p.tickCount + p.getId()) & 1) == 0) {
+			return;
+		}
 		if (busy(level, p)) {
 			return;
 		}
 		dog(p);
-		double sp = p.hurry ? 0.2 : p.speed;
+		double sp = (p.hurry ? 0.2 : p.speed) * (far ? 2 : 1);
 		if (p.hurry && --p.hurryTicks <= 0) {
 			// Gone indoors.
 			remove(level, p);
@@ -751,7 +759,9 @@ public final class Pedestrians {
 				return true;
 			}
 			// The kerb's edge: a zebra just ahead - cross now and then.
-			if (d == straight && !p.hurry && road(level, nx, y, nz) && zebraNear(level, nx, y, nz) && RANDOM.nextInt(100) < 35) {
+			// 2.0: at traffic lights only while the cars on that street have red.
+			if (d == straight && !p.hurry && road(level, nx, y, nz) && zebraNear(level, nx, y, nz) && RANDOM.nextInt(100) < 35
+					&& TrafficLights.mayWalk(level, nx + 0.5, nz + 0.5, y, DX[d] != 0 ? 0 : 1)) {
 				p.crossing = true;
 				p.crossLeft = 22;
 				p.toX = nx;

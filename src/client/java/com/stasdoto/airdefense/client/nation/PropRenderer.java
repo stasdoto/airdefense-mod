@@ -34,6 +34,11 @@ public class PropRenderer extends EntityRenderer<PropEntity, PropRenderer.State>
 		float pitch;
 		float spin;
 		boolean tall;
+		/** 2.0: its lights (VehicleLights' bits), how dark it is, the clock, where its lamps are. */
+		int lamps;
+		float dark;
+		long clock;
+		com.stasdoto.airdefense.client.vehicle.VehicleLights.Lamps spec;
 	}
 
 	private static final class PropModel extends EntityModel<State> {
@@ -90,6 +95,19 @@ public class PropRenderer extends EntityRenderer<PropEntity, PropRenderer.State>
 		s.spin = Mth.rotLerp(partialTick, p.spinO, p.spin);
 		s.tall = p.model.equals("tower_crane");
 		s.lightCoords = LightCoordsUtil.getLightCoords(p.level(), BlockPos.containing(p.getX(), p.getY() + 2, p.getZ()));
+		s.lamps = 0;
+		if (!s.tall && com.stasdoto.airdefense.client.ClientSettings.vehicleLights()) {
+			s.spec = com.stasdoto.airdefense.client.vehicle.VehicleLights.ofModel(p.model);
+			s.dark = com.stasdoto.airdefense.client.vehicle.VehicleLights.darkness(p.level());
+			s.clock = p.level().getGameTime();
+			s.lamps = TownTraffic.lamps(p, s.dark);
+			if (s.lamps < 0) {
+				// Not the town's traffic (a lorry on the highway, a tractor): lit at dusk while it moves.
+				boolean moving = Math.abs(p.pose[0] - p.poseO[0]) + Math.abs(p.pose[2] - p.poseO[2]) > 0.01;
+				s.lamps = moving && s.dark > 0.2f ? com.stasdoto.airdefense.client.vehicle.VehicleLights.HEAD
+						| com.stasdoto.airdefense.client.vehicle.VehicleLights.TAIL : 0;
+			}
+		}
 	}
 
 	@Override
@@ -108,6 +126,10 @@ public class PropRenderer extends EntityRenderer<PropEntity, PropRenderer.State>
 			poseStack.scale(-1, -1, 1);
 			collector.submitModel(m, s, poseStack, textures.get(s.model), s.lightCoords, OverlayTexture.NO_OVERLAY, s.outlineColor);
 			poseStack.popPose();
+			if (s.lamps != 0 && s.spec != null) {
+				com.stasdoto.airdefense.client.vehicle.VehicleLights.submit(poseStack, collector, camera.orientation, s.distanceToCameraSq, s.yaw, 0,
+						s.spec, s.lamps, s.dark, s.clock);
+			}
 		}
 		super.submit(s, poseStack, collector, camera);
 	}

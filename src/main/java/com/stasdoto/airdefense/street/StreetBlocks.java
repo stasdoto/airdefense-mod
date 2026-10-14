@@ -116,6 +116,11 @@ public final class StreetBlocks {
 	// 1.41: where a tower crane stands on a building site (its foot: the crane itself is drawn by the client).
 	public static final Block CRANE_BASE = thing("crane_base", 0, MapColor.STONE, SoundType.STONE, 0, 0, 0, 16, 8, 16);
 
+	// 2.0: the filling station's pump (right-click: fill up the vehicle by it) and its price board (models in tools/street/make_fuel.py).
+	public static final Block FUEL_PUMP = register("fuel_pump", p -> new FuelPumpBlock(p, new double[]{2, 0, 3, 14, 16, 13}),
+			BlockBehaviour.Properties.of().mapColor(MapColor.SNOW).strength(2f, 6f).sound(SoundType.METAL).noOcclusion().lightLevel(st -> 5));
+	public static final Block FUEL_PRICE = thing("fuel_price", 9, MapColor.COLOR_GREEN, SoundType.METAL, 1, 0, 7, 15, 16, 9);
+
 	/** A manhole cover set in the asphalt: a whole block (it is the road surface). */
 	public static final Block MANHOLE = register("manhole", Block::new, BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY).strength(1.8f, 6f)
 			.sound(SoundType.STONE));
@@ -165,5 +170,6 @@ public final class StreetBlocks {
 
 	public static void init() {
 		Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, TAB_KEY, TAB);
+		com.stasdoto.airdefense.nation.FuelPumps.init();
 	}
 }

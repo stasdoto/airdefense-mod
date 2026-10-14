@@ -21,4 +21,8 @@ public class VehicleRenderState extends EntityRenderState {
 	/** 1.38: an emergency vehicle's flashing lights (on or off), and the tick they flash by. */
 	public boolean beacons;
 	public int flash;
+	/** 2.0: its lights - which are on (VehicleLights' bits), how dark it is, the clock the indicators blink by. */
+	public int lamps;
+	public float dark;
+	public long clock;
 }
