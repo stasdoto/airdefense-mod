@@ -124,6 +124,60 @@ public final class ModSounds {
 	public static final SoundEvent ARTY_NEAR = register("arty_near", 200);
 	public static final SoundEvent ARTY_FAR = register("arty_far", 1800);
 	public static final SoundEvent SHELL_WHISTLE = register("shell_whistle", 110);
+	// 2.0: vehicles' engines in layers by revs (idle / mid / high, on and off load), crossfaded and pitched by the
+	// client (client.vehicle.EngineVoice); running gear, the gearbox, brakes, horns, doors, starting and stopping.
+	public static final SoundEvent VEH_PETROL_IDLE = register("veh_petrol_idle", 24);
+	public static final SoundEvent VEH_PETROL_MID_ON = register("veh_petrol_mid_on", 40);
+	public static final SoundEvent VEH_PETROL_MID_OFF = register("veh_petrol_mid_off", 32);
+	public static final SoundEvent VEH_PETROL_HIGH_ON = register("veh_petrol_high_on", 56);
+	public static final SoundEvent VEH_PETROL_HIGH_OFF = register("veh_petrol_high_off", 40);
+	public static final SoundEvent VEH_DIESEL_IDLE = register("veh_diesel_idle", 32);
+	public static final SoundEvent VEH_DIESEL_MID_ON = register("veh_diesel_mid_on", 56);
+	public static final SoundEvent VEH_DIESEL_MID_OFF = register("veh_diesel_mid_off", 40);
+	public static final SoundEvent VEH_DIESEL_HIGH_ON = register("veh_diesel_high_on", 72);
+	public static final SoundEvent VEH_DIESEL_HIGH_OFF = register("veh_diesel_high_off", 48);
+	public static final SoundEvent VEH_V12_IDLE = register("veh_v12_idle", 48);
+	public static final SoundEvent VEH_V12_MID_ON = register("veh_v12_mid_on", 80);
+	public static final SoundEvent VEH_V12_MID_OFF = register("veh_v12_mid_off", 56);
+	public static final SoundEvent VEH_V12_HIGH_ON = register("veh_v12_high_on", 96);
+	public static final SoundEvent VEH_V12_HIGH_OFF = register("veh_v12_high_off", 64);
+	public static final SoundEvent VEH_TURBINE_IDLE = register("veh_turbine_idle", 56);
+	public static final SoundEvent VEH_TURBINE_MID = register("veh_turbine_mid", 80);
+	public static final SoundEvent VEH_TURBINE_HIGH = register("veh_turbine_high", 100);
+	public static final SoundEvent VEH_ELECTRIC_LOW = register("veh_electric_low", 32);
+	public static final SoundEvent VEH_ELECTRIC_HIGH = register("veh_electric_high", 48);
+	public static final SoundEvent VEH_ROTOR_MAIN = register("veh_rotor_main", 220);
+	public static final SoundEvent VEH_ROTOR_COAX = register("veh_rotor_coax", 220);
+	public static final SoundEvent VEH_ROTOR_APACHE = register("veh_rotor_apache", 220);
+	public static final SoundEvent VEH_HELI_TURBINE = register("veh_heli_turbine", 96);
+	public static final SoundEvent VEH_JET_IDLE = register("veh_jet_idle", 120);
+	public static final SoundEvent VEH_JET_MID = register("veh_jet_mid", 240);
+	public static final SoundEvent VEH_JET_HIGH = register("veh_jet_high", 320);
+	public static final SoundEvent VEH_TRACKS_SLOW = register("veh_tracks_slow", 48);
+	public static final SoundEvent VEH_TRACKS_FAST = register("veh_tracks_fast", 64);
+	public static final SoundEvent VEH_ROAD = register("veh_road", 24);
+	public static final SoundEvent VEH_ROAD_KNOBBY = register("veh_road_knobby", 32);
+	public static final SoundEvent VEH_TYRE_SQUEAL = register("veh_tyre_squeal", 48);
+	public static final SoundEvent VEH_REVERSE_BEEP = register("veh_reverse_beep", 32);
+	public static final SoundEvent VEH_SHIFT = register("veh_shift", 24);
+	public static final SoundEvent VEH_TURBO = register("veh_turbo", 32);
+	public static final SoundEvent VEH_BRAKE_SQUEAL = register("veh_brake_squeal", 40);
+	public static final SoundEvent VEH_AIR_BRAKE = register("veh_air_brake", 40);
+	public static final SoundEvent VEH_HORN_CAR = register("veh_horn_car", 72);
+	public static final SoundEvent VEH_HORN_TRUCK = register("veh_horn_truck", 120);
+	public static final SoundEvent VEH_HORN_BUS = register("veh_horn_bus", 80);
+	public static final SoundEvent VEH_DOOR_OPEN = register("veh_door_open", 16);
+	public static final SoundEvent VEH_DOOR_CLOSE = register("veh_door_close", 20);
+	public static final SoundEvent VEH_BUS_DOOR = register("veh_bus_door", 24);
+	public static final SoundEvent VEH_THUMP = register("veh_thump", 24);
+	public static final SoundEvent VEH_START_PETROL = register("veh_start_petrol", 32);
+	public static final SoundEvent VEH_START_DIESEL = register("veh_start_diesel", 48);
+	public static final SoundEvent VEH_START_TANK = register("veh_start_tank", 72);
+	public static final SoundEvent VEH_START_TURBINE = register("veh_start_turbine", 80);
+	public static final SoundEvent VEH_STOP_PETROL = register("veh_stop_petrol", 24);
+	public static final SoundEvent VEH_STOP_DIESEL = register("veh_stop_diesel", 32);
+	public static final SoundEvent VEH_STOP_TANK = register("veh_stop_tank", 48);
+	public static final SoundEvent VEH_STOP_TURBINE = register("veh_stop_turbine", 64);
 
 	private ModSounds() {
 	}
