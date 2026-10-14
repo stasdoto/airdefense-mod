@@ -50,6 +50,8 @@ public final class TownTraffic {
 	public static int busStops;
 	public static int turns;
 	public static int waits;
+	/** For the tests: horns sounded at crossings. */
+	public static int horns;
 	/** For the tests: as many at once as this (0: by the hour). */
 	public static volatile int force;
 
@@ -86,6 +88,18 @@ public final class TownTraffic {
 	}
 
 	private static final Map<PropEntity, Drive> DRIVES = new HashMap<>();
+	private static final com.stasdoto.airdefense.client.vehicle.TrafficSounds.Info SOUND_INFO = new com.stasdoto.airdefense.client.vehicle.TrafficSounds.Info() {
+		@Override
+		public int kind(Entity vehicle) {
+			Drive d = vehicle instanceof PropEntity p ? DRIVES.get(p) : null;
+			return d == null ? 0 : d.kind;
+		}
+
+		@Override
+		public double speed(Entity vehicle) {
+			return vehicle instanceof PropEntity p ? p.speed : 0;
+		}
+	};
 
 	private TownTraffic() {
 	}
@@ -107,6 +121,7 @@ public final class TownTraffic {
 	public static void tick(Minecraft mc) {
 		ClientLevel level = mc.level;
 		if (level != lastLevel) {
+			com.stasdoto.airdefense.client.vehicle.TrafficSounds.clear();
 			ALL.clear();
 			DRIVES.clear();
 			PARKED.clear();
@@ -122,6 +137,8 @@ public final class TownTraffic {
 				remove(level, p);
 			}
 		}
+		// 2.0: the nearest few heard with their engines.
+		com.stasdoto.airdefense.client.vehicle.TrafficSounds.tick(ALL, SOUND_INFO, me);
 		if (++ticks % 20 != 0) {
 			return;
 		}
@@ -411,7 +428,12 @@ public final class TownTraffic {
 			d.stopped--;
 			p.speed = 0;
 			if (d.stopped == 0) {
-				level.playLocalSound(p.getX(), p.getY() + 1, p.getZ(), ModSounds.BUS_GO, SoundSource.AMBIENT, 1.0f, 1.0f, false);
+				if (com.stasdoto.airdefense.client.vehicle.TrafficSounds.voiced(p)) {
+					// 2.0: its engine is heard already - only the doors shutting.
+					com.stasdoto.airdefense.client.vehicle.TrafficSounds.depart(p);
+				} else {
+					level.playLocalSound(p.getX(), p.getY() + 1, p.getZ(), ModSounds.BUS_GO, SoundSource.AMBIENT, 1.0f, 1.0f, false);
+				}
 			}
 			return true;
 		}
@@ -421,7 +443,7 @@ public final class TownTraffic {
 			if (d.kind == 4) {
 				level.playLocalSound(p.getX(), p.getY() + 1, p.getZ(), ModSounds.TRAM_PASS, SoundSource.AMBIENT, 1.2f, 1.0f, false);
 				level.playLocalSound(p.getX(), p.getY() + 2, p.getZ(), ModSounds.TRAM_BELL, SoundSource.AMBIENT, 0.9f, 1.0f, false);
-			} else {
+			} else if (!com.stasdoto.airdefense.client.vehicle.TrafficSounds.voiced(p)) {
 				level.playLocalSound(p.getX(), p.getY() + 1, p.getZ(), ModSounds.CITY_CAR, SoundSource.AMBIENT, 0.8f, d.kind >= 2 ? 0.7f : 1.0f, false);
 			}
 		}
@@ -448,7 +470,7 @@ public final class TownTraffic {
 					want = 0;
 					if (!d.honked && RANDOM.nextInt(80) == 0) {
 						d.honked = true;
-						level.playLocalSound(p.getX(), p.getY() + 1, p.getZ(), ModSounds.CITY_HORN, SoundSource.AMBIENT, 0.6f, 1.1f, false);
+						com.stasdoto.airdefense.client.vehicle.TrafficSounds.horn(p, d.kind);
 					}
 				}
 			}
@@ -505,6 +527,11 @@ public final class TownTraffic {
 				continue;
 			}
 			int roll = RANDOM.nextInt(100);
+			// 2.0: now and then a horn at the crossing (someone cut in, a friend on the pavement).
+			if (atLeft && RANDOM.nextInt(30) == 0 && Minecraft.getInstance().player != null && p.distanceTo(Minecraft.getInstance().player) < 48) {
+				com.stasdoto.airdefense.client.vehicle.TrafficSounds.horn(p, d.kind);
+				horns++;
+			}
 			boolean right = atRight && roll < 22;
 			boolean left = atLeft && roll >= 22 && roll < 38;
 			if (atLeft) {
@@ -598,6 +625,7 @@ public final class TownTraffic {
 			d.lastStop = key;
 			d.stopped = 90 + RANDOM.nextInt(60);
 			busStops++;
+			com.stasdoto.airdefense.client.vehicle.TrafficSounds.arrive(p);
 			Pedestrians.board(s[0] + 0.5, s[2] + 0.5);
 			return true;
 		}

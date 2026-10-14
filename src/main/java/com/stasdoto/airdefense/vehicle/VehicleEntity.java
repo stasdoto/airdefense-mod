@@ -548,6 +548,66 @@ public class VehicleEntity extends LivingEntity {
 		this.clientInput = input;
 	}
 
+	// ------------------------------------------------------------------------------------------------
+	// 2.0 engine state for the sounds: revs, throttle, gear. STAND-IN worked out on each side from the motion it sees
+	// (an automatic gearbox, see EngineSim). When the physics keeps and syncs a real engine state, replace the bodies of
+	// getEngineRpm / getThrottle / getGear / engineRunning with it (the sounds only use these four).
+
+	private final EngineSim engineSim = new EngineSim();
+	private int engineSimTick = Integer.MIN_VALUE;
+	private float engineSpool;
+
+	private EngineSim engineSim() {
+		if (engineSimTick != tickCount) {
+			engineSimTick = tickCount;
+			boolean running = engineRunning();
+			boolean local = getControllingPassenger() instanceof Player p && p.isLocalPlayer();
+			Vec3 f = forward();
+			double along = local && !vtype.isAir() ? speed : (getX() - xo) * f.x + (getZ() - zo) * f.z;
+			float thr = Float.NaN;
+			if (local && vtype.air == VehicleType.PLANE) {
+				thr = throttle;
+			} else if (local && !vtype.isAir()) {
+				Input in = clientInput;
+				thr = outOfFuel() ? 0 : in.forward() ? (speed < -0.02f ? 0 : 1) : in.backward() ? (speed > 0.02f ? 0 : 0.8f) : 0;
+			}
+			if (vtype.isAir()) {
+				engineSpool = Mth.approach(engineSpool, running ? 1 : 0, vtype.air == VehicleType.HELI ? 0.006f : 0.015f);
+			}
+			engineSim.step(EngineSim.kindOf(vtype), along, vtype.maxSpeed, vtype.accel, thr, running, engineSpool, vtype.boat);
+		}
+		return engineSim;
+	}
+
+	/** The engine's revs (a minute; for turbines, jets, rotors: percent of full speed). */
+	public float getEngineRpm() {
+		return engineSim().rpm;
+	}
+
+	/** 0..1: how hard the engine pulls. */
+	public float getThrottle() {
+		return engineSim().throttle;
+	}
+
+	/** 0 neutral (engine off), 1.. forward gears, -1 reverse. */
+	public int getGear() {
+		return engineSim().gear;
+	}
+
+	/** How many times the gearbox has changed gear (the sounds clunk when it moves on). */
+	public int getGearChanges() {
+		return engineSim().shifts;
+	}
+
+	/** The engine runs: someone aboard, it moves (driven by the AI), or an aircraft on its sortie. */
+	public boolean engineRunning() {
+		if (outOfFuel() && !vtype.isAir()) {
+			return Math.abs(getX() - xo) + Math.abs(getZ() - zo) > 0.01;
+		}
+		return !getPassengers().isEmpty() || vtype.isAir() && getState() == DEPLOYED
+				|| !vtype.isAir() && Math.abs(getX() - xo) + Math.abs(getZ() - zo) > 0.01;
+	}
+
 	public boolean isFolded() {
 		return getState() == STOWED && Math.abs(elevation - vtype.geometry.fixedElevation()) < 1.0f
 				&& Math.abs(turretYaw) < 2.0f && roofOpen < 0.05f;

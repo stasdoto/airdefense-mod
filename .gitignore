@@ -45,3 +45,4 @@ run/
 
 __pycache__/
 *.pyc
+.claude/
