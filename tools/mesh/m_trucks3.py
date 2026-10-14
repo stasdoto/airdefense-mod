@@ -150,6 +150,13 @@ def kamaz_cab(b, part, w, z0, zf, y0, y1, seats, bumper_y, bonnet_front=0.08):
     return cab
 
 
+def western_cab(b, z0, z1, y0, y1, w, dash=0.85):
+    """The FMTV/HEMTT-class cab of the western trucks, with its inside."""
+    cab = T.fmtv_cab(b, b.body, z0, z1, y0, y1, w, b.r.seats)
+    K.cab_inside_part(b.body, 'cab_inside', cab, b.r.seats, dash_y=y0 + dash, tilt=-62)
+    return cab
+
+
 # ---------------------------------------------------------------------------------------------------------------
 # Chassis
 
