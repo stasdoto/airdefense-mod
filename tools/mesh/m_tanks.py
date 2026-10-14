@@ -7,6 +7,7 @@ them) and the track belts are parts of their own (track -1 left, 1 right; spin =
 the client scrolls.
 """
 import contextlib
+import importlib
 import io
 import math
 import os
@@ -394,6 +395,14 @@ def models():
     jobs += [(k, (lambda k=k: m_west.west_mbt(B[k], k))) for k in ('leopard2', 'abrams', 'challenger2')]
     jobs += [(k, (lambda k=k: m_ifv.ifv(B[k], k))) for k in ('bmp2', 'bmp3', 'bradley', 'cv90', 'm113')]
     jobs += [(k, (lambda k=k: m_wheeled.wheeled(B[k], k))) for k in ('btr82', 'btr4', 'stryker')]
-    jobs += [(k, (lambda k=k: convert.convert(B[k]))) for k in ('msta_s', 'm109', 'tos1', 'brem1', 'm88', 'maxxpro', 'kozak', 'tigr', 'hmmwv', 'tor', 'buk',
-                                                                'shilka', 'tunguska', 'strela10')]
+    conv = ('msta_s', 'm109', 'tos1', 'brem1', 'm88', 'maxxpro', 'kozak', 'tigr', 'hmmwv', 'tor', 'buk', 'shilka', 'tunguska', 'strela10')
+    hand = {}
+    for modname in ('m_arty', 'm_sam', 'm_wheel2'):
+        try:
+            mod = importlib.import_module(modname)
+        except ImportError:
+            continue
+        hand.update(mod.JOBS)
+    jobs += [(k, (lambda k=k: hand[k](B[k]))) for k in hand]
+    jobs += [(k, (lambda k=k: convert.convert(B[k]))) for k in conv if k not in hand]
     return [fn() for k, fn in jobs if not only or k in only]
