@@ -6,9 +6,14 @@ Binary format (big-endian, read by client.vehicle.MeshLoader):
   'ADM2' int version=1, int texW, int texH, byte flags (1 = tinted), short parts
   per part: UTF name, short parent, float pivot x y z, float rot x y z (degrees), float spin, byte steer, byte track,
             byte layers; per layer: byte layer (0 solid, 1 glass, 2 cutout), float near (0 = always),
-            float scale (metres per unit of the positions), float reserved (0), int verts, int quads,
+            float scale (metres per unit of the positions), float period, int verts, int quads,
             verts: short x y z (relative to the pivot, vehicle space), byte nx ny nz, short u v (0..65535),
                    int argb, byte flags (1 tint, 2 track belt)
+  Track belts (tile materials, see register_tile): their vertices are flagged 2 and map into a fixed tile of the texture
+  that holds two periods (two track links) one under the other; each belt quad spans exactly one period in v. The layer's
+  'period' float is that period in uv units (v, 0..1 of the texture height; 0 for layers without belts). The client adds
+  frac(travel / pitch) * period to the v of flagged vertices, travel = metres that side of the vehicle has moved forward,
+  pitch = the link length in metres (the track part's spin field, see Part.track).
             quads: 4 x (short or int when verts > 65535) indices
 """
 import math
@@ -25,6 +30,14 @@ DENSITY = {'plate': 7.0, 'gauges': 5.0, 'headlight': 3.0, 'headlight_box': 3.0, 
            'grille_mesh': 3.0, 'screen': 3.0, 'tyre': 1.3, 'tyre_wall': 1.0, 'seat': 0.6, 'carpet': 0.4, 'interior': 0.6,
            'rim_dark': 0.6, 'dash': 0.8, 'chrome': 1.2}
 PAD = 1
+# Tile materials (track belts): not baked per surface; their polygons' own uv (u across the tile 0..1, v along one period
+# 0..1) maps into one fixed tile painted by fn(model, scheme) -> rgba (2 * period + 2 rows, w, 4): a row of padding, two
+# identical periods, a row of padding (see export: the client scrolls v by up to one period).
+TILES = {}
+
+
+def register_tile(name, fn):
+    TILES[name] = fn
 
 
 class Vert:
@@ -191,16 +204,16 @@ class Chart:
                          (v[:, self.va] - self.vmin) * self.density + self.y + PAD], axis=1)
 
 
-def make_charts(flat, density):
-    polys = [p for p in flat.polys]
+def make_charts(flat, density, by_mat=False):
+    polys = [p for p in flat.polys if p['mat'] not in TILES]
     groups = {}
     for i, p in enumerate(polys):
         fn = p['fn']
         ax = int(np.argmax(np.abs(fn)))
         d = ax * 2 + (0 if fn[ax] >= 0 else 1)
-        groups.setdefault((p['geo'], d), []).append(i)
+        groups.setdefault((p['geo'], d, p['mat'] if by_mat else None), []).append(i)
     charts = []
-    for (geo, d), idxs in groups.items():
+    for (geo, d, _m), idxs in groups.items():
         # Connected pieces (sharing an edge).
         parent = {i: i for i in idxs}
 
@@ -232,24 +245,73 @@ def make_charts(flat, density):
     return charts
 
 
+def _skyline(order, W):
+    """Bottom-left skyline packing at width W: [(x, y)] per chart and the height used."""
+    sky = [(0, 0, W)]  # segments (x, y, w)
+    pos = []
+    for c in order:
+        cw, ch = c.w + 2 * PAD, c.h + 2 * PAD
+        best = None
+        for i in range(len(sky)):
+            x = sky[i][0]
+            if x + cw > W:
+                break
+            # The highest segment under [x, x + cw).
+            y = 0
+            j = i
+            while j < len(sky) and sky[j][0] < x + cw:
+                y = max(y, sky[j][1])
+                j += 1
+            if best is None or y + ch < best[1] + best[3] or (y + ch == best[1] + best[3] and x < best[0]):
+                best = (x, y, i, ch)
+        x, y, i, _ = best
+        pos.append((x, y))
+        top = y + ch
+        # Replace the covered part of the skyline with the new top.
+        new = []
+        for (sx, sy, sw) in sky:
+            ex = sx + sw
+            if ex <= x or sx >= x + cw:
+                new.append((sx, sy, sw))
+                continue
+            if sx < x:
+                new.append((sx, sy, x - sx))
+            if ex > x + cw:
+                new.append((x + cw, sy, ex - (x + cw)))
+        new.append((x, top, cw))
+        new.sort()
+        # Merge neighbours of the same height.
+        sky = []
+        for seg in new:
+            if sky and sky[-1][1] == seg[1] and sky[-1][0] + sky[-1][2] == seg[0]:
+                sky[-1] = (sky[-1][0], seg[1], sky[-1][2] + seg[2])
+            else:
+                sky.append(seg)
+    H = max((p[1] + c.h + 2 * PAD for p, c in zip(pos, order)), default=0)
+    return pos, H
+
+
 def pack(charts, min_w=64):
+    """Places the charts on the texture (skyline packing, trying a few widths for the smallest texture)."""
     real = [c for c in charts if not c.flat]
     area = sum((c.w + 2 * PAD) * (c.h + 2 * PAD) for c in real)
     W = min_w
-    while W * W < area * 1.25 or any(c.w + 2 * PAD > W for c in real):
+    while W * W < area or any(c.w + 2 * PAD > W for c in real):
         W *= 2
     order = sorted(real, key=lambda c: (-(c.h), -(c.w)))
-    x = y = row = 0
-    for c in order:
-        cw, ch = c.w + 2 * PAD, c.h + 2 * PAD
-        if x + cw > W:
-            y += row
-            x = 0
-            row = 0
+    best = None
+    for Wt in (W // 2, W, W * 2):
+        if Wt < min_w or any(c.w + 2 * PAD > Wt for c in real):
+            continue
+        pos, H = _skyline(order, Wt)
+        Hr = (H + 15) // 16 * 16
+        # The smallest texture, not much taller than wide.
+        key = (Wt * Hr * (1.5 if Hr > Wt else 1.0), -Wt)
+        if best is None or key < best[0]:
+            best = (key, Wt, H, pos)
+    _, W, H, pos = best
+    for c, (x, y) in zip(order, pos):
         c.x, c.y = x, y
-        x += cw
-        row = max(row, ch)
-    H = y + row
     return W, H
 
 
@@ -348,7 +410,7 @@ def texel_attrs(owner, bary, tri_of):
 def bake(model, verbose=True):
     flat = Flat(model)
     scheme = model.scheme or materials.Scheme()
-    charts = make_charts(flat, model.density)
+    charts = make_charts(flat, model.density, getattr(model, 'chart_by_mat', False))
     # Tiny pieces (bolts, thin edges) share one swatch of their material and get their shading per corner instead.
     for c in charts:
         if c.w * c.h <= 4 and all(DENSITY.get(p['mat'], 1.0) <= 1.3 for p in c.polys):
@@ -366,6 +428,26 @@ def bake(model, verbose=True):
         sw[m] = (x, sw_y)
         x += 3
     H = sw_y + (3 if mats_flat else 0)
+    # The tiles (track belts) in a row under the swatches.
+    tiles = {}
+    tile_polys = [p for p in flat.polys if p['mat'] in TILES]
+    if tile_polys:
+        x = 0
+        ty = H
+        row = 0
+        for m in sorted({p['mat'] for p in tile_polys}):
+            timg = np.asarray(TILES[m](model, scheme), dtype=np.float64)
+            th, tw = timg.shape[:2]
+            while tw > W:
+                W *= 2
+            if x + tw > W:
+                x = 0
+                ty += row
+                row = 0
+            tiles[m] = (x, ty, timg)
+            x += tw
+            row = max(row, th)
+        H = ty + row
     H = (H + 15) // 16 * 16
     owner, bary, tri_of = raster(charts, W, H)
     ys, xs, pos, nrm, puv, mats = texel_attrs(owner, bary, tri_of)
@@ -387,6 +469,23 @@ def bake(model, verbose=True):
         img[sy:sy + 3, sx:sx + 3, :3] = rgb.mean(axis=0)
         img[sy:sy + 3, sx:sx + 3, 3] = alpha.mean()
     img = dilate(img, owner >= 0, sw)
+    for m, (tx0, ty0, timg) in tiles.items():
+        th, tw = timg.shape[:2]
+        img[ty0:ty0 + th, tx0:tx0 + tw] = timg
+    if tile_polys:
+        P = np.concatenate([p['w'] for p in tile_polys])
+        N = np.concatenate([p['wn'] for p in tile_polys])
+        A = occ.ao(P, N)
+        k = 0
+        for p in tile_polys:
+            n = len(p['w'])
+            p['vao'] = A[k:k + n]
+            k += n
+            tx0, ty0, timg = tiles[p['mat']]
+            th, tw = timg.shape[:2]
+            per = (th - 2) / 2.0
+            p['tex'] = np.stack([tx0 + 0.5 + np.clip(p['uv'][:, 0], 0, 1) * (tw - 1), ty0 + 1 + p['uv'][:, 1] * per], axis=1)
+            p['period'] = per
     # Per-corner occlusion for the swatch pieces.
     flat_polys = [p for c in charts if c.flat for p in c.polys]
     if flat_polys:
@@ -467,6 +566,8 @@ def export(model, flat, W, H, path):
                 k = len(p['v'])
                 tx = p['tex']
                 flags = 1 if (model.tinted and p['mat'] in materials.TINTED) else 0
+                if p['mat'] in TILES:
+                    flags |= 2
                 if 'vao' in p:
                     shade_c = [int(np.clip(255 * (0.42 + 0.58 * a ** 1.1), 0, 255)) for a in p['vao']]
                 else:
@@ -495,7 +596,8 @@ def export(model, flat, W, H, path):
                 else:
                     for i in range(1, k - 1):
                         quads.append([ids[0], ids[i], ids[i + 1], ids[i + 1]])
-            out += struct.pack('>bfffii', LAYERS[lname], float(part.near), scale, 0.0, len(vlist), len(quads))
+            period = next((p['period'] / H for p in lp if 'period' in p), 0.0)
+            out += struct.pack('>bfffii', LAYERS[lname], float(part.near), scale, period, len(vlist), len(quads))
             for (q, qn, u, v, argb, flags) in vlist:
                 out += struct.pack('>hhhbbbHHIb', q[0], q[1], q[2], qn[0], qn[1], qn[2], u, v, argb & 0xFFFFFFFF, flags)
             big = len(vlist) > 65535
