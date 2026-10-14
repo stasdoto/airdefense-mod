@@ -10,6 +10,7 @@ import kit_town as K
 import materials
 import town_cars as TC
 import town_bus as TB
+import town_svc as TS
 from core import Geo
 
 
@@ -34,7 +35,7 @@ def boxy():
         sill=0.30, bump_f=0.34, bump_r=0.34, hood_front=0.80, belt_f=0.88, belt_r=0.90, tail_top=0.92, roof=1.42, cowl_z=0.75,
         ws_top_z=-0.05, roof_end_z=-0.95, deck_z=-1.7, gh_end=-1.7, b_z=-0.3, c_z=-0.98, roof_hw=0.62, rr=0.03, rs=0.035, crown=0.02,
         tumble=0.02, tuck=0.03, nose_len=0.25, nose_p=5.0, tail_len=0.25, tail_p=5.0, boxy=True, lamps='old', bumper='chrome',
-        wheel_style='steel', tinted=False, paint=0xE8E3D0, rear_seat_z=-0.85, driver=(-0.36, 0.48, -0.0)))
+        wheel_style='steel', tinted=True, paint=0xEDEDED, rear_seat_z=-0.85, driver=(-0.36, 0.48, -0.0)))
 
 
 def suv():
@@ -119,7 +120,7 @@ def police_extra(m, s, B, C, body, inside):
 def police():
     """The police saloon (drivable): the box model's size and axles, a light bar over the roof, the livery."""
     s = TC.CarSpec(
-        id='police_car', zf=2.46, zr=-2.29, width=1.85, front_axle=1.4, rear_axle=-1.4, wheel_r=0.33, tyre_w=0.22, track=0.79,
+        id='police_car', zf=2.46, zr=-2.29, width=1.85, front_axle=1.4, rear_axle=-1.4, wheel_r=0.33, tyre_w=0.22, track=0.78,
         cowl_z=0.85, ws_top_z=-0.08, roof_end_z=-1.0, deck_z=-1.65, b_z=-0.42, c_z=-1.12, nose_len=0.55,
         wheel_names=('wheel_1_l', 'wheel_1_r', 'wheel_2_l', 'wheel_2_r'), tinted=False, dirt=0.1, rear_seat_z=-0.95, paint=0xF2F3F4,
         roof=1.45, steering=((-0.4, 0.9, 0.15), (-24.0, 0.0, 0.0)), driver=(-0.4, 0.52, 0.1), seat_mat='seat', plate_text=None)
@@ -224,4 +225,4 @@ def tram_extra(m, s, B, C, body, inside):
 
 
 def models():
-    return [saloon(), hatch(), boxy(), suv(), taxi(), police(), bus(), trolleybus(), tram()]
+    return [saloon(), hatch(), boxy(), suv(), taxi(), police(), bus(), trolleybus(), tram(), TS.ambulance(), TS.fire_truck()]
