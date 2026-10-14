@@ -24,7 +24,7 @@ import render  # noqa: E402
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 MESHES = os.path.join(ROOT, 'src/main/resources/assets/airdefense/meshes')
 TEX = os.path.join(ROOT, 'src/main/resources/assets/airdefense/textures/entity/mesh')
-MODULES = ['m_town', 'm_tanks', 'm_trucks', 'm_air']
+MODULES = ['m_town', 'm_tanks', 'm_trucks', 'm_air', 'm_props']
 
 
 def save_png(arr, path):
