@@ -44,6 +44,8 @@ public class VehicleItem extends Item {
 			pos = pos.add(0, 1, 0);
 		}
 		VehicleEntity vehicle = VehicleEntity.spawn(level, type, pos, yaw);
+		// 2.0: put down in a town of his country (or of the one he commands), it belongs to that country.
+		com.stasdoto.airdefense.nation.Command.claimPlaced(level, player instanceof net.minecraft.server.level.ServerPlayer sp ? sp : null, vehicle);
 		if (player == null || !player.getAbilities().instabuild) {
 			context.getItemInHand().shrink(1);
 			// Survival: comes loaded, but further reloads need missiles (from a factory, or loaded by hand).

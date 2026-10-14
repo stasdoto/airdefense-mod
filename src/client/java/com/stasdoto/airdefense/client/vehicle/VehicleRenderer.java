@@ -19,6 +19,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.AABB;
 
 import com.stasdoto.airdefense.AirDefense;
+import com.stasdoto.airdefense.vehicle.CivilCars;
 import com.stasdoto.airdefense.vehicle.VehicleEntity;
 import com.stasdoto.airdefense.vehicle.VehicleType;
 
@@ -33,8 +34,19 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 	private final VehicleModel glassFar;
 	private final VehicleModel inside;
 	private final Identifier insideTexture;
+	/** 2.0: the baked mesh's layers, if the type has a mesh (looked up again when {@link MeshLoader#generation()} moves). */
+	private int meshGeneration = -1;
+	private VehicleModel meshSolid;
+	private VehicleModel meshCutout;
+	private VehicleModel meshGlass;
+	private Identifier meshTexture;
+	/** 2.0: where its lamps are. */
+	private final VehicleLights.Lamps lamps;
 	/** Within this distance (blocks) the cab's inside is drawn and the glass is see-through. */
 	private static final double INSIDE_RANGE = 18;
+	/** 2.0: a civilian car's models and paints, by its variant. */
+	private final VehicleModel[] variants;
+	private final Identifier[] variantTextures;
 
 	private static final net.minecraft.client.renderer.rendertype.RenderType GLOW = RenderTypes.entityTranslucentEmissive(
 			AirDefense.id("textures/misc/glow_dot.png"));
@@ -82,6 +94,35 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		}
 	}
 
+	/**
+	 * 2.0: the headlights - two warm glows at the front corners (the render pass may give them real beams). In the
+	 * body's frame: they pitch and roll with it.
+	 */
+	private void headlights(VehicleRenderState s, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
+		com.stasdoto.airdefense.vehicle.VehicleGeometry.Geometry g = type.geometry;
+		float hx = Math.max(0.4f, g.width() / 2 - 0.3f);
+		float hy = type.isCivil() || g.length() < 5.5f ? 0.68f : Math.min(1.3f, g.height() * 0.4f);
+		float hz = g.length() / 2 - 0.05f;
+		float size = (float) (0.22 + Math.sqrt(s.distanceToCameraSq) * 0.004);
+		for (int side = -1; side <= 1; side += 2) {
+			net.minecraft.world.phys.Vec3 o = VehicleEntity.tilted(hx * side, hy, hz, s.yaw, s.pitch, s.roll, s.lift);
+			poseStack.pushPose();
+			poseStack.translate(o.x, o.y, o.z);
+			poseStack.mulPose(new Matrix4f().rotation(camera.orientation));
+			collector.submitCustomGeometry(poseStack, GLOW, (pose, vc) -> {
+				float[][] corners = {{size, -size, 1, 1}, {size, size, 1, 0}, {-size, size, 0, 0}, {-size, -size, 0, 1}};
+				for (int pass = 0; pass < 2; pass++) {
+					for (int i = 0; i < 4; i++) {
+						float[] c = corners[pass == 0 ? i : 3 - i];
+						vc.addVertex(pose, c[0], c[1], 0).setColor(255, 240, 200, 235).setUv(c[2], c[3]).setOverlay(OverlayTexture.NO_OVERLAY)
+								.setLight(0xF000F0).setNormal(pose, 0, 0, 1);
+					}
+				}
+			});
+			poseStack.popPose();
+		}
+	}
+
 	public VehicleRenderer(EntityRendererProvider.Context context, VehicleType type) {
 		super(context);
 		this.type = type;
@@ -94,7 +135,7 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 			case IRIS_T -> VehicleModels.iris_t();
 			case NASAMS -> VehicleModels.nasams();
 			case GEPARD -> VehicleModels.gepard();
-			default -> GenModels.layer(type.id);
+			default -> GenModels.layer(type.isCivil() ? CivilCars.MODELS[0] : type.id);
 		};
 		Map<String, String> paths = switch (type) {
 			case ISKANDER -> VehicleModels.iskanderPaths();
@@ -105,12 +146,26 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 			case IRIS_T -> VehicleModels.iris_tPaths();
 			case NASAMS -> VehicleModels.nasamsPaths();
 			case GEPARD -> VehicleModels.gepardPaths();
-			default -> GenModels.paths(type.id);
+			default -> GenModels.paths(type.isCivil() ? CivilCars.MODELS[0] : type.id);
 		};
 		ModelPart root = layer.bakeRoot();
 		this.model = new VehicleModel(root, paths, type.geometry);
-		this.texture = AirDefense.id("textures/entity/vehicle/" + type.id + ".png");
-		this.wreckTexture = AirDefense.id("textures/entity/vehicle/" + type.id + "_wreck.png");
+		this.texture = AirDefense.id("textures/entity/vehicle/" + (type.isCivil() ? CivilCars.MODELS[0] : type.id) + ".png");
+		this.wreckTexture = type.isCivil() ? AirDefense.id("textures/entity/vehicle/car_saloon_black.png")
+				: AirDefense.id("textures/entity/vehicle/" + type.id + "_wreck.png");
+		if (type.isCivil()) {
+			// 2.0: a town car taken from its bay - each model and paint of the town's traffic (the mesh pass may replace these).
+			variants = new VehicleModel[CivilCars.MODELS.length];
+			variantTextures = new Identifier[CivilCars.MODELS.length];
+			for (int i = 0; i < variants.length; i++) {
+				String id = CivilCars.MODELS[i];
+				variants[i] = new VehicleModel(GenModels.layer(id).bakeRoot(), GenModels.paths(id), type.geometry);
+				variantTextures[i] = AirDefense.id("textures/entity/vehicle/" + id + ".png");
+			}
+		} else {
+			variants = null;
+			variantTextures = null;
+		}
 		String gid = type.id + "_glass";
 		if (GenModels.has(gid)) {
 			glass = new VehicleModel(GenModels.layer(gid).bakeRoot(), GenModels.paths(gid), type.geometry, RenderTypes::entityTranslucentCull);
@@ -127,8 +182,41 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 			inside = null;
 			insideTexture = null;
 		}
+		this.lamps = VehicleLights.of(type.geometry);
 		this.shadowRadius = type.geometry.width() * 0.55f;
 		this.shadowStrength = 0.9f;
+	}
+
+	/** 2.0: picks up the type's mesh (assets/airdefense/meshes/&lt;id&gt;.mesh); without one the box model is drawn. */
+	private void resolveMesh() {
+		int g = MeshLoader.generation();
+		if (g == meshGeneration) {
+			return;
+		}
+		meshGeneration = g;
+		meshSolid = null;
+		meshCutout = null;
+		meshGlass = null;
+		MeshLoader.Mesh m = MeshLoader.get(type.id);
+		if (m == null) {
+			return;
+		}
+		MeshState st = new MeshState();
+		java.util.Set<String> wheels = VehicleModel.wheelNames(type.geometry);
+		meshSolid = VehicleModel.ofMesh(MeshModel.bake(m, MeshLoader.SOLID, st, wheels), type.geometry, RenderTypes::entityCutoutCull);
+		if (m.has(MeshLoader.CUTOUT)) {
+			meshCutout = VehicleModel.ofMesh(MeshModel.bake(m, MeshLoader.CUTOUT, st, wheels), type.geometry, RenderTypes::entityCutout);
+		}
+		if (m.has(MeshLoader.GLASS)) {
+			meshGlass = VehicleModel.ofMesh(MeshModel.bake(m, MeshLoader.GLASS, st, wheels), type.geometry, RenderTypes::entityTranslucentCull);
+		}
+		meshTexture = m.texture;
+	}
+
+	/** Is this type drawn from a baked mesh (for the tests)? */
+	public boolean hasMesh() {
+		resolveMesh();
+		return meshSolid != null;
 	}
 
 	@Override
@@ -144,6 +232,7 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		s.roll = Mth.lerp(partialTick, v.tiltRollO, v.tiltRoll);
 		s.lift = Mth.lerp(partialTick, v.liftO, v.lift);
 		s.wheelRoll = Mth.lerp(partialTick, v.wheelRollO, v.wheelRoll);
+		s.trackTurn = Mth.lerp(partialTick, v.trackTurnO, v.trackTurn);
 		s.steer = Mth.lerp(partialTick, v.steerVisO, v.steerVis);
 		s.turretYaw = Mth.rotLerp(partialTick, v.turretYawO, v.turretYaw);
 		s.elevation = Mth.lerp(partialTick, v.elevationO, v.elevation);
@@ -154,6 +243,11 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		s.hidden = GunnerSight.hides(v);
 		s.beacons = type.isService() && v.beaconsOn();
 		s.flash = v.tickCount;
+		s.variant = v.getVariant();
+		s.lights = v.lightsOn() && v.isAlive();
+		s.dark = VehicleLights.darkness(v.level());
+		s.lamps = VehicleFx.flags(v, s.dark);
+		s.clock = v.level().getGameTime();
 	}
 
 	@Override
@@ -182,7 +276,37 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 			light = 0xF000F0;
 			overlay = OverlayTexture.pack(0.78f, false);
 		}
-		collector.submitModel(model, s, poseStack, tex, light, overlay, s.outlineColor);
+		resolveMesh();
+		if (meshSolid != null) {
+			// 2.0: the baked mesh (a wreck drawn dark by the model's shade); its inside is a part drawn only near.
+			collector.submitModel(meshSolid, s, poseStack, meshTexture, light, overlay, s.outlineColor);
+			if (meshCutout != null) {
+				collector.submitModel(meshCutout, s, poseStack, meshTexture, light, overlay, s.outlineColor);
+			}
+			if (meshGlass != null) {
+				collector.submitModel(meshGlass, s, poseStack, meshTexture, light, overlay, s.outlineColor);
+			}
+			poseStack.popPose();
+			if (s.beacons && !s.wreck) {
+				beacons(s, poseStack, collector, camera);
+			}
+			if (s.lamps != 0 && !s.wreck) {
+				VehicleLights.submit(poseStack, collector, camera.orientation, s.distanceToCameraSq, s.yaw, s.lift, lamps, s.lamps, s.dark, s.clock);
+			}
+			super.submit(s, poseStack, collector, camera);
+			return;
+		}
+		VehicleModel body = model;
+		if (variants != null) {
+			int i = Math.floorMod(s.variant, variants.length);
+			body = variants[i];
+			tex = variantTextures[i];
+			if (s.wreck) {
+				// Burnt out: its own paint, but black with soot.
+				light = 0x100010;
+			}
+		}
+		collector.submitModel(body, s, poseStack, tex, light, overlay, s.outlineColor);
 		if (inside != null && near) {
 			// The inside is modelled at twice the detail (32 units a metre): drawn at half scale.
 			poseStack.pushPose();
@@ -198,6 +322,9 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		poseStack.popPose();
 		if (s.beacons && !s.wreck) {
 			beacons(s, poseStack, collector, camera);
+		}
+		if (s.lamps != 0 && !s.wreck) {
+			VehicleLights.submit(poseStack, collector, camera.orientation, s.distanceToCameraSq, s.yaw, s.lift, lamps, s.lamps, s.dark, s.clock);
 		}
 		super.submit(s, poseStack, collector, camera);
 	}

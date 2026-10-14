@@ -20,6 +20,11 @@ public class PropEntity extends Entity {
 	public double[] poseO = new double[5];
 	public float spin;
 	public float spinO;
+	/** 2.0: its wheels' roll (metres travelled forward) and the front wheels' steering (degrees), for the mesh. */
+	public float wheelRoll;
+	public float wheelRollO;
+	public float steerVis;
+	public float steerVisO;
 	/** For its manager: how far along its way, how fast, which way, anything else. */
 	public double s;
 	public double speed;
@@ -35,14 +40,31 @@ public class PropEntity extends Entity {
 
 	/** Sets its pose (x, y, z, yaw, pitch), keeping the last one for drawing between ticks. */
 	public void move(double x, double y, double z, double yaw, double pitch) {
+		double[] old = pose;
 		poseO = pose;
 		pose = new double[]{x, y, z, yaw, pitch};
 		setPos(x, y, z);
+		wheelRollO = wheelRoll;
+		steerVisO = steerVis;
+		double r = Math.toRadians(yaw);
+		double along = (x - old[0]) * -Math.sin(r) + (z - old[2]) * Math.cos(r);
+		if (Math.abs(along) < 4) {
+			wheelRoll += (float) along;
+			if (Math.abs(along) > 0.01) {
+				double turn = Math.toRadians(net.minecraft.util.Mth.wrapDegrees(yaw - old[3]));
+				float target = (float) Math.toDegrees(Math.atan2(turn * 2.7, Math.abs(along)));
+				steerVis += (net.minecraft.util.Mth.clamp(target, -35, 35) - steerVis) * 0.4f;
+			} else {
+				steerVis *= 0.9f;
+			}
+		}
 	}
 
 	public void hold() {
 		poseO = pose;
 		spinO = spin;
+		wheelRollO = wheelRoll;
+		steerVisO = steerVis;
 	}
 
 	@Override

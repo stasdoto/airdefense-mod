@@ -155,14 +155,17 @@ public final class MapServer {
 			return true;
 		}
 		com.stasdoto.airdefense.nation.Country own = com.stasdoto.airdefense.nation.Politics.get(level.getServer()).countryOwnedBy(player.getUUID());
-		return own != null && own.id == v.country;
+		// 2.0: and the vehicles of the country he commands.
+		return own != null && own.id == v.country || v.country >= 0 && v.country == com.stasdoto.airdefense.nation.Command.commanding(player);
 	}
 
 	public static MapStatusPayload status(ServerLevel level, ServerPlayer player) {
 		com.stasdoto.airdefense.nation.Country own = com.stasdoto.airdefense.nation.Politics.get(level.getServer()).countryOwnedBy(player.getUUID());
 		int ownId = own == null ? -1 : own.id;
+		int commanded = com.stasdoto.airdefense.nation.Command.commanding(player);
 		List<VehicleEntity> vehicles = new ArrayList<>(level.getEntities(EntityTypeTest.forClass(VehicleEntity.class),
-				v -> v.isAlive() && v.distanceToSqr(player) < LIST_RANGE * LIST_RANGE && (v.country == -1 || v.country == ownId)));
+				v -> v.isAlive() && v.distanceToSqr(player) < LIST_RANGE * LIST_RANGE && (v.country == -1 || v.country == ownId
+						|| commanded >= 0 && v.country == commanded)));
 		vehicles.sort(Comparator.comparingDouble(v -> v.distanceToSqr(player)));
 		List<MapStatusPayload.Entry> entries = new ArrayList<>();
 		for (VehicleEntity v : vehicles) {

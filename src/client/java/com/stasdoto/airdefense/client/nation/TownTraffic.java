@@ -50,8 +50,16 @@ public final class TownTraffic {
 	public static int busStops;
 	public static int turns;
 	public static int waits;
+	/** For the tests: horns sounded at crossings. */
+	public static int horns;
 	/** For the tests: as many at once as this (0: by the hour). */
 	public static volatile int force;
+	/** 2.0, for the tests: stops made at a red light, starts on the green after one, pulls into a filling station. */
+	public static int redStops;
+	public static int greenStarts;
+	public static int fuelStops;
+	/** For the tests: every car passing a filling station pulls in. */
+	public static volatile boolean forceFuel;
 
 	/** What a moving vehicle is doing: along which street, which way, where on it, turning. */
 	private static final class Drive {
@@ -83,9 +91,34 @@ public final class TownTraffic {
 		long lastStop = Long.MIN_VALUE;
 		int stopped;
 		boolean honked;
+		/** 2.0: braking (ticks yet, for the brake lights), held at a red light, the road's height last looked up. */
+		int brake;
+		boolean heldAtRed;
+		int roadBX = Integer.MIN_VALUE;
+		int roadBZ = Integer.MIN_VALUE;
+		double roadYAt = Double.NaN;
+		/** 2.0: pulling in at a filling station - how far off the lane, how far it goes (0 = not), the stage, the pump. */
+		double side;
+		double sideTo;
+		int pull;
+		double pullFrom;
+		double pullLen;
+		long pump = Long.MIN_VALUE;
 	}
 
 	private static final Map<PropEntity, Drive> DRIVES = new HashMap<>();
+	private static final com.stasdoto.airdefense.client.vehicle.TrafficSounds.Info SOUND_INFO = new com.stasdoto.airdefense.client.vehicle.TrafficSounds.Info() {
+		@Override
+		public int kind(Entity vehicle) {
+			Drive d = vehicle instanceof PropEntity p ? DRIVES.get(p) : null;
+			return d == null ? 0 : d.kind;
+		}
+
+		@Override
+		public double speed(Entity vehicle) {
+			return vehicle instanceof PropEntity p ? p.speed : 0;
+		}
+	};
 
 	private TownTraffic() {
 	}
@@ -100,16 +133,148 @@ public final class TownTraffic {
 		return ALL.size();
 	}
 
+	/** 2.0: the town's street grid round (x, z) (for the traffic lights). */
+	static AtlasClient.City grid(ClientLevel level, double x, double z, double y) {
+		return townAt(level, x, z, y);
+	}
+
+	/** 2.0: how many stand at a red light now (for the tests). */
+	public static int waitingAtRed() {
+		int n = 0;
+		for (Drive d : DRIVES.values()) {
+			if (d.heldAtRed) {
+				n++;
+			}
+		}
+		return n;
+	}
+
+	/**
+	 * 2.0: the lights of one of the town's vehicles (VehicleLights' bits): headlights always (dipped by day), the tail
+	 * lights in the dark, the brake lights while it slows or stands, the indicator through a turn; 0 for a parked car,
+	 * -1 for a prop that is not the town's traffic.
+	 */
+	public static int lamps(PropEntity p, float dark) {
+		Drive d = DRIVES.get(p);
+		if (d == null) {
+			return PARKED.containsValue(p) ? 0 : -1;
+		}
+		int f = com.stasdoto.airdefense.client.vehicle.VehicleLights.HEAD;
+		if (dark > 0.15f) {
+			f |= com.stasdoto.airdefense.client.vehicle.VehicleLights.TAIL;
+		}
+		if (d.brake > 0 || d.stopped > 0) {
+			f |= com.stasdoto.airdefense.client.vehicle.VehicleLights.BRAKE;
+		}
+		if (d.turning) {
+			f |= d.turnSign > 0 ? com.stasdoto.airdefense.client.vehicle.VehicleLights.RIGHT : com.stasdoto.airdefense.client.vehicle.VehicleLights.LEFT;
+		} else if (d.pull == 1 || d.pull == 2 && d.stopped < 30) {
+			// Into the filling station (right), and out again (left) as it pulls away.
+			f |= d.pull == 1 ? com.stasdoto.airdefense.client.vehicle.VehicleLights.RIGHT : com.stasdoto.airdefense.client.vehicle.VehicleLights.LEFT;
+		}
+		return f;
+	}
+
 	public static int parkedCount() {
 		return PARKED.size();
 	}
 
+	// ------------------------------------------------------------------------------------------------
+	// 2.0: parked cars can be taken (driven away as real cars) and shoved by vehicles
+
+	/** Bays whose car has been taken (no new one drawn there while this world is open). */
+	private static final java.util.Set<Long> TAKEN = new java.util.HashSet<>();
+
+	/** A parked car the player looks at within reach: {bay key, the prop}, or null. */
+	@org.jetbrains.annotations.Nullable
+	public static Map.Entry<Long, PropEntity> parkedInSight(Vec3 eye, Vec3 look, double reach) {
+		Map.Entry<Long, PropEntity> best = null;
+		double bestT = reach;
+		for (Map.Entry<Long, PropEntity> e : PARKED.entrySet()) {
+			PropEntity p = e.getValue();
+			if (p.isRemoved() || p.position().distanceToSqr(eye) > (reach + 4) * (reach + 4)) {
+				continue;
+			}
+			for (double t = 0.5; t < bestT; t += 0.2) {
+				Vec3 q = eye.add(look.scale(t));
+				if (inside(p, q.x, q.y, q.z, 0.1)) {
+					bestT = t;
+					best = e;
+					break;
+				}
+			}
+		}
+		return best;
+	}
+
+	/** Is this point inside the parked car (its footprint turned by its yaw, about 1.6 m high)? */
+	private static boolean inside(PropEntity p, double x, double y, double z, double margin) {
+		double yaw = Math.toRadians(p.pose[3]);
+		double dx = x - p.pose[0];
+		double dz = z - p.pose[2];
+		double along = -dx * Math.sin(yaw) + dz * Math.cos(yaw);
+		double across = -dx * Math.cos(yaw) - dz * Math.sin(yaw);
+		return Math.abs(along) < 2.3 + margin && Math.abs(across) < 0.95 + margin && y > p.pose[1] - margin && y < p.pose[1] + 1.6 + margin;
+	}
+
+	/** The car of this bay was taken (the server put a real one there): it is no longer drawn. */
+	public static void taken(ClientLevel level, long bay) {
+		PropEntity p = PARKED.remove(bay);
+		TAKEN.add(bay);
+		if (p != null) {
+			level.removeEntity(p.getId(), Entity.RemovalReason.DISCARDED);
+			p.discard();
+		}
+	}
+
+	/**
+	 * A vehicle driven by the local player shoves the parked cars it runs into (they are only drawn here): they slide
+	 * and turn away. Returns the share of the vehicle's speed it keeps (momentum shared with a car of ~1.3 t).
+	 */
+	public static double shove(com.stasdoto.airdefense.vehicle.VehicleEntity v, double vx, double vz, double mass) {
+		double sp = Math.hypot(vx, vz);
+		if (sp < 0.02 || PARKED.isEmpty()) {
+			return 1;
+		}
+		double yaw = Math.toRadians(v.getYRot());
+		double fx = -Math.sin(yaw);
+		double fz = Math.cos(yaw);
+		double half = v.getVehicleType().geometry.length() / 2;
+		double keep = 1;
+		for (PropEntity p : PARKED.values()) {
+			if (p.isRemoved() || p.position().distanceToSqr(v.position()) > (half + 4) * (half + 4)) {
+				continue;
+			}
+			// The vehicle's nose (and its corners) in the car?
+			double nx = v.getX() + fx * (half + sp);
+			double nz = v.getZ() + fz * (half + sp);
+			if (!inside(p, nx, v.getY() + 0.5, nz, 0.2) && !inside(p, v.getX(), v.getY() + 0.5, v.getZ(), 0.2)) {
+				continue;
+			}
+			double share = mass / (mass + 1300);
+			double push = sp * share * 1.25;
+			double dx = p.pose[0] - v.getX();
+			double dz = p.pose[2] - v.getZ();
+			double side = Math.signum(dx * -fz + dz * fx);
+			double spinDeg = side * Math.min(25, sp * 40);
+			p.move(p.pose[0] + vx / sp * push, p.pose[1], p.pose[2] + vz / sp * push, p.pose[3] + spinDeg, 0);
+			keep = Math.min(keep, share);
+			shoved++;
+		}
+		return keep;
+	}
+
+	/** For the tests: parked cars shoved. */
+	public static int shoved;
+
 	public static void tick(Minecraft mc) {
 		ClientLevel level = mc.level;
 		if (level != lastLevel) {
+			com.stasdoto.airdefense.client.vehicle.TrafficSounds.clear();
 			ALL.clear();
 			DRIVES.clear();
 			PARKED.clear();
+			TAKEN.clear();
 			lastLevel = level;
 		}
 		if (level == null || mc.player == null || mc.isPaused()) {
@@ -118,10 +283,12 @@ public final class TownTraffic {
 		Vec3 me = mc.player.position();
 		for (PropEntity p : new ArrayList<>(ALL)) {
 			Drive d = DRIVES.get(p);
-			if (d == null || !drive(level, p, d) || p.position().distanceTo(me) > 120) {
+			if (d == null || !drive(level, p, d) || p.position().distanceToSqr(me) > 120 * 120) {
 				remove(level, p);
 			}
 		}
+		// 2.0: the nearest few heard with their engines.
+		com.stasdoto.airdefense.client.vehicle.TrafficSounds.tick(ALL, SOUND_INFO, me);
 		if (++ticks % 20 != 0) {
 			return;
 		}
@@ -129,6 +296,22 @@ public final class TownTraffic {
 		long hour = (Math.floorMod(level.getOverworldClockTime(), 24000L) / 1000 + 6) % 24;
 		AtlasClient.City town = townAt(level, me.x, me.z, me.y);
 		int want = force > 0 ? force : town == null || alert ? 0 : hour < 6 ? 2 : hour < 7 ? 6 : hour < 10 ? 16 : hour < 17 ? 11 : hour < 20 ? 16 : hour < 23 ? 8 : 3;
+		if (force <= 0) {
+			// 2.0: the player's setting (0..200 %).
+			want = Math.round(want * com.stasdoto.airdefense.client.ClientSettings.trafficDensity());
+		}
+		// 2.0: too many for the street (more than wanted, after the setting was turned down): the farthest one goes.
+		if (ALL.size() > want + 1) {
+			PropEntity far = null;
+			for (PropEntity p : ALL) {
+				if (far == null || p.distanceToSqr(me) > far.distanceToSqr(me)) {
+					far = p;
+				}
+			}
+			if (far != null && far.distanceToSqr(me) > 40 * 40) {
+				remove(level, far);
+			}
+		}
 		for (int k = 0; k < 2 && ALL.size() < want && town != null; k++) {
 			spawn(mc, level, me, town, hour);
 		}
@@ -256,7 +439,12 @@ public final class TownTraffic {
 						continue;
 					}
 					long key = q.asLong();
-					if (PARKED.containsKey(key)) {
+					if (PARKED.containsKey(key) || TAKEN.contains(key)) {
+						continue;
+					}
+					if (!level.getEntitiesOfClass(com.stasdoto.airdefense.vehicle.VehicleEntity.class,
+							new net.minecraft.world.phys.AABB(x - 2, y - 1, z - 2, x + 4, y + 3, z + 4)).isEmpty()) {
+						// 2.0: a real car (taken by somebody, or put there) stands in the bay.
 						continue;
 					}
 					long h = mix(key * 0x9E3779B97F4A7C15L);
@@ -407,48 +595,66 @@ public final class TownTraffic {
 	/** One tick of a vehicle. False when it is to go (off the road, out of the loaded land). */
 	private static boolean drive(ClientLevel level, PropEntity p, Drive d) {
 		p.hold();
+		if (d.brake > 0) {
+			d.brake--;
+		}
 		if (d.stopped > 0) {
 			d.stopped--;
 			p.speed = 0;
 			if (d.stopped == 0) {
-				level.playLocalSound(p.getX(), p.getY() + 1, p.getZ(), ModSounds.BUS_GO, SoundSource.AMBIENT, 1.0f, 1.0f, false);
+				if (d.pull == 2) {
+					// Filled up: out of the station and back into the lane.
+					d.pull = 3;
+					d.pullFrom = d.along;
+					d.pullLen = 9;
+				} else if (com.stasdoto.airdefense.client.vehicle.TrafficSounds.voiced(p)) {
+					// 2.0: its engine is heard already - only the doors shutting.
+					com.stasdoto.airdefense.client.vehicle.TrafficSounds.depart(p);
+				} else {
+					level.playLocalSound(p.getX(), p.getY() + 1, p.getZ(), ModSounds.BUS_GO, SoundSource.AMBIENT, 1.0f, 1.0f, false);
+				}
 			}
 			return true;
 		}
+		Minecraft mc = Minecraft.getInstance();
+		double toMe = mc.player == null ? 0 : p.distanceToSqr(mc.player);
 		// The sound of it going by (a tram's wheels and bell, a car's tyres) once it comes near.
-		if (!d.honked && p.timer == 0 && Minecraft.getInstance().player != null && p.distanceTo(Minecraft.getInstance().player) < 24) {
+		if (!d.honked && p.timer == 0 && mc.player != null && toMe < 24 * 24) {
 			p.timer = 1;
 			if (d.kind == 4) {
 				level.playLocalSound(p.getX(), p.getY() + 1, p.getZ(), ModSounds.TRAM_PASS, SoundSource.AMBIENT, 1.2f, 1.0f, false);
 				level.playLocalSound(p.getX(), p.getY() + 2, p.getZ(), ModSounds.TRAM_BELL, SoundSource.AMBIENT, 0.9f, 1.0f, false);
-			} else {
+			} else if (!com.stasdoto.airdefense.client.vehicle.TrafficSounds.voiced(p)) {
 				level.playLocalSound(p.getX(), p.getY() + 1, p.getZ(), ModSounds.CITY_CAR, SoundSource.AMBIENT, 0.8f, d.kind >= 2 ? 0.7f : 1.0f, false);
 			}
 		}
 		// Keep the distance to the one ahead, stop for people crossing in front.
 		double want = d.max;
 		double gapAhead = Double.MAX_VALUE;
-		for (PropEntity o : ALL) {
-			Drive od = DRIVES.get(o);
-			if (o == p || od == null || od.turning || od.axis != d.axis || od.line != d.line || od.dir != d.dir) {
-				continue;
-			}
-			double gap = (od.along - d.along) * d.dir - (od.length + d.length) / 2;
-			if (gap > -1 && gap < gapAhead) {
-				gapAhead = gap;
+		if (d.pull == 0) {
+			for (PropEntity o : ALL) {
+				Drive od = DRIVES.get(o);
+				if (o == p || od == null || od.turning || od.side > 2.0 || od.axis != d.axis || od.line != d.line || od.dir != d.dir) {
+					continue;
+				}
+				double gap = (od.along - d.along) * d.dir - (od.length + d.length) / 2;
+				if (gap > -1 && gap < gapAhead) {
+					gapAhead = gap;
+				}
 			}
 		}
 		if (gapAhead < 10) {
 			want = Math.min(want, Math.max(0, (gapAhead - 2.5) * 0.06));
 		}
-		if (!d.turning) {
+		// 2.0 LOD: far away (beyond 64 blocks) the people in front are looked at every other tick only.
+		if (!d.turning && d.pull == 0 && (toMe < 64 * 64 || (p.tickCount & 1) == 0)) {
 			double[] nose = lanePoint(d, d.along + d.dir * (d.length / 2 + 2.5));
 			for (PedestrianEntity w : Pedestrians.near(nose[0], nose[1], 3.0)) {
 				if (w.crossing) {
 					want = 0;
 					if (!d.honked && RANDOM.nextInt(80) == 0) {
 						d.honked = true;
-						level.playLocalSound(p.getX(), p.getY() + 1, p.getZ(), ModSounds.CITY_HORN, SoundSource.AMBIENT, 0.6f, 1.1f, false);
+						com.stasdoto.airdefense.client.vehicle.TrafficSounds.horn(p, d.kind);
 					}
 				}
 			}
@@ -456,33 +662,171 @@ public final class TownTraffic {
 				waits++;
 			}
 		}
+		// 2.0: the traffic lights - stop at the line before the zebra on red (and amber, if it can still stop).
+		if (!d.turning && d.pull == 0) {
+			want = Math.min(want, lightAhead(level, p, d));
+		}
+		if (d.pull == 1 || d.pull == 3) {
+			// Slowly in and out of the filling station.
+			want = Math.min(want, d.pull == 1 ? 0.2 : 0.22);
+		}
 		// Speed up gently, brake harder.
+		double was = p.speed;
 		p.speed = p.speed < want ? Math.min(want, p.speed + 0.012) : Math.max(want, p.speed - 0.05);
+		if (p.speed < was - 0.003 || p.speed < 0.005) {
+			d.brake = 8;
+		}
+		if (d.heldAtRed && p.speed > 0.05) {
+			d.heldAtRed = false;
+			greenStarts++;
+		}
 		double sp = p.speed;
 		if (d.turning) {
 			return turnStep(level, p, d, sp);
 		}
 		double next = d.along + d.dir * sp;
-		// The cross streets: a turn decided once at each; the bus stops: a stop at each for the buses.
-		if (!crossing(level, p, d, next)) {
-			return false;
+		if (d.pull == 0) {
+			// The cross streets: a turn decided once at each; the bus stops: a stop at each for the buses.
+			if (!crossing(level, p, d, next)) {
+				return false;
+			}
+			if (d.turning) {
+				return true;
+			}
+			if ((d.kind == 2 || d.kind == 3) && busStop(level, p, d)) {
+				return true;
+			}
+			if (d.kind <= 1) {
+				pullIn(d);
+			}
 		}
-		if (d.turning) {
-			return true;
-		}
-		if ((d.kind == 2 || d.kind == 3) && busStop(level, p, d)) {
-			return true;
+		double sideWas = d.side;
+		if (d.pull == 1 || d.pull == 3) {
+			double k = Mth.clamp((next - d.pullFrom) * d.dir / d.pullLen, 0, 1);
+			double e = k * k * (3 - 2 * k);
+			d.side = d.pull == 1 ? d.sideTo * e : d.sideTo * (1 - e);
+			if (k >= 1) {
+				if (d.pull == 1) {
+					d.pull = 2;
+					d.stopped = 140 + RANDOM.nextInt(120);
+					p.speed = 0;
+					fuelStops++;
+				} else {
+					d.pull = 0;
+					d.side = 0;
+				}
+			}
 		}
 		double[] at = lanePoint(d, next);
-		double y = roadY(level, at[0], at[1], d.y);
+		double y = d.side > 0.6 ? groundY(level, at[0], at[1], d.y) : roadYCached(level, d, at[0], at[1]);
 		if (Double.isNaN(y)) {
 			// The road ends here: away it goes (at the town's edge, out of the loaded land).
 			return false;
 		}
 		d.along = next;
 		d.y = d.y + Mth.clamp(y - d.y, -0.2, 0.2);
-		p.move(at[0], d.y, at[1], yaw(d.axis, d.dir), 0);
+		// Turned a little towards where it is heading off the lane (the yaw grows to the right).
+		double veer = sp > 0.01 ? Math.toDegrees(Math.atan2(d.side - sideWas, sp)) : 0;
+		p.move(at[0], d.y, at[1], yaw(d.axis, d.dir) + veer, 0);
 		return true;
+	}
+
+	/** 2.0: the speed allowed by the traffic light ahead (a large number when there is none, or it is green). */
+	private static double lightAhead(ClientLevel level, PropEntity p, Drive d) {
+		AtlasClient.City town = townAt(level, p.getX(), p.getZ(), d.y);
+		if (town == null) {
+			return Double.MAX_VALUE;
+		}
+		int[] cross = d.axis == 0 ? town.gz() : town.gx();
+		double nose = d.along + d.dir * d.length / 2;
+		double best = Double.MAX_VALUE;
+		int bc = Integer.MIN_VALUE;
+		for (int c : cross) {
+			// The stop line: before the zebra (5-6 from the cross street's middle line).
+			double stop = c + 0.5 - d.dir * 7.3;
+			double ds = (stop - nose) * d.dir;
+			if (ds > -0.6 && ds < 32 && ds < best) {
+				best = ds;
+				bc = c;
+			}
+		}
+		if (bc == Integer.MIN_VALUE) {
+			return Double.MAX_VALUE;
+		}
+		int ix = d.axis == 0 ? d.line : bc;
+		int iz = d.axis == 0 ? bc : d.line;
+		if (!TrafficLights.hasLights(ix, iz)) {
+			return Double.MAX_VALUE;
+		}
+		int sig = TrafficLights.signal(level, d.axis, ix, iz);
+		// Amber: stop if there is room to (else on through it).
+		if (sig == TrafficLights.GREEN || sig == TrafficLights.AMBER && best < 3.0 + p.speed * 8) {
+			return Double.MAX_VALUE;
+		}
+		if (best < 1.2 && p.speed < 0.02 && !d.heldAtRed) {
+			d.heldAtRed = true;
+			redStops++;
+		}
+		return Math.max(0, (best - 0.25) * 0.07);
+	}
+
+	/** 2.0: now and then a car pulls in at a filling station by the street on its right (decided once for each pump). */
+	private static void pullIn(Drive d) {
+		for (int[] pump : TrafficLights.pumps()) {
+			long key = BlockPos.asLong(pump[0], pump[1], pump[2]);
+			if (key == d.pump) {
+				continue;
+			}
+			double pAlong = d.axis == 0 ? pump[2] + 0.5 : pump[0] + 0.5;
+			double ahead = (pAlong - d.along) * d.dir;
+			if (ahead < 7 || ahead > 9) {
+				continue;
+			}
+			double lane = d.axis == 0 ? d.line + 0.5 - d.dir * 2.0 : d.line + 0.5 + d.dir * 2.0;
+			double across = d.axis == 0 ? pump[0] + 0.5 : pump[2] + 0.5;
+			// How far to the right of the lane the pump is (the right: -x heading +z, +z heading +x).
+			double right = (across - lane) * (d.axis == 0 ? -d.dir : d.dir);
+			double to = right - 1.7;
+			if (to < 3 || to > 16) {
+				continue;
+			}
+			d.pump = key;
+			if (RANDOM.nextInt(100) >= (forceFuel ? 100 : 35)) {
+				return;
+			}
+			d.pull = 1;
+			d.sideTo = to;
+			d.pullFrom = d.along;
+			d.pullLen = ahead;
+			return;
+		}
+	}
+
+	/** The road's top under (x, z), looked up again only when the block changes. */
+	private static double roadYCached(ClientLevel level, Drive d, double x, double z) {
+		int bx = Mth.floor(x);
+		int bz = Mth.floor(z);
+		if (bx != d.roadBX || bz != d.roadBZ) {
+			d.roadBX = bx;
+			d.roadBZ = bz;
+			d.roadYAt = roadY(level, x, z, d.y);
+		}
+		return d.roadYAt;
+	}
+
+	/** The top of whatever stands under (x, z) near height {@code near} (a forecourt, a kerb). */
+	private static double groundY(ClientLevel level, double x, double z, double near) {
+		BlockPos.MutableBlockPos q = new BlockPos.MutableBlockPos();
+		int bx = Mth.floor(x);
+		int bz = Mth.floor(z);
+		for (int y = (int) Math.floor(near) + 1; y >= (int) Math.floor(near) - 3; y--) {
+			BlockState st = level.getBlockState(q.set(bx, y, bz));
+			net.minecraft.world.phys.shapes.VoxelShape shape = st.getCollisionShape(level, q);
+			if (!shape.isEmpty() && st.getBlock() != com.stasdoto.airdefense.street.StreetBlocks.FUEL_PUMP) {
+				return y + shape.max(net.minecraft.core.Direction.Axis.Y);
+			}
+		}
+		return near;
 	}
 
 	/** Passing a cross street: straight on, or a turn (if the street that way is a road) - trams always straight on. */
@@ -505,6 +849,11 @@ public final class TownTraffic {
 				continue;
 			}
 			int roll = RANDOM.nextInt(100);
+			// 2.0: now and then a horn at the crossing (someone cut in, a friend on the pavement).
+			if (atLeft && RANDOM.nextInt(30) == 0 && Minecraft.getInstance().player != null && p.distanceTo(Minecraft.getInstance().player) < 48) {
+				com.stasdoto.airdefense.client.vehicle.TrafficSounds.horn(p, d.kind);
+				horns++;
+			}
 			boolean right = atRight && roll < 22;
 			boolean left = atLeft && roll >= 22 && roll < 38;
 			if (atLeft) {
@@ -598,6 +947,7 @@ public final class TownTraffic {
 			d.lastStop = key;
 			d.stopped = 90 + RANDOM.nextInt(60);
 			busStops++;
+			com.stasdoto.airdefense.client.vehicle.TrafficSounds.arrive(p);
 			Pedestrians.board(s[0] + 0.5, s[2] + 0.5);
 			return true;
 		}

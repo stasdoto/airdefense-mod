@@ -106,6 +106,11 @@ public final class FxClient {
 		});
 	}
 
+	/** 2.0: a bare particle of one of the mod's kinds for other client code to set up and add (null before the sprites load). */
+	public static FxParticle make(SimpleParticleType type, ClientLevel level, double x, double y, double z, double vx, double vy, double vz) {
+		return SPRITES.get(type) == null ? null : new FxParticle(level, x, y, z, vx, vy, vz, SPRITES.get(type));
+	}
+
 	private static FxParticle base(SimpleParticleType type, ClientLevel level, double x, double y, double z, double vx, double vy, double vz) {
 		return new FxParticle(level, x, y, z, vx, vy, vz, SPRITES.get(type));
 	}

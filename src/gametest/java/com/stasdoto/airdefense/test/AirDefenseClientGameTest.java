@@ -140,6 +140,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("drive")) {
 				drive(ctx, server);
 			}
+			if (scene("physics")) {
+				physics(ctx, server);
+			}
 			if (scene("map")) {
 				tabletMap(ctx, server);
 			}
@@ -224,6 +227,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("livetown")) {
 				liveTown(ctx, server);
 			}
+			if (scene("vehsounds")) {
+				vehSounds(ctx, server);
+			}
 			if (scene("port")) {
 				port(ctx, server);
 			}
@@ -260,8 +266,14 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("people")) {
 				people(ctx, server);
 			}
+			if (scene("meshcar")) {
+				meshCar(ctx, server);
+			}
 			if (scene("services")) {
 				services(ctx, server);
+			}
+			if (scene("commandother")) {
+				commandOther(ctx, server);
 			}
 
 			AirDefense.LOGGER.info("[airdefense-test] SUMMARY {}", MissileStats.summary());
@@ -3432,6 +3444,250 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	 * 1.32.1: a country of ten villages at war with the player's town: its strikes come in waves (one to three launch
 	 * sites, one warning), not ten villages each on its own.
 	 */
+	/**
+	 * 2.0 "command any country": the player's country with a Gepard put down by hand in its town (it belongs to the
+	 * country now) and a Patriot it was ordered to put up; on the map the player takes command of a foreign country,
+	 * orders it to put up two Iskanders and a Shahed launcher near its border, declares war on his own country in its
+	 * name and strikes his own town. The missiles fly under the foreign flag: his own air defence shoots at them.
+	 */
+	private void commandOther(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 200000;
+		server.runCommand("gamemode creative @a");
+		camera(server, x + 40.5, ground + 30, 60.5, 150, 25);
+		ctx.waitTicks(60);
+		int[] ids = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var mine = com.stasdoto.airdefense.nation.Nations.countryOf(l, p, pl, true);
+			int id = p.newId();
+			BlockPos at = new BlockPos(x, ground, 0);
+			var town = new com.stasdoto.airdefense.nation.Settlement(id, "Родное", at, at.above(2), -1, java.util.Optional.empty(), 0,
+					java.util.Map.of(), List.of(), List.of());
+			p.settlements.put(id, town);
+			town.country = mine.id;
+			int fid = p.newId();
+			BlockPos fat = new BlockPos(x + 1500, ground, 0);
+			var foreign = new com.stasdoto.airdefense.nation.Settlement(fid, "Чужбина", fat, fat.above(2), -1, java.util.Optional.empty(), 0,
+					java.util.Map.of(), List.of(), List.of());
+			p.settlements.put(fid, foreign);
+			var them = com.stasdoto.airdefense.nation.Nations.newWorldCountry(p, fid);
+			foreign.country = them.id;
+			p.setDirty();
+			return new int[]{id, mine.id, fid, them.id};
+		});
+		server.runCommand("clear @a");
+		server.runCommand("item replace entity @a hotbar.0 with airdefense:designator");
+		ctx.waitTicks(5);
+		selectSlot(ctx, 0);
+		ctx.waitTicks(20);
+		// A Gepard put down by hand in the player's own town: it belongs to his country now.
+		int[] gepard = server.computeOnServer(s -> {
+			ServerLevel l = s.overworld();
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			VehicleEntity v = VehicleEntity.spawn(l, VehicleType.GEPARD, new Vec3(x + 20.5, ground, 30.5), 90);
+			com.stasdoto.airdefense.nation.Command.claimPlaced(l, pl, v);
+			return new int[]{v.getId(), v.country};
+		});
+		// A Patriot his country is ordered to put up (command mode on his own country, from the server's handler).
+		server.runOnServer(s -> {
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			com.stasdoto.airdefense.nation.Command.handle(pl, new com.stasdoto.airdefense.nation.CommandActionPayload(
+					com.stasdoto.airdefense.nation.CommandActionPayload.TAKE, ids[1], 0, 0, 0, 0));
+			com.stasdoto.airdefense.nation.Command.handle(pl, new com.stasdoto.airdefense.nation.CommandActionPayload(
+					com.stasdoto.airdefense.nation.CommandActionPayload.PLACE, ids[1], VehicleType.PATRIOT.ordinal(), 1, x - 25, 40));
+			com.stasdoto.airdefense.nation.Command.handle(pl, new com.stasdoto.airdefense.nation.CommandActionPayload(
+					com.stasdoto.airdefense.nation.CommandActionPayload.RELEASE, ids[1], 0, 0, 0, 0));
+		});
+		ctx.waitTicks(100);
+		int[] patriot = server.computeOnServer(s -> {
+			for (VehicleEntity v : s.overworld().getEntitiesOfClass(VehicleEntity.class, new net.minecraft.world.phys.AABB(x - 60, ground - 10, -20, x + 10, ground + 20, 90),
+					v -> v.isAlive() && v.getVehicleType() == VehicleType.PATRIOT)) {
+				return new int[]{v.getId(), v.country, v.garrison ? 1 : 0, v.getAmmo()};
+			}
+			return new int[]{-1, -9, 0, 0};
+		});
+		int gepardAmmo0 = server.computeOnServer(s -> s.overworld().getEntity(gepard[0]) instanceof VehicleEntity v ? v.getAmmo() : -1);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT commandother_own: gepard by hand belongs to country {} (own {}), patriot by order: entity {} country {} garrison {} ammo {}",
+				gepard[1], ids[1], patriot[0], patriot[1], patriot[2], patriot[3]);
+		// The map: the foreign town picked on the army tab - the "Command this country" button.
+		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT);
+		ctx.waitForScreen(com.stasdoto.airdefense.client.map.TacticalMapScreen.class);
+		ctx.waitTicks(40);
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				m.setTab(1);
+				m.selectVillage(ids[2]);
+				m.centerOn(x + 750, 0, 5);
+			}
+		});
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("co1_command_button");
+		boolean commandClicked = ctx.tryClickScreenButton("Command this country");
+		int waited = waitUntil(ctx, () -> com.stasdoto.airdefense.client.nation.CommandClient.commanded() == ids[3], 100);
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("co2_command_panel");
+		// War on the player's own country, in its name.
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				m.pickOther(ids[1]);
+				m.pressCommand(4);
+			}
+		});
+		ctx.waitTicks(20);
+		// Launchers near its border: two Iskanders and a Shahed launcher where the map is clicked.
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				m.pressCommand(1);
+				m.pickPoint(x + 1300, 20);
+			}
+		});
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("co3_place_launchers");
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				m.pressCommand(2);
+				m.pickPoint(x + 1310, -20);
+				m.pressCommand(2);
+			}
+		});
+		ctx.waitTicks(10);
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				// The Shahed launcher (next in the list after the Iskander).
+				m.pickPoint(x + 1290, 50);
+				int i = com.stasdoto.airdefense.nation.CommandKit.of(com.stasdoto.airdefense.nation.CommandKit.LAUNCHERS).indexOf(VehicleType.SHAHED);
+				int k = com.stasdoto.airdefense.nation.CommandKit.of(com.stasdoto.airdefense.nation.CommandKit.LAUNCHERS).indexOf(VehicleType.ISKANDER);
+				int size = com.stasdoto.airdefense.nation.CommandKit.of(com.stasdoto.airdefense.nation.CommandKit.LAUNCHERS).size();
+				for (int n = 0; n < Math.floorMod(i - k, Math.max(1, size)); n++) {
+					m.cycleForTest(0, 1);
+				}
+				m.pressCommand(2);
+				m.pressCommand(5);
+			}
+		});
+		ctx.waitTicks(30);
+		// The strike: the player's own town, eight rounds from any launcher.
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				m.pressCommand(3);
+				m.cycleForTest(1, 1);
+				m.pickPoint(x, 0);
+				m.centerOn(x + 650, 0, 5);
+			}
+		});
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("co4_strike_panel");
+		int[] before = counters();
+		int sent0 = com.stasdoto.airdefense.nation.Command.roundsSent;
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				m.pressCommand(3);
+			}
+		});
+		ctx.waitTicks(20);
+		int sent = com.stasdoto.airdefense.nation.Command.roundsSent - sent0;
+		String state = server.computeOnServer(s -> {
+			var p = com.stasdoto.airdefense.nation.Politics.get(s);
+			var them = p.country(ids[3]);
+			var ar = com.stasdoto.airdefense.nation.Arsenals.get(s).arsenals.get(ids[2]);
+			int ordered = 0;
+			if (ar != null) {
+				for (var u : ar.units) {
+					if (u.pos != null) {
+						ordered++;
+					}
+				}
+			}
+			return "at war " + (them != null && them.atWarWith(ids[1])) + ", foreign units ordered " + ordered;
+		});
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		ctx.waitTicks(5);
+		// Watch the sky over the town.
+		look(server, x - 60, ground + 12, 70, x + 120, ground + 70, 0);
+		ctx.waitTicks(120);
+		ctx.takeScreenshot("co5_sky");
+		ctx.waitTicks(200);
+		ctx.takeScreenshot("co6_sky_later");
+		ctx.waitTicks(500);
+		int[] now = counters();
+		int[] ammo = server.computeOnServer(s -> new int[]{
+				s.overworld().getEntity(patriot[0]) instanceof VehicleEntity v ? v.getAmmo() : -1,
+				s.overworld().getEntity(gepard[0]) instanceof VehicleEntity v ? v.getAmmo() : -1});
+		AirDefense.LOGGER.info("[airdefense-test] RESULT commandother: command button {} (taken after {} ticks), {}, rounds ordered {} | launched={} intercepted={} hits={}"
+						+ " interceptors={} decoys={} | patriot ammo {} -> {}, gepard ammo {} -> {} | orders: taken {} placed {} wars {} claimed {}",
+				commandClicked, waited, state, sent, now[0] - before[0], now[1] - before[1], now[2] - before[2], now[3] - before[3], now[5] - before[5],
+				patriot[3], ammo[0], gepardAmmo0, ammo[1], com.stasdoto.airdefense.nation.Command.taken, com.stasdoto.airdefense.nation.Command.placed,
+				com.stasdoto.airdefense.nation.Command.wars, com.stasdoto.airdefense.nation.Command.claimed);
+		// The strike planner: the game paused, the two Iskanders picked and given one point, launched together.
+		ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT);
+		ctx.waitForScreen(com.stasdoto.airdefense.client.map.TacticalMapScreen.class);
+		ctx.waitTicks(40);
+		int planned = ctx.computeOnClient(mc -> {
+			if (!(mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m)) {
+				return -1;
+			}
+			m.plannerForTest();
+			m.setPaused(true);
+			var st = com.stasdoto.airdefense.client.nation.CommandClient.state();
+			int row = 0;
+			int n = 0;
+			if (st != null) {
+				for (var u : st.units()) {
+					VehicleType t = VehicleType.byId(u.type());
+					if (!com.stasdoto.airdefense.nation.CommandKit.canStrikeWith(t)) {
+						continue;
+					}
+					if (t == VehicleType.ISKANDER && n < 2) {
+						m.pickLauncherForTest(row);
+						n++;
+					}
+					row++;
+				}
+			}
+			m.pickPoint(x + 10, 10);
+			m.pressCommand(1);
+			m.centerOn(x + 650, 0, 5);
+			return n;
+		});
+		long tick0 = server.computeOnServer(s -> s.overworld().getGameTime());
+		ctx.waitTicks(30);
+		long tick1 = server.computeOnServer(s -> s.overworld().getGameTime());
+		boolean pausedOk = ctx.computeOnClient(mc -> mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m && m.paused());
+		int[] counts = ctx.computeOnClient(mc -> mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m ? m.plannerCounts() : new int[]{-1, -1});
+		ctx.takeScreenshot("co7_strike_planner");
+		int[] before2 = counters();
+		int planL0 = com.stasdoto.airdefense.nation.Command.planLaunchers;
+		int planR0 = com.stasdoto.airdefense.nation.Command.planRounds;
+		ctx.runOnClient(mc -> {
+			if (mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) {
+				m.pressCommand(3);
+			}
+		});
+		ctx.waitTicks(20);
+		boolean resumed = ctx.computeOnClient(mc -> !(mc.gui.screen() instanceof com.stasdoto.airdefense.client.map.TacticalMapScreen m) || !m.paused());
+		ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE);
+		look(server, x - 60, ground + 12, 70, x + 120, ground + 70, 0);
+		ctx.waitTicks(100);
+		ctx.takeScreenshot("co8_planned_strike_sky");
+		ctx.waitTicks(300);
+		int[] now2 = counters();
+		AirDefense.LOGGER.info("[airdefense-test] RESULT commandother_plan: launchers picked {}, planner rows {} plan {}, paused {} (server ticks while paused {}),"
+						+ " resumed {} | planned launchers fired {} rounds {} | launched={} intercepted={} hits={}",
+				planned, counts[0], counts[1], pausedOk, tick1 - tick0, resumed, com.stasdoto.airdefense.nation.Command.planLaunchers - planL0,
+				com.stasdoto.airdefense.nation.Command.planRounds - planR0, now2[0] - before2[0], now2[1] - before2[1], now2[2] - before2[2]);
+		// Back to his own country; peace again.
+		server.runOnServer(s -> {
+			ServerPlayer pl = s.getPlayerList().getPlayers().getFirst();
+			com.stasdoto.airdefense.nation.Command.handle(pl, new com.stasdoto.airdefense.nation.CommandActionPayload(
+					com.stasdoto.airdefense.nation.CommandActionPayload.PEACE, ids[3], ids[1], 0, 0, 0));
+			com.stasdoto.airdefense.nation.Command.handle(pl, new com.stasdoto.airdefense.nation.CommandActionPayload(
+					com.stasdoto.airdefense.nation.CommandActionPayload.RELEASE, ids[3], 0, 0, 0, 0));
+		});
+		server.runCommand("clear @a");
+		server.runCommand("gamemode spectator @a");
+	}
+
 	private void strikeWave(ClientGameTestContext ctx, TestServerContext server) {
 		int x = 140000;
 		server.runCommand("gamemode spectator @a");
@@ -5586,6 +5842,147 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runOnServer(s -> forVehicles(s.overworld(), ids, Entity::discard));
 	}
 
+	// --- 2.0: vehicle physics -----------------------------------------------------------------------------
+
+	/** What the local driver's vehicle is doing (from his client, where it is simulated). */
+	private static String driveLog(ClientGameTestContext ctx) {
+		return ctx.computeOnClient(mc -> mc.player != null && mc.player.getVehicle() instanceof VehicleEntity v
+				? String.format(java.util.Locale.ROOT, "speed %.1f km/h, rpm %.0f, gear %d, throttle %.2f, brake %s, skid %.2f, yaw rate %.1f deg/s, surface %s, y %.2f",
+						Math.abs(v.getSpeed()) * 72, v.getEngineRpm(), v.getGear(), v.getThrottle(), v.isBraking(), v.getSkid(),
+						Math.toDegrees(v.driveState().omega), v.driveState().surface, v.getY())
+				: "no vehicle");
+	}
+
+	private static float driveKmh(ClientGameTestContext ctx) {
+		return ctx.computeOnClient(mc -> mc.player != null && mc.player.getVehicle() instanceof VehicleEntity v ? Math.abs(v.getSpeed()) * 72 : -1f);
+	}
+
+	private int mountNew(ClientGameTestContext ctx, TestServerContext server, VehicleType type, double x, double z, float yaw) {
+		int id = server.computeOnServer(s -> {
+			ServerPlayer p = s.getPlayerList().getPlayers().getFirst();
+			p.stopRiding();
+			VehicleEntity v = VehicleEntity.spawn(s.overworld(), type, new Vec3(x, ground, z), yaw);
+			p.startRiding(v);
+			return v.getId();
+		});
+		ctx.waitTicks(15);
+		return id;
+	}
+
+	/**
+	 * 2.0 physics: a car pulls away through its gears, brakes to a stop and backs up (automatic reverse), a handbrake
+	 * turn, a jump off a ramp and the landing, a tank climbing a slope. RESULT lines: speeds, revs, gears, yaw rate, slide.
+	 */
+	private void physics(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 14000;
+		server.runCommand("gamemode creative @a");
+		camera(server, x + 40, ground + 4, 0, -90, 10);
+		ctx.waitTicks(40);
+		// A long paved strip, cleared above.
+		for (int seg = 0; seg < 4; seg++) {
+			int a = x + seg * 80;
+			server.runCommand(String.format("fill %d %d -8 %d %d 8 minecraft:gray_concrete", a, ground - 1, a + 79, ground - 1));
+			server.runCommand(String.format("fill %d %d -8 %d %d 8 minecraft:air", a, ground, a + 79, ground + 6));
+		}
+		ctx.waitTicks(10);
+		int car = mountNew(ctx, server, VehicleType.CIVIL_CAR, x + 4.5, 0.5, -90);
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.THIRD_PERSON_BACK));
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("phys_01_car_seated");
+		// Pulling away: speed, revs and the gear every second.
+		ctx.getInput().holdKey(o -> o.keyUp);
+		int maxGear = 0;
+		for (int t = 1; t <= 8; t++) {
+			ctx.waitTicks(20);
+			maxGear = Math.max(maxGear, ctx.computeOnClient(mc -> mc.player.getVehicle() instanceof VehicleEntity v ? v.getGear() : 0));
+			AirDefense.LOGGER.info("[airdefense-test] RESULT physics accel t={}s: {}", t, driveLog(ctx));
+			if (t == 3) {
+				ctx.takeScreenshot("phys_02_car_accel");
+			}
+		}
+		AirDefense.LOGGER.info("[airdefense-test] RESULT physics accel: top gear reached {}, synced on server rpm {}", maxGear,
+				server.computeOnServer(s -> s.overworld().getEntity(car) instanceof VehicleEntity v ? v.getEngineRpm() : -1f));
+		// Braking to a stop, then holding the brake backs it up.
+		ctx.getInput().releaseKey(o -> o.keyUp);
+		float before = driveKmh(ctx);
+		ctx.getInput().holdKey(o -> o.keyDown);
+		int stop = waitUntil(ctx, () -> driveKmh(ctx) < 1f, 200);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT physics brake: from {} km/h to a stop in {} ticks", String.format("%.1f", before), stop);
+		ctx.waitTicks(40);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT physics reverse: {}", driveLog(ctx));
+		ctx.getInput().releaseKey(o -> o.keyDown);
+		// Handbrake turn: up to speed, then left and Space.
+		ctx.getInput().holdKey(o -> o.keyUp);
+		ctx.waitTicks(60);
+		ctx.getInput().releaseKey(o -> o.keyUp);
+		ctx.getInput().holdKey(o -> o.keyLeft);
+		ctx.getInput().holdKey(o -> o.keyJump);
+		float maxSkid = 0;
+		double maxRate = 0;
+		for (int i = 0; i < 6; i++) {
+			ctx.waitTicks(4);
+			maxSkid = Math.max(maxSkid, ctx.computeOnClient(mc -> mc.player.getVehicle() instanceof VehicleEntity v ? v.getSkid() : 0f));
+			maxRate = Math.max(maxRate, ctx.computeOnClient(mc -> mc.player.getVehicle() instanceof VehicleEntity v ? Math.abs(Math.toDegrees(v.driveState().omega)) : 0.0));
+			if (i == 2) {
+				ctx.takeScreenshot("phys_03_handbrake_turn");
+			}
+		}
+		AirDefense.LOGGER.info("[airdefense-test] RESULT physics handbrake: max yaw rate {} deg/s, max skid {}, {}", String.format("%.0f", maxRate),
+				String.format("%.2f", maxSkid), driveLog(ctx));
+		ctx.getInput().releaseKey(o -> o.keyLeft);
+		ctx.getInput().releaseKey(o -> o.keyJump);
+		ctx.waitTicks(40);
+
+		// A jump: a run-up, a ramp four blocks high, then the drop.
+		int rx = x + 120;
+		for (int i = 0; i < 8; i++) {
+			int h = i / 2;
+			server.runCommand(String.format("fill %d %d -3 %d %d 3 minecraft:stone", rx + 60 + i, ground, rx + 60 + i, ground + h));
+		}
+		DriveStateReset.reset();
+		mountNew(ctx, server, VehicleType.CIVIL_CAR, rx + 0.5, 0.5, -90);
+		ctx.getInput().holdKey(o -> o.keyUp);
+		int up = waitUntil(ctx, () -> ctx.computeOnClient(mc -> mc.player.getVehicle() instanceof VehicleEntity v && v.driveState().airborne), 260);
+		ctx.takeScreenshot("phys_04_jump");
+		ctx.waitTicks(30);
+		ctx.getInput().releaseKey(o -> o.keyUp);
+		ctx.waitTicks(10);
+		ctx.takeScreenshot("phys_05_landed");
+		AirDefense.LOGGER.info("[airdefense-test] RESULT physics jump: airborne after {} ticks, longest air time {} ticks, landing {} m/s, crashes {}, {}",
+				up, com.stasdoto.airdefense.vehicle.DriveState.maxAirTicks, String.format("%.1f", com.stasdoto.airdefense.vehicle.DriveState.hardestLanding),
+				VehicleEntity.crashes, driveLog(ctx));
+
+		// A tank on a slope: one block up for every two along, ten blocks high.
+		int tx = x + 240;
+		for (int i = 0; i < 20; i++) {
+			server.runCommand(String.format("fill %d %d -4 %d %d 4 minecraft:dirt", tx + 20 + i, ground, tx + 20 + i, ground + i / 2));
+		}
+		mountNew(ctx, server, VehicleType.T72, tx + 0.5, 0.5, -90);
+		ctx.getInput().holdKey(o -> o.keyUp);
+		ctx.waitTicks(80);
+		float flat = driveKmh(ctx);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT physics tank flat: {}", driveLog(ctx));
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("phys_06_tank_slope");
+		ctx.waitTicks(20);
+		float slope = driveKmh(ctx);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT physics tank slope: {} km/h on the flat, {} km/h on the slope; {}", String.format("%.1f", flat),
+				String.format("%.1f", slope), driveLog(ctx));
+		ctx.getInput().releaseKey(o -> o.keyUp);
+		ctx.waitTicks(10);
+		server.runOnServer(s -> s.getPlayerList().getPlayers().getFirst().stopRiding());
+		ctx.runOnClient(mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
+		server.runCommand("gamemode spectator @a");
+	}
+
+	/** Clears the physics counters between parts of the scene. */
+	private static final class DriveStateReset {
+		static void reset() {
+			com.stasdoto.airdefense.vehicle.DriveState.maxAirTicks = 0;
+			com.stasdoto.airdefense.vehicle.DriveState.hardestLanding = 0;
+		}
+	}
+
 	private void unopposedIskander(ClientGameTestContext ctx, TestServerContext server) {
 		int x = 1500;
 		BlockPos target = new BlockPos(x, ground - 1, 170);
@@ -6209,6 +6606,72 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runOnServer(s -> {
 			s.getPlayerList().getPlayers().getFirst().stopRiding();
 			forVehicles(s.overworld(), List.of(himars), Entity::discard);
+		});
+		server.runCommand("gamemode spectator @a");
+	}
+
+	/**
+	 * 2.0 vehicle sounds: a car, a truck and a tank drive off along a road (the AI's autopilot) while the player watches;
+	 * the engine model's revs, throttle and gear and the loops playing are printed while they accelerate and cruise;
+	 * the player gets into the tank (starter + engine catching) and sounds the truck's horn.
+	 */
+	private void vehSounds(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 21400;
+		int g = ground;
+		server.runCommand("gamemode creative @a");
+		camera(server, x + 12, g + 3, -20, 90, 10);
+		ctx.waitTicks(40);
+		int car = spawnVehicle(server, VehicleType.POLICE_CAR, x, 0, 180);
+		int truck = spawnVehicle(server, VehicleType.SUPPLY_TRUCK, x - 6, 0, 180);
+		int tank = spawnVehicle(server, VehicleType.T72, x - 14, 0, 180);
+		ctx.waitTicks(10);
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(car, truck, tank),
+				v -> v.drive(List.of(new Vec3(v.getX(), v.getY(), -60), new Vec3(v.getX(), v.getY(), -160)), 1.0f)));
+		StringBuilder log = new StringBuilder();
+		for (int k = 0; k < 4; k++) {
+			ctx.waitTicks(25);
+			String line = ctx.computeOnClient(mc -> {
+				StringBuilder b = new StringBuilder();
+				for (Entity e : mc.level.entitiesForRendering()) {
+					if (e instanceof VehicleEntity v && (v.getId() == car || v.getId() == truck || v.getId() == tank)) {
+						b.append(v.getVehicleType().id).append(": ").append(com.stasdoto.airdefense.client.vehicle.VehicleSounds.describe(v)).append("; ");
+					}
+				}
+				return b.toString();
+			});
+			log.append("[t").append(k).append("] ").append(line);
+		}
+		ctx.takeScreenshot("vs1_driving_off");
+		int loops = ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.vehicle.VehicleSounds.playing());
+		int shifts = com.stasdoto.airdefense.client.vehicle.VehicleSounds.PLAYED[2];
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(car, truck, tank), Entity::discard));
+		int tank2 = spawnVehicle(server, VehicleType.T72, x, 6, 180);
+		int truck2 = spawnVehicle(server, VehicleType.SUPPLY_TRUCK, x + 6, 6, 180);
+		ctx.waitTicks(20);
+		int[] before = com.stasdoto.airdefense.client.vehicle.VehicleSounds.PLAYED.clone();
+		server.runOnServer(s -> {
+			ServerPlayer p = s.getPlayerList().getPlayers().getFirst();
+			if (s.overworld().getEntity(tank2) instanceof VehicleEntity v) {
+				p.startRiding(v);
+			}
+		});
+		ctx.waitTicks(80);
+		boolean horn = ctx.computeOnClient(mc -> {
+			for (Entity e : mc.level.entitiesForRendering()) {
+				if (e instanceof VehicleEntity v && v.getId() == truck2) {
+					return com.stasdoto.airdefense.client.vehicle.VehicleSounds.horn(v);
+				}
+			}
+			return false;
+		});
+		String tankState = ctx.computeOnClient(mc -> mc.player.getVehicle() instanceof VehicleEntity v
+				? com.stasdoto.airdefense.client.vehicle.VehicleSounds.describe(v) : "not aboard");
+		int[] now = com.stasdoto.airdefense.client.vehicle.VehicleSounds.PLAYED;
+		AirDefense.LOGGER.info("[airdefense-test] RESULT vehsounds: drive {} loopsWhileDriving={} shifts={} starts={} doors={} horn={} tankIdle=[{}]",
+				log, loops, shifts, now[0] - before[0], now[6] - before[6], horn, tankState);
+		server.runOnServer(s -> {
+			s.getPlayerList().getPlayers().getFirst().stopRiding();
+			forVehicles(s.overworld(), List.of(tank2, truck2), Entity::discard);
 		});
 		server.runCommand("gamemode spectator @a");
 	}
@@ -8281,6 +8744,154 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	private static void selectSlot(ClientGameTestContext ctx, int slot) {
 		ctx.getInput().pressKey(options -> options.keyHotbarSlots[slot]);
 		ctx.waitTicks(3);
+	}
+
+	// --- 2.0: meshes ---------------------------------------------------------------------------------
+
+	/** A camera at (x, y, z) (feet) looking at a point (yaw, pitch from the eye). */
+	private static float[] lookEye(double x, double y, double z, double tx, double ty, double tz) {
+		double dx = tx - x;
+		double dz = tz - z;
+		double dy = ty - (y + 1.62);
+		float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+		float pitch = (float) -Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)));
+		return new float[]{(float) x, (float) y, (float) z, yaw, pitch};
+	}
+
+	private static final int MESH_PROP_ID = -7_300_000;
+
+	/** Puts a prop (a town car) down on the client only, as the town traffic does. */
+	private static int meshProp(ClientGameTestContext ctx, int n, String model, double x, double y, double z, double yaw) {
+		int id = MESH_PROP_ID - n;
+		ctx.runOnClient(mc -> {
+			var p = new com.stasdoto.airdefense.nation.PropEntity(com.stasdoto.airdefense.registry.ModEntities.PROP, mc.level);
+			p.setId(id);
+			p.model = model;
+			p.move(x, y, z, yaw, 0);
+			p.poseO = p.pose;
+			p.wheelRoll = 0;
+			p.wheelRollO = 0;
+			p.steerVis = 0;
+			p.steerVisO = 0;
+			p.setOldPosAndRot();
+			mc.level.addEntity(p);
+		});
+		return id;
+	}
+
+	private static void removeMeshProps(ClientGameTestContext ctx, int count) {
+		ctx.runOnClient(mc -> {
+			for (int i = 0; i < count; i++) {
+				var e = mc.level.getEntity(MESH_PROP_ID - i);
+				if (e != null) {
+					mc.level.removeEntity(e.getId(), Entity.RemovalReason.DISCARDED);
+				}
+			}
+		});
+	}
+
+	/** Average frames per second over {@code ticks}, and the mean frame time (ms). */
+	private static float[] frameRate(ClientGameTestContext ctx, int ticks) {
+		float fps = 0;
+		double ft = 0;
+		int n = 0;
+		ctx.waitTicks(25);
+		for (int i = 0; i < ticks; i++) {
+			ctx.waitTick();
+			if (i % 5 == 0) {
+				fps += ctx.computeOnClient(mc -> mc.getFps());
+				ft += ctx.computeOnClient(mc -> mc.getFrameTimeNs()) / 1e6;
+				n++;
+			}
+		}
+		return new float[]{fps / n, (float) (ft / n)};
+	}
+
+	/**
+	 * 2.0: the test car's baked mesh (car_saloon) drawn as a town car prop and as a vehicle (the police car drawn with it):
+	 * from the front, side, back and above, the eight paints, wheels turned and rolled, at night, far away; and the frame
+	 * rate of thirty of them against the box models.
+	 */
+	private void meshCar(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 175000;
+		int g = ground;
+		server.runCommand("gamemode spectator @a");
+		server.runCommand("time set 6000");
+		server.runCommand("weather clear");
+		camera(server, x + 0.5, g + 2, -8, 0, 10);
+		ctx.waitTicks(80);
+		var mesh = ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.vehicle.MeshLoader.get("car_saloon"));
+		AirDefense.LOGGER.info("[airdefense-test] RESULT meshcar: car_saloon mesh {} ({} parts, {} vertices, {} quads, texture {}x{})",
+				mesh != null ? "loaded" : "MISSING", mesh != null ? mesh.parts.length : 0, mesh != null ? mesh.vertices : 0,
+				mesh != null ? mesh.quads : 0, mesh != null ? mesh.texWidth : 0, mesh != null ? mesh.texHeight : 0);
+		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.vehicle.MeshLoader.alias("police_car", "car_saloon"));
+		int vid = spawnVehicle(server, VehicleType.POLICE_CAR, x + 8, 0, 0);
+		int n = 0;
+		double cx = x + 0.5;
+		meshProp(ctx, n++, "car_saloon_red", cx, g, 0.5, 0);
+		ctx.waitTicks(20);
+		ctx.runOnClient(mc -> mc.gui.hud.getChat().clearMessages(false));
+		shot(ctx, server, lookEye(cx + 3.5, g, 5.5, cx, g + 0.7, 0.5), "mesh1_front", 20);
+		shot(ctx, server, lookEye(cx - 6, g, 0.5, cx, g + 0.7, 0.5), "mesh2_side", 20);
+		shot(ctx, server, lookEye(cx - 3.5, g, -5, cx, g + 0.7, 0.5), "mesh3_rear", 20);
+		shot(ctx, server, lookEye(cx + 2.5, g + 3.5, 3, cx, g + 0.6, 0.5), "mesh4_above", 20);
+		// The vehicle path (the police car drawn with the test mesh), close by: the cab's inside through the glass.
+		shot(ctx, server, lookEye(x + 8.5 + 3, g + 0.2, 3.5, x + 8.5, g + 1.0, 0.5), "mesh5_vehicle", 30);
+		// Turning: the front wheels steer, the wheels roll (driven round a bend for a second).
+		int mover = meshProp(ctx, n++, "car_saloon_green", cx - 8, g, 0.5, 0);
+		for (int t = 0; t < 24; t++) {
+			int tt = t;
+			ctx.runOnClient(mc -> {
+				if (mc.level.getEntity(mover) instanceof com.stasdoto.airdefense.nation.PropEntity p) {
+					double yaw = -tt * 2.5;
+					double r = Math.toRadians(yaw);
+					p.move(p.pose[0] - Math.sin(r) * 0.12, p.pose[1], p.pose[2] + Math.cos(r) * 0.12, yaw, 0);
+				}
+			});
+			ctx.waitTick();
+		}
+		float[] wheel = ctx.computeOnClient(mc -> mc.level.getEntity(mover) instanceof com.stasdoto.airdefense.nation.PropEntity p
+				? new float[]{p.wheelRoll, p.steerVis} : new float[2]);
+		AirDefense.LOGGER.info("[airdefense-test] RESULT meshcar_turn: wheel roll {} m, steer {} deg", wheel[0], wheel[1]);
+		float[] mpos = ctx.computeOnClient(mc -> mc.level.getEntity(mover) instanceof com.stasdoto.airdefense.nation.PropEntity p
+				? new float[]{(float) p.getX(), (float) p.getZ()} : new float[]{(float) cx - 8, 0.5f});
+		shot(ctx, server, lookEye(mpos[0] + 3.0, g, mpos[1] + 3.5, mpos[0], g + 0.4, mpos[1]), "mesh6_steer", 15);
+		// The eight paints of the tinted car in a row, and a hatchback with no mesh yet (its box model).
+		String[] paints = {"white", "red", "blue", "green", "beige", "cherry", "black", "silver"};
+		for (int i = 0; i < paints.length; i++) {
+			meshProp(ctx, n++, "car_saloon_" + paints[i], cx - 10 + i * 2.6, g, 14.5, 180);
+		}
+		meshProp(ctx, n++, "car_hatch_blue", cx + 12, g, 14.5, 180);
+		shot(ctx, server, lookEye(cx + 1, g + 1.5, 6, cx + 1, g + 0.6, 14.5), "mesh7_paints", 30);
+		// By night.
+		server.runCommand("time set 18000");
+		shot(ctx, server, lookEye(cx + 3.5, g, 5.5, cx, g + 0.7, 0.5), "mesh8_night", 30);
+		server.runCommand("time set 6000");
+		// Far away: 40 and 90 blocks.
+		shot(ctx, server, lookEye(cx + 14, g + 4, -36, cx, g + 0.7, 0.5), "mesh9_far40", 30);
+		shot(ctx, server, lookEye(cx + 30, g + 8, -84, cx, g + 0.7, 0.5), "mesh9_far90", 40);
+		// Thirty town cars together: the frame rate with the meshes and with the box models.
+		for (int i = 0; i < 30; i++) {
+			meshProp(ctx, n++, "car_saloon_" + paints[i % paints.length], cx - 14 + (i % 6) * 5.5, g, 30.5 + (i / 6) * 6.5, i * 37 % 360);
+		}
+		camera(server, cx, g + 5, 16, 0, 22);
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("mesh10_thirty");
+		float[] withMesh = frameRate(ctx, 100);
+		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.vehicle.MeshLoader.disable(true));
+		float[] withBoxes = frameRate(ctx, 100);
+		ctx.takeScreenshot("mesh10_thirty_boxes");
+		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.vehicle.MeshLoader.disable(false));
+		AirDefense.LOGGER.info("[airdefense-test] RESULT meshcar_perf: 30 cars with meshes {} fps ({} ms a frame), box models {} fps ({} ms)",
+				withMesh[0], withMesh[1], withBoxes[0], withBoxes[1]);
+		removeMeshProps(ctx, n);
+		ctx.runOnClient(mc -> com.stasdoto.airdefense.client.vehicle.MeshLoader.alias("police_car", null));
+		server.runOnServer(s -> {
+			Entity e = s.overworld().getEntity(vid);
+			if (e != null) {
+				e.discard();
+			}
+		});
 	}
 
 	// --- helpers -----------------------------------------------------------------------------------

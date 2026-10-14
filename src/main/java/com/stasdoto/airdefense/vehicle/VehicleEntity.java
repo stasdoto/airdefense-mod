@@ -78,6 +78,14 @@ public class VehicleEntity extends LivingEntity {
 	private static final EntityDataAccessor<Float> DATA_FUEL = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.FLOAT);
 	/** 1.38: an emergency vehicle's flashing lights. */
 	private static final EntityDataAccessor<Boolean> DATA_BEACONS = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.BOOLEAN);
+	/**
+	 * 2.0: what the driver is doing, for everyone round to see and hear (packed): engine revs, throttle, gear, brake,
+	 * handbrake, headlights, horn, cruise control; and the skid and the front wheels' angle.
+	 */
+	private static final EntityDataAccessor<Integer> DATA_DRIVE_A = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+	private static final EntityDataAccessor<Integer> DATA_DRIVE_B = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
+	/** 2.0: a civilian car's model and paint (index into {@link CivilCars#MODELS}). */
+	private static final EntityDataAccessor<Integer> DATA_VARIANT = SynchedEntityData.defineId(VehicleEntity.class, EntityDataSerializers.INT);
 
 	public static final int STOWED = 0;
 	public static final int DEPLOYED = 1;
@@ -127,6 +135,9 @@ public class VehicleEntity extends LivingEntity {
 	public float wheelRollO;
 	public float steerVis;
 	public float steerVisO;
+	/** 2.0: the tracks' belts run against each other as it turns (metres, + = left belt forward); drawn by the mesh. */
+	public float trackTurn;
+	public float trackTurnO;
 	public float tiltPitch;
 	public float tiltPitchO;
 	public float tiltRoll;
@@ -247,6 +258,9 @@ public class VehicleEntity extends LivingEntity {
 		builder.define(DATA_CARGO, 0);
 		builder.define(DATA_CARGO_KIND, -1);
 		builder.define(DATA_BEACONS, false);
+		builder.define(DATA_DRIVE_A, 0);
+		builder.define(DATA_DRIVE_B, 64 << 8);
+		builder.define(DATA_VARIANT, 0);
 	}
 
 	public boolean beaconsOn() {
@@ -256,6 +270,16 @@ public class VehicleEntity extends LivingEntity {
 	public void setBeacons(boolean on) {
 		entityData.set(DATA_BEACONS, on);
 	}
+
+	// ------------------------------------------------------------------------------------------------
+	// 2.0 extras: what the client's lights and damage effects read (see client.vehicle.VehicleLights, VehicleFx).
+	// TODO(2.0 physics): replace with the driving model's own light switch, brake and throttle state when it lands.
+
+	/** Set by the client each tick from how its speed changes (where no driving model says so). */
+	public boolean brakingSeen;
+
+	/** 2.0: the client's per-tick effects of a vehicle (lights, damage smoke, the burning wreck); set by the client. */
+	public static java.util.function.Consumer<VehicleEntity> clientFx;
 
 	// ------------------------------------------------------------------------------------------------
 	// 1.38: the towns' emergency services on a call (see nation.Services)
@@ -548,6 +572,67 @@ public class VehicleEntity extends LivingEntity {
 		this.clientInput = input;
 	}
 
+	// ------------------------------------------------------------------------------------------------
+	// 2.0 engine state for the sounds: revs, throttle, gear. STAND-IN worked out on each side from the motion it sees
+	// (an automatic gearbox, see EngineSim). When the physics keeps and syncs a real engine state, replace the bodies of
+	// getEngineRpm / getThrottle / getGear / engineRunning with it (the sounds only use these four).
+
+	private final EngineSim engineSim = new EngineSim();
+	private int engineSimTick = Integer.MIN_VALUE;
+	private float engineSpool;
+
+	private EngineSim engineSim() {
+		if (engineSimTick != tickCount) {
+			engineSimTick = tickCount;
+			boolean running = engineRunning();
+			boolean local = getControllingPassenger() instanceof Player p && p.isLocalPlayer();
+			Vec3 f = forward();
+			double along = local && !vtype.isAir() ? speed : (getX() - xo) * f.x + (getZ() - zo) * f.z;
+			float thr = Float.NaN;
+			if (local && vtype.air == VehicleType.PLANE) {
+				thr = throttle;
+			} else if (local && !vtype.isAir()) {
+				Input in = clientInput;
+				thr = outOfFuel() ? 0 : in.forward() ? (speed < -0.02f ? 0 : 1) : in.backward() ? (speed > 0.02f ? 0 : 0.8f) : 0;
+			}
+			if (vtype.isAir()) {
+				engineSpool = Mth.approach(engineSpool, running ? 1 : 0, vtype.air == VehicleType.HELI ? 0.006f : 0.015f);
+			}
+			engineSim.step(EngineSim.kindOf(vtype), along, vtype.maxSpeed, vtype.accel, thr, running, engineSpool, vtype.boat);
+		}
+		return engineSim;
+	}
+
+	/** Stand-in revs for aircraft and boats (percent of full speed for turbines, jets, rotors). */
+	private float simRpm() {
+		return engineSim().rpm;
+	}
+
+	private int lastGearSeen;
+	private int gearChangeCount;
+
+	/** How many times the gearbox has changed gear (the sounds clunk when it moves on). */
+	public int getGearChanges() {
+		if (vtype.isAir() || vtype.boat) {
+			return engineSim().shifts;
+		}
+		int g = getGear();
+		if (g != lastGearSeen) {
+			lastGearSeen = g;
+			gearChangeCount++;
+		}
+		return gearChangeCount;
+	}
+
+	/** The engine runs: someone aboard, it moves (driven by the AI), or an aircraft on its sortie. */
+	public boolean engineRunning() {
+		if (outOfFuel() && !vtype.isAir()) {
+			return Math.abs(getX() - xo) + Math.abs(getZ() - zo) > 0.01;
+		}
+		return !getPassengers().isEmpty() || vtype.isAir() && getState() == DEPLOYED
+				|| !vtype.isAir() && Math.abs(getX() - xo) + Math.abs(getZ() - zo) > 0.01;
+	}
+
 	public boolean isFolded() {
 		return getState() == STOWED && Math.abs(elevation - vtype.geometry.fixedElevation()) < 1.0f
 				&& Math.abs(turretYaw) < 2.0f && roofOpen < 0.05f;
@@ -556,7 +641,7 @@ public class VehicleEntity extends LivingEntity {
 	/** Gepard can shoot on the move; launchers and missile batteries must fold up first. */
 	public boolean canDrive() {
 		// Lorries have nothing to fold (their "deployed" is only the load bed being open).
-		return isAlive() && (vtype.gunOnly() || vtype.isArmed() || vtype.isTruck() || vtype.isService() || isFolded());
+		return isAlive() && (vtype.gunOnly() || vtype.isArmed() || vtype.isTruck() || vtype.isService() || vtype.isCivil() || isFolded());
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -1186,6 +1271,11 @@ public class VehicleEntity extends LivingEntity {
 		if (outOfFuel()) {
 			in = new Input(false, false, false, false, in.jump(), in.shift(), in.sprint());
 		}
+		if (!vtype.boat) {
+			// 2.0: wheels and tracks have real physics now (see DriveState).
+			travelGround(in);
+			return;
+		}
 		boolean floating = vtype.boat && onWater();
 		float max = vtype.maxSpeed * (vtype.boat ? (floating ? 1.0f : 0.06f) : isInWater() ? 0.35f : 1.0f);
 		if (in.forward()) {
@@ -1247,6 +1337,425 @@ public class VehicleEntity extends LivingEntity {
 		if (horizontalCollision) {
 			speed *= 0.3f;
 		}
+	}
+
+	// ------------------------------------------------------------------------------------------------
+	// 2.0: driving physics of wheels and tracks (DriveState), what others see and hear of it, crashes and ramming
+
+	@Nullable
+	private DriveState drive;
+	private int lastSimTick = -100;
+	/** Client hook: sends the local driver's pedals, gear, revs, lights, horn and crashes to the server (set by client code). */
+	public static Consumer<VehicleEntity> driveReporter = v -> {
+	};
+	/** The local driver's switches (client): headlights, horn; set by the client's keys. */
+	public boolean wantLights;
+	public boolean wantHorn;
+	private boolean wantLightsInit;
+	/** A crash to report (client side, sent with the next report). */
+	public float pendingImpact;
+	public int pendingHit = -1;
+	private int sentA = Integer.MIN_VALUE;
+	private int sentB = Integer.MIN_VALUE;
+	/** Body on its springs (client visuals): pitch, roll and heave offsets and their rates. */
+	private float bodyPitch;
+	private float bodyPitchV;
+	private float bodyRoll;
+	private float bodyRollV;
+	private float heave;
+	private float heaveV;
+	private float terrainPitch;
+	private float terrainRoll;
+	private float terrainLift;
+	private float estLong;
+	private float estALong;
+	private float estALat;
+	private double prevVy;
+	/** For the tests: crashes, the hardest one (m/s), mobs and vehicles rammed. */
+	public static int crashes;
+	public static float hardestCrash;
+	public static int rams;
+	public float lastCrash;
+
+	/** The ground physics of this vehicle (made on first use). */
+	public DriveState driveState() {
+		if (drive == null) {
+			drive = new DriveState(vtype);
+		}
+		return drive;
+	}
+
+	public DriveSpec driveSpec() {
+		return DriveSpec.of(vtype);
+	}
+
+	/** Is the driving simulated here this tick (the driver's client, or the server when nobody drives)? */
+	public boolean simulatedHere() {
+		return drive != null && tickCount - lastSimTick <= 2;
+	}
+
+	private void travelGround(Input in) {
+		DriveState d = driveState();
+		boolean ai = !level().isClientSide();
+		if (tickCount - lastSimTick > 2) {
+			d.syncFrom(this);
+		}
+		lastSimTick = tickCount;
+		boolean crewed = getControllingPassenger() != null || route != null;
+		boolean engineOn = isAlive() && !outOfFuel() && crewed;
+		Vec3 dm = getDeltaMovement();
+		if (!crewed && d.rpm < 5 && Math.abs(d.vx) < 1e-3 && Math.abs(d.vz) < 1e-3 && onGround() && !d.airborne) {
+			// Parked and still: nothing to work out but gravity.
+			d.vx = d.vz = 0;
+			d.omega = 0;
+			d.throttle = 0;
+			d.gear = 0;
+			d.skid = 0;
+			d.rpm = 0;
+			Vec3 m = new Vec3(0, dm.y > 0 ? dm.y - 0.08 : -0.08, 0);
+			setDeltaMovement(m);
+			move(MoverType.SELF, m);
+			speed = 0;
+			yBodyRot = yHeadRot = getYRot();
+			publishDrive();
+			return;
+		}
+		double maxShare = isInWater() ? 0.35 : 1.0;
+		d.tick(this, in, ai, canDrive(), engineOn, maxShare);
+		yBodyRot = yHeadRot = getYRot();
+		speed = (float) d.forwardSpeed(forward());
+		steer = d.steer;
+		if (d.impact > 3.5f) {
+			onCrash(d.impact, d.impactEntity);
+		}
+		publishDrive();
+	}
+
+	/** 2.0: the AI driver's headlights: on at night. */
+	private boolean aiLights() {
+		long t = Math.floorMod(level().getOverworldClockTime(), 24000L);
+		return t > 12600 && t < 23400;
+	}
+
+	private void publishDrive() {
+		DriveState d = drive;
+		boolean client = level().isClientSide();
+		boolean lights;
+		boolean horn;
+		if (client) {
+			if (!wantLightsInit) {
+				wantLights = (driveA() & (1 << 21)) != 0;
+				wantLightsInit = true;
+			}
+			lights = wantLights;
+			horn = wantHorn;
+		} else {
+			lights = route != null ? aiLights() : (driveA() & (1 << 21)) != 0;
+			horn = false;
+		}
+		int a = Math.min(1023, Math.round(d.rpm / 20f))
+				| Math.round(Mth.clamp(d.throttle, 0, 1) * 31) << 10
+				| ((Mth.clamp(d.gear, -1, 13) + 1) & 15) << 15
+				| (d.brake > 0.3f ? 1 : 0) << 19
+				| (d.handbrake ? 1 : 0) << 20
+				| (lights ? 1 : 0) << 21
+				| (horn ? 1 : 0) << 22
+				| (d.cruise ? 1 : 0) << 23;
+		int b = Math.round(Mth.clamp(d.skid, 0, 1) * 255)
+				| (Math.round(Mth.clamp(d.steer, -63, 63)) + 64) << 8;
+		if (client) {
+			if (a != sentA || b != sentB || pendingImpact > 0) {
+				sentA = a;
+				sentB = b;
+				driveReporter.accept(this);
+			}
+		} else {
+			entityData.set(DATA_DRIVE_A, a);
+			entityData.set(DATA_DRIVE_B, b);
+		}
+	}
+
+	/** The packed drive state the local driver reports (see {@link #publishDrive}). */
+	public int reportA() {
+		return sentA;
+	}
+
+	public int reportB() {
+		return sentB;
+	}
+
+	/** Server: the driver's report from his client. */
+	public void applyDriveReport(Player player, int a, int b, float impact, int hit) {
+		if (!isDriver(player) || !(level() instanceof ServerLevel level)) {
+			return;
+		}
+		entityData.set(DATA_DRIVE_A, a);
+		entityData.set(DATA_DRIVE_B, b);
+		if (impact > 3.5f && Float.isFinite(impact)) {
+			crash(level, Math.min(impact, 80f), hit);
+		}
+	}
+
+	private void onCrash(float impact, int hit) {
+		if (level() instanceof ServerLevel level) {
+			crash(level, impact, hit);
+		} else if (impact > pendingImpact) {
+			pendingImpact = impact;
+			pendingHit = hit;
+		}
+	}
+
+	/** Server: a crash at {@code impact} m/s (the speed lost): damage, a bang, and the vehicle hit gets pushed. */
+	private void crash(ServerLevel level, float impact, int hit) {
+		crashes++;
+		hardestCrash = Math.max(hardestCrash, impact);
+		lastCrash = impact;
+		if (hit >= 0 && level.getEntity(hit) instanceof VehicleEntity other && other != this && other.isAlive()) {
+			double m1 = DriveSpec.of(vtype).mass;
+			double m2 = DriveSpec.of(other.vtype).mass;
+			// The other one gets the speed this one lost, by the ratio of the masses: a tank shoves a car aside.
+			float otherImpact = (float) Math.min(impact * 2, impact * m1 / m2);
+			Vec3 dir = new Vec3(other.getX() - getX(), 0, other.getZ() - getZ());
+			if (dir.lengthSqr() < 1e-4) {
+				dir = forward();
+			}
+			dir = dir.normalize();
+			if (other.getControllingPassenger() == null && !other.vtype.isAir() && !other.vtype.boat) {
+				DriveState od = other.driveState();
+				if (!other.simulatedHere()) {
+					od.syncFrom(other);
+				}
+				double dv = otherImpact / DriveSpec.MS_PER_BT * 0.9;
+				od.vx += dir.x * dv;
+				od.vz += dir.z * dv;
+				od.omega += (level.getRandom().nextDouble() - 0.5) * Math.min(2.0, otherImpact * 0.15);
+			}
+			other.crashDamage(level, otherImpact);
+			rams++;
+		}
+		crashDamage(level, impact);
+		if (impact > 5) {
+			float vol = Math.min(2.5f, impact / 12f);
+			level.playSound(null, getX(), getY() + 1, getZ(), net.minecraft.sounds.SoundEvents.ZOMBIE_ATTACK_IRON_DOOR, SoundSource.NEUTRAL, vol,
+					vtype.tracked() ? 0.55f : 0.8f + level.getRandom().nextFloat() * 0.2f);
+		}
+		if (impact > 12) {
+			Vec3 p = toWorld(0, 0.8, vtype.geometry.length() / 2 * (speed < 0 ? -1 : 1));
+			level.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT, p.x, p.y, p.z, (int) Math.min(30, impact), 0.6, 0.4, 0.6, 0.3);
+		}
+	}
+
+	/** Damage from a crash at this many m/s: nothing below ~20 km/h, a wreck at full tilt into a wall (armour helps). */
+	public void crashDamage(ServerLevel level, float impact) {
+		double over = Math.max(0, impact - 6) / 30.0;
+		float frac = (float) (Math.pow(over, 1.5) * 0.8);
+		if (frac > 0) {
+			float dmg = frac * vtype.maxHealth * (float) Math.sqrt(vtype.armor);
+			hurtServer(level, level.damageSources().flyIntoWall(), dmg / (0.2f * vtype.armor));
+		}
+		if (impact > 14) {
+			for (Entity e : getPassengers()) {
+				if (e instanceof LivingEntity le) {
+					le.hurtServer(level, level.damageSources().flyIntoWall(), (impact - 14) * (vtype.armor < 0.5f ? 0.3f : 0.6f));
+				}
+			}
+		}
+	}
+
+	/** The nearest vehicle in the way of this motion (or -1). */
+	int entityAhead(Vec3 motion) {
+		AABB box = getBoundingBox().expandTowards(motion.x * 3, 0, motion.z * 3).inflate(0.4, 0, 0.4);
+		double best = Double.MAX_VALUE;
+		int id = -1;
+		for (VehicleEntity v : level().getEntitiesOfClass(VehicleEntity.class, box, e -> e != this && e.isAlive())) {
+			double ox = v.getX() - getX();
+			double oz = v.getZ() - getZ();
+			if (ox * motion.x + oz * motion.z <= 0) {
+				continue;
+			}
+			double d = ox * ox + oz * oz;
+			if (d < best) {
+				best = d;
+				id = v.getId();
+			}
+		}
+		return id;
+	}
+
+	/** Of the speed into another vehicle, the share both keep going at (momentum shared by mass). */
+	double massShareAgainst(int id) {
+		if (level().getEntity(id) instanceof VehicleEntity other) {
+			double m1 = DriveSpec.of(vtype).mass;
+			double m2 = DriveSpec.of(other.vtype).mass;
+			return m1 / (m1 + m2);
+		}
+		return 0;
+	}
+
+	/** Server: mobs and people in the way of a moving vehicle are knocked aside and hurt (by speed and weight). */
+	private void ramEntities(ServerLevel level, double dx, double dz) {
+		double sp = Math.hypot(dx, dz);
+		if (sp < 0.12 || sp > 6 || vtype.isAir() || !isAlive() || (tickCount & 1) != 0) {
+			return;
+		}
+		VehicleGeometry.Geometry g = vtype.geometry;
+		double half = g.length() / 2 + 0.5;
+		double hw = g.width() / 2 + 0.3;
+		AABB box = getBoundingBox().inflate(half, 0.3, half).expandTowards(dx * 2, 0, dz * 2);
+		Vec3 f = forward();
+		Vec3 r = right();
+		double ms = sp * DriveSpec.MS_PER_BT;
+		double mass = DriveSpec.of(vtype).mass;
+		for (Entity e : level.getEntities(this, box, e -> e instanceof LivingEntity && e.isAlive() && !(e instanceof VehicleEntity)
+				&& e.getVehicle() != this && !e.isSpectator())) {
+			double ox = e.getX() - getX();
+			double oz = e.getZ() - getZ();
+			double lz = ox * f.x + oz * f.z;
+			double lx = ox * r.x + oz * r.z;
+			double rad = e.getBbWidth() / 2;
+			if (Math.abs(lx) > hw + rad || Math.abs(lz) > half + rad + sp * 2 || ox * dx + oz * dz <= 0) {
+				continue;
+			}
+			if (e.getY() > getY() + g.height() || e.getY() + e.getBbHeight() < getY() - 0.3) {
+				continue;
+			}
+			LivingEntity le = (LivingEntity) e;
+			if (le.hurtTime > 0) {
+				continue;
+			}
+			Vec3 dir = new Vec3(dx, 0, dz).normalize();
+			double side = Math.signum(lx) * Math.min(0.6, sp * 0.4);
+			Vec3 push = dir.scale(Math.min(2.4, sp * 1.25)).add(r.x * side, 0.2 + Math.min(0.55, ms * 0.025), r.z * side);
+			le.setDeltaMovement(push);
+			le.needsSync = true;
+			float dmg = (float) Math.max(0, (ms - 2.5) * 1.5 * Math.min(2.0, Math.pow(mass / 1500.0, 0.25)));
+			if (dmg > 0) {
+				le.hurtServer(level, level.damageSources().mobAttack(this), dmg);
+			}
+			rams++;
+		}
+	}
+
+	// --- what the others see and hear (and the HUD) -------------------------------------------------------
+
+	private int driveA() {
+		return entityData.get(DATA_DRIVE_A);
+	}
+
+	private int driveB() {
+		return entityData.get(DATA_DRIVE_B);
+	}
+
+	/** Engine revs (rpm); 0 with the engine off. Ground vehicles: the real thing; boats and aircraft: a rough figure. */
+	public float getEngineRpm() {
+		if (vtype.isAir() || vtype.boat) {
+			return simRpm();
+		}
+		return simulatedHere() ? drive.rpm : (driveA() & 1023) * 20f;
+	}
+
+	/** Revs as a share of the way from idle to the red line (0..1). */
+	public float getRpmShare() {
+		if (vtype.isAir()) {
+			return engine;
+		}
+		if (vtype.boat) {
+			return (float) Mth.clamp(Math.abs(speed) / Math.max(0.1, vtype.maxSpeed), 0, 1);
+		}
+		DriveSpec s = DriveSpec.of(vtype);
+		float rpm = getEngineRpm();
+		return rpm <= 0 ? 0 : (float) Mth.clamp((rpm - s.idleRpm) / (s.redRpm - s.idleRpm), 0, 1);
+	}
+
+	/** Throttle opening, 0..1. */
+	public float getThrottle() {
+		if (vtype.isAir() || vtype.boat) {
+			return engineSim().throttle;
+		}
+		return simulatedHere() ? drive.throttle : ((driveA() >> 10) & 31) / 31f;
+	}
+
+	/** Gear: -1 reverse, 0 neutral, 1.. forward. */
+	public int getGear() {
+		if (vtype.isAir() || vtype.boat) {
+			return speed < -0.01f ? -1 : speed > 0.01f ? 1 : 0;
+		}
+		return simulatedHere() ? drive.gear : ((driveA() >> 15) & 15) - 1;
+	}
+
+	/** How much the tyres or tracks slide (0..1): screech, smoke. */
+	public float getSkid() {
+		if (vtype.isAir() || vtype.boat) {
+			return 0;
+		}
+		return simulatedHere() ? drive.skid : (driveB() & 255) / 255f;
+	}
+
+	public boolean isBraking() {
+		if (vtype.isAir() || vtype.boat) {
+			return false;
+		}
+		return simulatedHere() ? drive.brake > 0.3f || drive.handbrake : (driveA() & (3 << 19)) != 0;
+	}
+
+	public boolean isHandbrake() {
+		return !vtype.isAir() && !vtype.boat && (simulatedHere() ? drive.handbrake : (driveA() & (1 << 20)) != 0);
+	}
+
+	/** Headlights. */
+	public boolean lightsOn() {
+		if (level().isClientSide() && wantLightsInit && isLocalDriverSimulated()) {
+			return wantLights;
+		}
+		return (driveA() & (1 << 21)) != 0;
+	}
+
+	public boolean hornOn() {
+		if (level().isClientSide() && isLocalDriverSimulated()) {
+			return wantHorn;
+		}
+		return (driveA() & (1 << 22)) != 0;
+	}
+
+	public boolean cruiseOn() {
+		return simulatedHere() ? drive.cruise : (driveA() & (1 << 23)) != 0;
+	}
+
+	/** The front wheels' angle (degrees, positive = right). */
+	public float getWheelSteer() {
+		return simulatedHere() ? drive.steer : ((driveB() >> 8) & 127) - 64;
+	}
+
+	/** Server: headlights on or off (kept while nobody drives). */
+	public void setLights(boolean on) {
+		int a = driveA();
+		entityData.set(DATA_DRIVE_A, on ? a | 1 << 21 : a & ~(1 << 21));
+	}
+
+	/** 2.0: a civilian car's model (index into {@link CivilCars#MODELS}). */
+	public int getVariant() {
+		return entityData.get(DATA_VARIANT);
+	}
+
+	public void setVariant(int variant) {
+		entityData.set(DATA_VARIANT, variant);
+	}
+
+	/** Client: the local driver toggles cruise control (it holds the speed it has now). */
+	public void toggleCruise() {
+		DriveState d = driveState();
+		if (d.cruise) {
+			d.cruise = false;
+		} else if (d.gear > 0 && speed > 0.1f) {
+			d.cruise = true;
+			d.cruiseSpeed = speed * DriveSpec.MS_PER_BT;
+		}
+	}
+
+	/** Client: the local driver's switches reset when he gets in (headlights as they were left). */
+	public void resetDriverSwitches() {
+		wantLightsInit = false;
+		wantHorn = false;
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -1494,7 +2003,7 @@ public class VehicleEntity extends LivingEntity {
 	}
 
 	/** The collision box covers only the middle of the vehicle; this checks the nose (or tail) for walls and trees. */
-	private boolean blockedAt(double dir, double ahead) {
+	boolean blockedAt(double dir, double ahead) {
 		double half = vtype.geometry.length() / 2 - 0.4;
 		Vec3 f = forward();
 		Vec3 r = right();
@@ -1594,6 +2103,9 @@ public class VehicleEntity extends LivingEntity {
 		} else {
 			stationaryTicks = 0;
 		}
+		// 2.0: whoever is in the way of a moving vehicle is knocked aside (the server sees how it moves, driven from a
+		// client or not).
+		ramEntities(level, pos.x - lastServerPos.x, pos.z - lastServerPos.z);
 		lastServerPos = pos;
 		if (marchTicks > 0) {
 			marchTicks--;
@@ -1645,6 +2157,8 @@ public class VehicleEntity extends LivingEntity {
 			tickTruck(level);
 		} else if (vtype.isService()) {
 			setState(DEPLOYED);
+		} else if (vtype.isCivil()) {
+			// 2.0: a town's car, taken from its parking bay: nothing to work but the engine.
 		} else if (vtype.isArmed()) {
 			tickArmed(level);
 		} else {
@@ -3292,8 +3806,13 @@ public class VehicleEntity extends LivingEntity {
 		double along = delta.dot(forward());
 		wheelRoll += (float) along;
 		float yawDelta = Mth.wrapDegrees(getYRot() - yRotO);
+		trackTurnO = trackTurn;
+		trackTurn += (float) Math.toRadians(yawDelta) * vtype.geometry.width() * 0.45f;
 		if (isLocalDriverSimulated()) {
 			steerVis = steer;
+		} else if (!vtype.isAir() && !vtype.boat) {
+			// 2.0: the driver's wheel angle is synced.
+			steerVis += (getWheelSteer() - steerVis) * 0.5f;
 		} else if (Math.abs(along) > 0.01) {
 			float wb = Math.max(2.5f, vtype.geometry.wheelbase());
 			float target = (float) Math.toDegrees(Math.atan2(Math.toRadians(yawDelta) * wb, Math.abs(along)));
@@ -3318,6 +3837,9 @@ public class VehicleEntity extends LivingEntity {
 		updateTilt();
 		if (!isAlive()) {
 			wreckEffects();
+		}
+		if (clientFx != null) {
+			clientFx.accept(this);
 		}
 	}
 
@@ -3368,13 +3890,68 @@ public class VehicleEntity extends LivingEntity {
 		float pitch = (float) Math.toDegrees(Math.atan2(hf - hr, halfLen * 2));
 		float roll = (float) Math.toDegrees(Math.atan2(hl - hrt, halfW * 2));
 		float up = (float) Mth.clamp((hf + hr) / 2 - getY(), 0, 1.2);
-		tiltPitch += (Mth.clamp(pitch, -22, 22) - tiltPitch) * 0.3f;
-		tiltRoll += (Mth.clamp(roll, -15, 15) - tiltRoll) * 0.3f;
-		lift += (up - lift) * 0.3f;
+		terrainPitch += (Mth.clamp(pitch, -22, 22) - terrainPitch) * 0.3f;
+		terrainRoll += (Mth.clamp(roll, -15, 15) - terrainRoll) * 0.3f;
+		terrainLift += (up - terrainLift) * 0.3f;
+		bodyOnSprings();
+		tiltPitch = terrainPitch + bodyPitch;
+		tiltRoll = terrainRoll + bodyRoll;
+		lift = terrainLift + heave;
+	}
+
+	/**
+	 * 2.0: the body on its suspension - it squats under acceleration, dives under braking, leans out of a turn, bounces
+	 * on landing; a spring and a damper, so it settles smoothly. Worked out on every client from how the vehicle moves
+	 * (the driver's own from his physics).
+	 */
+	private void bodyOnSprings() {
+		DriveSpec spec = DriveSpec.of(vtype);
+		float aLong;
+		float aLat;
+		double vy = getY() - yo;
+		if (simulatedHere()) {
+			aLong = drive.accelLong;
+			aLat = drive.accelLat;
+			if (drive.landing > 0) {
+				heaveV -= Math.min(0.3f, drive.landing * 0.012f);
+				bodyPitchV -= Math.min(1.5f, drive.landing * 0.08f);
+				drive.landing = 0;
+			}
+		} else {
+			Vec3 f = forward();
+			float lon = (float) (((getX() - xo) * f.x + (getZ() - zo) * f.z) * DriveSpec.MS_PER_BT);
+			float yawRate = Mth.wrapDegrees(getYRot() - yRotO) * Mth.DEG_TO_RAD * 20f;
+			estALong += ((lon - estLong) * 20f - estALong) * 0.3f;
+			estALat += (lon * yawRate - estALat) * 0.3f;
+			estLong = lon;
+			aLong = estALong;
+			aLat = estALat;
+			if (prevVy < -0.3 && vy > -0.05) {
+				heaveV -= (float) Math.min(0.3, -prevVy * 0.25);
+			}
+		}
+		prevVy = vy;
+		float tp = Mth.clamp(aLong * spec.pitchGain, -6, 6);
+		float tr = Mth.clamp(-aLat * spec.rollGain, -7, 7);
+		bodyPitchV += (tp - bodyPitch) * spec.spring - bodyPitchV * spec.damping;
+		bodyPitch += bodyPitchV;
+		bodyRollV += (tr - bodyRoll) * spec.spring - bodyRollV * spec.damping;
+		bodyRoll += bodyRollV;
+		heaveV += -heave * spec.spring * 1.5f - heaveV * spec.damping;
+		heave = Mth.clamp(heave + heaveV, -0.35f, 0.25f);
+		bodyPitch = Mth.clamp(bodyPitch, -9, 9);
+		bodyRoll = Mth.clamp(bodyRoll, -10, 10);
+		// Tyre smoke where the wheels slide.
+		float skid = getSkid();
+		if (skid > 0.4f && !vtype.tracked() && Math.hypot(getX() - xo, getZ() - zo) > 0.05 && random.nextFloat() < skid) {
+			VehicleGeometry.Geometry g = vtype.geometry;
+			Vec3 p = toWorld((random.nextBoolean() ? -1 : 1) * g.width() * 0.4, 0.15, -spec.rear);
+			level().addParticle(net.minecraft.core.particles.ParticleTypes.CLOUD, p.x, p.y, p.z, 0, 0.02, 0);
+		}
 	}
 
 	/** Height of the ground under a point of the vehicle (vehicle space), searched around the vehicle's level. */
-	private double groundAt(double x, double z) {
+	double groundAt(double x, double z) {
 		Vec3 p = toWorld(x, 0, z);
 		BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
 		int top = Mth.floor(getY() + 1.6);
