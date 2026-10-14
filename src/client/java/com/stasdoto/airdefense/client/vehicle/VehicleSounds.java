@@ -209,7 +209,7 @@ public final class VehicleSounds {
 						default -> null;
 					};
 					if (start != null) {
-						oneShot(mc, v, start, 1.0f, s.engine == null ? 1 : pitchScale(t), 0);
+						oneShot(mc, v, start, 1.0f, pitchScale(t), 0);
 						s.startTicks = switch (s.kind) {
 							case PETROL -> 30;
 							case DIESEL -> 42;

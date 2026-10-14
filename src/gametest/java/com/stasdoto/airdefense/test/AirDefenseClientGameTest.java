@@ -224,6 +224,9 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			if (scene("livetown")) {
 				liveTown(ctx, server);
 			}
+			if (scene("vehsounds")) {
+				vehSounds(ctx, server);
+			}
 			if (scene("port")) {
 				port(ctx, server);
 			}
@@ -6209,6 +6212,72 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 		server.runOnServer(s -> {
 			s.getPlayerList().getPlayers().getFirst().stopRiding();
 			forVehicles(s.overworld(), List.of(himars), Entity::discard);
+		});
+		server.runCommand("gamemode spectator @a");
+	}
+
+	/**
+	 * 2.0 vehicle sounds: a car, a truck and a tank drive off along a road (the AI's autopilot) while the player watches;
+	 * the engine model's revs, throttle and gear and the loops playing are printed while they accelerate and cruise;
+	 * the player gets into the tank (starter + engine catching) and sounds the truck's horn.
+	 */
+	private void vehSounds(ClientGameTestContext ctx, TestServerContext server) {
+		int x = 21400;
+		int g = ground;
+		server.runCommand("gamemode creative @a");
+		camera(server, x + 12, g + 3, -20, 90, 10);
+		ctx.waitTicks(40);
+		int car = spawnVehicle(server, VehicleType.POLICE_CAR, x, 0, 180);
+		int truck = spawnVehicle(server, VehicleType.SUPPLY_TRUCK, x - 6, 0, 180);
+		int tank = spawnVehicle(server, VehicleType.T72, x - 14, 0, 180);
+		ctx.waitTicks(10);
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(car, truck, tank),
+				v -> v.drive(List.of(new Vec3(v.getX(), v.getY(), -60), new Vec3(v.getX(), v.getY(), -160)), 1.0f)));
+		StringBuilder log = new StringBuilder();
+		for (int k = 0; k < 4; k++) {
+			ctx.waitTicks(25);
+			String line = ctx.computeOnClient(mc -> {
+				StringBuilder b = new StringBuilder();
+				for (Entity e : mc.level.entitiesForRendering()) {
+					if (e instanceof VehicleEntity v && (v.getId() == car || v.getId() == truck || v.getId() == tank)) {
+						b.append(v.getVehicleType().id).append(": ").append(com.stasdoto.airdefense.client.vehicle.VehicleSounds.describe(v)).append("; ");
+					}
+				}
+				return b.toString();
+			});
+			log.append("[t").append(k).append("] ").append(line);
+		}
+		ctx.takeScreenshot("vs1_driving_off");
+		int loops = ctx.computeOnClient(mc -> com.stasdoto.airdefense.client.vehicle.VehicleSounds.playing());
+		int shifts = com.stasdoto.airdefense.client.vehicle.VehicleSounds.PLAYED[2];
+		server.runOnServer(s -> forVehicles(s.overworld(), List.of(car, truck, tank), Entity::discard));
+		int tank2 = spawnVehicle(server, VehicleType.T72, x, 6, 180);
+		int truck2 = spawnVehicle(server, VehicleType.SUPPLY_TRUCK, x + 6, 6, 180);
+		ctx.waitTicks(20);
+		int[] before = com.stasdoto.airdefense.client.vehicle.VehicleSounds.PLAYED.clone();
+		server.runOnServer(s -> {
+			ServerPlayer p = s.getPlayerList().getPlayers().getFirst();
+			if (s.overworld().getEntity(tank2) instanceof VehicleEntity v) {
+				p.startRiding(v);
+			}
+		});
+		ctx.waitTicks(80);
+		boolean horn = ctx.computeOnClient(mc -> {
+			for (Entity e : mc.level.entitiesForRendering()) {
+				if (e instanceof VehicleEntity v && v.getId() == truck2) {
+					return com.stasdoto.airdefense.client.vehicle.VehicleSounds.horn(v);
+				}
+			}
+			return false;
+		});
+		String tankState = ctx.computeOnClient(mc -> mc.player.getVehicle() instanceof VehicleEntity v
+				? com.stasdoto.airdefense.client.vehicle.VehicleSounds.describe(v) : "not aboard");
+		int[] now = com.stasdoto.airdefense.client.vehicle.VehicleSounds.PLAYED;
+		AirDefense.LOGGER.info("[airdefense-test] RESULT vehsounds: drive {} loopsWhileDriving={} shifts={} starts={} doors={} horn={} tankIdle=[{}]",
+				log, loops, shifts, now[0] - before[0], now[6] - before[6], horn, tankState);
+		server.runOnServer(s -> {
+			s.getPlayerList().getPlayers().getFirst().stopRiding();
+			forVehicles(s.overworld(), List.of(tank2, truck2), Entity::discard);
 		});
 		server.runCommand("gamemode spectator @a");
 	}
