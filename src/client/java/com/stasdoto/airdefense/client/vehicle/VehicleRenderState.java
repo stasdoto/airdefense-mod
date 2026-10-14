@@ -9,6 +9,8 @@ public class VehicleRenderState extends EntityRenderState {
 	public float roll;
 	public float lift;
 	public float wheelRoll;
+	/** 2.0: how far the tracks have run against each other turning on the spot (metres: + left belt forward). */
+	public float trackTurn;
 	public float steer;
 	public float turretYaw;
 	public float elevation;

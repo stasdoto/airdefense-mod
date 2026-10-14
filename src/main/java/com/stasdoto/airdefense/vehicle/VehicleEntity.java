@@ -127,6 +127,9 @@ public class VehicleEntity extends LivingEntity {
 	public float wheelRollO;
 	public float steerVis;
 	public float steerVisO;
+	/** 2.0: the tracks' belts run against each other as it turns (metres, + = left belt forward); drawn by the mesh. */
+	public float trackTurn;
+	public float trackTurnO;
 	public float tiltPitch;
 	public float tiltPitchO;
 	public float tiltRoll;
@@ -3352,6 +3355,8 @@ public class VehicleEntity extends LivingEntity {
 		double along = delta.dot(forward());
 		wheelRoll += (float) along;
 		float yawDelta = Mth.wrapDegrees(getYRot() - yRotO);
+		trackTurnO = trackTurn;
+		trackTurn += (float) Math.toRadians(yawDelta) * vtype.geometry.width() * 0.45f;
 		if (isLocalDriverSimulated()) {
 			steerVis = steer;
 		} else if (Math.abs(along) > 0.01) {

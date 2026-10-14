@@ -33,6 +33,12 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 	private final VehicleModel glassFar;
 	private final VehicleModel inside;
 	private final Identifier insideTexture;
+	/** 2.0: the baked mesh's layers, if the type has a mesh (looked up again when {@link MeshLoader#generation()} moves). */
+	private int meshGeneration = -1;
+	private VehicleModel meshSolid;
+	private VehicleModel meshCutout;
+	private VehicleModel meshGlass;
+	private Identifier meshTexture;
 	/** Within this distance (blocks) the cab's inside is drawn and the glass is see-through. */
 	private static final double INSIDE_RANGE = 18;
 
@@ -131,6 +137,38 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		this.shadowStrength = 0.9f;
 	}
 
+	/** 2.0: picks up the type's mesh (assets/airdefense/meshes/&lt;id&gt;.mesh); without one the box model is drawn. */
+	private void resolveMesh() {
+		int g = MeshLoader.generation();
+		if (g == meshGeneration) {
+			return;
+		}
+		meshGeneration = g;
+		meshSolid = null;
+		meshCutout = null;
+		meshGlass = null;
+		MeshLoader.Mesh m = MeshLoader.get(type.id);
+		if (m == null) {
+			return;
+		}
+		MeshState st = new MeshState();
+		java.util.Set<String> wheels = VehicleModel.wheelNames(type.geometry);
+		meshSolid = VehicleModel.ofMesh(MeshModel.bake(m, MeshLoader.SOLID, st, wheels), type.geometry, RenderTypes::entityCutoutCull);
+		if (m.has(MeshLoader.CUTOUT)) {
+			meshCutout = VehicleModel.ofMesh(MeshModel.bake(m, MeshLoader.CUTOUT, st, wheels), type.geometry, RenderTypes::entityCutout);
+		}
+		if (m.has(MeshLoader.GLASS)) {
+			meshGlass = VehicleModel.ofMesh(MeshModel.bake(m, MeshLoader.GLASS, st, wheels), type.geometry, RenderTypes::entityTranslucentCull);
+		}
+		meshTexture = m.texture;
+	}
+
+	/** Is this type drawn from a baked mesh (for the tests)? */
+	public boolean hasMesh() {
+		resolveMesh();
+		return meshSolid != null;
+	}
+
 	@Override
 	public VehicleRenderState createRenderState() {
 		return new VehicleRenderState();
@@ -144,6 +182,7 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		s.roll = Mth.lerp(partialTick, v.tiltRollO, v.tiltRoll);
 		s.lift = Mth.lerp(partialTick, v.liftO, v.lift);
 		s.wheelRoll = Mth.lerp(partialTick, v.wheelRollO, v.wheelRoll);
+		s.trackTurn = Mth.lerp(partialTick, v.trackTurnO, v.trackTurn);
 		s.steer = Mth.lerp(partialTick, v.steerVisO, v.steerVis);
 		s.turretYaw = Mth.rotLerp(partialTick, v.turretYawO, v.turretYaw);
 		s.elevation = Mth.lerp(partialTick, v.elevationO, v.elevation);
@@ -181,6 +220,23 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 			// Through the thermal sight a vehicle shows warm (its engine, its tracks), a burnt-out one cold.
 			light = 0xF000F0;
 			overlay = OverlayTexture.pack(0.78f, false);
+		}
+		resolveMesh();
+		if (meshSolid != null) {
+			// 2.0: the baked mesh (a wreck drawn dark by the model's shade); its inside is a part drawn only near.
+			collector.submitModel(meshSolid, s, poseStack, meshTexture, light, overlay, s.outlineColor);
+			if (meshCutout != null) {
+				collector.submitModel(meshCutout, s, poseStack, meshTexture, light, overlay, s.outlineColor);
+			}
+			if (meshGlass != null) {
+				collector.submitModel(meshGlass, s, poseStack, meshTexture, light, overlay, s.outlineColor);
+			}
+			poseStack.popPose();
+			if (s.beacons && !s.wreck) {
+				beacons(s, poseStack, collector, camera);
+			}
+			super.submit(s, poseStack, collector, camera);
+			return;
 		}
 		collector.submitModel(model, s, poseStack, tex, light, overlay, s.outlineColor);
 		if (inside != null && near) {
