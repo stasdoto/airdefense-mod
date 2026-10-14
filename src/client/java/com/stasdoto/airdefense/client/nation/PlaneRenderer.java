@@ -8,6 +8,7 @@ import com.mojang.math.Axis;
 import org.joml.Matrix4f;
 
 import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -24,6 +25,9 @@ import net.minecraft.world.phys.AABB;
 
 import com.stasdoto.airdefense.AirDefense;
 import com.stasdoto.airdefense.client.vehicle.GenModels;
+import com.stasdoto.airdefense.client.vehicle.MeshLoader;
+import com.stasdoto.airdefense.client.vehicle.MeshModel;
+import com.stasdoto.airdefense.client.vehicle.MeshState;
 import com.stasdoto.airdefense.nation.PlaneEntity;
 
 /** 1.40: draws an airliner at its pose; when it is under way its red beacon flashes (on top and under the belly). */
@@ -34,12 +38,89 @@ public class PlaneRenderer extends EntityRenderer<PlaneEntity, PlaneRenderer.Sta
 		float pitch;
 		boolean beacon;
 		int flash;
+		/** 2.0: the age in ticks with the partial tick (the propellers turn with it while the plane is under way). */
+		float age;
 	}
 
 	private static final class PlaneModel extends EntityModel<State> {
 		PlaneModel(net.minecraft.client.model.geom.ModelPart root) {
 			super(root, RenderTypes::entityCutoutCull);
 		}
+	}
+
+	/** 2.0: a plane drawn from a baked mesh: one model per layer sharing the mesh's state; propellers (parts propeller_*) turn. */
+	private static final class MeshPlaneModel extends EntityModel<State> {
+		private final MeshModel mesh;
+		private final ModelPart[] props;
+
+		MeshPlaneModel(MeshModel mesh, java.util.function.Function<Identifier, RenderType> type) {
+			super(mesh.root, type);
+			this.mesh = mesh;
+			java.util.List<ModelPart> list = new java.util.ArrayList<>();
+			for (String n : new String[]{"propeller_l", "propeller_r"}) {
+				ModelPart part = find(mesh.root, mesh.paths, n);
+				if (part != null) {
+					list.add(part);
+				}
+			}
+			this.props = list.toArray(new ModelPart[0]);
+		}
+
+		@Override
+		public void setupAnim(State s) {
+			super.setupAnim(s);
+			mesh.state.distance = (float) Math.sqrt(s.distanceToCameraSq);
+			mesh.state.tint = -1;
+			mesh.state.shade = -1;
+			for (ModelPart p : props) {
+				p.zRot = s.beacon ? s.age * 1.9f : 0f;
+			}
+		}
+	}
+
+	private record MeshSet(MeshPlaneModel solid, MeshPlaneModel cutout, MeshPlaneModel glass, Identifier texture) {
+	}
+
+	private static final MeshSet NONE = new MeshSet(null, null, null, null);
+	private final Map<String, MeshSet> meshes = new HashMap<>();
+	private int meshGeneration = -1;
+
+	private MeshSet meshFor(String id) {
+		int g = MeshLoader.generation();
+		if (g != meshGeneration) {
+			meshGeneration = g;
+			meshes.clear();
+		}
+		MeshSet set = meshes.get(id);
+		if (set == null) {
+			MeshLoader.Mesh m = MeshLoader.get(id);
+			if (m == null) {
+				set = NONE;
+			} else {
+				MeshState st = new MeshState();
+				set = new MeshSet(new MeshPlaneModel(MeshModel.bake(m, MeshLoader.SOLID, st, null), RenderTypes::entityCutoutCull),
+						m.has(MeshLoader.CUTOUT) ? new MeshPlaneModel(MeshModel.bake(m, MeshLoader.CUTOUT, st, null), RenderTypes::entityCutout) : null,
+						m.has(MeshLoader.GLASS) ? new MeshPlaneModel(MeshModel.bake(m, MeshLoader.GLASS, st, null), RenderTypes::entityTranslucentCull) : null,
+						m.texture);
+			}
+			meshes.put(id, set);
+		}
+		return set == NONE ? null : set;
+	}
+
+	private static ModelPart find(ModelPart root, Map<String, String> paths, String name) {
+		String path = paths.get(name);
+		if (path == null) {
+			return null;
+		}
+		ModelPart p = root;
+		for (String step : path.split("/")) {
+			if (!p.hasChild(step)) {
+				return null;
+			}
+			p = p.getChild(step);
+		}
+		return p;
 	}
 
 	private static final RenderType GLOW = RenderTypes.entityTranslucentEmissive(AirDefense.id("textures/misc/glow_dot.png"));
@@ -70,6 +151,7 @@ public class PlaneRenderer extends EntityRenderer<PlaneEntity, PlaneRenderer.Sta
 		s.pitch = (float) Mth.lerp(partialTick, p.poseO[4], p.pose[4]);
 		s.beacon = p.phase != 1;
 		s.flash = p.tickCount;
+		s.age = p.tickCount + partialTick;
 		s.lightCoords = LightCoordsUtil.getLightCoords(p.level(), BlockPos.containing(p.getX(), p.getY() + 3, p.getZ()));
 	}
 
@@ -81,12 +163,23 @@ public class PlaneRenderer extends EntityRenderer<PlaneEntity, PlaneRenderer.Sta
 	@Override
 	public void submit(State s, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
 		PlaneModel m = models.get(s.model);
+		MeshSet mesh = meshFor(s.model);
 		if (m != null) {
 			poseStack.pushPose();
 			poseStack.mulPose(new Matrix4f().rotation(Axis.YP.rotationDegrees(-s.yaw)));
 			poseStack.mulPose(new Matrix4f().rotation(Axis.XP.rotationDegrees(-s.pitch)));
 			poseStack.scale(-1, -1, 1);
-			collector.submitModel(m, s, poseStack, textures.get(s.model), s.lightCoords, OverlayTexture.NO_OVERLAY, s.outlineColor);
+			if (mesh != null) {
+				collector.submitModel(mesh.solid, s, poseStack, mesh.texture, s.lightCoords, OverlayTexture.NO_OVERLAY, s.outlineColor);
+				if (mesh.cutout != null) {
+					collector.submitModel(mesh.cutout, s, poseStack, mesh.texture, s.lightCoords, OverlayTexture.NO_OVERLAY, s.outlineColor);
+				}
+				if (mesh.glass != null) {
+					collector.submitModel(mesh.glass, s, poseStack, mesh.texture, s.lightCoords, OverlayTexture.NO_OVERLAY, s.outlineColor);
+				}
+			} else {
+				collector.submitModel(m, s, poseStack, textures.get(s.model), s.lightCoords, OverlayTexture.NO_OVERLAY, s.outlineColor);
+			}
 			poseStack.popPose();
 			if (s.beacon && (s.flash / 6) % 4 == 0) {
 				boolean jet = s.model.equals("airliner");
