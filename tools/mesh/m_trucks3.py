@@ -169,6 +169,23 @@ def wheels(b, names=None, n=12, bolts=None, rim='paint', width=None):
         b.p[name].add(K.mil_wheel(piv, side, r, w, rim=rim, n=n, rim_ratio=0.5, lugs=n, bolts=bolts, ctis=False))
 
 
+def reflector(g, c, w, h, depth, facing=1, nx=2, ny=9, ribs=3, frame='steel', mat='lattice'):
+    """A cylindrical (curved along y) mesh dish centred at c = (x, y, z) facing +z (facing=1) or -z: w wide, h tall,
+    the middle {depth} behind the rim; a frame round it and ribs behind."""
+    cx, cy, cz = c
+    ys = np.linspace(-h / 2, h / 2, ny)
+    curve = lambda y: facing * -depth * (1 - (y / (h / 2)) ** 2) * 0 + facing * depth * (y / (h / 2)) ** 2
+    cols = []
+    for sx in np.linspace(-w / 2, w / 2, nx):
+        cols.append([V(cx + sx, cy + y, cz + curve(y)) for y in ys])
+    g.extend(geom.loft(cols, mat, closed=False))
+    g.extend(K.flipped(geom.loft(cols, mat, closed=False)))
+    for sx in np.linspace(-w / 2, w / 2, ribs + 2):
+        g.extend(geom.tube([V(cx + sx, cy + y, cz + curve(y) - facing * 0.03) for y in ys], 0.025, frame, n=4))
+    for yy in (-h / 2, h / 2):
+        g.extend(geom.tube([V(cx + sx, cy + yy, cz + curve(yy) - facing * 0.03) for sx in (-w / 2, w / 2)], 0.025, frame, n=4))
+
+
 def western_cab(b, z0, z1, y0, y1, w, dash=0.85):
     """The FMTV/HEMTT-class cab of the western trucks, with its inside."""
     cab = T.fmtv_cab(b, b.body, z0, z1, y0, y1, w, b.r.seats)

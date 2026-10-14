@@ -11,7 +11,7 @@ from m_trucks3 import *
 from m_t3c import western_front, shelter, landing_gear
 
 
-def light_truck(b, zf=4.8, zcowl=3.2, zrear=1.25, y_bot=0.82, hood=1.18, roof=1.98, w=1.02, bed=(0.3, 1.25)):
+def light_truck(b, zf=4.8, zcowl=3.2, zrear=1.25, y_bot=0.82, hood=1.18, roof=1.98, w=1.02, bed=(0.3, 1.25), open_bed=0.0):
     """A Humvee/JLTV-class 4x4: one wide shell (hood, cowl, cab), flared arches, grille and lamps, a flat bed behind."""
     body = b.body
     yb = hood + 0.12
@@ -44,13 +44,20 @@ def light_truck(b, zf=4.8, zcowl=3.2, zrear=1.25, y_bot=0.82, hood=1.18, roof=1.
                 x0, x1 = (px - 0.25, px + 0.3) if s > 0 else (-px - 0.3, -px + 0.25)
                 g.extend(K.fender(x0, x1, pz, R - 0.02, R + 0.1, -10, 190))
     # Frame, skid plates, fuel tank, bed with low sides, tow hitch at the back.
-    g.extend(K.frame_rails(0.42, 0.55, 0.72, zrear - 1.1, zf - 0.1, cross=(0.0, 1.3, 2.6, 3.8)))
-    g.extend(box((-0.7, 0.5, 2.8), (0.7, 0.62, 4.5), 'chassis'))
-    g.extend(K.rbox((-1.0, 0.7, bed[0]), (1.0, 1.15, bed[1]), 'paint', r=0.03))
+    g.extend(K.frame_rails(0.42, 0.55, 0.72, zrear - 1.1, zf - 0.1, cross=tuple(np.linspace(zrear - 0.8, zf - 0.4, 4))))
+    g.extend(box((-0.7, 0.5, zcowl - 0.4), (0.7, 0.62, zf - 0.3), 'chassis'))
+    if open_bed:
+        g.extend(K.rbox((-w, 0.7, bed[0]), (w, 0.95, bed[1]), 'paint', r=0.03))
+        for s_ in (-1, 1):
+            g.extend(K.rbox((s_ * w - (0.0 if s_ > 0 else 0.07), 0.95, bed[0]), (s_ * w + (0.07 if s_ > 0 else 0.0), 0.7 + open_bed, bed[1]), 'paint', r=0.015))
+        g.extend(K.rbox((-w, 0.95, bed[0]), (w, 0.7 + open_bed, bed[0] + 0.07), 'paint', r=0.015))
+        g.extend(box((-w + 0.07, 0.95, bed[0] + 0.07), (w - 0.07, 0.96, bed[1]), 'grating', faces=('top',)))
+    else:
+        g.extend(K.rbox((-1.0, 0.7, bed[0]), (1.0, 1.15, bed[1]), 'paint', r=0.03))
     for s in (-1, 1):
         g.extend(K.lamp_cluster((s * 0.9, 0.75, bed[0] - 0.02), s))
     g.extend(box((-0.08, 0.55, -0.7), (0.08, 0.65, bed[0]), 'metal_dark'))
-    g.extend(K.exhaust_stack(1.0, 0.7, 1.9, 1.7, r=0.04, bend=None))
+    g.extend(K.exhaust_stack(w - 0.02, 0.7, 1.9, (zcowl + zrear) / 2, r=0.04, bend=None))
     g.extend(K.whip_antenna((-0.9, roof + 0.02, zrear + 0.25), 1.4))
     body.add(g)
     b.axles()
