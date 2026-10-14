@@ -337,6 +337,7 @@ class CarBody:
                     out.append(base + gap * i / n)
             if z - out[-1] > 0.008:
                 out.append(z)
+        out[-1] = zs[-1]  # the nose and the tail themselves must stay (the fascia closes there)
         return sorted(set(round(z, 4) for z in out))
 
     def gh_stations(self):
@@ -399,8 +400,6 @@ def lower_body(s, B):
             if s.bumper == 'body' and (zm > s.front_axle + B.Ra + 0.02 or zm < s.rear_axle - B.Ra - 0.02):
                 return 'plastic'
             return 'paint'
-        if b == 4 and s.cladding and (zm < s.front_axle + B.Ra + 0.25 and zm > s.rear_axle - B.Ra - 0.25):
-            return 'plastic'
         if b >= 9:
             if s.gh_end + 0.001 < zm < s.cowl_z - 0.001:
                 return None
@@ -515,7 +514,7 @@ def front_rear(s, B, C, model):
         dims['tl_tail'] = (Lt, Ht)
         for side in (-1, 1):
             xc = side * (hw - 0.21)
-            y = s.belt_r - 0.12
+            y = s.belt_r - (0.12 if not s.hatch else 0.3)
             D = normalize(np.array([-side * 0.7, -0.05, 1.0]))
             U, V = lamp_axes(D, side, Lt, Ht)
             shape = K.taper_shape(0.0, 0.0, 0.0, 0.25, round_=0.1)
@@ -738,7 +737,7 @@ def shut_lines(s, B, model):
         # The fuel flap on the right rear wing.
         if side > 0:
             zfl = s.rear_axle + B.Ra + 0.25 if not s.hatch else s.rear_axle - 0.05
-            yfl = s.belt_r - 0.12
+            yfl = s.belt_r - (0.12 if not s.hatch else 0.3)
             cv.line([(x, yfl - 0.07, zfl - 0.08), (x, yfl - 0.07, zfl + 0.08), (x, yfl + 0.07, zfl + 0.08), (x, yfl + 0.07, zfl - 0.08),
                      (x, yfl - 0.07, zfl - 0.08)], dark, 4)
         # A subtle crease: a highlight along the swage line.
