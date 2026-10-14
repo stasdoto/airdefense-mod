@@ -9,6 +9,7 @@ import geom
 import kit_town as K
 import materials
 import town_cars as TC
+import town_bus as TB
 from core import Geo
 
 
@@ -125,5 +126,102 @@ def police():
     return TC.build_car(s, extra=police_extra)
 
 
+def seat_rows(zs, cells, left=(-0.95, -0.55), right=(0.55, 0.95)):
+    rows = []
+    for z in zs:
+        xs = list(left)
+        if not any(lo - 0.15 < z < hi + 0.15 for (hi, lo, k) in cells if k == 'd'):
+            xs += list(right)
+        rows.append((z, xs))
+    return rows
+
+
+def bus():
+    cells = [(4.85, 3.85, 'w'), (3.85, 2.7, 'w'), (2.7, 1.5, 'd'), (1.5, 0.2, 'w'), (0.2, -1.0, 'd'), (-1.0, -2.3, 'w'), (-2.3, -3.5, 'w'),
+             (-3.5, -4.75, 'w')]
+    s = TB.TransitSpec(id='town_bus', zf=5.5, zr=-5.5, paint=0xE3A700, second=0xF1EFE6, cells=cells,
+                       wheels=[(3.6, 0.5, 1.05, 0.3, True), (-2.6, 0.5, 1.05, 0.3, False)], driver=(-0.6, 4.35),
+                       seat_rows=seat_rows([-4.3, -3.55, -2.8, -2.05, -1.4, -0.55, 0.5, 1.15, 2.0, 3.2], cells))
+    return TB.build_transit(s, extra=bus_extra)
+
+
+def bus_extra(m, s, B, C, body, inside):
+    g = Geo(40)
+    y = s.roof + s.crown
+    if s.ac:
+        g.extend(K.hbox((-0.85, y - 0.02, -4.6), (0.85, y + 0.26, -3.0), 'steel', r=0.08))
+        for k in range(5):
+            g.extend(K.hbox((-0.7, y + 0.255, -4.45 + k * 0.3), (0.7, y + 0.275, -4.3 + k * 0.3), 'tl_vent'))
+    body.add(g)
+
+
+def trolleybus():
+    cells = [(5.15, 4.0, 'w'), (4.0, 2.9, 'w'), (2.9, 1.7, 'd'), (1.7, 0.4, 'w'), (0.4, -0.8, 'd'), (-0.8, -2.0, 'w'), (-2.0, -3.3, 'w'),
+             (-3.3, -4.2, 'w'), (-4.2, -5.05, 'w')]
+    s = TB.TransitSpec(id='trolleybus', zf=5.8, zr=-5.8, paint=0x2056A8, second=0xF1EFE6, cells=cells,
+                       wheels=[(3.8, 0.5, 1.05, 0.3, True), (-2.7, 0.5, 1.05, 0.3, False)], driver=(-0.6, 4.65), ac=False,
+                       seat_rows=seat_rows([-4.6, -3.85, -3.1, -2.35, -1.6, -0.9, -0.1, 0.9, 1.7, 2.5, 3.5], cells))
+    return TB.build_transit(s, extra=trolley_extra)
+
+
+POLE_PIVOT_Z = -2.3
+
+
+def trolley_extra(m, s, B, C, body, inside):
+    g = Geo(40)
+    y = s.roof + s.crown
+    # Roof gear: resistor boxes, the pole bases on insulators.
+    g.extend(K.hbox((-0.8, y - 0.02, -1.4), (0.8, y + 0.3, 3.0), 'steel', r=0.07))
+    for k in range(7):
+        g.extend(K.hbox((-0.65, y + 0.295, -1.2 + k * 0.6), (0.65, y + 0.315, -1.05 + k * 0.6), 'tl_vent'))
+    for sx in (-0.25, 0.25):
+        g.extend(K.hbox((sx - 0.1, y - 0.02, POLE_PIVOT_Z - 0.1), (sx + 0.1, y + 0.16, POLE_PIVOT_Z + 0.2), 'tl_pole', r=0.03))
+    body.add(g)
+    # The two poles, from the back of the roof up and back to the wires (as the box model: pivot (+-0.25, 3.3, -2.3), tilted -46).
+    for sx, name in ((-0.25, 'pole_l'), (0.25, 'pole_r')):
+        pole = body.part(name, (sx, 3.3, POLE_PIVOT_Z), (-46.0, 0.0, 0.0))
+        pg = Geo(40)
+        pg.extend(geom.tube([(sx, 3.3, POLE_PIVOT_Z), (sx, 3.3, POLE_PIVOT_Z - 4.95)], 0.032, 'tl_pole', n=6))
+        pg.extend(geom.cyl((sx, 3.3, POLE_PIVOT_Z - 0.35), (sx, 3.3, POLE_PIVOT_Z - 0.55), 0.05, 'tl_pole', n=8))
+        pg.extend(K.hbox((sx - 0.07, 3.23, POLE_PIVOT_Z - 5.12), (sx + 0.07, 3.39, POLE_PIVOT_Z - 4.88), 'tl_pole', r=0.02))
+        pg.extend(K.hbox((sx - 0.045, 3.25, POLE_PIVOT_Z - 5.12), (sx + 0.045, 3.37, POLE_PIVOT_Z - 5.0), 'metal_dark', r=0.01))
+        pole.add(pg)
+
+
+def tram():
+    cells = [(6.35, 5.1, 'w'), (5.1, 3.0, 'w'), (3.0, 1.6, 'd'), (1.6, 0.0, 'w'), (0.0, -1.6, 'w'), (-1.6, -3.0, 'd'), (-3.0, -5.1, 'w'),
+             (-5.1, -6.35, 'w')]
+    s = TB.TransitSpec(id='tram', zf=7.0, zr=-7.0, paint=0xB3261E, second=0xE9DFC5, cells=cells, ybot=0.3, belt_lo=1.0, win_lo=1.05,
+                       win_hi=2.5, top_hi=2.68, roof=3.1, floor=0.7, hw=1.25, driver=(-0.6, 5.7), ac=False,
+                       wheels=[(4.6, 0.42, 0.75, 0.24, False), (3.4, 0.42, 0.75, 0.24, False), (-3.4, 0.42, 0.75, 0.24, False),
+                               (-4.6, 0.42, 0.75, 0.24, False)],
+                       seat_rows=seat_rows([-5.8, -5.0, -4.2, -2.4, -0.8, 0.0], cells))
+    return TB.build_transit(s, extra=tram_extra)
+
+
+def tram_extra(m, s, B, C, body, inside):
+    g = Geo(40)
+    y = s.roof + s.crown
+    for z in (4.2, -4.2):
+        g.extend(K.hbox((-0.8, y - 0.02, z - 0.7), (0.8, y + 0.22, z + 0.7), 'steel', r=0.07))
+    g.extend(K.hbox((-0.5, y - 0.02, -0.5), (0.5, y + 0.14, 0.5), 'tl_pole', r=0.03))
+    # Bogie frames and axles between the wheel pairs (seen through the arches).
+    for zc in (4.0, -4.0):
+        for sd in (-1, 1):
+            g.extend(K.hbox((sd * 0.62 - 0.05, 0.2, zc - 0.62), (sd * 0.62 + 0.05, 0.46, zc + 0.62), 'metal_dark', r=0.02))
+        for z in (zc - 0.6, zc + 0.6):
+            g.extend(geom.cyl((-0.75, 0.42, z), (0.75, 0.42, z), 0.04, 'steel', n=8))
+    body.add(g)
+    pz = 0.0
+    arm = body.part('pantograph', (0.0, 3.25, pz), (-57.0, 0.0, 0.0))
+    ag = Geo(40)
+    for sx in (-0.25, 0.25):
+        ag.extend(geom.tube([(sx, 3.25, pz), (sx, 3.25, pz - 2.2)], 0.025, 'tl_pole', n=5))
+        ag.extend(geom.tube([(sx, 3.25, pz - 2.2), (sx * 0.5, 3.25, pz - 4.2)], 0.025, 'tl_pole', n=5))
+    ag.extend(geom.tube([(-0.6, 3.25, pz - 4.25), (0.6, 3.25, pz - 4.25)], 0.03, 'tl_pole', n=6))
+    ag.extend(K.hbox((-0.6, 3.27, pz - 4.35), (0.6, 3.31, pz - 4.15), 'metal_dark', r=0.008))
+    arm.add(ag)
+
+
 def models():
-    return [saloon(), hatch(), boxy(), suv(), taxi(), police()]
+    return [saloon(), hatch(), boxy(), suv(), taxi(), police(), bus(), trolleybus(), tram()]
