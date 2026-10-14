@@ -23,4 +23,6 @@ public class VehicleRenderState extends EntityRenderState {
 	public int flash;
 	/** 2.0: a civilian car's model and paint. */
 	public int variant;
+	/** 2.0: headlights on. */
+	public boolean lights;
 }

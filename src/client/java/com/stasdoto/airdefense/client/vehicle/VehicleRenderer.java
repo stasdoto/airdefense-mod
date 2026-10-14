@@ -86,6 +86,35 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		}
 	}
 
+	/**
+	 * 2.0: the headlights - two warm glows at the front corners (the render pass may give them real beams). In the
+	 * body's frame: they pitch and roll with it.
+	 */
+	private void headlights(VehicleRenderState s, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
+		com.stasdoto.airdefense.vehicle.VehicleGeometry.Geometry g = type.geometry;
+		float hx = Math.max(0.4f, g.width() / 2 - 0.3f);
+		float hy = type.isCivil() || g.length() < 5.5f ? 0.68f : Math.min(1.3f, g.height() * 0.4f);
+		float hz = g.length() / 2 - 0.05f;
+		float size = (float) (0.22 + Math.sqrt(s.distanceToCameraSq) * 0.004);
+		for (int side = -1; side <= 1; side += 2) {
+			net.minecraft.world.phys.Vec3 o = VehicleEntity.tilted(hx * side, hy, hz, s.yaw, s.pitch, s.roll, s.lift);
+			poseStack.pushPose();
+			poseStack.translate(o.x, o.y, o.z);
+			poseStack.mulPose(new Matrix4f().rotation(camera.orientation));
+			collector.submitCustomGeometry(poseStack, GLOW, (pose, vc) -> {
+				float[][] corners = {{size, -size, 1, 1}, {size, size, 1, 0}, {-size, size, 0, 0}, {-size, -size, 0, 1}};
+				for (int pass = 0; pass < 2; pass++) {
+					for (int i = 0; i < 4; i++) {
+						float[] c = corners[pass == 0 ? i : 3 - i];
+						vc.addVertex(pose, c[0], c[1], 0).setColor(255, 240, 200, 235).setUv(c[2], c[3]).setOverlay(OverlayTexture.NO_OVERLAY)
+								.setLight(0xF000F0).setNormal(pose, 0, 0, 1);
+					}
+				}
+			});
+			poseStack.popPose();
+		}
+	}
+
 	public VehicleRenderer(EntityRendererProvider.Context context, VehicleType type) {
 		super(context);
 		this.type = type;
@@ -173,6 +202,7 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		s.beacons = type.isService() && v.beaconsOn();
 		s.flash = v.tickCount;
 		s.variant = v.getVariant();
+		s.lights = v.lightsOn() && v.isAlive();
 	}
 
 	@Override
@@ -227,6 +257,9 @@ public class VehicleRenderer extends EntityRenderer<VehicleEntity, VehicleRender
 		poseStack.popPose();
 		if (s.beacons && !s.wreck) {
 			beacons(s, poseStack, collector, camera);
+		}
+		if (s.lights && !s.hidden) {
+			headlights(s, poseStack, collector, camera);
 		}
 		super.submit(s, poseStack, collector, camera);
 	}

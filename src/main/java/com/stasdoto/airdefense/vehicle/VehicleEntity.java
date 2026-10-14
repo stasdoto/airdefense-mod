@@ -3737,6 +3737,9 @@ public class VehicleEntity extends LivingEntity {
 		float yawDelta = Mth.wrapDegrees(getYRot() - yRotO);
 		if (isLocalDriverSimulated()) {
 			steerVis = steer;
+		} else if (!vtype.isAir() && !vtype.boat) {
+			// 2.0: the driver's wheel angle is synced.
+			steerVis += (getWheelSteer() - steerVis) * 0.5f;
 		} else if (Math.abs(along) > 0.01) {
 			float wb = Math.max(2.5f, vtype.geometry.wheelbase());
 			float target = (float) Math.toDegrees(Math.atan2(Math.toRadians(yawDelta) * wb, Math.abs(along)));
@@ -3811,9 +3814,64 @@ public class VehicleEntity extends LivingEntity {
 		float pitch = (float) Math.toDegrees(Math.atan2(hf - hr, halfLen * 2));
 		float roll = (float) Math.toDegrees(Math.atan2(hl - hrt, halfW * 2));
 		float up = (float) Mth.clamp((hf + hr) / 2 - getY(), 0, 1.2);
-		tiltPitch += (Mth.clamp(pitch, -22, 22) - tiltPitch) * 0.3f;
-		tiltRoll += (Mth.clamp(roll, -15, 15) - tiltRoll) * 0.3f;
-		lift += (up - lift) * 0.3f;
+		terrainPitch += (Mth.clamp(pitch, -22, 22) - terrainPitch) * 0.3f;
+		terrainRoll += (Mth.clamp(roll, -15, 15) - terrainRoll) * 0.3f;
+		terrainLift += (up - terrainLift) * 0.3f;
+		bodyOnSprings();
+		tiltPitch = terrainPitch + bodyPitch;
+		tiltRoll = terrainRoll + bodyRoll;
+		lift = terrainLift + heave;
+	}
+
+	/**
+	 * 2.0: the body on its suspension - it squats under acceleration, dives under braking, leans out of a turn, bounces
+	 * on landing; a spring and a damper, so it settles smoothly. Worked out on every client from how the vehicle moves
+	 * (the driver's own from his physics).
+	 */
+	private void bodyOnSprings() {
+		DriveSpec spec = DriveSpec.of(vtype);
+		float aLong;
+		float aLat;
+		double vy = getY() - yo;
+		if (simulatedHere()) {
+			aLong = drive.accelLong;
+			aLat = drive.accelLat;
+			if (drive.landing > 0) {
+				heaveV -= Math.min(0.3f, drive.landing * 0.012f);
+				bodyPitchV -= Math.min(1.5f, drive.landing * 0.08f);
+				drive.landing = 0;
+			}
+		} else {
+			Vec3 f = forward();
+			float lon = (float) (((getX() - xo) * f.x + (getZ() - zo) * f.z) * DriveSpec.MS_PER_BT);
+			float yawRate = Mth.wrapDegrees(getYRot() - yRotO) * Mth.DEG_TO_RAD * 20f;
+			estALong += ((lon - estLong) * 20f - estALong) * 0.3f;
+			estALat += (lon * yawRate - estALat) * 0.3f;
+			estLong = lon;
+			aLong = estALong;
+			aLat = estALat;
+			if (prevVy < -0.3 && vy > -0.05) {
+				heaveV -= (float) Math.min(0.3, -prevVy * 0.25);
+			}
+		}
+		prevVy = vy;
+		float tp = Mth.clamp(aLong * spec.pitchGain, -6, 6);
+		float tr = Mth.clamp(-aLat * spec.rollGain, -7, 7);
+		bodyPitchV += (tp - bodyPitch) * spec.spring - bodyPitchV * spec.damping;
+		bodyPitch += bodyPitchV;
+		bodyRollV += (tr - bodyRoll) * spec.spring - bodyRollV * spec.damping;
+		bodyRoll += bodyRollV;
+		heaveV += -heave * spec.spring * 1.5f - heaveV * spec.damping;
+		heave = Mth.clamp(heave + heaveV, -0.35f, 0.25f);
+		bodyPitch = Mth.clamp(bodyPitch, -9, 9);
+		bodyRoll = Mth.clamp(bodyRoll, -10, 10);
+		// Tyre smoke where the wheels slide.
+		float skid = getSkid();
+		if (skid > 0.4f && !vtype.tracked() && Math.hypot(getX() - xo, getZ() - zo) > 0.05 && random.nextFloat() < skid) {
+			VehicleGeometry.Geometry g = vtype.geometry;
+			Vec3 p = toWorld((random.nextBoolean() ? -1 : 1) * g.width() * 0.4, 0.15, -spec.rear);
+			level().addParticle(net.minecraft.core.particles.ParticleTypes.CLOUD, p.x, p.y, p.z, 0, 0.02, 0);
+		}
 	}
 
 	/** Height of the ground under a point of the vehicle (vehicle space), searched around the vehicle's level. */
