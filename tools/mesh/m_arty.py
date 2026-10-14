@@ -44,7 +44,7 @@ def tail_lamps(d, xs, y, z, hw=0.1):
 
 def gear_for(bm, **kw):
     kw.setdefault('drive', 'front')
-    kw.setdefault('pitch', 0.15)
+    kw.setdefault('pitch', 0.19)
     kw.setdefault('thick', 0.06)
     kw.setdefault('n', 10)
     kw.setdefault('teeth', 10)
@@ -58,7 +58,7 @@ def gear_for(bm, **kw):
 
 
 def msta_s(bm):
-    m = MT.new_model(bm, density=26)
+    m = MT.new_model(bm, density=22)
     body = m.part('body', (0, 0, 0))
     st = [(-3.45, 1.35, 0.5), (-3.40, 1.6, 0.45), (2.25, 1.6, 0.45), (3.5, 0.72, 0.5)]
     hw_up, hw_low = 1.79, 1.21
@@ -139,7 +139,7 @@ def msta_s(bm):
 
 
 def m109(bm):
-    m = MT.new_model(bm, density=26)
+    m = MT.new_model(bm, density=22)
     body = m.part('body', (0, 0, 0))
     st = [(-3.1, 1.3, 0.5), (-3.06, 1.9, 0.5), (1.8, 1.9, 0.5), (1.85, 1.62, 0.5), (3.15, 0.75, 0.5)]
     g = Geo(25)
@@ -243,7 +243,7 @@ def t72_hull(m, bm, kind):
 
 
 def tos1(bm):
-    m = MT.new_model(bm, density=26)
+    m = MT.new_model(bm, density=22)
     body = t72_hull(m, bm, 'tos1')
     e = Geo(30)
     # Engine deck behind the turret, fuel drums at the rear, stowage boxes on the fenders.
@@ -299,7 +299,7 @@ def tos1(bm):
 
 
 def brem1(bm):
-    m = MT.new_model(bm, density=26)
+    m = MT.new_model(bm, density=22)
     body = t72_hull(m, bm, 'brem1')
     e = Geo(30)
     # The superstructure: a sloped cab over the front of the hull.
@@ -353,7 +353,7 @@ def brem1(bm):
 
 
 def m88(bm):
-    m = MT.new_model(bm, density=26)
+    m = MT.new_model(bm, density=22)
     body = m.part('body', (0, 0, 0))
     st = [(-4.3, 1.35, 0.55), (-4.25, 1.75, 0.5), (0.95, 1.75, 0.5), (1.0, 2.75, 0.5), (3.45, 2.75, 0.5), (3.5, 2.35, 0.5), (4.35, 0.75, 0.5)]
     g = Geo(25)

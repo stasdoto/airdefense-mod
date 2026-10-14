@@ -394,10 +394,10 @@ def models():
     jobs = [('t72', lambda: t72_like(B['t72'])), ('t90', lambda: t72_like(B['t90'], 't90')), ('t80bvm', lambda: t72_like(B['t80bvm'], 't80'))]
     jobs += [(k, (lambda k=k: m_west.west_mbt(B[k], k))) for k in ('leopard2', 'abrams', 'challenger2')]
     jobs += [(k, (lambda k=k: m_ifv.ifv(B[k], k))) for k in ('bmp2', 'bmp3', 'bradley', 'cv90', 'm113')]
-    jobs += [(k, (lambda k=k: m_wheeled.wheeled(B[k], k))) for k in ('btr82', 'btr4', 'stryker')]
+    jobs += [(k, (lambda k=k: m_wheeled.wheeled(B[k], k))) for k in ('btr82',)]
     conv = ('msta_s', 'm109', 'tos1', 'brem1', 'm88', 'maxxpro', 'kozak', 'tigr', 'hmmwv', 'tor', 'buk', 'shilka', 'tunguska', 'strela10')
     hand = {}
-    for modname in ('m_arty', 'm_sam', 'm_wheel2'):
+    for modname in ('m_arty', 'm_sam', 'm_wheel2', 'm_wheel3'):
         try:
             mod = importlib.import_module(modname)
         except ImportError:

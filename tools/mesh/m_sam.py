@@ -51,7 +51,7 @@ def tracks(m, bm, rollers):
 
 
 def tor(bm):
-    m = MT.new_model(bm, density=26)
+    m = MT.new_model(bm, density=22)
     st = [(-3.74, 1.35, 0.5), (-3.70, 1.8, 0.5), (2.7, 1.8, 0.5), (3.1, 1.5, 0.5), (3.6, 1.45, 0.5), (3.89, 0.85, 0.5)]
     body, d = hull(m, bm, st, 1.62, 1.15, 1.0, 3.89, -3.74, 1.8, skirt=(-3.2, 2.7, 7), hatch=(-0.7, 3.2), lights_x=1.25, lamp_y=1.3)
     e = Geo(30)
@@ -96,7 +96,7 @@ def tor(bm):
 
 
 def buk(bm):
-    m = MT.new_model(bm, density=26)
+    m = MT.new_model(bm, density=22)
     st = [(-4.5, 1.4, 0.5), (-4.45, 1.85, 0.5), (2.7, 1.85, 0.5), (3.2, 1.6, 0.5), (4.3, 1.6, 0.5), (4.65, 1.05, 0.5)]
     body, d = hull(m, bm, st, 1.62, 1.1, 1.05, 4.65, -4.5, 1.85, skirt=(-4.1, 3.5, 9), hatch=None, lights_x=1.25, lamp_y=1.3)
     e = Geo(30)
@@ -152,7 +152,7 @@ def buk(bm):
 
 
 def tunguska(bm):
-    m = MT.new_model(bm, density=26)
+    m = MT.new_model(bm, density=22)
     st = [(-3.8, 1.35, 0.5), (-3.76, 1.8, 0.5), (2.7, 1.8, 0.5), (3.1, 1.5, 0.5), (3.7, 1.45, 0.5), (3.99, 0.85, 0.5)]
     body, d = hull(m, bm, st, 1.62, 1.12, 1.0, 3.99, -3.8, 1.8, skirt=(-3.3, 2.8, 7), hatch=(-0.7, 3.2), lights_x=1.25, lamp_y=1.3)
     e = Geo(30)
@@ -213,7 +213,7 @@ def tunguska(bm):
 
 
 def shilka(bm):
-    m = MT.new_model(bm, density=26)
+    m = MT.new_model(bm, density=22)
     st = [(-3.2, 1.3, 0.5), (-3.15, 1.7, 0.5), (2.3, 1.7, 0.5), (2.55, 1.45, 0.5), (3.1, 1.4, 0.5), (3.35, 0.95, 0.5)]
     body, d = hull(m, bm, st, 1.55, 1.1, 0.95, 3.35, -3.2, 1.7, skirt=(-2.8, 2.5, 6), hatch=(-0.7, 2.9), lights_x=1.2, lamp_y=1.25)
     e = Geo(30)
@@ -266,7 +266,7 @@ def shilka(bm):
 
 
 def strela10(bm):
-    m = MT.new_model(bm, density=26)
+    m = MT.new_model(bm, density=22)
     st = [(-3.2, 1.2, 0.45), (-3.15, 1.65, 0.45), (2.5, 1.65, 0.45), (2.75, 1.4, 0.45), (3.1, 1.4, 0.45), (3.35, 0.85, 0.45)]
     body, d = hull(m, bm, st, 1.42, 1.0, 0.85, 3.35, -3.2, 1.65, skirt=(-2.9, 2.5, 6), hatch=(-0.75, 2.8), lights_x=1.1, lamp_y=1.2)
     e = Geo(30)
