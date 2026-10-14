@@ -419,10 +419,91 @@ def shahed():
     return b.finish()
 
 
+def s300():
+    b = Build('s300')
+    carrier(b, (4.4, 6.65, 1.2, 2.85), (1.25, 1.6), -6.5, w=1.52, jacks=True)
+    g = Geo(30)
+    # The generator / equipment box behind the cab, hydraulic tank, steps.
+    g.extend(K.rbox((-1.45, 1.6, 2.3), (1.45, 2.5, 4.55), 'paint', r=0.04))
+    for z in (2.9, 3.5, 4.1):
+        g.extend(K.band((-1.45, 1.6, 2.3), (1.45, 2.5, 4.55), 2, z, 0.07, 0.02, faces=('top', 'left', 'right')))
+    g.extend(K.rbox((1.43, 1.7, 3.18), (1.5, 2.15, 3.68), 'metal_dark', r=0.01))
+    b.body.add(g)
+    er = b['erector']
+    eg = Geo(30)
+    eg.extend(K.rbox((-1.3, 1.85, -6.2), (1.3, 2.05, 1.6), 'paint', r=0.03))
+    for z in (-5.5, -3.0, -0.5, 1.2):
+        eg.extend(K.rbox((-1.2, 1.9, z - 0.15), (1.2, 2.12, z + 0.15), 'paint', r=0.03))
+    er.add(eg)
+    for n_, *_ in b.r.rails:
+        rp = b.r.by[n_]
+        lo, hi = rp.bounds()
+        pg = Geo(40)
+        x0, x1, y0, y1 = lo[0] + 0.04, hi[0] - 0.04, lo[1] + 0.04, hi[1] - 0.04
+        pg.extend(K.rbox((x0, y0, -6.1), (x1, y1, 1.4), 'paint', r=0.1))
+        for z in (-5.6, -4.4, -3.2, -2.0, -0.8, 0.4):
+            pg.extend(K.rbox((x0 - 0.02, y0 - 0.02, z - 0.05), (x1 + 0.02, y1 + 0.02, z + 0.05), 'paint', r=0.05))
+        pg.extend(geom.panel(((x0 + x1) / 2, (y0 + y1) / 2, 1.405), x1 - x0 - 0.2, y1 - y0 - 0.2, (1, 0, 0), (0, 1, 0), 'tpk_end'))
+        pg.extend(K.rbox((x0 - 0.03, y0 - 0.03, -4.5), (x1 + 0.03, y1 + 0.03, -4.3), 'paint', r=0.02))
+        b[n_].add(pg)
+    return b.finish()
+
+
+def pantsir():
+    b = Build('pantsir')
+    carrier(b, (3.25, 5.0, 1.1, 3.0), (1.1, 1.55), -4.95, w=1.27, tanks=False)
+    g = Geo(30)
+    # Equipment shelter behind the cab, the rear shell round the turret ring, side doors and vents.
+    g.extend(K.rbox((-1.25, 1.55, -0.2), (1.25, 2.75, 3.15), 'paint', r=0.05))
+    for z in (0.4, 1.2, 2.0, 2.8):
+        g.extend(K.band((-1.25, 1.55, -0.2), (1.25, 2.75, 3.15), 2, z, 0.06, 0.02, faces=('top', 'left', 'right')))
+    g.extend(K.rbox((1.25, 1.95, 1.23), (1.3, 2.4, 1.72), 'metal_dark', r=0.01))
+    g.extend(K.rbox((-1.25, 1.55, -4.9), (1.25, 1.8, -0.2), 'paint', r=0.03))
+    b.body.add(g)
+    t = b['turret']
+    tg = Geo(30)
+    tg.extend(cyl((0, 1.8, -2.4), (0, 2.1, -2.4), 1.1, 'paint', n=24, bevel=0.02))
+    tg.extend(K.rbox((-1.0, 1.95, -3.6), (1.0, 3.0, -1.3), 'paint', r=0.08))
+    tg.extend(K.rbox((-0.8, 3.0, -3.4), (0.8, 3.25, -1.7), 'paint', r=0.06))
+    tg.extend(K.rbox((-0.5, 2.07, -1.3), (0.5, 3.02, -1.05), 'paint', r=0.05))
+    tg.extend(K.array_face((0, 2.55, -1.04), 0.8, 0.7, (0, 0, 1), (0, 1, 0), 'aesa', frame=0.04, depth=0.1))
+    # The electro-optical turret on the roof.
+    tg.extend(cyl((0, 3.25, -3.0), (0, 3.55, -3.0), 0.14, 'metal_dark', n=10))
+    tg.extend(geom.sphere((0, 3.6, -3.0), 0.16, 'metal_dark', 10) if hasattr(geom, 'sphere') else Geo(0))
+    t.add(tg)
+    s = b['search']
+    sg = Geo(30)
+    sg.extend(K.rbox((-0.9, 3.7, -3.0), (0.9, 4.45, -2.9), 'paint', r=0.02))
+    sg.extend(K.rbox((-0.85, 3.75, -2.9), (0.85, 4.4, -2.84), 'aesa', r=0.0))
+    sg.extend(K.rbox((-0.08, 3.25, -3.0), (0.08, 3.7, -2.8), 'paint', r=0.02))
+    s.add(sg)
+    w = b['weapons']
+    wg = Geo(30)
+    wg.extend(K.rbox((-1.15, 2.45, -2.8), (1.15, 2.65, -2.6), 'paint', r=0.02))
+    for sx in (-1, 1):
+        # The 30 mm twin cannons: an ammunition box, a mount, two barrels each side with muzzle brakes.
+        x0, x1 = (-1.93, -1.17) if sx < 0 else (1.17, 1.93)
+        wg.extend(K.rbox((x0, 2.2, -3.7), (x1, 2.95, -3.55), 'paint', r=0.04))
+        xa, xb = (-1.85, -1.25) if sx < 0 else (1.25, 1.85)
+        wg.extend(K.rbox((xa, 1.92, -3.3), (xb, 2.18, -2.0), 'metal_dark', r=0.03))
+        for xx in ((-1.67, -1.43) if sx < 0 else (1.43, 1.67)):
+            wg.extend(cyl((xx, 2.05, -2.0), (xx, 2.05, 0.3), 0.032, 'metal_dark', n=8))
+            wg.extend(cyl((xx, 2.05, 0.18), (xx, 2.05, 0.3), 0.06, 'metal_dark', n=8))
+    w.add(wg)
+    for n_, *_ in b.r.rails:
+        rp = b.r.by[n_]
+        lo, hi = rp.bounds()
+        pg = Geo(30)
+        c = ((lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2)
+        pg.extend(K.tpk((c[0], c[1], lo[2]), (c[0], c[1], hi[2] - 0.03), hi[0] - lo[0] - 0.02, hi[1] - lo[1] - 0.02, 'paint', ribs=4))
+        b[n_].add(pg)
+    return b.finish()
+
+
 # ---------------------------------------------------------------------------------------------------------------
 # The vehicles nobody models by hand: the general converter (boxes -> chamfered shapes), with real military wheels.
 
-CONVERT_IDS = ['s300', 'pantsir', 'bm21', 'fuel_truck', 'supply_truck', 'p18', 'st68', 'trml4d', 'sentinel', 'mpq65', 'elm2084',
+CONVERT_IDS = ['bm21', 'fuel_truck', 'supply_truck', 'p18', 'st68', 'trml4d', 'sentinel', 'mpq65', 'elm2084',
                'osa', 'sampt', 'avenger', 'mfg', 'zu23', 'iron_dome', 'tpq36', 'bastion', 'nmesis', 'orlan', 'tb2_gcs', 'lancet',
                'switchblade', 'bukovel', 'zoopark', 'kupol', 'borisoglebsk']
 
@@ -444,7 +525,8 @@ def converted(id):
             part.geos = []
             m.tyre_half = w / 2
             m.tyre_lugs = 16
-            part.add(K.mil_wheel(piv, side, r, w, rim='paint', n=16, lugs=16))
+            nn = 14 if len(wheels) <= 8 else 11
+            part.add(K.mil_wheel(piv, side, r, w, rim='paint', n=nn, lugs=nn, bolts=0 if len(wheels) > 6 else 4, ctis=False))
     return m
 
 
@@ -452,7 +534,7 @@ def _mk(id):
     return lambda: converted(id)
 
 
-BUILDERS = {'himars': himars, 'patriot': patriot, 'iris_t': iris_t, 'nasams': nasams, 'iskander': iskander, 'kalibr': kalibr, 'shahed': shahed}
+BUILDERS = {'himars': himars, 's300': s300, 'pantsir': pantsir, 'patriot': patriot, 'iris_t': iris_t, 'nasams': nasams, 'iskander': iskander, 'kalibr': kalibr, 'shahed': shahed}
 for _i in CONVERT_IDS:
     BUILDERS[_i] = _mk(_i)
 
