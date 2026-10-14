@@ -109,7 +109,9 @@ public enum VehicleType {
 	LANCET("lancet", GenGeometry.LANCET, LauncherType.LANCET, null, 200, 0.82f, 0.011f, 30, 0, 0.6f, 0, 2.55f, 3.2f),
 	SWITCHBLADE("switchblade", GenGeometry.SWITCHBLADE, LauncherType.SWITCHBLADE, null, 220, 1.0f, 0.018f, 34, 0, 1.5f, 0, 2.5f, 2.5f),
 	BORISOGLEBSK("borisoglebsk", GenGeometry.BORISOGLEBSK, RadarType.BORISOGLEBSK, 260, 0.85f, 0.014f, 0, 2.6f, 1.2f, 2.85f, 2.9f),
-	BUKOVEL("bukovel", GenGeometry.BUKOVEL, RadarType.BUKOVEL, 140, 1.15f, 0.022f, 34, 0, 1.5f, 2.0f, 2.2f);
+	BUKOVEL("bukovel", GenGeometry.BUKOVEL, RadarType.BUKOVEL, 140, 1.15f, 0.022f, 34, 0, 1.5f, 2.0f, 2.2f),
+	// 2.0: a town's car, taken from its parking bay (any of the town's models and paints, see CivilCars).
+	CIVIL_CAR("civil_car", CivilCars.GEOMETRY, 4, 0, 90, 1.75f, 0.024f, 34, 1.8f, 1.5f);
 
 	public static final int HELI = 1;
 	public static final int PLANE = 2;
@@ -133,7 +135,7 @@ public enum VehicleType {
 	public final int air;
 	@Nullable
 	public final Ordnance ordnance;
-	/** Trucks: 1 = fuel (litres), 2 = ammunition (points); and how much they take. */
+	/** Trucks: 1 = fuel (litres), 2 = ammunition (points); and how much they take. 3 = a service vehicle, 4 = a civilian car. */
 	public final int cargo;
 	public final int cargoCapacity;
 	public final float maxHealth;
@@ -373,6 +375,11 @@ public enum VehicleType {
 		return cargo == 1 || cargo == 2;
 	}
 
+	/** 2.0: a town's car (taken from its parking bay). */
+	public boolean isCivil() {
+		return cargo == 4;
+	}
+
 	/** 1.38: a fire engine, an ambulance, a police car. */
 	public boolean isService() {
 		return cargo == 3;
@@ -400,6 +407,9 @@ public enum VehicleType {
 	public int fuelCapacity() {
 		if (air != 0) {
 			return 1500;
+		}
+		if (cargo == 4) {
+			return 55;
 		}
 		if (ship != null) {
 			return 6000;

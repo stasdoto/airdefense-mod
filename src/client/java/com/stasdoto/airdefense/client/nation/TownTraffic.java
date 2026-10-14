@@ -118,6 +118,94 @@ public final class TownTraffic {
 		return PARKED.size();
 	}
 
+	// ------------------------------------------------------------------------------------------------
+	// 2.0: parked cars can be taken (driven away as real cars) and shoved by vehicles
+
+	/** Bays whose car has been taken (no new one drawn there while this world is open). */
+	private static final java.util.Set<Long> TAKEN = new java.util.HashSet<>();
+
+	/** A parked car the player looks at within reach: {bay key, the prop}, or null. */
+	@org.jetbrains.annotations.Nullable
+	public static Map.Entry<Long, PropEntity> parkedInSight(Vec3 eye, Vec3 look, double reach) {
+		Map.Entry<Long, PropEntity> best = null;
+		double bestT = reach;
+		for (Map.Entry<Long, PropEntity> e : PARKED.entrySet()) {
+			PropEntity p = e.getValue();
+			if (p.isRemoved() || p.position().distanceToSqr(eye) > (reach + 4) * (reach + 4)) {
+				continue;
+			}
+			for (double t = 0.5; t < bestT; t += 0.2) {
+				Vec3 q = eye.add(look.scale(t));
+				if (inside(p, q.x, q.y, q.z, 0.1)) {
+					bestT = t;
+					best = e;
+					break;
+				}
+			}
+		}
+		return best;
+	}
+
+	/** Is this point inside the parked car (its footprint turned by its yaw, about 1.6 m high)? */
+	private static boolean inside(PropEntity p, double x, double y, double z, double margin) {
+		double yaw = Math.toRadians(p.pose[3]);
+		double dx = x - p.pose[0];
+		double dz = z - p.pose[2];
+		double along = -dx * Math.sin(yaw) + dz * Math.cos(yaw);
+		double across = -dx * Math.cos(yaw) - dz * Math.sin(yaw);
+		return Math.abs(along) < 2.3 + margin && Math.abs(across) < 0.95 + margin && y > p.pose[1] - margin && y < p.pose[1] + 1.6 + margin;
+	}
+
+	/** The car of this bay was taken (the server put a real one there): it is no longer drawn. */
+	public static void taken(ClientLevel level, long bay) {
+		PropEntity p = PARKED.remove(bay);
+		TAKEN.add(bay);
+		if (p != null) {
+			level.removeEntity(p.getId(), Entity.RemovalReason.DISCARDED);
+			p.discard();
+		}
+	}
+
+	/**
+	 * A vehicle driven by the local player shoves the parked cars it runs into (they are only drawn here): they slide
+	 * and turn away. Returns the share of the vehicle's speed it keeps (momentum shared with a car of ~1.3 t).
+	 */
+	public static double shove(com.stasdoto.airdefense.vehicle.VehicleEntity v, double vx, double vz, double mass) {
+		double sp = Math.hypot(vx, vz);
+		if (sp < 0.02 || PARKED.isEmpty()) {
+			return 1;
+		}
+		double yaw = Math.toRadians(v.getYRot());
+		double fx = -Math.sin(yaw);
+		double fz = Math.cos(yaw);
+		double half = v.getVehicleType().geometry.length() / 2;
+		double keep = 1;
+		for (PropEntity p : PARKED.values()) {
+			if (p.isRemoved() || p.position().distanceToSqr(v.position()) > (half + 4) * (half + 4)) {
+				continue;
+			}
+			// The vehicle's nose (and its corners) in the car?
+			double nx = v.getX() + fx * (half + sp);
+			double nz = v.getZ() + fz * (half + sp);
+			if (!inside(p, nx, v.getY() + 0.5, nz, 0.2) && !inside(p, v.getX(), v.getY() + 0.5, v.getZ(), 0.2)) {
+				continue;
+			}
+			double share = mass / (mass + 1300);
+			double push = sp * share * 1.25;
+			double dx = p.pose[0] - v.getX();
+			double dz = p.pose[2] - v.getZ();
+			double side = Math.signum(dx * -fz + dz * fx);
+			double spinDeg = side * Math.min(25, sp * 40);
+			p.move(p.pose[0] + vx / sp * push, p.pose[1], p.pose[2] + vz / sp * push, p.pose[3] + spinDeg, 0);
+			keep = Math.min(keep, share);
+			shoved++;
+		}
+		return keep;
+	}
+
+	/** For the tests: parked cars shoved. */
+	public static int shoved;
+
 	public static void tick(Minecraft mc) {
 		ClientLevel level = mc.level;
 		if (level != lastLevel) {
@@ -125,6 +213,7 @@ public final class TownTraffic {
 			ALL.clear();
 			DRIVES.clear();
 			PARKED.clear();
+			TAKEN.clear();
 			lastLevel = level;
 		}
 		if (level == null || mc.player == null || mc.isPaused()) {
@@ -273,7 +362,12 @@ public final class TownTraffic {
 						continue;
 					}
 					long key = q.asLong();
-					if (PARKED.containsKey(key)) {
+					if (PARKED.containsKey(key) || TAKEN.contains(key)) {
+						continue;
+					}
+					if (!level.getEntitiesOfClass(com.stasdoto.airdefense.vehicle.VehicleEntity.class,
+							new net.minecraft.world.phys.AABB(x - 2, y - 1, z - 2, x + 4, y + 3, z + 4)).isEmpty()) {
+						// 2.0: a real car (taken by somebody, or put there) stands in the bay.
 						continue;
 					}
 					long h = mix(key * 0x9E3779B97F4A7C15L);

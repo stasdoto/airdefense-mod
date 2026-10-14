@@ -213,7 +213,11 @@ public final class GunClient {
 			}
 		}
 		while (MEDKIT.consumeClick()) {
-			send(GunActionPayload.MEDKIT, Vec3.ZERO, -1);
+			// 2.0: at the wheel of a ground vehicle the same key (H) is the horn.
+			if (!(p.getVehicle() instanceof VehicleEntity ve && ve.isDriver(p) && !ve.getVehicleType().isAir() && !ve.getVehicleType().boat
+					&& MEDKIT.same(com.stasdoto.airdefense.client.vehicle.VehicleClient.HORN))) {
+				send(GunActionPayload.MEDKIT, Vec3.ZERO, -1);
+			}
 		}
 		seeker(mc, p, gun);
 		if (gun == null || p.getVehicle() instanceof VehicleEntity) {

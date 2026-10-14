@@ -1553,5 +1553,18 @@
   "subtitles.airdefense.veh_bus_door": "Шипят двери автобуса",
   "subtitles.airdefense.veh_thump": "Стучит подвеска",
   "subtitles.airdefense.veh_start": "Заводится двигатель",
-  "subtitles.airdefense.veh_stop": "Глохнет двигатель"
+  "subtitles.airdefense.veh_stop": "Глохнет двигатель",
+  "entity.airdefense.civil_car": "Легковой автомобиль",
+  "item.airdefense.civil_car": "Легковой автомобиль",
+  "map.airdefense.short.civil_car": "АВТО",
+  "key.airdefense.horn": "Сигнал",
+  "key.airdefense.lights": "Фары",
+  "key.airdefense.cruise": "Круиз-контроль",
+  "hud.airdefense.vehicle.civil": "Городская машина",
+  "hud.airdefense.vehicle.keys_drive": "[Пробел] ручник  [%s] сигнал  [%s] фары  [%s] круиз  [%s] пересесть",
+  "hud.airdefense.drive.kmh": "км/ч",
+  "hud.airdefense.drive.lights_on": "Фары включены",
+  "hud.airdefense.drive.lights_off": "Фары выключены",
+  "hud.airdefense.drive.cruise_on": "Круиз-контроль включён",
+  "hud.airdefense.drive.cruise_off": "Круиз-контроль выключен"
 }
