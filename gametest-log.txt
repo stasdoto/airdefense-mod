@@ -1,0 +1,400 @@
+[14:05:29] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=1319 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:05:29] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1239 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:29] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1159 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:29] [Render thread/INFO] (airdefense) Mesh cv90: 23 parts, 15215 vertices, 6456 quads (274 KB, 1 ms)
+[14:05:29] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182285.400000, -58.300000, 496.000000
+[14:05:29] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1079 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:29] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=1599 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:29] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=1519 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:05:29] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=279 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:05:30] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1279 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:30] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1199 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:30] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1119 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:30] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1039 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:30] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=1559 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:30] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=1319 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:30] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1239 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:30] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1159 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:30] [Render thread/INFO] (airdefense) Mesh stryker: 11 parts, 11160 vertices, 5177 quads (204 KB, 0 ms)
+[14:05:30] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182355.400000, -59.000000, 496.100000
+[14:05:30] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1079 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:05:31] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=1599 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:31] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=1359 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:05:31] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1279 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:31] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1199 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:31] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1119 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:31] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=1639 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:31] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=1559 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:05:31] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=319 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:05:32] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1319 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:32] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1239 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:32] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1159 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:32] [Render thread/INFO] (airdefense) Mesh tigr: 9 parts, 7807 vertices, 4274 quads (148 KB, 0 ms)
+[14:05:32] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182424.300000, -59.000000, 494.800000
+[14:05:32] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1079 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:32] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=1599 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:32] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=1359 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:32] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1279 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:32] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1199 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:32] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1119 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:05:33] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=1639 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:33] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=1399 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:05:33] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1319 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:33] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1239 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:33] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1159 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:33] [Render thread/INFO] (airdefense) Mesh hmmwv: 9 parts, 8189 vertices, 4489 quads (155 KB, 0 ms)
+[14:05:33] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182493.700000, -59.100000, 494.100000
+[14:05:33] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=1679 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:33] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=1599 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:05:33] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=359 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:05:34] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1359 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:34] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1279 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:34] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1199 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:34] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1119 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:34] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=1639 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:34] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=1399 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:34] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1319 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:34] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1239 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:34] [Render thread/INFO] (airdefense) Mesh brem1: 21 parts, 15117 vertices, 5502 quads (265 KB, 1 ms)
+[14:05:34] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182005.700000, -59.000000, 566.400000
+[14:05:34] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1159 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:05:35] [Server thread/INFO] (airdefense) [airdefense] slow tick 61 ms: vehicles 2 ms (65); the rest (the game) 57 ms
+[14:05:35] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=1679 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:35] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=1439 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:05:35] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1359 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:35] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1279 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:35] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1199 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:35] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=1719 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:35] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=1639 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:05:35] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=399 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:05:36] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1399 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:36] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1319 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:36] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1239 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:36] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1159 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:36] [Render thread/INFO] (airdefense) Mesh m88: 21 parts, 12442 vertices, 4916 quads (222 KB, 0 ms)
+[14:05:36] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182076.900000, -58.900000, 567.700000
+[14:05:36] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=1679 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:36] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=1439 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:36] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1359 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:36] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1279 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:36] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1199 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:05:37] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=1719 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:37] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=1479 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:05:37] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1399 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:37] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1319 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:37] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1239 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:37] [Render thread/INFO] (airdefense) Mesh tos1: 21 parts, 17533 vertices, 7069 quads (313 KB, 1 ms)
+[14:05:37] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182145.100000, -59.000000, 565.700000
+[14:05:37] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=1759 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:37] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=1679 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:05:37] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=439 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:05:38] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1439 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:38] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1359 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:38] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1279 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:38] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1199 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:38] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=1719 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:38] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=1479 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:38] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1399 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:38] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1319 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:38] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1239 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:05:39] [Render thread/INFO] (airdefense) Mesh ah64: 15 parts, 10386 vertices, 6332 quads (202 KB, 1 ms)
+[14:05:39] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=1759 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:39] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=1519 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:05:39] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182221.100000, -58.200000, 572.500000
+[14:05:39] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1439 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:39] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1359 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:39] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1279 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:39] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=1799 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:39] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=1719 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:05:39] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=479 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:05:40] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1479 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:40] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1399 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:40] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1319 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:40] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1239 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:40] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=1759 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:40] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=1519 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:40] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1439 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:40] [Render thread/INFO] (airdefense) Mesh a10: 5 parts, 9461 vertices, 6003 quads (185 KB, 1 ms)
+[14:05:40] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1359 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:40] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1279 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:05:41] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=1799 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:41] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182290.900000, -58.500000, 572.300000
+[14:05:41] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=1559 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:05:41] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1479 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:41] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1399 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:41] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1319 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:41] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=1839 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:41] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=1759 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:05:41] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=519 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:05:42] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1519 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:42] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1439 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:42] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1359 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:42] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1279 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:42] [Render thread/INFO] (airdefense) Mesh buyan_m: 4 parts, 7746 vertices, 4654 quads (150 KB, 0 ms)
+[14:05:42] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=1799 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:42] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=1559 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:42] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1479 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:42] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1399 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:42] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1319 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:05:43] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182397.700000, -51.400000, 614.000000
+[14:05:43] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=1839 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:43] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=1599 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:05:43] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1519 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:43] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1439 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:43] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1359 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:43] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=1879 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:44] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=1799 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:05:44] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=559 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:05:44] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1559 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:44] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1479 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:44] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1399 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:44] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1319 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:44] [Render thread/INFO] (airdefense) Mesh visby: 4 parts, 3546 vertices, 2357 quads (70 KB, 0 ms)
+[14:05:44] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=1839 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:44] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=1599 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:44] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1519 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:44] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1439 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:45] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1359 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:05:45] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182466.400000, -54.800000, 612.600000
+[14:05:45] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=1879 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:45] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=1639 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:05:45] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1559 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:45] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1479 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:45] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1399 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:45] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=1919 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:46] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=1839 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:05:46] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=599 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:05:46] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1599 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:46] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1519 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:46] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1439 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:46] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1359 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:46] [Render thread/INFO] (airdefense) Mesh bastion: 14 parts, 10506 vertices, 5455 quads (197 KB, 1 ms)
+[14:05:46] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182499.200000, -58.700000, 570.400000
+[14:05:46] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=1879 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:46] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=1639 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:46] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1559 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:46] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1479 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:47] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1399 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:05:47] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=1919 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:47] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=1679 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:05:47] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1599 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:47] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1519 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:47] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1439 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:47] [Render thread/INFO] (airdefense) Mesh nmesis: 10 parts, 7094 vertices, 3608 quads (132 KB, 0 ms)
+[14:05:47] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182004.700000, -59.200000, 635.200000
+[14:05:48] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=1959 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:48] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=1879 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:05:48] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=639 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:05:48] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1639 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:48] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1559 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:48] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1479 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:48] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1399 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:48] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=1919 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:48] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=1679 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:48] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1599 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:48] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1519 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:49] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1439 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:05:49] [Render thread/INFO] (airdefense) Mesh orlan: 12 parts, 9175 vertices, 4729 quads (172 KB, 0 ms)
+[14:05:49] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182075.300000, -58.800000, 635.900000
+[14:05:49] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 2016ms or 40 ticks behind
+[14:05:49] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=1959 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:49] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=1719 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:05:49] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1639 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:49] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1559 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:49] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1479 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:50] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=1999 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:50] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=1919 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:05:50] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=679 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:05:50] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1679 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:50] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1599 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:50] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1519 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:50] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1439 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:50] [Render thread/INFO] (airdefense) Mesh tb2_gcs: 13 parts, 9594 vertices, 4604 quads (177 KB, 0 ms)
+[14:05:50] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182149.300000, -58.200000, 640.500000
+[14:05:50] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=1959 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:51] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=1719 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:51] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1639 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:51] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1559 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:51] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1479 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:05:51] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=1999 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:51] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=1759 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:05:51] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1679 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:51] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1599 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:51] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1519 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:52] [Render thread/INFO] (airdefense) Mesh lancet: 14 parts, 9327 vertices, 4884 quads (175 KB, 0 ms)
+[14:05:52] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182215.300000, -59.000000, 635.900000
+[14:05:52] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=2039 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:52] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=1959 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:05:52] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=719 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:05:52] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1719 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:52] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1639 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:52] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1559 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:52] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1479 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:52] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=1999 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:53] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=1759 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:53] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1679 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:53] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1599 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:53] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1519 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:05:53] [Render thread/INFO] (airdefense) Mesh switchblade: 14 parts, 7938 vertices, 4132 quads (149 KB, 0 ms)
+[14:05:53] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182284.500000, -59.200000, 635.100000
+[14:05:53] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=2039 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:53] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=1799 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:05:53] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1719 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:53] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1639 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:53] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1559 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:54] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=2079 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:54] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=1999 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:05:54] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=759 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:05:54] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1759 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:54] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1679 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:54] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1599 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:54] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1519 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:54] [Render thread/INFO] (airdefense) Mesh borisoglebsk: 20 parts, 10134 vertices, 4409 quads (184 KB, 0 ms)
+[14:05:54] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182354.900000, -58.600000, 635.500000
+[14:05:55] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=2039 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:55] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=1799 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:55] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1719 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:55] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1639 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:55] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1559 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:05:55] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=2079 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:55] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=1839 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:05:55] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1759 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:55] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1679 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:55] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1599 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:56] [Render thread/INFO] (airdefense) Mesh bukovel: 8 parts, 6988 vertices, 3678 quads (131 KB, 0 ms)
+[14:05:56] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182423.800000, -59.200000, 634.200000
+[14:05:56] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=2119 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:56] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=2039 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:05:56] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=799 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:05:56] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1799 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:56] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1719 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:56] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1639 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:56] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1559 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:57] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=2079 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:57] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=1839 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:57] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1759 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:57] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1679 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:57] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1599 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:05:57] [Render thread/INFO] (airdefense) Mesh car_saloon: 6 parts, 9145 vertices, 4468 quads (169 KB, 2 ms)
+[14:05:57] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182493.500000, -59.500000, 633.900000
+[14:05:57] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=2119 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:57] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=1879 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:05:57] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1799 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:57] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1719 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:57] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1639 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:58] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=2159 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:58] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=2079 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:05:58] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=839 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:05:58] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1839 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:58] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1759 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:58] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1679 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:58] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1599 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:58] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182009.500000, -59.000000, -50.300000
+[14:05:59] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=2119 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:59] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=1879 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:59] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1799 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:05:59] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1719 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:59] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1639 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:05:59] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=2159 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:05:59] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=1919 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:05:59] [Render thread/INFO] (airdefense) Mesh town_bus: 6 parts, 12281 vertices, 6114 quads (228 KB, 2 ms)
+[14:05:59] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1839 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:05:59] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1759 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:05:59] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1679 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:00] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182039.500000, -59.000000, -50.300000
+[14:06:00] [Render thread/INFO] (airdefense) Mesh trolleybus: 8 parts, 13204 vertices, 6590 quads (245 KB, 1 ms)
+[14:06:00] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=2199 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:00] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=2119 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:06:00] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=879 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:06:00] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1879 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:06:00] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1799 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:06:00] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1719 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:00] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1639 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:06:01] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=2159 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:06:01] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=1919 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:01] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1839 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:06:01] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1759 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:01] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1679 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:06:01] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182069.500000, -59.000000, -50.300000
+[14:06:01] [Render thread/INFO] (airdefense) Mesh tram: 11 parts, 15600 vertices, 8246 quads (293 KB, 2 ms)
+[14:06:01] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=2199 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:01] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=1959 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:06:01] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1879 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:06:01] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1799 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:06:02] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1719 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:02] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=2239 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:02] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=2159 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:06:02] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=919 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:06:02] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1919 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:06:02] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1839 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:06:02] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1759 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:02] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1679 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:06:02] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182094.600000, -59.000000, -55.800000
+[14:06:03] [Render thread/INFO] (airdefense) Mesh car_hatch: 6 parts, 9524 vertices, 4568 quads (175 KB, 2 ms)
+[14:06:03] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=2199 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:06:03] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=1959 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:03] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1879 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:06:03] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1799 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:03] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1719 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:06:03] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=2239 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:03] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=1999 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:06:03] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1919 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:06:03] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1839 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:06:04] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1759 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:04] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182124.600000, -59.000000, -55.800000
+[14:06:04] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=2279 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:04] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=2199 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:06:04] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=959 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:06:04] [Render thread/INFO] (airdefense) Mesh car_boxy: 6 parts, 9533 vertices, 4822 quads (177 KB, 1 ms)
+[14:06:04] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1959 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:06:04] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1879 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:06:04] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1799 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:04] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1719 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:06:05] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=2239 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:06:05] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=1999 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:05] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1919 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:06:05] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1839 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:05] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1759 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:06:05] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182154.600000, -59.000000, -55.800000
+[14:06:05] [Render thread/INFO] (airdefense) Mesh car_suv: 6 parts, 10170 vertices, 4952 quads (188 KB, 0 ms)
+[14:06:05] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=2279 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:05] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=2039 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:06:05] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1959 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:06:05] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1879 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:06:06] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1799 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:06] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=2319 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:06] [Server thread/INFO] (airdefense) [airdefense-test] AD GEPARD active=true moving=false still=2239 march=0 mode=1 ammo=30 fireTimer=0 tracked=- threats in range 0
+[14:06:06] [Server thread/INFO] (airdefense) [airdefense-test] AD IRON_DOME active=true moving=false still=999 march=0 mode=1 ammo=20 fireTimer=0 tracked=- threats in range 0
+[14:06:06] [Server thread/INFO] (airdefense) [airdefense-test] AD BUK active=true moving=false still=1999 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:06:06] [Server thread/INFO] (airdefense) [airdefense-test] AD STRELA10 active=true moving=false still=1919 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:06:06] [Server thread/INFO] (airdefense) [airdefense-test] AD SAMPT active=true moving=false still=1839 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:06] [Server thread/INFO] (airdefense) [airdefense-test] AD ZU23 active=true moving=false still=1759 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:06:07] [Server thread/INFO] (Minecraft) System chat: Teleported Player0 to 182184.600000, -59.000000, -55.800000
+[14:06:07] [Server thread/INFO] (airdefense) [airdefense-test] AD NASAMS active=true moving=false still=2279 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:06:07] [Server thread/INFO] (airdefense) [airdefense-test] AD TOR active=true moving=false still=2039 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:07] [Render thread/INFO] (airdefense) Mesh car_taxi: 6 parts, 9313 vertices, 4560 quads (172 KB, 0 ms)
+[14:06:07] [Server thread/INFO] (airdefense) [airdefense-test] AD OSA active=true moving=false still=1959 march=0 mode=1 ammo=6 fireTimer=0 tracked=- threats in range 0
+[14:06:07] [Server thread/INFO] (airdefense) [airdefense-test] AD TUNGUSKA active=true moving=false still=1879 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:07] [Server thread/INFO] (airdefense) [airdefense-test] AD MFG active=true moving=false still=1799 march=0 mode=1 ammo=40 fireTimer=0 tracked=- threats in range 0
+[14:06:07] [Server thread/INFO] (airdefense) [airdefense-test] AD IRIS_T active=true moving=false still=2319 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:07] [Server thread/INFO] (airdefense) [airdefense-test] AD PANTSIR active=true moving=false still=2079 march=0 mode=1 ammo=12 fireTimer=0 tracked=- threats in range 0
+[14:06:07] [Server thread/INFO] (airdefense) [airdefense-test] AD S300 active=true moving=false still=1999 march=0 mode=1 ammo=4 fireTimer=0 tracked=- threats in range 0
+[14:06:07] [Server thread/INFO] (airdefense) [airdefense-test] AD SHILKA active=true moving=false still=1919 march=0 mode=1 ammo=25 fireTimer=0 tracked=- threats in range 0
+[14:06:08] [Server thread/INFO] (airdefense) [airdefense-test] AD AVENGER active=true moving=false still=1839 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:08] [Test thread/INFO] (airdefense) [airdefense-test] RESULT gallery: shown 80 vehicles with meshes, 0 without: 
+[14:06:08] [Test thread/INFO] (airdefense) [airdefense-test] SUMMARY strikes=0 interceptors=0 shotDown=0 impacts=0 interceptorBursts=0 interceptorCrashes=0 seekerFailures=0 decoys=0 decoysDown=0
+[14:06:08] [Server thread/INFO] (airdefense) [airdefense-test] AD PATRIOT active=true moving=false still=2359 march=0 mode=1 ammo=8 fireTimer=0 tracked=- threats in range 0
+[14:06:08] [Server thread/INFO] (Minecraft) Player0 lost connection: Disconnected
+[14:06:08] [Server thread/INFO] (Minecraft) System chat: Player0 left the game
+[14:06:08] [Server thread/INFO] (Minecraft) Stopping singleplayer server as player logged out
+[14:06:08] [Server thread/INFO] (Minecraft) Stopping server
+[14:06:08] [Server thread/INFO] (Minecraft) Saving players
+[14:06:08] [Server thread/INFO] (Minecraft) Saving worlds
+[14:06:09] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[New World]'/minecraft:overworld
+[14:06:10] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[New World]'/minecraft:the_nether
+[14:06:10] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[New World]'/minecraft:the_end
+[14:06:10] [Render thread/INFO] (Minecraft) Stopping!
+
+BUILD SUCCESSFUL in 2m 55s
+12 actionable tasks: 6 executed, 6 up-to-date
+Configuration cache entry stored.
