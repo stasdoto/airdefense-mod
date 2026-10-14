@@ -92,8 +92,8 @@ public final class VehicleClient {
 		}
 		horns(mc);
 		while (SETTINGS.consumeClick()) {
-			if (mc.screen == null) {
-				mc.setScreen(new com.stasdoto.airdefense.client.ui.SettingsScreen(null));
+			if (mc.gui.screen() == null) {
+				mc.gui.setScreen(new com.stasdoto.airdefense.client.ui.SettingsScreen(null));
 			}
 		}
 		if (player != null && !(player.getVehicle() instanceof VehicleEntity)) {
