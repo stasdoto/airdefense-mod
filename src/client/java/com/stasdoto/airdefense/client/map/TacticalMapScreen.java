@@ -21,16 +21,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-import com.stasdoto.airdefense.client.nation.CommandClient;
-import com.stasdoto.airdefense.client.nation.NationClient;
-import com.stasdoto.airdefense.nation.CommandActionPayload;
-import com.stasdoto.airdefense.nation.CommandKit;
-import com.stasdoto.airdefense.nation.CommandStatePayload;
 import com.stasdoto.airdefense.item.DesignatorItem;
-import com.stasdoto.airdefense.nation.NationActionPayload;
-import com.stasdoto.airdefense.nation.NationMapPayload;
-import com.stasdoto.airdefense.nation.Settlement;
-import com.stasdoto.airdefense.nation.SoldierEntity;
 import com.stasdoto.airdefense.map.Grid;
 import com.stasdoto.airdefense.map.MapActionPayload;
 import com.stasdoto.airdefense.map.MapStatusPayload;
@@ -87,16 +78,10 @@ public class TacticalMapScreen extends Screen {
 	private UiButton modeButton;
 	private UiButton clearButton;
 	private UiButton meButton;
-	/** Panel tab: 0 = vehicles, 1 = villages and the army. */
+	/** Panel tab: 0 = vehicles, 1 = the strike planner. */
 	private int tab;
-	private int selectedVillage = -1;
-	private UiButton tabVehicles;
-	private UiButton tabArmy;
-	private UiButton callButton;
-	private UiButton sendButton;
-	private UiButton homeButton;
-	private UiButton dismissButton;
-	private UiButton manageButton;
+	/** Lite: which side the tablet commands (header button). */
+	private UiButton sideButton;
 	private UiButton planButton;
 	private UiButton massButton;
 	/** 1.30: how many rounds the selected gun fires (0 = its usual fire mission). */
@@ -104,34 +89,9 @@ public class TacticalMapScreen extends Screen {
 	private int rounds;
 	private static final int[] GUN_ROUNDS = {0, 1, 3, 12, 30};
 	private static final int[] ROCKET_ROUNDS = {0, 10, 20};
-	/** A building picked on the map (army tab): to pull down or rebuild. */
-	private int pickedVillage = -1;
-	private int pickedIndex = -1;
-	private int pickedType;
-	private int rebuildChoice;
-	private UiButton prevTypeButton;
-	private UiButton typeButton;
-	private UiButton nextTypeButton;
-	private UiButton rebuildButton;
-	private UiButton demolishButton;
-	private UiButton dropButton;
-	/** 2.0: "Command this country" (army tab), and the command panel (tab 2): six buttons down the panel, two choosers. */
-	private UiButton commandButton;
+	/** The planner's buttons down the panel, and its chooser (the salvo). */
 	private final UiButton[] cmd = new UiButton[6];
-	private final UiButton[] row = new UiButton[6];
-	/** Command panel: 0 = the country's orders, 1 = putting up a vehicle, 2 = a strike. */
-	private int cmdMode;
-	private int placeKind;
-	private int placeChoice;
-	/** The strike's launcher type (-1 = any) and how many rounds. */
-	private int weapon = -1;
-	private int roundsIndex = 2;
-	private static final int[] CMD_ROUNDS = {1, 2, 4, 8, 16, 32};
-	/** The other country (for war and peace): picked by clicking one of its towns. */
-	private int cmdOther = -1;
-	/** Ticks spent in command mode without the server confirming it. */
-	private int cmdWait;
-
+	private final UiButton[] row = new UiButton[3];
 	public TacticalMapScreen() {
 		super(Component.translatable("screen.airdefense.map.title"));
 	}
@@ -146,20 +106,6 @@ public class TacticalMapScreen extends Screen {
 		int pw = PANEL_W - 8;
 		listTop = my0 + 16;
 		listBottom = my1 - 70;
-		tabVehicles = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.tab_vehicles"), b -> setTab(0))
-				.bounds(px0 + 4, my0 + 1, pw / 2 - 1, 13).style(UiButton.Style.TAB).build());
-		tabArmy = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.tab_army"), b -> setTab(1))
-				.bounds(px0 + 4 + pw / 2 + 1, my0 + 1, pw - pw / 2 - 1, 13).style(UiButton.Style.TAB).build());
-		manageButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.manage"), b -> army(NationActionPayload.OPEN))
-				.bounds(px0 + 4, my1 - 64, pw, 20).build());
-		callButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.call"), b -> army(NationActionPayload.MOBILIZE))
-				.bounds(px0 + 4, my1 - 42, pw / 2 - 1, 20).build());
-		dismissButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.dismiss"), b -> army(NationActionPayload.DEMOBILIZE))
-				.bounds(px0 + 4 + pw / 2 + 1, my1 - 42, pw - pw / 2 - 1, 20).build());
-		sendButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.send"), b -> army(NationActionPayload.ORDER))
-				.bounds(px0 + 4, my1 - 20, pw / 2 - 1, 20).build());
-		homeButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.home"), b -> army(NationActionPayload.RECALL))
-				.bounds(px0 + 4 + pw / 2 + 1, my1 - 20, pw - pw / 2 - 1, 20).build());
 		fireButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.fire"), b -> fire())
 				.bounds(px0 + 4, my1 - 20, pw, 20).style(UiButton.Style.DANGER).build());
 		modeButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.mode_auto"), b -> toggleMode())
@@ -167,55 +113,38 @@ public class TacticalMapScreen extends Screen {
 		clearButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.clear"), b -> clearTarget())
 				.bounds(px0 + 4, my1 - 42, pw / 2 - 1, 20).build());
 		UiButton radarButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.to_radar"),
-				b -> minecraft.gui.setScreen(new RadarScreen())).bounds(mx0 + (int) (font.width(title) * 1.25f) + 8, 2, 70, 13).build());
+				b -> minecraft.gui.setScreen(new RadarScreen())).bounds(mx0, 2, 70, 13).build());
 		massButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.mass_strike"), b -> massStrike())
-				.bounds(mx0 + (int) (font.width(title) * 1.25f) + 82, 2, 110, 13).build());
+				.bounds(mx0, 2, 110, 13).build());
 		UiButton sirenButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.sirens"),
 						b -> minecraft.gui.setScreen(new com.stasdoto.airdefense.client.siren.SirenScreen()))
-				.bounds(mx0 + (int) (font.width(title) * 1.25f) + 196, 2, 80, 13).build());
+				.bounds(mx0, 2, 80, 13).build());
 		planButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.plan"), b -> openPlan())
 				.bounds(px0 + 4 + pw / 2 + 1, my1 - 20, pw - pw / 2 - 1, 20).build());
 		meButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.me"), b -> follow = true)
 				.bounds(px0 + 4 + pw / 2 + 1, my1 - 42, pw - pw / 2 - 1, 20).build());
 		roundsButton = addRenderableWidget(UiButton.create(Component.empty(), b -> cycleRounds())
 				.bounds(px0 + 4 + pw / 2 + 1, my1 - 20, pw - pw / 2 - 1, 20).build());
-		prevTypeButton = addRenderableWidget(UiButton.create(Component.literal("<"), b -> cycleRebuild(-1)).bounds(px0 + 4, my1 - 64, 18, 20).build());
-		typeButton = addRenderableWidget(UiButton.create(Component.empty(), b -> cycleRebuild(1)).bounds(px0 + 24, my1 - 64, pw - 40, 20).build());
-		nextTypeButton = addRenderableWidget(UiButton.create(Component.literal(">"), b -> cycleRebuild(1)).bounds(px0 + pw - 14, my1 - 64, 18, 20).build());
-		rebuildButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.rebuild"), b -> buildingAction(NationActionPayload.REBUILD))
-				.bounds(px0 + 4, my1 - 42, pw, 20).build());
-		demolishButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.demolish"), b -> buildingAction(NationActionPayload.DEMOLISH))
-				.bounds(px0 + 4, my1 - 20, pw / 2 - 1, 20).build());
-		dropButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.drop"), b -> dropBuilding())
-				.bounds(px0 + 4 + pw / 2 + 1, my1 - 20, pw - pw / 2 - 1, 20).build());
 		pauseButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.plan.pause"), b -> setPaused(!paused))
-				.bounds(mx0 + (int) (font.width(title) * 1.25f) + 280, 2, 62, 13).build());
-		plannerButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.plan.open_short"), b -> openPlanner())
-				.bounds(mx0 + (int) (font.width(title) * 1.25f) + 346, 2, 70, 13).build());
-		layoutHeader(new UiButton[]{radarButton, massButton, sirenButton, pauseButton, plannerButton},
-				new String[][]{{"screen.airdefense.map.to_radar"}, {"screen.airdefense.map.mass_strike"}, {"screen.airdefense.map.sirens"},
+				.bounds(mx0, 2, 62, 13).build());
+		plannerButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.plan.open_short"),
+				b -> setTab(tab == 1 ? 0 : 1)).bounds(mx0, 2, 70, 13).build());
+		sideButton = addRenderableWidget(UiButton.create(Component.translatable(sideKey()), b -> toggleSide()).bounds(mx0, 2, 90, 13).build());
+		layoutHeader(new UiButton[]{sideButton, radarButton, massButton, sirenButton, pauseButton, plannerButton},
+				new String[][]{{"screen.airdefense.map.side.ours", "screen.airdefense.map.side.enemy"}, {"screen.airdefense.map.to_radar"},
+						{"screen.airdefense.map.mass_strike"}, {"screen.airdefense.map.sirens"},
 						{"screen.airdefense.map.plan.pause", "screen.airdefense.map.plan.pause_on", "screen.airdefense.map.plan.pause_mp"},
-						{"screen.airdefense.map.plan.open_short"}});
-		commandButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.cmd.command"), b -> takeCommand())
-				.bounds(px0 + 4, my1 - 64, pw, 20).style(UiButton.Style.PRIMARY).build());
+						{"screen.airdefense.map.plan.open_short", "screen.airdefense.map.plan.back"}});
 		for (int i = 0; i < cmd.length; i++) {
 			final int k = i;
-			cmd[i] = addRenderableWidget(UiButton.create(Component.empty(), b -> commandPressed(k)).bounds(px0 + 4, my1 - 130 + 22 * i, pw, 20).build());
+			cmd[i] = addRenderableWidget(UiButton.create(Component.empty(), b -> plannerPressed(k)).bounds(px0 + 4, my1 - 130 + 22 * i, pw, 20).build());
 		}
-		for (int r = 0; r < 2; r++) {
-			final int k = r;
-			int y = my1 - 130 + 22 * r;
-			row[r * 3] = addRenderableWidget(UiButton.create(Component.literal("<"), b -> cycle(k, -1)).bounds(px0 + 4, y, 18, 20).build());
-			row[r * 3 + 1] = addRenderableWidget(UiButton.create(Component.empty(), b -> cycle(k, 1)).bounds(px0 + 24, y, pw - 40, 20).build());
-			row[r * 3 + 2] = addRenderableWidget(UiButton.create(Component.literal(">"), b -> cycle(k, 1)).bounds(px0 + pw - 14, y, 18, 20).build());
-		}
+		int y = my1 - 130;
+		row[0] = addRenderableWidget(UiButton.create(Component.literal("<"), b -> cycle(0, -1)).bounds(px0 + 4, y, 18, 20).build());
+		row[1] = addRenderableWidget(UiButton.create(Component.empty(), b -> cycle(0, 1)).bounds(px0 + 24, y, pw - 40, 20).build());
+		row[2] = addRenderableWidget(UiButton.create(Component.literal(">"), b -> cycle(0, 1)).bounds(px0 + pw - 14, y, 18, 20).build());
 		if (!initialised) {
 			initialised = true;
-			com.stasdoto.airdefense.client.nation.CommandClient.send(com.stasdoto.airdefense.nation.CommandActionPayload.STATE, -1, 0, 0, 0, 0);
-			if (com.stasdoto.airdefense.client.nation.CommandClient.commanded() >= 0) {
-				// Still commanding a country from the last time the map was open.
-				tab = 2;
-			}
 			Player p = minecraft.player;
 			if (p != null) {
 				centerX = p.getX();
@@ -228,7 +157,6 @@ public class TacticalMapScreen extends Screen {
 		updateButtons();
 	}
 
-
 	@Override
 	public void tick() {
 		Player p = minecraft.player;
@@ -238,13 +166,6 @@ public class TacticalMapScreen extends Screen {
 		}
 		if (++refresh % 10 == 0) {
 			MapClient.send(MapActionPayload.refresh());
-		}
-		if (tab == 2 && refresh % 20 == 0 || refresh % 100 == 0) {
-			com.stasdoto.airdefense.client.nation.CommandClient.send(com.stasdoto.airdefense.nation.CommandActionPayload.STATE, -1, 0, 0, 0, 0);
-		}
-		if (tab == 2 && com.stasdoto.airdefense.client.nation.CommandClient.commanded() < 0 && !paused() && ++cmdWait > 60) {
-			// The server did not take it (not allowed, or the country is gone).
-			setTab(1);
 		}
 		if (follow) {
 			centerX = p.getX();
@@ -262,6 +183,91 @@ public class TacticalMapScreen extends Screen {
 		}
 		updateButtons();
 	}
+
+	// ------------------------------------------------------------------------------------------------
+	// Lite: the two sides
+
+	private static String sideKey() {
+		return MapClient.side() == com.stasdoto.airdefense.map.Sides.ENEMY ? "screen.airdefense.map.side.enemy" : "screen.airdefense.map.side.ours";
+	}
+
+	/** Play the other side: the list, the orders and what is put down next are that side's. */
+	public void toggleSide() {
+		MapClient.playSide(MapClient.side() == com.stasdoto.airdefense.map.Sides.ENEMY ? com.stasdoto.airdefense.map.Sides.OURS
+				: com.stasdoto.airdefense.map.Sides.ENEMY);
+		selected = -1;
+		plan.clear();
+		picked.clear();
+		updateButtons();
+	}
+
+	private void updateButtons() {
+		if (fireButton == null) {
+			return;
+		}
+		sideButton.setMessage(Component.translatable(sideKey()));
+		sideButton.setStyle(MapClient.side() == com.stasdoto.airdefense.map.Sides.ENEMY ? UiButton.Style.DANGER : UiButton.Style.PRIMARY);
+		pauseButton.active = canPause();
+		pauseButton.setMessage(Component.translatable(!canPause() ? "screen.airdefense.map.plan.pause_mp" : paused
+				? "screen.airdefense.map.plan.pause_on" : "screen.airdefense.map.plan.pause"));
+		plannerButton.setMessage(Component.translatable(tab == 1 ? "screen.airdefense.map.plan.back" : "screen.airdefense.map.plan.open_short"));
+		massButton.active = target != null;
+		boolean planner = tab == 1;
+		for (UiButton b : cmd) {
+			b.visible = planner;
+		}
+		for (UiButton b : row) {
+			b.visible = planner;
+		}
+		if (planner) {
+			for (UiButton b : new UiButton[]{fireButton, modeButton, clearButton, meButton, planButton, roundsButton}) {
+				b.visible = false;
+			}
+			updatePlannerButtons();
+			return;
+		}
+		clearButton.visible = true;
+		meButton.visible = true;
+		MapStatusPayload.Entry sel = selectedEntry();
+		boolean arty = sel != null && typeOf(sel).isArtillery();
+		boolean defense = sel != null && typeOf(sel).hasMode() && !arty;
+		fireButton.visible = !defense;
+		fireButton.active = sel != null && typeOf(sel).isLauncher() && cannotFire(sel) == null;
+		boolean planable = sel != null && typeOf(sel).launcher != null && (typeOf(sel).launcher.missile.kind == MissileType.Kind.DRONE
+				|| typeOf(sel).launcher.missile.kind == MissileType.Kind.CRUISE);
+		int pw = PANEL_W - 8;
+		fireButton.setWidth(planable || arty ? pw / 2 - 1 : pw);
+		planButton.visible = planable;
+		roundsButton.visible = arty;
+		// Artillery: the counter-battery switch takes the "me" button's place.
+		meButton.visible = !arty;
+		modeButton.visible = defense || arty;
+		modeButton.setX(arty ? px0 + 4 + pw / 2 + 1 : px0 + 4);
+		modeButton.setY(arty ? my1 - 42 : my1 - 20);
+		modeButton.setWidth(arty ? pw - pw / 2 - 1 : pw);
+		if (arty) {
+			modeButton.setMessage(Component.translatable(sel.mode() == VehicleEntity.MODE_AUTO ? "screen.airdefense.map.cb_on" : "screen.airdefense.map.cb_off"));
+			roundsButton.setMessage(Component.translatable("screen.airdefense.map.rounds", rounds > 0 ? rounds : typeOf(sel).launcher.salvo));
+		} else if (defense && typeOf(sel).isRadar()) {
+			modeButton.setMessage(Component.translatable(sel.mode() == VehicleEntity.MODE_OFF ? "screen.airdefense.map.radar_off" : "screen.airdefense.map.radar_on"));
+		} else if (defense) {
+			modeButton.setMessage(Component.translatable(switch (sel.mode()) {
+				case VehicleEntity.MODE_AUTO -> "screen.airdefense.map.mode_auto";
+				case VehicleEntity.MODE_MANUAL -> "screen.airdefense.map.mode_manual";
+				default -> "screen.airdefense.map.mode_off";
+			}));
+		}
+		clearButton.active = target != null;
+		meButton.active = !follow;
+	}
+
+	/** 0 = the vehicles, 1 = the strike planner. */
+	public void setTab(int tab) {
+		this.tab = tab;
+		listScroll = 0;
+		updateButtons();
+	}
+
 
 	@Override
 	public void onClose() {
@@ -412,113 +418,6 @@ public class TacticalMapScreen extends Screen {
 		return s;
 	}
 
-	private void updateButtons() {
-		if (fireButton == null) {
-			return;
-		}
-		pauseButton.active = canPause();
-		pauseButton.setMessage(Component.translatable(!canPause() ? "screen.airdefense.map.plan.pause_mp" : paused
-				? "screen.airdefense.map.plan.pause_on" : "screen.airdefense.map.plan.pause"));
-		plannerButton.active = CommandClient.allowed();
-		boolean command = tab == 2;
-		tabVehicles.visible = !command;
-		tabArmy.visible = !command;
-		if (command) {
-			for (UiButton b : new UiButton[]{callButton, dismissButton, manageButton, sendButton, homeButton, fireButton, modeButton, clearButton,
-					meButton, planButton, roundsButton, prevTypeButton, typeButton, nextTypeButton, rebuildButton, demolishButton, dropButton, commandButton}) {
-				b.visible = false;
-			}
-			massButton.active = target != null;
-			updateCommandButtons();
-			return;
-		}
-		for (UiButton b : cmd) {
-			b.visible = false;
-		}
-		for (UiButton b : row) {
-			b.visible = false;
-		}
-		boolean army = tab == 1;
-		tabVehicles.active = army;
-		tabArmy.active = !army;
-		NationMapPayload.Village v = selectedVillage();
-		boolean mine = v != null && v.mine();
-		boolean editing = army && pickedVillage >= 0;
-		prevTypeButton.visible = editing;
-		typeButton.visible = editing;
-		nextTypeButton.visible = editing;
-		rebuildButton.visible = editing;
-		demolishButton.visible = editing;
-		dropButton.visible = editing;
-		if (editing) {
-			typeButton.setMessage(Component.translatable(REBUILD_TYPES[rebuildChoice].key()));
-			rebuildButton.active = mine && REBUILD_TYPES[rebuildChoice].ordinal() != pickedType;
-			demolishButton.active = mine;
-		}
-		army = army && !editing;
-		callButton.visible = army;
-		dismissButton.visible = army;
-		manageButton.visible = army;
-		manageButton.active = mine;
-		// 2.0: take command of the selected village's country (any country, not only one's own).
-		int pw0 = PANEL_W - 8;
-		commandButton.visible = army && v != null && !v.country().isEmpty() && com.stasdoto.airdefense.client.nation.CommandClient.allowed();
-		manageButton.setWidth(commandButton.visible && mine ? pw0 / 2 - 1 : pw0);
-		if (commandButton.visible) {
-			manageButton.visible = mine;
-			commandButton.setX(mine ? px0 + 4 + pw0 / 2 + 1 : px0 + 4);
-			commandButton.setWidth(mine ? pw0 - pw0 / 2 - 1 : pw0);
-			commandButton.setMessage(Component.translatable(mine ? "screen.airdefense.map.cmd.command_short" : "screen.airdefense.map.cmd.command"));
-		}
-		sendButton.visible = army;
-		homeButton.visible = army;
-		callButton.active = mine;
-		dismissButton.active = mine && v.soldiers() > 0;
-		sendButton.active = mine && v.soldiers() > 0 && target != null;
-		homeButton.active = mine && v.soldiers() > 0;
-		clearButton.visible = !army;
-		meButton.visible = !army;
-		massButton.active = target != null;
-		if (army || editing) {
-			fireButton.visible = false;
-			modeButton.visible = false;
-			planButton.visible = false;
-			roundsButton.visible = false;
-			return;
-		}
-		MapStatusPayload.Entry sel = selectedEntry();
-		boolean arty = sel != null && typeOf(sel).isArtillery();
-		boolean defense = sel != null && typeOf(sel).hasMode() && !arty;
-		fireButton.visible = !defense;
-		fireButton.active = sel != null && typeOf(sel).isLauncher() && cannotFire(sel) == null;
-		boolean planable = sel != null && typeOf(sel).launcher != null && (typeOf(sel).launcher.missile.kind == MissileType.Kind.DRONE
-				|| typeOf(sel).launcher.missile.kind == MissileType.Kind.CRUISE);
-		int pw = PANEL_W - 8;
-		fireButton.setWidth(planable || arty ? pw / 2 - 1 : pw);
-		planButton.visible = planable;
-		roundsButton.visible = arty;
-		// Artillery: the counter-battery switch takes the "me" button's place.
-		meButton.visible = !arty;
-		modeButton.visible = defense || arty;
-		modeButton.setX(arty ? px0 + 4 + pw / 2 + 1 : px0 + 4);
-		modeButton.setY(arty ? my1 - 42 : my1 - 20);
-		modeButton.setWidth(arty ? pw - pw / 2 - 1 : pw);
-		if (arty) {
-			modeButton.setMessage(Component.translatable(sel.mode() == VehicleEntity.MODE_AUTO ? "screen.airdefense.map.cb_on" : "screen.airdefense.map.cb_off"));
-			roundsButton.setMessage(Component.translatable("screen.airdefense.map.rounds", rounds > 0 ? rounds : typeOf(sel).launcher.salvo));
-		} else if (defense && typeOf(sel).isRadar()) {
-			modeButton.setMessage(Component.translatable(sel.mode() == VehicleEntity.MODE_OFF ? "screen.airdefense.map.radar_off" : "screen.airdefense.map.radar_on"));
-		} else if (defense) {
-			modeButton.setMessage(Component.translatable(switch (sel.mode()) {
-				case VehicleEntity.MODE_AUTO -> "screen.airdefense.map.mode_auto";
-				case VehicleEntity.MODE_MANUAL -> "screen.airdefense.map.mode_manual";
-				default -> "screen.airdefense.map.mode_off";
-			}));
-		}
-		clearButton.active = target != null;
-		meButton.active = !follow;
-	}
-
 	/** The next choice of how many rounds the selected gun fires. */
 	private void cycleRounds() {
 		MapStatusPayload.Entry sel = selectedEntry();
@@ -596,70 +495,11 @@ public class TacticalMapScreen extends Screen {
 	}
 
 	// ------------------------------------------------------------------------------------------------
-	// Villages and the army
+	// For the tests
 
 	/** For the automated test: a click on the map at this world point (sets the target point). */
 	public void pickPoint(int x, int z) {
 		setTarget(x, z);
-	}
-
-	public void setTab(int tab) {
-		this.tab = tab;
-		listScroll = 0;
-		cmdMode = 0;
-		cmdWait = 0;
-		updateButtons();
-	}
-
-	private static List<NationMapPayload.Village> villages() {
-		List<NationMapPayload.Village> list = new ArrayList<>(NationClient.villages());
-		// Your own villages first.
-		list.sort((a, b) -> Boolean.compare(b.mine(), a.mine()));
-		return list;
-	}
-
-	@Nullable
-	private NationMapPayload.Village selectedVillage() {
-		for (NationMapPayload.Village v : NationClient.villages()) {
-			if (v.id() == selectedVillage) {
-				return v;
-			}
-		}
-		return null;
-	}
-
-	public void selectVillage(int id) {
-		selectedVillage = id;
-		updateButtons();
-	}
-
-	@Nullable
-	private NationMapPayload.Village villageAt(double sx, double sy) {
-		NationMapPayload.Village best = null;
-		double bestD = 10 * 10;
-		for (NationMapPayload.Village v : NationClient.villages()) {
-			double d = Mth.square(toScreenX(v.x()) - sx) + Mth.square(toScreenY(v.z()) - sy);
-			if (d < bestD) {
-				bestD = d;
-				best = v;
-			}
-		}
-		return best;
-	}
-
-	private void army(int action) {
-		NationMapPayload.Village v = selectedVillage();
-		if (v == null) {
-			return;
-		}
-		if (action == NationActionPayload.ORDER) {
-			if (target == null) {
-				return;
-			}
-			NationClient.send(action, v.id(), 0, target.getX(), target.getY(), target.getZ());
-		} else {
-			NationClient.send(action, v.id(), 1, 0, 0, 0);
-		}
 	}
 
 	/** For the automated test: the map point that a screen position shows. */
@@ -698,7 +538,7 @@ public class TacticalMapScreen extends Screen {
 		}
 		double x = event.x();
 		double y = event.y();
-		if (tab == 2 && cmdMode == 3 && event.button() == InputConstants.MOUSE_BUTTON_LEFT && plannerListClick(x, y)) {
+		if (tab == 1 && event.button() == InputConstants.MOUSE_BUTTON_LEFT && plannerListClick(x, y)) {
 			return true;
 		}
 		if (inMap(x, y)) {
@@ -714,20 +554,8 @@ public class TacticalMapScreen extends Screen {
 				return true;
 			}
 		}
-		if (tab != 2 && x >= px0 && x < px0 + PANEL_W && y >= listTop && y < listEnd() && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
+		if (tab == 0 && x >= px0 && x < px0 + PANEL_W && y >= listTop && y < listBottom && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
 			int row = (int) ((y - listTop) / ROW_H) + listScroll;
-			if (tab == 1) {
-				List<NationMapPayload.Village> villages = villages();
-				if (row >= 0 && row < villages.size()) {
-					NationMapPayload.Village v = villages.get(row);
-					selectVillage(v.id());
-					follow = false;
-					centerX = v.x();
-					centerZ = v.z();
-					return true;
-				}
-				return false;
-			}
 			List<MapStatusPayload.Entry> list = entries();
 			if (row >= 0 && row < list.size()) {
 				MapStatusPayload.Entry e = list.get(row);
@@ -761,20 +589,13 @@ public class TacticalMapScreen extends Screen {
 	public boolean mouseReleased(MouseButtonEvent event) {
 		if (pressedInMap && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
 			pressedInMap = false;
-			if (!dragMoved && tab == 2) {
-				commandClick(event.x(), event.y());
+			if (!dragMoved && tab == 1) {
+				plannerClick(Mth.floor(toWorldX(event.x())), Mth.floor(toWorldZ(event.y())));
 				return true;
 			}
 			if (!dragMoved) {
-				MapStatusPayload.Entry hit = tab == 0 ? vehicleAt(event.x(), event.y()) : null;
-				NationMapPayload.Village village = tab == 1 ? villageAt(event.x(), event.y()) : null;
-				int[] building = tab == 1 && village == null ? buildingAt(event.x(), event.y()) : null;
-				if (building != null) {
-					pickBuilding(building);
-				} else if (village != null) {
-					dropBuilding();
-					selectVillage(village.id());
-				} else if (hit != null) {
+				MapStatusPayload.Entry hit = vehicleAt(event.x(), event.y());
+				if (hit != null) {
 					select(hit.id());
 				} else {
 					setTarget(Mth.floor(toWorldX(event.x())), Mth.floor(toWorldZ(event.y())));
@@ -796,9 +617,9 @@ public class TacticalMapScreen extends Screen {
 			centerZ = wz - (y - mapCenterY()) / scale();
 			return true;
 		}
-		if (tab != 2 && x >= px0 && y >= listTop && y < listEnd() && scrollY != 0) {
-			int rows = Math.max(1, (listEnd() - listTop) / ROW_H);
-			int size = tab == 1 ? villages().size() : entries().size();
+		if (tab == 0 && x >= px0 && y >= listTop && y < listBottom && scrollY != 0) {
+			int rows = Math.max(1, (listBottom - listTop) / ROW_H);
+			int size = entries().size();
 			listScroll = Mth.clamp(listScroll - (int) Math.signum(scrollY), 0, Math.max(0, size - rows));
 			return true;
 		}
@@ -848,26 +669,16 @@ public class TacticalMapScreen extends Screen {
 		if (scale() >= 0.125f) {
 			drawTerrain(g);
 		}
-		long t0 = System.nanoTime();
-		// The borders, towns and roads come painted in tiles (1.25.1); only their names are written here.
-		AtlasTiles.draw(g, scale(), centerX, centerZ, mx0, my0, mx1, my1);
-		drawAtlasLabels(g);
-		atlasNanos = System.nanoTime() - t0;
 		drawGrid(g);
 		drawRanges(g);
-		drawVillages(g);
 		drawFires(g);
 		drawRecon(g);
 		drawTarget(g);
 		drawMissiles(g, partialTick);
 		drawVehicles(g);
-		if (tab == 2) {
-			drawCommandMap(g);
-			if (cmdMode == 3) {
-				drawPlanMap(g);
-			}
+		if (tab == 1) {
+			drawPlanMap(g);
 		}
-		drawMen(g);
 		drawPlayer(g, partialTick);
 		g.disableScissor();
 		drawScaleBar(g);
@@ -905,90 +716,6 @@ public class TacticalMapScreen extends Screen {
 		int uw = Math.max(1, (int) Math.round(w * k));
 		int vh = Math.max(1, (int) Math.round(h * k));
 		g.blit(RenderPipelines.GUI_TEXTURED, AtlasClient.texture(), (int) Math.floor(cx0), (int) Math.floor(cy0), u, v, w, h, uw, vh, tw, tw);
-	}
-
-	/** For the tests: the atlas tiles' state. */
-	public static String tileStats() {
-		return String.join(", ", AtlasTiles.stats());
-	}
-
-	/** For the tests: how long the atlas layers took to lay down in the last frame (ns). */
-	public static long atlasNanos;
-
-	/** A country's colour on the map (a little different for each country, so two of one dye still look apart). */
-	private static int countryColor(int country) {
-		return AtlasTiles.countryColor(country);
-	}
-
-	private static boolean isWar(int country) {
-		var c = AtlasClient.country(country);
-		return c != null && c.war();
-	}
-
-	/** The countries' names over their capitals far out, the towns' names, the depots' labels. */
-	private void drawAtlasLabels(GuiGraphicsExtractor g) {
-		if (!AtlasClient.loaded) {
-			return;
-		}
-		float sc = scale();
-		if (sc <= 0.125f && AtlasClient.politics != null) {
-			for (var t : AtlasClient.politics.towns()) {
-				if (!t.capital()) {
-					continue;
-				}
-				var c = AtlasClient.country(t.country());
-				if (c == null) {
-					continue;
-				}
-				String name = c.name().toUpperCase(Locale.ROOT);
-				int sx = (int) toScreenX(t.x());
-				int sy = (int) toScreenY(t.z()) - 16;
-				if (sx > mx0 - 100 && sx < mx1 + 100 && sy > my0 && sy < my1) {
-					int w = font.width(name);
-					g.text(font, name, sx - w / 2, sy, (countryColor(c.id()) & 0xFFFFFF) | 0xFF000000 | 0x404040);
-				}
-			}
-		}
-		java.util.Set<Integer> listed = new java.util.HashSet<>();
-		for (NationMapPayload.Village v : NationClient.villages()) {
-			listed.add(v.id());
-		}
-		for (AtlasClient.City c : AtlasClient.CITIES) {
-			var town = AtlasClient.cityTown(c.key());
-			if (town != null && !listed.contains(town.id())) {
-				townName(g, town, c.x(), c.z(), c.index() == 0 ? 0.75f : 0.45f);
-			}
-		}
-		if (sc >= 0.25f) {
-			String label = Component.translatable("map.airdefense.depot").getString();
-			for (AtlasClient.Depot d : AtlasClient.DEPOTS) {
-				int x0 = (int) Math.floor(toScreenX(d.x0()));
-				int x1 = (int) Math.ceil(toScreenX(d.x1() + 1));
-				int y1 = (int) Math.ceil(toScreenY(d.z1() + 1));
-				if (x1 < mx0 || x0 > mx1 || y1 < my0 || y1 > my1 + 10) {
-					continue;
-				}
-				small(g, label, (x0 + x1) / 2 - (int) (font.width(label) * 0.375f), y1 + 2, 0xFFD8DCE0);
-			}
-		}
-		for (AtlasClient.Hamlet h : AtlasClient.HAMLETS) {
-			var town = AtlasClient.hamletTown(h.key());
-			if (town != null && !listed.contains(town.id())) {
-				townName(g, town, h.x(), h.z(), 0.25f);
-			}
-		}
-	}
-
-	private void townName(GuiGraphicsExtractor g, com.stasdoto.airdefense.nation.AtlasPoliticsPayload.Town t, int x, int z, float minScale) {
-		if (scale() < minScale * 0.25f && !t.capital()) {
-			return;
-		}
-		String label = t.capital() ? "★ " + t.name() : t.name();
-		int sx = (int) toScreenX(x);
-		int sy = (int) toScreenY(z) + 4;
-		if (sx > mx0 - 80 && sx < mx1 + 80 && sy > my0 && sy < my1) {
-			small(g, label, sx - (int) (font.width(label) * 0.375f), sy, 0xFFF0F2F4);
-		}
 	}
 
 	private void drawTerrain(GuiGraphicsExtractor g) {
@@ -1280,239 +1007,6 @@ public class TacticalMapScreen extends Screen {
 		}
 	}
 
-	/** Villages: their area in the owner's colour (dotted for independent ones), the flag, the name. */
-	private void drawVillages(GuiGraphicsExtractor g) {
-		for (NationMapPayload.Village v : NationClient.villages()) {
-			double sx = toScreenX(v.x());
-			double sy = toScreenY(v.z());
-			double r = v.radius() * scale();
-			if (sx + r < mx0 || sx - r > mx1 || sy + r < my0 || sy - r > my1) {
-				continue;
-			}
-			boolean independent = v.country().isEmpty();
-			int color = v.color();
-			boolean atlas = AtlasClient.outlines(v.id());
-			if (atlas) {
-				// Its outline comes from the atlas (drawTowns).
-			} else if (v.half() > 0) {
-				// A city: its square of streets.
-				int h = (int) Math.round((v.half() + 2) * scale());
-				int cx = (int) toScreenX(v.x() - 12);
-				int cy = (int) toScreenY(v.z() - 11);
-				int edge = (color & 0x00FFFFFF) | 0xC0000000;
-				g.fill(cx - h, cy - h, cx + h + 1, cy + h + 1, (color & 0x00FFFFFF) | 0x28000000);
-				g.fill(cx - h, cy - h, cx + h + 1, cy - h + 1, edge);
-				g.fill(cx - h, cy + h, cx + h + 1, cy + h + 1, edge);
-				g.fill(cx - h, cy - h, cx - h + 1, cy + h + 1, edge);
-				g.fill(cx + h, cy - h, cx + h + 1, cy + h + 1, edge);
-			} else {
-				circle(g, sx, sy, r, (color & 0x00FFFFFF) | 0xC0000000, independent ? 3 : 0);
-				if (!independent && r > 6) {
-					circle(g, sx, sy, r - 1, (color & 0x00FFFFFF) | 0x60000000, 0);
-				}
-			}
-			boolean sel = v.id() == selectedVillage;
-			drawBuildings(g, v);
-			// The flag at the town square.
-			int fx = (int) toScreenX(v.fx());
-			int fy = (int) toScreenY(v.fz());
-			g.fill(fx, fy - 7, fx + 1, fy + 1, 0xFF101418);
-			g.fill(fx + 1, fy - 7, fx + 6, fy - 3, color);
-			if (v.war() && !atlas) {
-				// At war with you: a red ring.
-				circle(g, sx, sy, Math.max(5, r) + 1, 0xFFFF3A2A, 0);
-				circle(g, sx, sy, Math.max(5, r) + 2, 0xFFFF3A2A, 0);
-			}
-			if (sel) {
-				circle(g, sx, sy, Math.max(6, r) + 2, 0xFFFFFFFF, 2);
-			}
-			if (scale() >= 0.25f || sel || v.mine()) {
-				String label = v.capital() ? "★ " + v.name() : v.name();
-				small(g, label, (int) sx - (int) (font.width(label) * 0.375f), (int) sy + 4, sel ? 0xFFFFFFFF : 0xFFE6E9EC);
-			}
-		}
-	}
-
-	/** A village's buildings: their footprints, coloured by kind (outlined only while they are going up). */
-	private void drawBuildings(GuiGraphicsExtractor g, NationMapPayload.Village v) {
-		List<Integer> list = v.buildings();
-		for (int i = 0; i + 2 < list.size(); i += 3) {
-			int head = list.get(i);
-			com.stasdoto.airdefense.nation.BuildingType type = com.stasdoto.airdefense.nation.BuildingType.byId(head >> 4);
-			boolean done = (head & 1) == 1;
-			int[] fp = footprint(v, list, i);
-			int ax = fp[0];
-			int az = fp[1];
-			int bx = fp[2];
-			int bz = fp[3];
-			boolean picked = v.id() == pickedVillage && list.get(i + 2) == pickedIndex;
-			int x0 = (int) Math.floor(toScreenX(Math.min(ax, bx)));
-			int z0 = (int) Math.floor(toScreenY(Math.min(az, bz)));
-			int x1 = (int) Math.ceil(toScreenX(Math.max(ax, bx) + 1));
-			int z1 = (int) Math.ceil(toScreenY(Math.max(az, bz) + 1));
-			if (x1 < mx0 || x0 > mx1 || z1 < my0 || z0 > my1) {
-				continue;
-			}
-			x1 = Math.max(x1, x0 + 2);
-			z1 = Math.max(z1, z0 + 2);
-			int color = switch (type) {
-				case SMALL_HOUSE, HOUSE -> 0xFF9A6A3E;
-				case APARTMENTS -> 0xFFD8D8D2;
-				case BARRACKS -> 0xFF5E6A3A;
-				case HANGAR -> 0xFF8A8E92;
-				case FACTORY -> 0xFFA04A36;
-				case HOSPITAL -> 0xFFF2F2F2;
-				case WAREHOUSE -> 0xFFC8A060;
-				case PANEL5, PANEL9 -> 0xFFE4E0D6;
-				case TOWER, OFFICE -> 0xFF6E90B0;
-				case COTTAGE -> 0xFFB07A50;
-				case SHOP -> 0xFFE0A040;
-				case SCHOOL -> 0xFFD8B070;
-				case CITY_HALL -> 0xFFF0EEE6;
-				case PARK -> 0xFF4E9A3E;
-				case GAS_STATION -> 0xFFE04040;
-				case LOGISTICS_HUB -> 0xFF4A7AC0;
-				case OIL_WELL, REFINERY -> 0xFF303030;
-				case GARAGES -> 0xFF9A9A9A;
-				case FARM -> 0xFFB04A3A;
-				case FOOD_PLANT -> 0xFFC07040;
-				case ARMS_FACTORY -> 0xFF5A6A40;
-				case MARKET -> 0xFFE070B0;
-				default -> 0xFF808080;
-			};
-			if (picked) {
-				g.fill(x0 - 2, z0 - 2, x1 + 2, z1 + 2, 0xFFFFE040);
-			}
-			if (done) {
-				g.fill(x0, z0, x1, z1, 0xFF101418);
-				g.fill(x0 + 1, z0 + 1, x1 - 1, z1 - 1, color);
-				if (type == com.stasdoto.airdefense.nation.BuildingType.HOSPITAL && x1 - x0 >= 5) {
-					int cx = (x0 + x1) / 2;
-					int cz = (z0 + z1) / 2;
-					g.fill(cx - 1, cz - 2, cx + 1, cz + 2, 0xFFD02020);
-					g.fill(cx - 2, cz - 1, cx + 2, cz + 1, 0xFFD02020);
-				}
-			} else {
-				// Still going up: a dashed outline.
-				for (int x = x0; x < x1; x += 2) {
-					g.fill(x, z0, x + 1, z0 + 1, color);
-					g.fill(x, z1 - 1, x + 1, z1, color);
-				}
-				for (int z = z0; z < z1; z += 2) {
-					g.fill(x0, z, x0 + 1, z + 1, color);
-					g.fill(x1 - 1, z, x1, z + 1, color);
-				}
-			}
-		}
-	}
-
-	/** World corners {ax, az, bx, bz} of the building at {@code i} in the village's list. */
-	private static int[] footprint(NationMapPayload.Village v, List<Integer> list, int i) {
-		int head = list.get(i);
-		int off = list.get(i + 1);
-		com.stasdoto.airdefense.nation.BuildingType type = com.stasdoto.airdefense.nation.BuildingType.byId(head >> 4);
-		net.minecraft.core.Direction facing = net.minecraft.core.Direction.from2DDataValue(head >> 1 & 3);
-		int ox = v.x() + (off >> 16);
-		int oz = v.z() + (short) (off & 0xFFFF);
-		int hw = type.halfWidth();
-		net.minecraft.core.Direction right = facing.getClockWise();
-		// Two opposite corners of the footprint (local x from -hw to hw, z from 0 to depth - 1).
-		return new int[]{ox + right.getStepX() * -hw, oz + right.getStepZ() * -hw,
-				ox + right.getStepX() * hw + facing.getStepX() * (type.depth - 1), oz + right.getStepZ() * hw + facing.getStepZ() * (type.depth - 1)};
-	}
-
-	/** The building under the cursor: {village id, index in its list, type id}, or null. */
-	@Nullable
-	private int[] buildingAt(double sx, double sy) {
-		double wx = toWorldX(sx);
-		double wz = toWorldZ(sy);
-		for (NationMapPayload.Village v : NationClient.villages()) {
-			List<Integer> list = v.buildings();
-			for (int i = 0; i + 2 < list.size(); i += 3) {
-				int[] fp = footprint(v, list, i);
-				if (wx >= Math.min(fp[0], fp[2]) && wx < Math.max(fp[0], fp[2]) + 1 && wz >= Math.min(fp[1], fp[3]) && wz < Math.max(fp[1], fp[3]) + 1) {
-					return new int[]{v.id(), list.get(i + 2), list.get(i) >> 4};
-				}
-			}
-		}
-		return null;
-	}
-
-	/** Types a building can be rebuilt as. */
-	private static final com.stasdoto.airdefense.nation.BuildingType[] REBUILD_TYPES = {
-			com.stasdoto.airdefense.nation.BuildingType.COTTAGE, com.stasdoto.airdefense.nation.BuildingType.SMALL_HOUSE,
-			com.stasdoto.airdefense.nation.BuildingType.HOUSE, com.stasdoto.airdefense.nation.BuildingType.APARTMENTS,
-			com.stasdoto.airdefense.nation.BuildingType.PANEL5, com.stasdoto.airdefense.nation.BuildingType.PANEL9,
-			com.stasdoto.airdefense.nation.BuildingType.TOWER, com.stasdoto.airdefense.nation.BuildingType.OFFICE,
-			com.stasdoto.airdefense.nation.BuildingType.SHOP, com.stasdoto.airdefense.nation.BuildingType.SCHOOL,
-			com.stasdoto.airdefense.nation.BuildingType.HOSPITAL, com.stasdoto.airdefense.nation.BuildingType.PARK,
-			com.stasdoto.airdefense.nation.BuildingType.GARAGES, com.stasdoto.airdefense.nation.BuildingType.WAREHOUSE,
-			com.stasdoto.airdefense.nation.BuildingType.GAS_STATION, com.stasdoto.airdefense.nation.BuildingType.LOGISTICS_HUB,
-			com.stasdoto.airdefense.nation.BuildingType.REFINERY, com.stasdoto.airdefense.nation.BuildingType.BARRACKS,
-			com.stasdoto.airdefense.nation.BuildingType.HANGAR, com.stasdoto.airdefense.nation.BuildingType.CITY_HALL};
-
-	private void pickBuilding(int[] hit) {
-		pickedVillage = hit[0];
-		pickedIndex = hit[1];
-		pickedType = hit[2];
-		rebuildChoice = 0;
-		for (int k = 0; k < REBUILD_TYPES.length; k++) {
-			if (REBUILD_TYPES[k].ordinal() == hit[2]) {
-				rebuildChoice = k;
-			}
-		}
-		selectVillage(hit[0]);
-	}
-
-	/** For the tests: open the army tab and pick the building at a world point, to be rebuilt as {@code type}. */
-	public boolean pickForTest(double wx, double wz, int type) {
-		setTab(1);
-		int[] hit = buildingAt(toScreenX(wx), toScreenY(wz));
-		if (hit == null) {
-			return false;
-		}
-		pickBuilding(hit);
-		for (int k = 0; k < REBUILD_TYPES.length; k++) {
-			if (REBUILD_TYPES[k].ordinal() == type) {
-				rebuildChoice = k;
-			}
-		}
-		updateButtons();
-		return true;
-	}
-
-	private void dropBuilding() {
-		pickedVillage = -1;
-		pickedIndex = -1;
-		updateButtons();
-	}
-
-	private void cycleRebuild(int d) {
-		rebuildChoice = Math.floorMod(rebuildChoice + d, REBUILD_TYPES.length);
-		updateButtons();
-	}
-
-	private void buildingAction(int action) {
-		if (pickedVillage < 0) {
-			return;
-		}
-		NationClient.send(action, pickedVillage, pickedIndex, REBUILD_TYPES[rebuildChoice].ordinal(), 0, 0);
-		dropBuilding();
-	}
-
-	/** Guards, soldiers (yours with a white rim) and bandits (dark with a red rim). */
-	private void drawMen(GuiGraphicsExtractor g) {
-		for (NationMapPayload.Man m : NationClient.men()) {
-			int sx = (int) toScreenX(m.x() + 0.5);
-			int sy = (int) toScreenY(m.z() + 0.5);
-			if (sx < mx0 || sx >= mx1 || sy < my0 || sy >= my1) {
-				continue;
-			}
-			int rim = m.role() == SoldierEntity.BANDIT || m.role() == SoldierEntity.REBEL ? 0xFFFF3A2A : m.mine() ? 0xFFFFFFFF : 0xFF101418;
-			g.fill(sx - 2, sy - 2, sx + 2, sy + 2, rim);
-			g.fill(sx - 1, sy - 1, sx + 1, sy + 1, m.color());
-		}
-	}
 
 	private void drawPlayer(GuiGraphicsExtractor g, float partialTick) {
 		Player p = minecraft.player;
@@ -1605,11 +1099,7 @@ public class TacticalMapScreen extends Screen {
 		int x1 = px0 + PANEL_W;
 		com.stasdoto.airdefense.client.ui.Ui.panel(g, x0, my0 - 2, x1, my1 + 2);
 		if (tab == 1) {
-			drawArmyPanel(g, mouseX, mouseY);
-			return;
-		}
-		if (tab == 2) {
-			drawCommandPanel(g);
+			drawPlanPanel(g, my0 + 3);
 			return;
 		}
 		List<MapStatusPayload.Entry> list = entries();
@@ -1670,353 +1160,18 @@ public class TacticalMapScreen extends Screen {
 		}
 	}
 
-	private void drawArmyPanel(GuiGraphicsExtractor g, int mouseX, int mouseY) {
-		int x0 = px0;
-		int x1 = px0 + PANEL_W;
-		List<NationMapPayload.Village> list = villages();
-		if (list.isEmpty()) {
-			g.textWithWordWrap(font, Component.translatable("screen.airdefense.map.no_villages"), x0 + 5, listTop + 4, PANEL_W - 10, C_DIM);
-		}
-		int rows = Math.max(1, (listEnd() - listTop) / ROW_H);
-		listScroll = Mth.clamp(listScroll, 0, Math.max(0, list.size() - rows));
-		for (int i = 0; i < rows && i + listScroll < list.size(); i++) {
-			NationMapPayload.Village v = list.get(i + listScroll);
-			int y = listTop + i * ROW_H;
-			boolean sel = v.id() == selectedVillage;
-			boolean hover = mouseX >= x0 && mouseX < x1 && mouseY >= y && mouseY < y + ROW_H;
-			if (sel || hover) {
-				com.stasdoto.airdefense.client.ui.Ui.card(g, x0 + 3, y, x1 - 3, y + ROW_H - 1, !sel, sel);
-			}
-			g.fill(x0 + 5, y + 3, x0 + 10, y + 8, v.color());
-			g.text(font, v.name(), x0 + 13, y + 1, sel ? 0xFFFFFFFF : v.mine() ? com.stasdoto.airdefense.client.ui.Ui.OK : C_TEXT);
-			String line = v.war() ? Component.translatable("screen.airdefense.map.village_war", v.country()).getString()
-					: v.mine() ? Component.translatable("screen.airdefense.map.village_mine", v.population(), v.soldiers()).getString()
-					: v.country().isEmpty() ? Component.translatable("screen.airdefense.map.village_free", v.population()).getString()
-					: v.country() + " · " + Component.translatable("screen.airdefense.map.village_guards", v.guards()).getString();
-			small(g, line, x0 + 13, y + 11, C_DIM);
-		}
-		com.stasdoto.airdefense.client.ui.Ui.divider(g, x0 + 2, x1 - 2, my1 - 92);
-		NationMapPayload.Village sel = selectedVillage();
-		Component l1;
-		Component l2 = null;
-		if (pickedVillage >= 0 && sel != null) {
-			var cur = com.stasdoto.airdefense.nation.BuildingType.byId(pickedType);
-			var to = REBUILD_TYPES[rebuildChoice];
-			l1 = Component.translatable("screen.airdefense.map.picked", Component.translatable(cur.key()), sel.name());
-			l2 = !sel.mine() ? Component.translatable("screen.airdefense.map.not_yours")
-					: Component.translatable("screen.airdefense.map.rebuild_cost", to.wood, to.stone, to.iron);
-		} else if (sel == null) {
-			l1 = Component.translatable("screen.airdefense.map.select_village");
-		} else if (!sel.mine()) {
-			l1 = Component.literal(sel.name());
-			l2 = Component.translatable(sel.war() ? "screen.airdefense.map.enemy" : "screen.airdefense.map.not_yours");
-		} else {
-			l1 = Component.translatable("screen.airdefense.map.army_of", sel.name(), sel.soldiers());
-			l2 = target == null ? Component.translatable("screen.airdefense.map.pick_point")
-					: Component.translatable("screen.airdefense.map.point", target.getX(), target.getZ());
-		}
-		small(g, l1.getString(), x0 + 5, my1 - 88, C_TEXT);
-		if (l2 != null) {
-			small(g, l2.getString(), x0 + 5, my1 - 79, sel != null && sel.war() ? 0xFFFF7A6A : C_DIM);
-		}
-	}
-
-	/** Where the list ends: higher on the army tab (its buttons take more room). */
-	private int listEnd() {
-		return tab == 1 ? my1 - 94 : listBottom;
-	}
-
 	// ------------------------------------------------------------------------------------------------
 	// 2.0: command any country - put up its air defence, launchers and radars, strike with it, war and peace
 
-	/** "Command this country" on the army tab: the selected village's country. */
-	private void takeCommand() {
-		NationMapPayload.Village v = selectedVillage();
-		int c = v == null ? -1 : CommandClient.countryOfTown(v.id());
-		if (c >= 0) {
-			commandCountry(c);
-		}
-	}
-
-	/** Takes command of a country and opens its panel (also for the tests). */
-	public void commandCountry(int country) {
-		CommandClient.send(CommandActionPayload.TAKE, country, 0, 0, 0, 0);
-		cmdOther = -1;
-		setTab(2);
-	}
-
-	/** For the tests: the command panel's page (0 = orders, 1 = putting up a vehicle, 2 = a strike). */
-	public int commandMode() {
-		return cmdMode;
-	}
-
-	private List<VehicleType> placeList() {
-		return CommandKit.of(placeKind);
-	}
-
-	/** The kinds of launcher the commanded country has (for the strike). */
-	private static List<VehicleType> weapons() {
-		List<VehicleType> out = new ArrayList<>();
-		CommandStatePayload st = CommandClient.state();
-		if (st != null) {
-			for (CommandStatePayload.Unit u : st.units()) {
-				VehicleType t = VehicleType.byId(u.type());
-				if (CommandKit.canStrikeWith(t) && !out.contains(t)) {
-					out.add(t);
-				}
-			}
-		}
-		return out;
-	}
-
-	private void showRow(int r, Component label) {
-		row[r * 3].visible = true;
-		row[r * 3 + 1].visible = true;
-		row[r * 3 + 2].visible = true;
-		row[r * 3 + 1].setMessage(label);
-	}
-
-	private void updateCommandButtons() {
-		int c = CommandClient.commanded();
-		for (UiButton b : cmd) {
-			b.visible = true;
-			b.active = c >= 0;
-			b.setStyle(UiButton.Style.SECONDARY);
-		}
-		for (UiButton b : row) {
-			b.visible = false;
-		}
-		switch (cmdMode) {
-			case 3 -> updatePlannerButtons(c);
-			case 1 -> {
-				List<VehicleType> list = placeList();
-				placeChoice = Mth.clamp(placeChoice, 0, Math.max(0, list.size() - 1));
-				showRow(0, list.isEmpty() ? Component.empty() : Component.translatable("entity.airdefense." + list.get(placeChoice).id));
-				cmd[0].visible = false;
-				cmd[1].visible = false;
-				cmd[4].visible = false;
-				cmd[2].setMessage(Component.translatable("screen.airdefense.map.cmd.here"));
-				cmd[2].setStyle(UiButton.Style.PRIMARY);
-				cmd[2].active = c >= 0 && target != null && !list.isEmpty();
-				cmd[3].setMessage(Component.translatable("screen.airdefense.map.cmd.auto"));
-				cmd[3].active = c >= 0 && !list.isEmpty();
-				cmd[5].setMessage(Component.translatable("screen.airdefense.map.cmd.back"));
-				cmd[5].active = true;
-			}
-			case 2 -> {
-				List<VehicleType> ws = weapons();
-				if (weapon >= ws.size()) {
-					weapon = -1;
-				}
-				showRow(0, weapon < 0 ? Component.translatable("screen.airdefense.map.cmd.any")
-						: Component.translatable("entity.airdefense." + ws.get(weapon).id));
-				showRow(1, Component.translatable("screen.airdefense.map.cmd.rounds", CMD_ROUNDS[roundsIndex]));
-				cmd[0].visible = false;
-				cmd[1].visible = false;
-				cmd[2].visible = false;
-				cmd[3].setMessage(Component.translatable("screen.airdefense.map.cmd.fire"));
-				cmd[3].setStyle(UiButton.Style.DANGER);
-				cmd[3].active = c >= 0 && target != null;
-				cmd[4].visible = true;
-				cmd[4].setMessage(Component.translatable("screen.airdefense.map.plan.open"));
-				cmd[4].setStyle(UiButton.Style.PRIMARY);
-				cmd[4].active = c >= 0;
-				cmd[5].setMessage(Component.translatable("screen.airdefense.map.cmd.back"));
-				cmd[5].active = true;
-			}
-			default -> {
-				cmd[0].setMessage(Component.translatable("screen.airdefense.map.cmd.place_ad"));
-				cmd[1].setMessage(Component.translatable("screen.airdefense.map.cmd.place_launchers"));
-				cmd[2].setMessage(Component.translatable("screen.airdefense.map.cmd.place_radars"));
-				cmd[3].setMessage(Component.translatable("screen.airdefense.map.cmd.strike"));
-				boolean war = cmdOther >= 0 && CommandClient.atWar(cmdOther);
-				cmd[4].setMessage(Component.translatable(war ? "screen.airdefense.map.cmd.peace" : "screen.airdefense.map.cmd.war"));
-				cmd[4].setStyle(war ? UiButton.Style.SECONDARY : UiButton.Style.DANGER);
-				cmd[4].active = c >= 0 && cmdOther >= 0 && cmdOther != c;
-				cmd[5].setMessage(Component.translatable("screen.airdefense.map.cmd.back_own"));
-				cmd[5].setStyle(UiButton.Style.GHOST);
-				cmd[5].active = true;
-			}
-		}
-	}
-
-	/** The first sensible choice of each list: a Patriot, an Iskander, the first radar. */
-	private static int defaultChoice(int kind) {
-		VehicleType want = kind == CommandKit.AIR_DEFENCE ? VehicleType.PATRIOT : kind == CommandKit.LAUNCHERS ? VehicleType.ISKANDER : null;
-		int i = want == null ? -1 : CommandKit.of(kind).indexOf(want);
-		return Math.max(0, i);
-	}
-
-	private void cycle(int r, int d) {
-		if (cmdMode == 1 && r == 0) {
-			placeChoice = Math.floorMod(placeChoice + d, Math.max(1, placeList().size()));
-		} else if (cmdMode == 2 && r == 0) {
-			weapon = Math.floorMod(weapon + 1 + d, weapons().size() + 1) - 1;
-		} else if (cmdMode == 3 && r == 0) {
-			planSalvo = Math.floorMod(planSalvo + d, PLAN_SALVOS.length);
-			for (long k : picked) {
-				int[] a = plan.get(k);
-				if (a != null) {
-					a[2] = PLAN_SALVOS[planSalvo];
-				}
-			}
-		} else if (cmdMode == 2 && r == 1) {
-			roundsIndex = Math.floorMod(roundsIndex + d, CMD_ROUNDS.length);
-		}
-		updateButtons();
-	}
-
-	private void commandPressed(int k) {
-		int c = CommandClient.commanded();
-		switch (cmdMode) {
-			case 1 -> {
-				List<VehicleType> list = placeList();
-				if (k == 5) {
-					cmdMode = 0;
-				} else if (c >= 0 && !list.isEmpty()) {
-					VehicleType t = list.get(Mth.clamp(placeChoice, 0, list.size() - 1));
-					if (k == 2 && target != null) {
-						CommandClient.send(CommandActionPayload.PLACE, c, t.ordinal(), 1, target.getX(), target.getZ());
-					} else if (k == 3) {
-						CommandClient.send(CommandActionPayload.PLACE, c, t.ordinal(), 0, 0, 0);
-					}
-				}
-			}
-			case 3 -> plannerPressed(k);
-			case 2 -> {
-				if (k == 4) {
-					cmdMode = 3;
-				} else if (k == 5) {
-					cmdMode = 0;
-				} else if (k == 3 && c >= 0 && target != null) {
-					List<VehicleType> ws = weapons();
-					int type = weapon < 0 || weapon >= ws.size() ? -1 : ws.get(weapon).ordinal();
-					CommandClient.send(CommandActionPayload.STRIKE, c, type, CMD_ROUNDS[roundsIndex], target.getX(), target.getZ());
-				}
-			}
-			default -> {
-				if (k <= 2) {
-					cmdMode = 1;
-					placeKind = k;
-					placeChoice = defaultChoice(k);
-				} else if (k == 3) {
-					cmdMode = 2;
-				} else if (k == 4 && c >= 0 && cmdOther >= 0) {
-					CommandClient.send(CommandClient.atWar(cmdOther) ? CommandActionPayload.PEACE : CommandActionPayload.WAR, c, cmdOther, 0, 0, 0);
-				} else if (k == 5) {
-					CommandClient.send(CommandActionPayload.RELEASE, c, 0, 0, 0, 0);
-					setTab(1);
-					return;
-				}
-			}
-		}
-		updateButtons();
-	}
-
-	/** For the tests: press one of the command panel's six buttons (0 at the top). */
+	/** For the tests: press one of the planner's six buttons (0 at the top). */
 	public void pressCommand(int k) {
-		commandPressed(k);
+		plannerPressed(k);
+		updateButtons();
 	}
 
-	/** For the tests: turn one of the command panel's choosers ({@code r}: 0 = the type, 1 = the rounds). */
+	/** For the tests: turn the planner's salvo chooser. */
 	public void cycleForTest(int r, int d) {
 		cycle(r, d);
-	}
-
-	/** For the tests: pick the other country (war and peace). */
-	public void pickOther(int country) {
-		cmdOther = country;
-		updateButtons();
-	}
-
-	/**
-	 * A click on the map in command mode: the point (where to put a vehicle up, or to strike); on a town, the town's
-	 * country becomes the other one (war and peace) and, but when putting a vehicle up, the point snaps to the town.
-	 */
-	private void commandClick(double sx, double sy) {
-		com.stasdoto.airdefense.nation.AtlasPoliticsPayload.Town town = townAt(sx, sy);
-		if (cmdMode == 3) {
-			if (town != null) {
-				plannerClick(town.x(), town.z());
-			} else {
-				plannerClick(Mth.floor(toWorldX(sx)), Mth.floor(toWorldZ(sy)));
-			}
-		} else if (town != null && cmdMode != 1) {
-			if (town.country() >= 0 && town.country() != CommandClient.commanded()) {
-				cmdOther = town.country();
-			}
-			setTarget(town.x(), town.z());
-		} else {
-			setTarget(Mth.floor(toWorldX(sx)), Mth.floor(toWorldZ(sy)));
-		}
-	}
-
-	/** The town under the cursor (any town of the atlas, near or far), or null. */
-	@Nullable
-	private com.stasdoto.airdefense.nation.AtlasPoliticsPayload.Town townAt(double sx, double sy) {
-		var politics = AtlasClient.politics;
-		if (politics == null) {
-			return null;
-		}
-		com.stasdoto.airdefense.nation.AtlasPoliticsPayload.Town best = null;
-		double bestD = 10 * 10;
-		for (var t : politics.towns()) {
-			double d = Mth.square(toScreenX(t.x()) - sx) + Mth.square(toScreenY(t.z()) - sy);
-			if (d < bestD) {
-				bestD = d;
-				best = t;
-			}
-		}
-		return best;
-	}
-
-	private static int kindColor(VehicleType t) {
-		int k = CommandKit.kindOf(t);
-		return k == CommandKit.LAUNCHERS ? C_LAUNCHER : k == CommandKit.RADARS ? C_RADAR : C_DEFENSE;
-	}
-
-	/**
-	 * The commanded country on the map: its units still in the books (hollow squares; those in the world are drawn with
-	 * the vehicles), the launchers' reach while a strike is being given, the reach of a vehicle about to go up.
-	 */
-	private void drawCommandMap(GuiGraphicsExtractor g) {
-		CommandStatePayload st = CommandClient.state();
-		if (st == null || st.country() < 0) {
-			return;
-		}
-		List<VehicleType> ws = cmdMode == 2 ? weapons() : List.of();
-		VehicleType only = cmdMode == 2 && weapon >= 0 && weapon < ws.size() ? ws.get(weapon) : null;
-		int circles = 0;
-		for (CommandStatePayload.Unit u : st.units()) {
-			VehicleType t = VehicleType.byId(u.type());
-			double sx = toScreenX(u.x() + 0.5);
-			double sy = toScreenY(u.z() + 0.5);
-			if (cmdMode == 2 && CommandKit.canStrikeWith(t) && (only == null || only == t) && circles < 24) {
-				circles++;
-				circle(g, sx, sy, t.launcher.maxRange * scale(), 0x70E8A33C, 4);
-			}
-			if (u.present() || sx < mx0 - 6 || sx > mx1 + 6 || sy < my0 - 6 || sy > my1 + 6) {
-				continue;
-			}
-			int x = (int) sx;
-			int y = (int) sy;
-			int c = kindColor(t);
-			g.fill(x - 3, y - 3, x + 4, y - 2, c);
-			g.fill(x - 3, y + 3, x + 4, y + 4, c);
-			g.fill(x - 3, y - 3, x - 2, y + 4, c);
-			g.fill(x + 3, y - 3, x + 4, y + 4, c);
-			if (scale() >= 0.25f) {
-				small(g, Component.translatable("map.airdefense.short." + t.id).getString(), x + 5, y - 3, 0xC0E6E9EC);
-			}
-		}
-		if (cmdMode == 1 && target != null) {
-			List<VehicleType> list = placeList();
-			if (!list.isEmpty()) {
-				VehicleType t = list.get(Mth.clamp(placeChoice, 0, list.size() - 1));
-				double reach = t.defense != null ? t.defense.range : t.radar != null ? t.radar.range : t.launcher != null ? t.launcher.maxRange : 0;
-				circle(g, toScreenX(target.getX() + 0.5), toScreenY(target.getZ() + 0.5), reach * scale(), 0xB0000000 | (kindColor(t) & 0xFFFFFF), 3);
-			}
-		}
 	}
 
 	/** One line of the command panel, cut to its width; returns where the next one goes. */
@@ -2032,103 +1187,15 @@ public class TacticalMapScreen extends Screen {
 		return y + 9;
 	}
 
-	private void drawCommandPanel(GuiGraphicsExtractor g) {
-		int x0 = px0;
-		int x1 = px0 + PANEL_W;
-		int y = my0 + 3;
-		CommandStatePayload st = CommandClient.state();
-		int c = CommandClient.commanded();
-		var country = CommandClient.country(c);
-		com.stasdoto.airdefense.client.ui.Ui.flag(g, x0 + 6, y + 1, 12, 8, country == null ? 0xFF808080 : country.argb());
-		com.stasdoto.airdefense.client.ui.Ui.clipped(g, font, country == null ? Component.translatable("screen.airdefense.map.cmd.waiting")
-				: Component.literal(country.name()), x0 + 22, y + 1, PANEL_W - 28, C_TEXT);
-		y += 13;
-		y = cmdLine(g, Component.translatable("screen.airdefense.map.cmd.commanding").getString(), y, com.stasdoto.airdefense.client.ui.Ui.ACCENT);
-		if (st != null && c >= 0) {
-			y = cmdLine(g, (st.free() ? Component.translatable("screen.airdefense.map.cmd.free")
-					: Component.translatable("screen.airdefense.map.cmd.stores", st.wood(), st.stone(), st.iron())).getString(), y, C_DIM);
-			int[] n = new int[CommandKit.KINDS];
-			for (CommandStatePayload.Unit u : st.units()) {
-				int k = CommandKit.kindOf(VehicleType.byId(u.type()));
-				if (k >= 0) {
-					n[k]++;
-				}
-			}
-			y = cmdLine(g, Component.translatable("screen.airdefense.map.cmd.forces", n[0], n[1], n[2]).getString(), y, C_DIM);
-			StringBuilder wars = new StringBuilder();
-			for (int w : st.wars()) {
-				var o = CommandClient.country(w);
-				if (o != null) {
-					wars.append(wars.isEmpty() ? "" : ", ").append(o.name());
-				}
-			}
-			y = cmdLine(g, wars.isEmpty() ? Component.translatable("screen.airdefense.map.cmd.at_peace").getString()
-					: Component.translatable("screen.airdefense.map.cmd.at_war", wars.toString()).getString(), y, wars.isEmpty() ? 0xFF8AE07A : 0xFFFF7A6A);
-		}
-		com.stasdoto.airdefense.client.ui.Ui.divider(g, x0 + 2, x1 - 2, y + 1);
-		y += 5;
-		String point = target == null ? null : Component.translatable("screen.airdefense.map.point", target.getX(), target.getZ()).getString();
-		planTop = -1;
-		switch (cmdMode) {
-			case 3 -> drawPlanPanel(g, y);
-			case 1 -> {
-				String head = switch (placeKind) {
-					case CommandKit.LAUNCHERS -> "screen.airdefense.map.cmd.place_launchers";
-					case CommandKit.RADARS -> "screen.airdefense.map.cmd.place_radars";
-					default -> "screen.airdefense.map.cmd.place_ad";
-				};
-				y = cmdLine(g, Component.translatable(head).getString(), y, C_TEXT);
-				List<VehicleType> list = placeList();
-				if (!list.isEmpty() && st != null && !st.free()) {
-					int[] cost = com.stasdoto.airdefense.nation.Economy.vehicleCost(list.get(Mth.clamp(placeChoice, 0, list.size() - 1)));
-					y = cmdLine(g, Component.translatable("screen.airdefense.map.cmd.cost", cost[0], cost[1], cost[2]).getString(), y, C_DIM);
-				}
-				y = cmdLine(g, point != null ? point : Component.translatable("screen.airdefense.map.cmd.pick_spot").getString(), y,
-						point != null ? 0xFF8AE07A : C_DIM);
-				cmdLine(g, Component.translatable("screen.airdefense.map.cmd.auto_hint").getString(), y, C_DIM);
-			}
-			case 2 -> {
-				y = cmdLine(g, Component.translatable("screen.airdefense.map.cmd.strike").getString(), y, C_TEXT);
-				y = cmdLine(g, point != null ? point : Component.translatable("screen.airdefense.map.cmd.pick_target").getString(), y,
-						point != null ? 0xFFFFE07A : C_DIM);
-				if (target != null && st != null) {
-					List<VehicleType> ws = weapons();
-					VehicleType only = weapon >= 0 && weapon < ws.size() ? ws.get(weapon) : null;
-					int reach = 0;
-					for (CommandStatePayload.Unit u : st.units()) {
-						VehicleType t = VehicleType.byId(u.type());
-						if (CommandKit.canStrikeWith(t) && (only == null || only == t)
-								&& Math.hypot(u.x() - target.getX(), u.z() - target.getZ()) <= t.launcher.maxRange) {
-							reach++;
-						}
-					}
-					cmdLine(g, Component.translatable("screen.airdefense.map.cmd.in_reach", reach).getString(), y, reach > 0 ? 0xFF8AE07A : C_BAD);
-				}
-			}
-			default -> {
-				var other = CommandClient.country(cmdOther);
-				if (other != null && cmdOther != c) {
-					y = cmdLine(g, Component.translatable(CommandClient.atWar(cmdOther) ? "screen.airdefense.map.cmd.other_war" : "screen.airdefense.map.cmd.other",
-							other.name()).getString(), y, CommandClient.atWar(cmdOther) ? 0xFFFF7A6A : C_TEXT);
-				} else {
-					y = cmdLine(g, Component.translatable("screen.airdefense.map.cmd.pick_other").getString(), y, C_DIM);
-				}
-				if (point != null) {
-					cmdLine(g, point, y, C_DIM);
-				}
-			}
-		}
-	}
-
 	// ------------------------------------------------------------------------------------------------
 	// 2.0: the pause and the strike planner - a massed strike planned calmly: each launcher its point, then all at once
 
 	/** The game stands still while the map is open (singleplayer only). */
 	private boolean paused;
-	/** The plan: by launcher (town << 20 | index) its point and salvo {x, z, salvo}; 0 = its usual salvo. */
-	private final java.util.LinkedHashMap<Long, int[]> plan = new java.util.LinkedHashMap<>();
+	/** The plan: by launcher (its entity id) its point and salvo {x, z, salvo}; 0 = its usual salvo. */
+	private final java.util.LinkedHashMap<Integer, int[]> plan = new java.util.LinkedHashMap<>();
 	/** Launchers picked in the planner's list (the next point on the map goes to them). */
-	private final java.util.Set<Long> picked = new java.util.HashSet<>();
+	private final java.util.Set<Integer> picked = new java.util.HashSet<>();
 	private int planSalvo;
 	private static final int[] PLAN_SALVOS = {0, 1, 2, 4, 8};
 	private int planScroll;
@@ -2137,6 +1204,184 @@ public class TacticalMapScreen extends Screen {
 	private int planRows;
 	private UiButton pauseButton;
 	private UiButton plannerButton;
+
+	/** The side's launchers (rows of the planner): missiles, rockets and guns - not the drone stations. */
+	private static List<MapStatusPayload.Entry> launchers() {
+		List<MapStatusPayload.Entry> out = new ArrayList<>();
+		for (MapStatusPayload.Entry e : entries()) {
+			VehicleType t = typeOf(e);
+			if (t.isLauncher() && !t.isDroneLauncher()) {
+				out.add(e);
+			}
+		}
+		return out;
+	}
+
+	/** The planner's buttons. */
+	private void updatePlannerButtons() {
+		row[1].setMessage(Component.translatable(planSalvo == 0 ? "screen.airdefense.map.plan.salvo_usual" : "screen.airdefense.map.plan.salvo",
+				PLAN_SALVOS[planSalvo]));
+		for (UiButton b : cmd) {
+			b.setStyle(UiButton.Style.SECONDARY);
+			b.active = true;
+		}
+		cmd[0].visible = false;
+		cmd[1].setMessage(Component.translatable("screen.airdefense.map.plan.all_one"));
+		cmd[1].active = target != null && !launchers().isEmpty();
+		cmd[2].setMessage(Component.translatable("screen.airdefense.map.plan.clear"));
+		cmd[2].active = !plan.isEmpty();
+		cmd[3].setMessage(Component.translatable("screen.airdefense.map.plan.launch", plan.size()));
+		cmd[3].setStyle(UiButton.Style.DANGER);
+		cmd[3].active = !plan.isEmpty();
+		cmd[4].setMessage(Component.translatable(picked.isEmpty() ? "screen.airdefense.map.plan.pick_all" : "screen.airdefense.map.plan.pick_none"));
+		cmd[4].active = !launchers().isEmpty();
+		cmd[5].setMessage(Component.translatable("screen.airdefense.map.plan.back"));
+	}
+
+	private void cycle(int r, int d) {
+		planSalvo = Math.floorMod(planSalvo + d, PLAN_SALVOS.length);
+		for (int k : picked) {
+			int[] a = plan.get(k);
+			if (a != null) {
+				a[2] = PLAN_SALVOS[planSalvo];
+			}
+		}
+		updateButtons();
+	}
+
+	private void plannerPressed(int k) {
+		List<MapStatusPayload.Entry> list = launchers();
+		switch (k) {
+			case 1 -> {
+				// Every picked launcher (all of them when none is picked) at the one point.
+				if (target != null) {
+					for (MapStatusPayload.Entry e : list) {
+						if (picked.isEmpty() || picked.contains(e.id())) {
+							plan.put(e.id(), new int[]{target.getX(), target.getZ(), PLAN_SALVOS[planSalvo]});
+						}
+					}
+				}
+			}
+			case 2 -> plan.clear();
+			case 3 -> launchPlan();
+			case 4 -> {
+				if (picked.isEmpty()) {
+					for (MapStatusPayload.Entry e : list) {
+						picked.add(e.id());
+					}
+				} else {
+					picked.clear();
+				}
+			}
+			case 5 -> setTab(0);
+			default -> {
+			}
+		}
+	}
+
+	/** "Launch": the plan goes to the server, all at once; the game goes on. */
+	private void launchPlan() {
+		if (plan.isEmpty()) {
+			return;
+		}
+		List<com.stasdoto.airdefense.map.StrikePlanPayload.Shot> shots = new ArrayList<>();
+		plan.forEach((k, v) -> shots.add(new com.stasdoto.airdefense.map.StrikePlanPayload.Shot(k, v[0], v[1], v[2])));
+		paused = false;
+		if (net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.canSend(com.stasdoto.airdefense.map.StrikePlanPayload.TYPE)) {
+			net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(new com.stasdoto.airdefense.map.StrikePlanPayload(shots));
+		}
+		plan.clear();
+		picked.clear();
+	}
+
+	/** For the tests: pick a planner row (by its place in the list) on or off. */
+	public void pickLauncherForTest(int row) {
+		List<MapStatusPayload.Entry> list = launchers();
+		if (row >= 0 && row < list.size()) {
+			int k = list.get(row).id();
+			if (!picked.remove(k)) {
+				picked.add(k);
+			}
+		}
+		updateButtons();
+	}
+
+	/** A click on the map in the planner: the point, and it goes to the picked launchers. */
+	private void plannerClick(int x, int z) {
+		setTarget(x, z);
+		for (MapStatusPayload.Entry e : launchers()) {
+			if (picked.contains(e.id())) {
+				plan.put(e.id(), new int[]{x, z, PLAN_SALVOS[planSalvo]});
+			}
+		}
+		updateButtons();
+	}
+
+	/** The plan on the map: a line from each launcher to its point, the flight time half-way, the point. */
+	private void drawPlanMap(GuiGraphicsExtractor g) {
+		for (MapStatusPayload.Entry u : launchers()) {
+			int[] a = plan.get(u.id());
+			boolean sel = picked.contains(u.id());
+			double sx = toScreenX(u.x());
+			double sy = toScreenY(u.z());
+			if (sel) {
+				circle(g, sx, sy, 6, 0xFFFFFFFF, 0);
+			}
+			if (a == null) {
+				continue;
+			}
+			VehicleType t = typeOf(u);
+			double tx = toScreenX(a[0] + 0.5);
+			double ty = toScreenY(a[1] + 0.5);
+			double d = Math.hypot(a[0] - u.x(), a[1] - u.z());
+			boolean ok = d <= t.launcher.maxRange && d >= minRange(t);
+			line(g, sx, sy, tx, ty, ok ? 0xE0FFB040 : 0xE0FF5A4A, 3);
+			int x = (int) tx;
+			int y = (int) ty;
+			g.fill(x - 3, y, x + 4, y + 1, C_TARGET);
+			g.fill(x, y - 3, x + 1, y + 4, C_TARGET);
+			String label = ok ? "~" + flightSeconds(t, d) + Component.translatable("screen.airdefense.map.sec").getString()
+					: Component.translatable("screen.airdefense.map.plan.out").getString();
+			small(g, label, (int) ((sx + tx) / 2) + 3, (int) ((sy + ty) / 2) - 3, ok ? 0xFFFFE07A : C_BAD);
+		}
+	}
+
+	/** The planner's panel: the launchers, each with its rounds, its point and the flight time. */
+	private void drawPlanPanel(GuiGraphicsExtractor g, int y) {
+		y = cmdLine(g, Component.translatable("screen.airdefense.map.plan.title").getString(), y, C_TEXT);
+		y = cmdLine(g, Component.translatable(paused() ? "screen.airdefense.map.plan.paused" : "screen.airdefense.map.plan.hint").getString(), y,
+				paused() ? com.stasdoto.airdefense.client.ui.Ui.GOLD : C_DIM);
+		List<MapStatusPayload.Entry> list = launchers();
+		planTop = y;
+		planRows = Math.max(1, (my1 - 134 - y) / 10);
+		planScroll = Mth.clamp(planScroll, 0, Math.max(0, list.size() - planRows));
+		if (list.isEmpty()) {
+			cmdLine(g, Component.translatable("screen.airdefense.map.plan.none").getString(), y, C_DIM);
+			return;
+		}
+		for (int i = 0; i < planRows && i + planScroll < list.size(); i++) {
+			MapStatusPayload.Entry u = list.get(i + planScroll);
+			VehicleType t = typeOf(u);
+			int[] a = plan.get(u.id());
+			boolean sel = picked.contains(u.id());
+			int ry = y + i * 10;
+			if (sel) {
+				g.fill(px0 + 3, ry - 1, px0 + PANEL_W - 3, ry + 8, 0x40FFFFFF);
+			}
+			g.fill(px0 + 6, ry + 2, px0 + 9, ry + 5, C_LAUNCHER);
+			String what = Component.translatable("map.airdefense.short." + t.id).getString() + " " + ready(u);
+			String where;
+			if (a == null) {
+				where = "—";
+			} else {
+				double d = Math.hypot(a[0] - u.x(), a[1] - u.z());
+				where = (d <= t.launcher.maxRange ? "→ ~" + flightSeconds(t, d) + Component.translatable("screen.airdefense.map.sec").getString()
+						: Component.translatable("screen.airdefense.map.plan.out").getString()) + (a[2] > 0 ? " ×" + a[2] : "");
+			}
+			small(g, what, px0 + 12, ry, sel ? 0xFFFFFFFF : C_TEXT);
+			small(g, where, px0 + PANEL_W - 6 - (int) (font.width(where) * 0.75f), ry, a == null ? C_DIM : 0xFFFFE07A);
+		}
+	}
 
 	/** Pausing works in the player's own world (not opened to others). */
 	private boolean canPause() {
@@ -2159,144 +1404,14 @@ public class TacticalMapScreen extends Screen {
 		updateButtons();
 	}
 
-	private static long key(CommandStatePayload.Unit u) {
-		return (long) u.town() << 20 | u.index() & 0xFFFFF;
-	}
-
-	/** The commanded country's launchers (rows of the planner). */
-	private static List<CommandStatePayload.Unit> launchers() {
-		List<CommandStatePayload.Unit> out = new ArrayList<>();
-		CommandStatePayload st = CommandClient.state();
-		if (st != null) {
-			for (CommandStatePayload.Unit u : st.units()) {
-				if (CommandKit.canStrikeWith(VehicleType.byId(u.type()))) {
-					out.add(u);
-				}
-			}
-		}
-		return out;
-	}
-
-	/** The planner from the header: the commanded country's, else the player's own country is taken command of. */
-	private void openPlanner() {
-		if (CommandClient.commanded() < 0) {
-			int own = ownCountry();
-			if (own < 0) {
-				return;
-			}
-			commandCountry(own);
-		}
-		tab = 2;
-		cmdMode = 3;
-		updateButtons();
-	}
-
 	/** For the tests: open the planner. */
 	public void plannerForTest() {
-		openPlanner();
-	}
-
-	private static int ownCountry() {
-		var politics = AtlasClient.politics;
-		if (politics != null) {
-			for (var c : politics.countries()) {
-				if (c.mine()) {
-					return c.id();
-				}
-			}
-		}
-		return -1;
-	}
-
-	/** The planner's buttons (see updateCommandButtons). */
-	private void updatePlannerButtons(int c) {
-		showRow(0, Component.translatable(planSalvo == 0 ? "screen.airdefense.map.plan.salvo_usual" : "screen.airdefense.map.plan.salvo", PLAN_SALVOS[planSalvo]));
-		cmd[0].visible = false;
-		cmd[1].setMessage(Component.translatable("screen.airdefense.map.plan.all_one"));
-		cmd[1].active = c >= 0 && target != null && !launchers().isEmpty();
-		cmd[2].setMessage(Component.translatable("screen.airdefense.map.plan.clear"));
-		cmd[2].active = !plan.isEmpty();
-		cmd[3].setMessage(Component.translatable("screen.airdefense.map.plan.launch", plan.size()));
-		cmd[3].setStyle(UiButton.Style.DANGER);
-		cmd[3].active = c >= 0 && !plan.isEmpty();
-		cmd[4].setMessage(Component.translatable(picked.isEmpty() ? "screen.airdefense.map.plan.pick_all" : "screen.airdefense.map.plan.pick_none"));
-		cmd[4].active = !launchers().isEmpty();
-		cmd[5].setMessage(Component.translatable("screen.airdefense.map.cmd.back"));
-		cmd[5].active = true;
-	}
-
-	private void plannerPressed(int k) {
-		List<CommandStatePayload.Unit> list = launchers();
-		switch (k) {
-			case 1 -> {
-				// Every picked launcher (all of them when none is picked) at the one point.
-				if (target != null) {
-					for (CommandStatePayload.Unit u : list) {
-						if (picked.isEmpty() || picked.contains(key(u))) {
-							plan.put(key(u), new int[]{target.getX(), target.getZ(), PLAN_SALVOS[planSalvo]});
-						}
-					}
-				}
-			}
-			case 2 -> plan.clear();
-			case 3 -> launchPlan();
-			case 4 -> {
-				if (picked.isEmpty()) {
-					for (CommandStatePayload.Unit u : list) {
-						picked.add(key(u));
-					}
-				} else {
-					picked.clear();
-				}
-			}
-			case 5 -> cmdMode = 2;
-			default -> {
-			}
-		}
-	}
-
-	/** "Launch": the plan goes to the server, all at once; the game goes on. */
-	private void launchPlan() {
-		int c = CommandClient.commanded();
-		if (c < 0 || plan.isEmpty()) {
-			return;
-		}
-		List<com.stasdoto.airdefense.nation.StrikePlanPayload.Shot> shots = new ArrayList<>();
-		plan.forEach((k, v) -> shots.add(new com.stasdoto.airdefense.nation.StrikePlanPayload.Shot((int) (k >> 20), (int) (k & 0xFFFFF), v[0], v[1], v[2])));
-		paused = false;
-		if (net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.canSend(com.stasdoto.airdefense.nation.StrikePlanPayload.TYPE)) {
-			net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(new com.stasdoto.airdefense.nation.StrikePlanPayload(c, shots));
-		}
-		plan.clear();
-		picked.clear();
-	}
-
-	/** For the tests: pick a planner row (by its place in the list) on or off. */
-	public void pickLauncherForTest(int row) {
-		List<CommandStatePayload.Unit> list = launchers();
-		if (row >= 0 && row < list.size()) {
-			long k = key(list.get(row));
-			if (!picked.remove(k)) {
-				picked.add(k);
-			}
-		}
-		updateButtons();
+		setTab(1);
 	}
 
 	/** For the tests: launchers in the planner's list, and in the plan. */
 	public int[] plannerCounts() {
 		return new int[]{launchers().size(), plan.size()};
-	}
-
-	/** A click on the map in the planner: the point, and it goes to the picked launchers. */
-	private void plannerClick(int x, int z) {
-		setTarget(x, z);
-		for (CommandStatePayload.Unit u : launchers()) {
-			if (picked.contains(key(u))) {
-				plan.put(key(u), new int[]{x, z, PLAN_SALVOS[planSalvo]});
-			}
-		}
-		updateButtons();
 	}
 
 	/** A click on the planner's list: that launcher picked or dropped. */
@@ -2315,72 +1430,6 @@ public class TacticalMapScreen extends Screen {
 		double speed = Math.max(0.3, m.maxSpeed * 0.85);
 		double arc = m.kind == MissileType.Kind.BALLISTIC || m.artillery() ? 1.35 : 1.08;
 		return (int) Math.ceil(d * arc / speed / 20.0);
-	}
-
-	/** The plan on the map: a line from each launcher to its point, the flight time half-way, the point. */
-	private void drawPlanMap(GuiGraphicsExtractor g) {
-		for (CommandStatePayload.Unit u : launchers()) {
-			int[] a = plan.get(key(u));
-			boolean sel = picked.contains(key(u));
-			double sx = toScreenX(u.x() + 0.5);
-			double sy = toScreenY(u.z() + 0.5);
-			if (sel) {
-				circle(g, sx, sy, 6, 0xFFFFFFFF, 0);
-			}
-			if (a == null) {
-				continue;
-			}
-			VehicleType t = VehicleType.byId(u.type());
-			double tx = toScreenX(a[0] + 0.5);
-			double ty = toScreenY(a[1] + 0.5);
-			double d = Math.hypot(a[0] - u.x(), a[1] - u.z());
-			boolean ok = d <= t.launcher.maxRange && d >= Math.max(VehicleEntity.MIN_STRIKE_DISTANCE, t.launcher.minRange);
-			line(g, sx, sy, tx, ty, ok ? 0xE0FFB040 : 0xE0FF5A4A, 3);
-			int x = (int) tx;
-			int y = (int) ty;
-			g.fill(x - 3, y, x + 4, y + 1, C_TARGET);
-			g.fill(x, y - 3, x + 1, y + 4, C_TARGET);
-			String label = ok ? "~" + flightSeconds(t, d) + Component.translatable("screen.airdefense.map.sec").getString()
-					: Component.translatable("screen.airdefense.map.plan.out").getString();
-			small(g, label, (int) ((sx + tx) / 2) + 3, (int) ((sy + ty) / 2) - 3, ok ? 0xFFFFE07A : C_BAD);
-		}
-	}
-
-	/** The planner's panel: the launchers, each with its rounds, its point and the flight time. */
-	private void drawPlanPanel(GuiGraphicsExtractor g, int y) {
-		y = cmdLine(g, Component.translatable("screen.airdefense.map.plan.title").getString(), y, C_TEXT);
-		y = cmdLine(g, Component.translatable(paused() ? "screen.airdefense.map.plan.paused" : "screen.airdefense.map.plan.hint").getString(), y,
-				paused() ? com.stasdoto.airdefense.client.ui.Ui.GOLD : C_DIM);
-		List<CommandStatePayload.Unit> list = launchers();
-		planTop = y;
-		planRows = Math.max(1, (my1 - 134 - y) / 10);
-		planScroll = Mth.clamp(planScroll, 0, Math.max(0, list.size() - planRows));
-		if (list.isEmpty()) {
-			cmdLine(g, Component.translatable("screen.airdefense.map.plan.none").getString(), y, C_DIM);
-			return;
-		}
-		for (int i = 0; i < planRows && i + planScroll < list.size(); i++) {
-			CommandStatePayload.Unit u = list.get(i + planScroll);
-			VehicleType t = VehicleType.byId(u.type());
-			int[] a = plan.get(key(u));
-			boolean sel = picked.contains(key(u));
-			int ry = y + i * 10;
-			if (sel) {
-				g.fill(px0 + 3, ry - 1, px0 + PANEL_W - 3, ry + 8, 0x40FFFFFF);
-			}
-			g.fill(px0 + 6, ry + 2, px0 + 9, ry + 5, C_LAUNCHER);
-			String what = Component.translatable("map.airdefense.short." + t.id).getString() + " " + u.ammo() + "/" + t.strikeLoad();
-			String where;
-			if (a == null) {
-				where = "—";
-			} else {
-				double d = Math.hypot(a[0] - u.x(), a[1] - u.z());
-				where = (d <= t.launcher.maxRange ? "→ ~" + flightSeconds(t, d) + Component.translatable("screen.airdefense.map.sec").getString()
-						: Component.translatable("screen.airdefense.map.plan.out").getString()) + (a[2] > 0 ? " ×" + a[2] : "");
-			}
-			small(g, what, px0 + 12, ry, sel ? 0xFFFFFFFF : C_TEXT);
-			small(g, where, px0 + PANEL_W - 6 - (int) (font.width(where) * 0.75f), ry, a == null ? C_DIM : 0xFFFFE07A);
-		}
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -2421,15 +1470,6 @@ public class TacticalMapScreen extends Screen {
 
 	// ------------------------------------------------------------------------------------------------
 	// For the automated test
-
-	/** For the automated test: villages on screen as {id, x, y}. */
-	public List<int[]> villageScreenPositions() {
-		List<int[]> out = new ArrayList<>();
-		for (NationMapPayload.Village v : NationClient.villages()) {
-			out.add(new int[]{v.id(), (int) toScreenX(v.x()), (int) toScreenY(v.z())});
-		}
-		return out;
-	}
 
 	public List<int[]> vehicleScreenPositions() {
 		List<int[]> out = new ArrayList<>();

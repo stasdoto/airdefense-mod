@@ -12,7 +12,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
-import com.stasdoto.airdefense.nation.Politics;
 import com.stasdoto.airdefense.radar.CounterBattery;
 import com.stasdoto.airdefense.vehicle.VehicleEntity;
 
@@ -72,10 +71,9 @@ public final class Jammers {
 		if (list.isEmpty()) {
 			return 0;
 		}
-		Politics p = Politics.get(level.getServer());
 		double best = 0;
 		for (Jammer j : list) {
-			if (CounterBattery.sameSide(p, j.country, side)) {
+			if (CounterBattery.sameSide(j.country, side)) {
 				continue;
 			}
 			double d = j.pos.distanceTo(at);

@@ -8,13 +8,13 @@ import java.util.Map;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RotatedPillarBlock;
@@ -25,10 +25,6 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
 import com.stasdoto.airdefense.AirDefense;
-import com.stasdoto.airdefense.nation.Country;
-import com.stasdoto.airdefense.nation.Politics;
-import com.stasdoto.airdefense.nation.Settlement;
-import com.stasdoto.airdefense.street.StreetBlock;
 
 /**
  * 1.48 "Positions": the field works and who builds them. A work is dug and built at once in front of whoever puts it
@@ -43,9 +39,6 @@ import com.stasdoto.airdefense.street.StreetBlock;
  * <li>an obstacle line (the AI's): Czech hedgehogs with coils of barbed wire between them;</li>
  * <li>a foxhole (soldiers digging in where they were sent): a horseshoe of sandbags.</li>
  * </ul>
- * The world's countries at war fortify their towns facing the enemy (only near players, so it is seen and the land is
- * there), a work every twenty seconds up to a few per town; their guards take the posts of these works when the fighting
- * comes.
  */
 public final class Fortify {
 	public enum Kind {
@@ -62,7 +55,6 @@ public final class Fortify {
 	}
 
 	public static void init() {
-		ServerTickEvents.END_SERVER_TICK.register(Fortify::tick);
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -365,89 +357,15 @@ public final class Fortify {
 		return best;
 	}
 
-	/** A soldier sent somewhere digs in when he gets there (one in four: a foxhole for the squad). */
-	public static void digIn(ServerLevel level, BlockPos at, Direction facing) {
-		if (postNear(level, at, 10, p -> true) != null) {
-			return;
+	/** Ground a work may be dug in (earth, sand, stone - not a path, a field or a block with contents). */
+	public static boolean naturalGround(BlockState s) {
+		if (s.is(Blocks.DIRT_PATH) || s.is(Blocks.FARMLAND) || s.hasBlockEntity()) {
+			return false;
 		}
-		BlockPos ground = at.below();
-		if (com.stasdoto.airdefense.nation.Sites.naturalGround(level.getBlockState(ground)) && build(level, ground, facing, Kind.FOXHOLE)) {
-			dugIn++;
-		}
-	}
-
-	// ------------------------------------------------------------------------------------------------
-	// The world's countries fortify their towns
-
-	private static void tick(MinecraftServer server) {
-		if (server.getTickCount() % 400 != 123) {
-			return;
-		}
-		fortifyOnce(server);
-	}
-
-	/** One round of the world's countries fortifying (one work, for the first town that wants one). Public for the tests. */
-	public static void fortifyOnce(MinecraftServer server) {
-		ServerLevel level = server.overworld();
-		Politics p = Politics.get(server);
-		Works works = Works.get(server);
-		for (Country c : p.countries.values()) {
-			if (c.owner != null || c.wars.isEmpty()) {
-				continue;
-			}
-			for (Settlement s : p.settlementsOf(c.id)) {
-				if (!level.isLoaded(s.flag) || level.getNearestPlayer(s.center.getX(), s.center.getY(), s.center.getZ(), 220, false) == null) {
-					continue;
-				}
-				int done = works.count.getOrDefault(s.id, 0);
-				int quota = s.isDistrict() ? 2 : s.isCity() ? 5 : 3;
-				if (done >= quota) {
-					continue;
-				}
-				Settlement enemy = nearestEnemy(p, c, s);
-				if (enemy == null) {
-					continue;
-				}
-				double a = Math.atan2(enemy.center.getZ() - s.center.getZ(), enemy.center.getX() - s.center.getX());
-				a += (done % 2 == 0 ? 1 : -1) * ((done + 1) / 2) * 0.5;
-				double dist = s.radius + 12;
-				int x = s.center.getX() + (int) Math.round(Math.cos(a) * dist);
-				int z = s.center.getZ() + (int) Math.round(Math.sin(a) * dist);
-				BlockPos at = new BlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1, z);
-				works.count.put(s.id, done + 1);
-				works.setDirty();
-				if (!level.isLoaded(at) || !com.stasdoto.airdefense.nation.Sites.naturalGround(level.getBlockState(at))) {
-					continue;
-				}
-				Direction facing = Direction.getApproximateNearest(Math.cos(a), 0, Math.sin(a));
-				Kind kind = switch (done % 5) {
-					case 0, 3 -> Kind.TRENCH;
-					case 1 -> Kind.POSITION;
-					case 2 -> Kind.OBSTACLES;
-					default -> s.isCity() ? Kind.PILLBOX : Kind.POSITION;
-				};
-				if (build(level, at, facing, kind)) {
-					aiBuilt++;
-					AirDefense.LOGGER.info("[airdefense] {} digs a {} at {} facing {}", s.name, kind.name().toLowerCase(java.util.Locale.ROOT), at.toShortString(), enemy.name);
-				}
-				return;
-			}
-		}
-	}
-
-	private static Settlement nearestEnemy(Politics p, Country c, Settlement s) {
-		Settlement best = null;
-		double bd = Double.MAX_VALUE;
-		for (int w : c.wars) {
-			for (Settlement o : p.settlementsOf(w)) {
-				double d = o.center.distSqr(s.center);
-				if (d < bd) {
-					bd = d;
-					best = o;
-				}
-			}
-		}
-		return best;
+		return s.is(BlockTags.SUBSTRATE_OVERWORLD) || s.is(BlockTags.SAND) || s.is(BlockTags.BASE_STONE_OVERWORLD) || s.is(BlockTags.TERRACOTTA)
+				|| s.is(Blocks.GRAVEL) || s.is(Blocks.SNOW_BLOCK) || s.is(Blocks.CLAY) || s.is(Blocks.SANDSTONE) || s.is(Blocks.RED_SANDSTONE)
+				|| s.is(Blocks.PACKED_ICE) || s.is(Blocks.MUD) || s.is(Blocks.GRASS_BLOCK) || s.is(Blocks.DIRT) || s.is(Blocks.PODZOL)
+				|| s.is(Blocks.COARSE_DIRT) || s.is(Blocks.MYCELIUM);
 	}
 
 	/** Saved with the world: how many works each town has dug, and the posts of all the works. */

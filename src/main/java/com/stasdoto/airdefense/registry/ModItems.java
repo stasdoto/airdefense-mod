@@ -154,7 +154,7 @@ public final class ModItems {
 		public net.minecraft.world.InteractionResult use(net.minecraft.world.level.Level level, net.minecraft.world.entity.player.Player player,
 				net.minecraft.world.InteractionHand hand) {
 			if (level instanceof net.minecraft.server.level.ServerLevel server && player instanceof net.minecraft.server.level.ServerPlayer sp) {
-				com.stasdoto.airdefense.nation.Supply.fillCans(server, sp, player.getItemInHand(hand));
+				com.stasdoto.airdefense.vehicle.VehicleEntity.fillCansFromTruck(server, sp, player.getItemInHand(hand));
 			}
 			return net.minecraft.world.InteractionResult.SUCCESS;
 		}

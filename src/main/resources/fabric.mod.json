@@ -2,14 +2,13 @@
 	"schemaVersion": 1,
 	"id": "airdefense",
 	"version": "${version}",
-	"name": "Stasdoto Air Defense",
-	"description": "Ракетные комплексы и ПВО: Искандер, крылатые ракеты, Шахеды, HIMARS, Patriot, IRIS-T, NASAMS, Гепард и ПЗРК.",
+	"name": "Stasdoto Air Defense Lite",
+	"description": "Лёгкая версия: только техника — пусковые, ПВО, радары, планшет. Без стран, городов, жителей и дорог.",
 	"authors": ["Stasdoto"],
 	"license": "All-Rights-Reserved",
 	"icon": "assets/airdefense/icon.png",
 	"environment": "*",
 	"mixins": [
-		"airdefense.mixins.json",
 		{
 			"config": "airdefense.client.mixins.json",
 			"environment": "client"

@@ -34,24 +34,15 @@ public class AirDefense implements ModInitializer {
 		com.stasdoto.airdefense.util.Perf.init();
 		com.stasdoto.airdefense.fx.Smoke.init();
 		com.stasdoto.airdefense.gear.GearServer.init();
-		com.stasdoto.airdefense.nation.Repairs.init();
 		com.stasdoto.airdefense.radar.CounterBattery.init();
 		com.stasdoto.airdefense.drone.Jammers.init();
 		com.stasdoto.airdefense.drone.Recon.init();
-		com.stasdoto.airdefense.nation.Orphans.init();
-		com.stasdoto.airdefense.nation.Shelters.init();
-		com.stasdoto.airdefense.nation.Services.init();
-		com.stasdoto.airdefense.nation.Seasons.init();
 		ModParticles.init();
 		PayloadTypeRegistry.clientboundPlay().register(FxPayload.TYPE, FxPayload.CODEC);
 		VehicleActionPayload.register();
 		com.stasdoto.airdefense.vehicle.VehicleDrivePayload.register();
 		ModEntities.init();
 		ModBlocks.init();
-		com.stasdoto.airdefense.street.StreetBlocks.init();
-		com.stasdoto.airdefense.street.Weathered.init();
-		com.stasdoto.airdefense.street.FacadeBlocks.init();
-		com.stasdoto.airdefense.nation.Growth.init();
 		com.stasdoto.airdefense.fort.FortBlocks.init();
 		ModBlockEntities.init();
 		ModItems.init();
@@ -61,10 +52,8 @@ public class AirDefense implements ModInitializer {
 		FactoryNet.init();
 		GunServer.init();
 		com.stasdoto.airdefense.siren.SirenNet.init();
-		com.stasdoto.airdefense.nation.Nations.init();
-		com.stasdoto.airdefense.nation.CityFeature.init();
-		com.stasdoto.airdefense.nation.Atlas.init();
-		com.stasdoto.airdefense.nation.Allegiance.init();
+		com.stasdoto.airdefense.map.LandAtlas.init();
+		com.stasdoto.airdefense.map.Sides.init();
 		com.stasdoto.airdefense.guide.Guide.init();
 		LOGGER.info("Stasdoto Air Defense loaded");
 	}

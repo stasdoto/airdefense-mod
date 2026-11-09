@@ -26,11 +26,6 @@ import net.minecraft.world.phys.Vec3;
 
 import com.stasdoto.airdefense.AirDefense;
 import com.stasdoto.airdefense.registry.ModBlocks;
-import com.stasdoto.airdefense.nation.Cities;
-import com.stasdoto.airdefense.nation.CityShape;
-import com.stasdoto.airdefense.nation.Hamlets;
-import com.stasdoto.airdefense.nation.Politics;
-import com.stasdoto.airdefense.nation.Settlement;
 
 /**
  * The air raid warning system (1.24), saved with the world: which towns are under an alert (switched on from the
@@ -121,10 +116,11 @@ public final class Sirens extends SavedData {
 		return server.getDataStorage().computeIfAbsent(TYPE);
 	}
 
-	/** The town a siren belongs to (the settlement whose area it stands in), or -1. */
+	/** Lite: no towns - all the sirens are one warning zone (0). */
+	public static final int ZONE = 0;
+
 	public static int townOf(ServerLevel level, BlockPos pos) {
-		Settlement s = Politics.get(level.getServer()).settlementAt(pos);
-		return s == null ? -1 : s.id;
+		return ZONE;
 	}
 
 	/** What a siren at a place in this town should be sounding, given its own setting. */
@@ -207,24 +203,18 @@ public final class Sirens extends SavedData {
 	// ------------------------------------------------------------------------------------------------
 	// Automatic alerts: a raid seen by the radars, the air defence opening fire
 
-	/** Every town within {@code radius} of {@code at} goes on alert (or stays on it a while longer). */
+	/** Lite: a raid seen or the air defence firing puts the sirens on alert (or keeps them on it a while longer). */
 	public static void autoAlert(ServerLevel level, Vec3 at, double radius) {
 		Sirens s = get(level.getServer());
 		long now = level.getGameTime();
-		boolean any = false;
-		for (Settlement t : Politics.get(level.getServer()).near(BlockPos.containing(at), radius)) {
-			Long until = s.autoUntil.get(t.id);
-			if (until == null || until <= now) {
-				autoAlerts++;
-				AirDefense.LOGGER.info("[airdefense] air raid alert in {}", t.name);
-			}
-			s.autoUntil.put(t.id, now + AUTO_TICKS);
-			s.clearUntil.remove(t.id);
-			any = true;
+		Long until = s.autoUntil.get(ZONE);
+		if (until == null || until <= now) {
+			autoAlerts++;
+			AirDefense.LOGGER.info("[airdefense] air raid alert");
 		}
-		if (any) {
-			s.setDirty();
-		}
+		s.autoUntil.put(ZONE, now + AUTO_TICKS);
+		s.clearUntil.remove(ZONE);
+		s.setDirty();
 	}
 
 	/** Called every second: automatic alerts that ran out turn into the all clear; planned sirens are put up. */
@@ -267,64 +257,6 @@ public final class Sirens extends SavedData {
 			pending.put(key, (long) facing.get2DDataValue() | (long) how << 8);
 			setDirty();
 		}
-	}
-
-	/**
-	 * A city's sirens: one on the central square by the city hall and more on the pavements, spread over the city so
-	 * every street hears one (2 in a small city, 4 in a middle one, 6 in a large one).
-	 */
-	public static void planCity(ServerLevel level, Cities.City c) {
-		Sirens s = get(level.getServer());
-		CityShape sh = c.shape();
-		int count = c.district() ? 2 : switch (c.size) {
-			case SMALL -> 2;
-			case MEDIUM -> 4;
-			case LARGE -> 6;
-		};
-		// The candidates: the middle of every side of every lot, on the pavement (the line of the street lamps).
-		List<int[]> cand = new ArrayList<>();
-		for (CityShape.Lot l : sh.lots) {
-			int ax = l.cx() + 2;
-			int az = l.cz() + 2;
-			cand.add(new int[]{l.x0 - 1, az, Direction.WEST.get2DDataValue()});
-			cand.add(new int[]{l.x1 + 1, az, Direction.EAST.get2DDataValue()});
-			cand.add(new int[]{ax, l.z0 - 1, Direction.NORTH.get2DDataValue()});
-			cand.add(new int[]{ax, l.z1 + 1, Direction.SOUTH.get2DDataValue()});
-		}
-		CityShape.Lot hall = sh.hallLot();
-		List<int[]> chosen = new ArrayList<>();
-		// First: the main siren on the square in front of the city hall.
-		chosen.add(new int[]{hall.cx() + 2, hall.z1 + 1, Direction.SOUTH.get2DDataValue()});
-		double reach = c.radius() * 0.72;
-		while (chosen.size() < count) {
-			int[] best = null;
-			double bestD = 0;
-			for (int[] k : cand) {
-				if (Math.hypot(k[0] - c.x, k[1] - c.z) > reach) {
-					continue;
-				}
-				double d = Double.MAX_VALUE;
-				for (int[] o : chosen) {
-					d = Math.min(d, Math.hypot(k[0] - o[0], k[1] - o[1]));
-				}
-				if (d > bestD) {
-					bestD = d;
-					best = k;
-				}
-			}
-			if (best == null || bestD < 40) {
-				break;
-			}
-			chosen.add(best);
-		}
-		for (int[] k : chosen) {
-			s.plan(k[0], c.base + 1, k[1], Direction.from2DDataValue(k[2]), ON_PAVEMENT);
-		}
-	}
-
-	/** A hamlet's siren: on a pole next to the well and the bell. */
-	public static void planHamlet(ServerLevel level, Hamlets.Hamlet h) {
-		get(level.getServer()).plan(h.x - 3, h.base + 1, h.z + 3, Direction.SOUTH, NEAR_CENTRE);
 	}
 
 	/** A village's siren: near its bell. */
@@ -483,10 +415,5 @@ public final class Sirens extends SavedData {
 		BlockState s = level.getBlockState(p);
 		return !s.isAir() && s.getFluidState().isEmpty() && !s.is(BlockTags.LEAVES) && !s.getCollisionShape(level, p).isEmpty()
 				&& !s.is(ModBlocks.SIREN) && !s.is(ModBlocks.SIREN_MAST);
-	}
-
-	@Nullable
-	public static Settlement town(ServerLevel level, int id) {
-		return Politics.get(level.getServer()).settlements.get(id);
 	}
 }

@@ -16,8 +16,6 @@ import com.stasdoto.airdefense.missile.MissileEntity;
 import com.stasdoto.airdefense.vehicle.VehicleEntity;
 import com.stasdoto.airdefense.vehicle.VehicleType;
 import com.stasdoto.airdefense.weapon.GrenadeEntity;
-import com.stasdoto.airdefense.nation.SoldierEntity;
-import com.stasdoto.airdefense.nation.WorkerEntity;
 
 public final class ModEntities {
 	private static final ResourceKey<EntityType<?>> MISSILE_KEY = ResourceKey.create(Registries.ENTITY_TYPE, AirDefense.id("missile"));
@@ -40,54 +38,6 @@ public final class ModEntities {
 					.clientTrackingRange(8)
 					.updateInterval(2)
 					.build(GRENADE_KEY));
-
-	private static final ResourceKey<EntityType<?>> SOLDIER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, AirDefense.id("soldier"));
-
-	/** Guards, soldiers and bandits (people with guns). */
-	public static final EntityType<SoldierEntity> SOLDIER = Registry.register(BuiltInRegistries.ENTITY_TYPE, SOLDIER_KEY,
-			EntityType.Builder.<SoldierEntity>of(SoldierEntity::new, MobCategory.MISC)
-					.sized(0.6f, 1.8f)
-					.eyeHeight(1.62f)
-					.clientTrackingRange(10)
-					.build(SOLDIER_KEY));
-
-	private static final ResourceKey<EntityType<?>> WORKER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, AirDefense.id("worker"));
-
-	/** Villagers at work (gathering or building). */
-	public static final EntityType<WorkerEntity> WORKER = Registry.register(BuiltInRegistries.ENTITY_TYPE, WORKER_KEY,
-			EntityType.Builder.<WorkerEntity>of(WorkerEntity::new, MobCategory.MISC)
-					.sized(0.6f, 1.8f)
-					.eyeHeight(1.62f)
-					.clientTrackingRange(10)
-					.build(WORKER_KEY));
-
-	private static final ResourceKey<EntityType<?>> PEDESTRIAN_KEY = ResourceKey.create(Registries.ENTITY_TYPE, AirDefense.id("pedestrian"));
-
-	/** 1.37: passers-by in the towns (made only on the client, round the player). */
-	public static final EntityType<com.stasdoto.airdefense.nation.PedestrianEntity> PEDESTRIAN = Registry.register(BuiltInRegistries.ENTITY_TYPE,
-			PEDESTRIAN_KEY, EntityType.Builder.<com.stasdoto.airdefense.nation.PedestrianEntity>of(com.stasdoto.airdefense.nation.PedestrianEntity::new,
-					MobCategory.MISC).sized(0.6f, 1.8f).eyeHeight(1.62f).clientTrackingRange(4).noSave().noSummon().build(PEDESTRIAN_KEY));
-
-	private static final ResourceKey<EntityType<?>> TRAIN_KEY = ResourceKey.create(Registries.ENTITY_TYPE, AirDefense.id("train"));
-
-	/** 1.39: trains on the railways (made only on the client, round the player). */
-	public static final EntityType<com.stasdoto.airdefense.nation.TrainEntity> TRAIN = Registry.register(BuiltInRegistries.ENTITY_TYPE,
-			TRAIN_KEY, EntityType.Builder.<com.stasdoto.airdefense.nation.TrainEntity>of(com.stasdoto.airdefense.nation.TrainEntity::new,
-					MobCategory.MISC).sized(3f, 4f).clientTrackingRange(16).noSave().noSummon().build(TRAIN_KEY));
-
-	private static final ResourceKey<EntityType<?>> PLANE_KEY = ResourceKey.create(Registries.ENTITY_TYPE, AirDefense.id("airliner"));
-
-	/** 1.40: the airliners at the airports (made only on the client, round the player). */
-	public static final EntityType<com.stasdoto.airdefense.nation.PlaneEntity> PLANE = Registry.register(BuiltInRegistries.ENTITY_TYPE,
-			PLANE_KEY, EntityType.Builder.<com.stasdoto.airdefense.nation.PlaneEntity>of(com.stasdoto.airdefense.nation.PlaneEntity::new,
-					MobCategory.MISC).sized(4f, 4f).clientTrackingRange(16).noSave().noSummon().build(PLANE_KEY));
-
-	private static final ResourceKey<EntityType<?>> PROP_KEY = ResourceKey.create(Registries.ENTITY_TYPE, AirDefense.id("prop"));
-
-	/** 1.41: lorries, tractors, tower cranes (made only on the client, round the player). */
-	public static final EntityType<com.stasdoto.airdefense.nation.PropEntity> PROP = Registry.register(BuiltInRegistries.ENTITY_TYPE,
-			PROP_KEY, EntityType.Builder.<com.stasdoto.airdefense.nation.PropEntity>of(com.stasdoto.airdefense.nation.PropEntity::new,
-					MobCategory.MISC).sized(3f, 3f).clientTrackingRange(16).noSave().noSummon().build(PROP_KEY));
 
 	private static final Map<VehicleType, EntityType<VehicleEntity>> VEHICLES = new EnumMap<>(VehicleType.class);
 
@@ -115,9 +65,6 @@ public final class ModEntities {
 	}
 
 	public static void init() {
-		FabricDefaultAttributeRegistry.register(SOLDIER, SoldierEntity.createAttributes());
-		FabricDefaultAttributeRegistry.register(WORKER, WorkerEntity.createAttributes());
-		FabricDefaultAttributeRegistry.register(PEDESTRIAN, com.stasdoto.airdefense.nation.PedestrianEntity.createAttributes());
 		for (VehicleType type : VehicleType.values()) {
 			FabricDefaultAttributeRegistry.register(vehicle(type), VehicleEntity.createAttributes(type));
 		}

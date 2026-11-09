@@ -22,7 +22,6 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 
 import com.stasdoto.airdefense.AirDefense;
-import com.stasdoto.airdefense.street.StreetBlock;
 
 /**
  * 1.48 "Positions": the field works - sandbags (a full wall and a low parapet), Czech hedgehogs against tanks, barbed

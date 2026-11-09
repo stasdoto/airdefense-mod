@@ -1,5 +1,7 @@
 package com.stasdoto.airdefense.map;
 
+import com.stasdoto.airdefense.AirDefense;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -38,6 +40,42 @@ public final class MapServer {
 		PayloadTypeRegistry.clientboundPlay().register(MapStatusPayload.TYPE, MapStatusPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(RadarPayload.TYPE, RadarPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(MapActionPayload.TYPE, (payload, context) -> handle(context.player(), payload));
+		PayloadTypeRegistry.serverboundPlay().register(StrikePlanPayload.TYPE, StrikePlanPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(StrikePlanPayload.TYPE, (payload, context) -> launchPlan(context.player(), payload));
+	}
+
+	/** For the tests: planned strikes launched, launchers in them. */
+	public static int plans;
+	public static int planLaunchers;
+
+	/**
+	 * 2.0: the strike planner's "Launch": every launcher fires at the point it was given, all at once - each checked
+	 * here (it is of the player's side, it is a launcher) and fired as any order from the tablet.
+	 */
+	public static void launchPlan(ServerPlayer player, StrikePlanPayload plan) {
+		if (DesignatorItem.held(player) == null || plan.shots().size() > StrikePlanPayload.MAX_SHOTS) {
+			return;
+		}
+		ServerLevel level = player.level();
+		int launchers = 0;
+		java.util.Set<Integer> used = new java.util.HashSet<>();
+		for (StrikePlanPayload.Shot shot : plan.shots()) {
+			if (!used.add(shot.vehicle()) || !(level.getEntity(shot.vehicle()) instanceof VehicleEntity v) || !v.getVehicleType().isLauncher()
+					|| !mine(level, player, v)) {
+				continue;
+			}
+			BlockPos aim = ground(level, shot.x(), MapActionPayload.Y_UNKNOWN, shot.z());
+			if (v.commandFire(aim, null, Math.min(shot.salvo(), StrikePlanPayload.MAX_ROUNDS))) {
+				launchers++;
+			}
+		}
+		if (launchers > 0) {
+			plans++;
+			planLaunchers += launchers;
+		}
+		player.sendSystemMessage(Component.translatable(launchers > 0 ? "message.airdefense.plan.launched" : "message.airdefense.plan.none", launchers));
+		AirDefense.LOGGER.info("[airdefense] planned strike: {} launchers fired", launchers);
+		ServerPlayNetworking.send(player, status(level, player));
 	}
 
 	private static void handle(ServerPlayer player, MapActionPayload p) {
@@ -86,6 +124,11 @@ public final class MapServer {
 				DesignatorItem.setTarget(tablet, target);
 				com.stasdoto.airdefense.drone.DroneNet.massStrike(player, target);
 			}
+			case MapActionPayload.SET_SIDE -> {
+				Sides.play(player, p.x());
+				player.sendOverlayMessage(Component.translatable(Sides.playing(player) == Sides.ENEMY
+						? "message.airdefense.side.enemy" : "message.airdefense.side.ours"));
+			}
 			case MapActionPayload.CLEAR_TARGET -> {
 				DesignatorItem.clearTarget(tablet);
 				player.sendOverlayMessage(Component.translatable("message.airdefense.target_cleared"));
@@ -95,7 +138,6 @@ public final class MapServer {
 			}
 		}
 		ServerPlayNetworking.send(player, status(level, player));
-		com.stasdoto.airdefense.nation.NationNet.sendMap(level, player);
 	}
 
 	/** A point picked on the map, on the ground: the height comes from the world (the chunk is loaded for it if needed). */
@@ -110,7 +152,7 @@ public final class MapServer {
 		// world generator will do - the missile finds the ground there by itself.
 		int top = level.hasChunk(x >> 4, z >> 4)
 				? level.getChunk(x >> 4, z >> 4).getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x & 15, z & 15)
-				: com.stasdoto.airdefense.nation.Cities.terrain(level).top(x, z);
+				: LandAtlas.terrain(level).top(x, z);
 		return new BlockPos(x, Math.max(level.getMinY(), top), z);
 	}
 
@@ -149,23 +191,15 @@ public final class MapServer {
 		return new RadarPayload(stations, contacts);
 	}
 
-	/** The player's own vehicle (or one of his country's towns'): only those take orders from his tablet. */
+	/** Lite: a vehicle of the side the player plays now - only those take orders from his tablet. */
 	public static boolean mine(ServerLevel level, ServerPlayer player, VehicleEntity v) {
-		if (v.country == -1) {
-			return true;
-		}
-		com.stasdoto.airdefense.nation.Country own = com.stasdoto.airdefense.nation.Politics.get(level.getServer()).countryOwnedBy(player.getUUID());
-		// 2.0: and the vehicles of the country he commands.
-		return own != null && own.id == v.country || v.country >= 0 && v.country == com.stasdoto.airdefense.nation.Command.commanding(player);
+		return Sides.same(v.country, Sides.playing(player));
 	}
 
 	public static MapStatusPayload status(ServerLevel level, ServerPlayer player) {
-		com.stasdoto.airdefense.nation.Country own = com.stasdoto.airdefense.nation.Politics.get(level.getServer()).countryOwnedBy(player.getUUID());
-		int ownId = own == null ? -1 : own.id;
-		int commanded = com.stasdoto.airdefense.nation.Command.commanding(player);
+		int ownId = Sides.playing(player);
 		List<VehicleEntity> vehicles = new ArrayList<>(level.getEntities(EntityTypeTest.forClass(VehicleEntity.class),
-				v -> v.isAlive() && v.distanceToSqr(player) < LIST_RANGE * LIST_RANGE && (v.country == -1 || v.country == ownId
-						|| commanded >= 0 && v.country == commanded)));
+				v -> v.isAlive() && v.distanceToSqr(player) < LIST_RANGE * LIST_RANGE && Sides.same(v.country, ownId)));
 		vehicles.sort(Comparator.comparingDouble(v -> v.distanceToSqr(player)));
 		List<MapStatusPayload.Entry> entries = new ArrayList<>();
 		for (VehicleEntity v : vehicles) {

@@ -96,9 +96,6 @@ public final class VehicleClient {
 				mc.gui.setScreen(new com.stasdoto.airdefense.client.ui.SettingsScreen(null));
 			}
 		}
-		if (player != null && !(player.getVehicle() instanceof VehicleEntity)) {
-			takeParkedCar(mc, player);
-		}
 		if (player == null || !(player.getVehicle() instanceof VehicleEntity v)) {
 			lastDriven = -1;
 			while (LIGHTS.consumeClick()) {
@@ -175,14 +172,6 @@ public final class VehicleClient {
 			v.toggleCruise();
 			player.sendOverlayMessage(Component.translatable(v.cruiseOn() ? "hud.airdefense.drive.cruise_on" : "hud.airdefense.drive.cruise_off"));
 		}
-		if (v.simulatedHere()) {
-			var d = v.driveState();
-			double keep = com.stasdoto.airdefense.client.nation.TownTraffic.shove(v, d.vx, d.vz, v.driveSpec().mass);
-			if (keep < 1) {
-				d.vx *= keep;
-				d.vz *= keep;
-			}
-		}
 	}
 
 	/** 2.0: horns of every vehicle round (others' too: it is synced). */
@@ -242,36 +231,6 @@ public final class VehicleClient {
 		} catch (ReflectiveOperationException ex) {
 			hornHook = null;
 			return false;
-		}
-	}
-
-	/** For the tests: how many times a parked car was asked for. */
-	public static int takeRequests;
-
-	/** 2.0: right-click on a car parked in a town's bay: the server puts a real one there, with the player at the wheel. */
-	private static void takeParkedCar(Minecraft mc, LocalPlayer player) {
-		if (mc.gui.screen() != null || player.isSpectator() || !mc.options.keyUse.isDown()) {
-			return;
-		}
-		Vec3 eye = player.getEyePosition();
-		var hit = com.stasdoto.airdefense.client.nation.TownTraffic.parkedInSight(eye, player.getViewVector(1f), 4.5);
-		if (hit == null) {
-			return;
-		}
-		if (mc.hitResult != null && mc.hitResult.getType() != net.minecraft.world.phys.HitResult.Type.MISS
-				&& mc.hitResult.getLocation().distanceTo(eye) + 2.5 < hit.getValue().position().distanceTo(eye)) {
-			// Something else (a block, a person) is in front of the car.
-			return;
-		}
-		while (mc.options.keyUse.consumeClick()) {
-		}
-		mc.options.keyUse.setDown(false);
-		var p = hit.getValue();
-		if (ClientPlayNetworking.canSend(com.stasdoto.airdefense.vehicle.VehicleDrivePayload.TakeCar.TYPE)) {
-			ClientPlayNetworking.send(new com.stasdoto.airdefense.vehicle.VehicleDrivePayload.TakeCar(net.minecraft.core.BlockPos.of(hit.getKey()), p.model,
-					p.pose[0], p.pose[1], p.pose[2], (float) p.pose[3]));
-			com.stasdoto.airdefense.client.nation.TownTraffic.taken(mc.level, hit.getKey());
-			takeRequests++;
 		}
 	}
 

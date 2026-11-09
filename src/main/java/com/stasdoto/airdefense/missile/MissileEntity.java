@@ -819,8 +819,6 @@ public class MissileEntity extends Entity {
 			return;
 		}
 		whistled = true;
-		// 1.47: the men where it will land hear it too, and run.
-		com.stasdoto.airdefense.nation.SoldierEntity.incoming(level, target, 12);
 		long now = level.getGameTime();
 		if (now - lastWhistleTime < 10 && lastWhistleAt.distanceToSqr(target) < 40 * 40) {
 			return;
@@ -863,11 +861,7 @@ public class MissileEntity extends Entity {
 		if (!getMissileType().loiters()) {
 			return false;
 		}
-		if (country == -1) {
-			return true;
-		}
-		return country >= 0 && level().getServer() != null
-				&& com.stasdoto.airdefense.radar.CounterBattery.playerSide(com.stasdoto.airdefense.nation.Politics.get(level().getServer()), country);
+		return com.stasdoto.airdefense.radar.CounterBattery.playerSide(country);
 	}
 
 	/** 1.33: the ship an anti-ship missile's seeker has locked on to, and where it was first aimed. */
@@ -891,11 +885,10 @@ public class MissileEntity extends Entity {
 		double dx = aim.x - pos.x;
 		double dz = aim.z - pos.z;
 		if (shipTarget == null && life % 5 == 0 && dx * dx + dz * dz < 280 * 280) {
-			com.stasdoto.airdefense.nation.Politics p = com.stasdoto.airdefense.nation.Politics.get(level.getServer());
 			double best = 90 * 90;
 			for (com.stasdoto.airdefense.vehicle.VehicleEntity v : level.getEntitiesOfClass(com.stasdoto.airdefense.vehicle.VehicleEntity.class,
 					new AABB(aim, aim).inflate(90, 40, 90), v -> v.isAlive() && v.getVehicleType().boat
-							&& !com.stasdoto.airdefense.radar.CounterBattery.sameSide(p, v.country, country()))) {
+							&& !com.stasdoto.airdefense.radar.CounterBattery.sameSide(v.country, country()))) {
 				double d = v.distanceToSqr(aim);
 				if (d < best) {
 					best = d;
@@ -1267,14 +1260,13 @@ public class MissileEntity extends Entity {
 	/** The enemy vehicle on the ground nearest the point it circles, within its camera's sight. */
 	@org.jetbrains.annotations.Nullable
 	private Entity findPrey(ServerLevel level, MissileType type) {
-		com.stasdoto.airdefense.nation.Politics p = com.stasdoto.airdefense.nation.Politics.get(level.getServer());
 		double r = type.sightRange();
 		Vec3 c = target;
 		Entity best = null;
 		double bestD = r * r;
 		for (com.stasdoto.airdefense.vehicle.VehicleEntity v : level.getEntitiesOfClass(com.stasdoto.airdefense.vehicle.VehicleEntity.class,
 				new AABB(c.x - r, c.y - 60, c.z - r, c.x + r, c.y + 80, c.z + r),
-				v -> v.isAlive() && !v.airborne() && com.stasdoto.airdefense.drone.Recon.enemy(p, country(), v))) {
+				v -> v.isAlive() && !v.airborne() && com.stasdoto.airdefense.drone.Recon.enemy(country(), v))) {
 			double d = Mth.square(v.getX() - c.x) + Mth.square(v.getZ() - c.z);
 			if (d < bestD) {
 				bestD = d;
@@ -1329,14 +1321,13 @@ public class MissileEntity extends Entity {
 		if ((life + getId()) % 10 != 0) {
 			return;
 		}
-		com.stasdoto.airdefense.nation.Politics p = com.stasdoto.airdefense.nation.Politics.get(level.getServer());
 		Vec3 pos = position();
 		double r = 64;
 		Entity best = null;
 		double bestD = r * r;
 		for (com.stasdoto.airdefense.vehicle.VehicleEntity v : level.getEntitiesOfClass(com.stasdoto.airdefense.vehicle.VehicleEntity.class,
 				new AABB(pos.x - r, pos.y - 140, pos.z - r, pos.x + r, pos.y, pos.z + r),
-				v -> v.isAlive() && !v.airborne() && com.stasdoto.airdefense.drone.Recon.enemy(p, country(), v))) {
+				v -> v.isAlive() && !v.airborne() && com.stasdoto.airdefense.drone.Recon.enemy(country(), v))) {
 			double d = Mth.square(v.getX() - pos.x) + Mth.square(v.getZ() - pos.z);
 			if (d < bestD) {
 				bestD = d;
@@ -1670,7 +1661,6 @@ public class MissileEntity extends Entity {
 				Effects.airBurst(level, this, at, type);
 			} else {
 				Effects.groundImpact(level, this, at, type);
-				com.stasdoto.airdefense.radar.CounterBattery.impact(level, this, at);
 				if (ARTY_LANDED.size() < 400) {
 					ARTY_LANDED.add(at);
 				}

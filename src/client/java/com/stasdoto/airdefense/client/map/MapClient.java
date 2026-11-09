@@ -13,6 +13,8 @@ import com.stasdoto.airdefense.map.MapStatusPayload;
 /** Client side of the tablet map: opening it, the latest vehicle situation from the server, sending orders. */
 public final class MapClient {
 	private static MapStatusPayload latest;
+	/** Lite: the side this player plays (see Sides); the server is told whenever it changes, it starts as "ours". */
+	private static int side = com.stasdoto.airdefense.map.Sides.OURS;
 
 	private MapClient() {
 	}
@@ -25,6 +27,7 @@ public final class MapClient {
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> {
 			if (mc.level == null) {
 				latest = null;
+				side = com.stasdoto.airdefense.map.Sides.OURS;
 			}
 			MapCache.tick(mc);
 		});
@@ -65,6 +68,17 @@ public final class MapClient {
 	public static boolean cyrillic() {
 		String lang = Minecraft.getInstance().options.languageCode;
 		return lang != null && (lang.startsWith("ru") || lang.startsWith("uk") || lang.startsWith("be"));
+	}
+
+	public static int side() {
+		return side;
+	}
+
+	/** Lite: play the other side (the list empties until the server answers with that side's vehicles). */
+	public static void playSide(int s) {
+		side = com.stasdoto.airdefense.map.Sides.of(s);
+		latest = null;
+		send(new MapActionPayload(MapActionPayload.SET_SIDE, -1, side, 0, 0));
 	}
 
 	public static void send(MapActionPayload payload) {

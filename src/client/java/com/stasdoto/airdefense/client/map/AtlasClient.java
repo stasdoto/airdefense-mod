@@ -18,9 +18,7 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.Identifier;
 
 import com.stasdoto.airdefense.AirDefense;
-import com.stasdoto.airdefense.nation.AtlasPayload;
-import com.stasdoto.airdefense.nation.AtlasPoliticsPayload;
-import com.stasdoto.airdefense.nation.Territory;
+import com.stasdoto.airdefense.map.AtlasPayload;
 
 /**
  * The atlas on the client (1.25): the ground picture of the 10 km round the spawn, the towns' plans, the roads, and who
@@ -66,11 +64,7 @@ public final class AtlasClient {
 	/** Pixels of the ground texture per atlas pixel. */
 	public static final int UP = 4;
 
-	public static AtlasPoliticsPayload politics;
-	private static final Map<Long, AtlasPoliticsPayload.Town> BY_KEY = new HashMap<>();
-	private static final Map<Integer, AtlasPoliticsPayload.Country> COUNTRIES = new HashMap<>();
-	private static final Map<Integer, AtlasPoliticsPayload.Town> TOWNS = new HashMap<>();
-	/** Bumped whenever who-holds-what changes (the map redraws its borders). */
+	/** Bumped whenever a new atlas comes in. */
 	public static int version;
 
 	private AtlasClient() {
@@ -78,64 +72,23 @@ public final class AtlasClient {
 
 	public static void init() {
 		ClientPlayNetworking.registerGlobalReceiver(AtlasPayload.TYPE, (payload, context) -> context.client().execute(() -> load(payload.data())));
-		ClientPlayNetworking.registerGlobalReceiver(AtlasPoliticsPayload.TYPE, (payload, context) -> context.client().execute(() -> politics(payload)));
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> {
-			if (mc.level == null && (loaded || politics != null)) {
+			if (mc.level == null && loaded) {
 				clear();
 			}
 		});
 	}
 
 	private static void clear() {
-		AtlasTiles.clear();
 		loaded = false;
 		CITIES.clear();
 		HAMLETS.clear();
 		DEPOTS.clear();
 		ROADS.clear();
-		politics = null;
-		BY_KEY.clear();
-		COUNTRIES.clear();
-		TOWNS.clear();
 		if (texture != null) {
 			Minecraft.getInstance().getTextureManager().release(textureId);
 			texture = null;
 		}
-	}
-
-	private static void politics(AtlasPoliticsPayload p) {
-		politics = p;
-		BY_KEY.clear();
-		COUNTRIES.clear();
-		TOWNS.clear();
-		for (AtlasPoliticsPayload.Town t : p.towns()) {
-			TOWNS.put(t.id(), t);
-			if (t.kind() < 2) {
-				BY_KEY.put(t.key() * 2 + t.kind(), t);
-			}
-		}
-		for (AtlasPoliticsPayload.Country c : p.countries()) {
-			COUNTRIES.put(c.id(), c);
-		}
-		version++;
-	}
-
-	public static AtlasPoliticsPayload.Town cityTown(long key) {
-		return BY_KEY.get(key * 2);
-	}
-
-	public static AtlasPoliticsPayload.Town hamletTown(long key) {
-		return BY_KEY.get(key * 2 + 1);
-	}
-
-	/** Whether the atlas draws this town's outline (a planned city or hamlet in it). */
-	public static boolean outlines(int settlement) {
-		AtlasPoliticsPayload.Town t = TOWNS.get(settlement);
-		return loaded && t != null && t.kind() < 2;
-	}
-
-	public static AtlasPoliticsPayload.Country country(int id) {
-		return COUNTRIES.get(id);
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -239,7 +192,7 @@ public final class AtlasClient {
 				City c = CITIES.get(i);
 				seatX[i] = c.x;
 				seatZ[i] = c.z;
-				seatW[i] = Territory.weight(c.size, c.index == 0);
+				seatW[i] = 1f;
 				seatKey[i] = c.key;
 			}
 			bake(kinds, colors);
@@ -334,31 +287,5 @@ public final class AtlasClient {
 		int g = (int) Math.min(255, ((a >> 8) & 255) * k);
 		int b = (int) Math.min(255, (a & 255) * k);
 		return r << 16 | g << 8 | b;
-	}
-
-	// ------------------------------------------------------------------------------------------------
-	// Borders
-
-	/** The city whose region holds this point (its index in CITIES), or -1. */
-	public static int regionAt(double x, double z) {
-		return Territory.owner(seatX, seatZ, seatW, warp, x, z);
-	}
-
-	/** The cities' centres (0 = x, 1 = z), for painting the borders off the render thread. */
-	static int[] seats(int axis) {
-		return (axis == 0 ? seatX : seatZ).clone();
-	}
-
-	static float[] seatWeights() {
-		return seatW.clone();
-	}
-
-	/** The country holding a city's region (-1: nobody yet, or unknown). */
-	public static int countryOfCity(int index) {
-		if (index < 0 || index >= seatKey.length) {
-			return -1;
-		}
-		AtlasPoliticsPayload.Town t = cityTown(seatKey[index]);
-		return t == null ? -1 : t.country();
 	}
 }

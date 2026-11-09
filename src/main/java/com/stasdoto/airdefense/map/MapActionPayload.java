@@ -24,6 +24,8 @@ public record MapActionPayload(int action, int vehicleId, int x, int y, int z) i
 	 * ({@link #fireMission(int)}); the low byte is the action.
 	 */
 	public static final int FIRE_MISSION = 7;
+	/** Lite: play the other side ({@code x} = the side, see {@link Sides}). */
+	public static final int SET_SIDE = 8;
 	/** Height of a map point the client does not know: the server looks it up. */
 	public static final int Y_UNKNOWN = Integer.MIN_VALUE;
 

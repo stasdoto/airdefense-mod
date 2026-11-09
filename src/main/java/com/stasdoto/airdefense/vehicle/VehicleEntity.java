@@ -1070,7 +1070,6 @@ public class VehicleEntity extends LivingEntity {
 			return;
 		}
 		if (cargoDelivery != 0) {
-			com.stasdoto.airdefense.nation.Arsenals.lorryArrived(level, this);
 			unloadedTicks = 0;
 			return;
 		}
@@ -1083,26 +1082,12 @@ public class VehicleEntity extends LivingEntity {
 		if (troops <= 0) {
 			return;
 		}
-		com.stasdoto.airdefense.nation.Politics p = com.stasdoto.airdefense.nation.Politics.get(level.getServer());
-		com.stasdoto.airdefense.nation.Country c = p.country(country);
-		Vec3 back = forward().scale(-(vtype.geometry.length() / 2 + 1.5));
-		RandomSource r = level.getRandom();
-		for (int i = 0; i < troops; i++) {
-			Vec3 at = position().add(back).add(right().scale((i % 3 - 1) * 1.4)).add(forward().scale(-(i / 3) * 1.3));
-			int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mth.floor(at.x), Mth.floor(at.z));
-			com.stasdoto.airdefense.nation.SoldierEntity e = com.stasdoto.airdefense.nation.SoldierEntity.create(level,
-					com.stasdoto.airdefense.nation.SoldierEntity.SOLDIER, country, c == null ? 0 : c.color, home, new Vec3(at.x, y, at.z), r.nextInt());
-			if (troopTarget != null) {
-				e.orderTo(troopTarget);
-			}
-			if (garrison) {
-				// An attacker's column: its men stay a while, then go.
-				e.raidSince = level.getGameTime();
-			}
-			level.addFreshEntity(e);
-			dismounted++;
-		}
 		troops = 0;
+	}
+
+	/** Lite: a vehicle of the other side. */
+	private boolean hostileTo(Entity e) {
+		return e instanceof VehicleEntity v && com.stasdoto.airdefense.map.Sides.hostile(country, v.country);
 	}
 
 	/** An AI gunner (the world's countries' armour): picks the nearest enemy in sight and fires bursts at it. */
@@ -1118,7 +1103,7 @@ public class VehicleEntity extends LivingEntity {
 			double best = Double.MAX_VALUE;
 			boolean bigGun = w.vehicleDamage >= 15;
 			for (Entity e : level.getEntities(this, getBoundingBox().inflate(reach, 60, reach),
-					e -> e.isAlive() && !e.isSpectator() && com.stasdoto.airdefense.nation.War.hostile(level, country, e))) {
+					e -> e.isAlive() && !e.isSpectator() && hostileTo(e))) {
 				double d = Math.sqrt(e.distanceToSqr(this));
 				double sc = d;
 				if (e == lastAttacker && level.getGameTime() - lastAttackedAt < 200) {
@@ -1128,9 +1113,6 @@ public class VehicleEntity extends LivingEntity {
 					sc += bigGun ? (v.vtype.isArmed() ? -50 : -25) : 25;
 				} else if (bigGun) {
 					sc += 20;
-				}
-				if (e instanceof com.stasdoto.airdefense.nation.SoldierEntity so && so.gun() != null && so.gun().rocket()) {
-					sc -= 30;
 				}
 				if (sc < best && sees(level, e)) {
 					best = sc;
@@ -2202,9 +2184,8 @@ public class VehicleEntity extends LivingEntity {
 		if (stationaryTicks < 40 || !isAlive()) {
 			return;
 		}
-		com.stasdoto.airdefense.nation.Politics p = com.stasdoto.airdefense.nation.Politics.get(level.getServer());
 		List<VehicleEntity> near = level.getEntitiesOfClass(VehicleEntity.class, getBoundingBox().inflate(MEND_RANGE),
-				v -> v != this && v.isAlive() && v.getHealth() < v.getMaxHealth() && com.stasdoto.airdefense.radar.CounterBattery.sameSide(p, v.country, country));
+				v -> v != this && v.isAlive() && v.getHealth() < v.getMaxHealth() && com.stasdoto.airdefense.radar.CounterBattery.sameSide(v.country, country));
 		for (VehicleEntity v : near) {
 			float add = Math.min(v.getMaxHealth() * 0.03f, v.getMaxHealth() - v.getHealth());
 			v.setHealth(v.getHealth() + add);
@@ -2369,23 +2350,30 @@ public class VehicleEntity extends LivingEntity {
 		return entityData.get(DATA_CARGO);
 	}
 
-	/** What the truck carries: a {@link com.stasdoto.airdefense.nation.VillageEconomy} kind (fuel or ammunition unless loaded with something else). */
+	/** Kinds of goods (the numbers the full mod's towns used: "nation.airdefense.goods.N"). */
+	public static final int CARGO_OIL = 3;
+	public static final int CARGO_FUEL = 4;
+	public static final int CARGO_AMMO = 5;
+	public static final int CARGO_FOOD = 6;
+	public static final int CARGO_ARMS = 7;
+
+	/** What the truck carries: fuel or ammunition. */
 	public int getCargoKind() {
 		int k = entityData.get(DATA_CARGO_KIND);
 		return k >= 0 ? k : defaultCargo();
 	}
 
 	private int defaultCargo() {
-		return vtype.cargo == 1 ? com.stasdoto.airdefense.nation.VillageEconomy.FUEL : com.stasdoto.airdefense.nation.VillageEconomy.AMMO;
+		return vtype.cargo == 1 ? CARGO_FUEL : CARGO_AMMO;
 	}
 
 	public void setCargoKind(int kind) {
 		entityData.set(DATA_CARGO_KIND, kind);
 	}
 
-	/** How many modes the truck has: serve, load, unload, load oil (or food), load weapons. */
+	/** Lite: no towns to load at - the truck only serves (and fills up again by itself while it stands, see tickTruck). */
 	public int truckModes() {
-		return vtype.cargo == 1 ? 4 : 5;
+		return 1;
 	}
 
 	/** The language key suffix of the truck's mode. */
@@ -2401,8 +2389,8 @@ public class VehicleEntity extends LivingEntity {
 	private int loadKind(int mode) {
 		return switch (mode) {
 			case TRUCK_LOAD -> defaultCargo();
-			case TRUCK_LOAD_OTHER -> vtype.cargo == 1 ? com.stasdoto.airdefense.nation.VillageEconomy.OIL : com.stasdoto.airdefense.nation.VillageEconomy.FOOD;
-			case TRUCK_LOAD_ARMS -> com.stasdoto.airdefense.nation.VillageEconomy.ARMS;
+			case TRUCK_LOAD_OTHER -> vtype.cargo == 1 ? CARGO_OIL : CARGO_FOOD;
+			case TRUCK_LOAD_ARMS -> CARGO_ARMS;
 			default -> -1;
 		};
 	}
@@ -2417,65 +2405,97 @@ public class VehicleEntity extends LivingEntity {
 			return;
 		}
 		boolean fuel = vtype.cargo == 1;
-		int mode = getMode();
-		if (getCargo() <= 0 && entityData.get(DATA_CARGO_KIND) >= 0) {
+		if (getMode() != TRUCK_SUPPLY) {
+			setMode(TRUCK_SUPPLY);
+		}
+		if (entityData.get(DATA_CARGO_KIND) >= 0 && getCargoKind() != defaultCargo()) {
 			setCargoKind(-1);
+			setCargo(0);
 		}
-		if (mode == TRUCK_SUPPLY && getCargoKind() != defaultCargo()) {
-			return;
-		}
-		if (mode == TRUCK_SUPPLY) {
-			// Vehicles round the truck get what it carries.
-			for (VehicleEntity v : level.getEntitiesOfClass(VehicleEntity.class, getBoundingBox().inflate(12, 6, 12), v -> v != this && v.isAlive())) {
-				if (getCargo() <= 0) {
-					break;
-				}
-				if (fuel) {
-					if (!v.infiniteFuel()) {
-						int give = (int) Math.min(Math.min(60, getCargo()), v.vtype.fuelCapacity() - v.getFuel());
-						if (give > 0) {
-							v.refuel(give);
-							setCargo(getCargo() - give);
-						}
+		// Vehicles round the truck get what it carries.
+		int before = getCargo();
+		for (VehicleEntity v : level.getEntitiesOfClass(VehicleEntity.class, getBoundingBox().inflate(12, 6, 12), v -> v != this && v.isAlive())) {
+			if (getCargo() <= 0) {
+				break;
+			}
+			if (fuel) {
+				if (!v.infiniteFuel()) {
+					int give = (int) Math.min(Math.min(60, getCargo()), v.vtype.fuelCapacity() - v.getFuel());
+					if (give > 0) {
+						v.refuel(give);
+						setCargo(getCargo() - give);
 					}
-				} else {
-					com.stasdoto.airdefense.nation.VillageEconomy pool = new com.stasdoto.airdefense.nation.VillageEconomy();
-					pool.stock[com.stasdoto.airdefense.nation.VillageEconomy.AMMO] = getCargo();
-					com.stasdoto.airdefense.nation.Supply.rearm(pool, v);
-					setCargo(pool.stock[com.stasdoto.airdefense.nation.VillageEconomy.AMMO]);
 				}
+			} else {
+				rearmFromTruck(v);
 			}
+		}
+		// Lite: nothing handed out this second - the truck fills up from its own stores (a field depot).
+		if (getCargo() == before && getCargo() < vtype.cargoCapacity) {
+			setCargo(getCargo() + (fuel ? 50 : 5));
+		}
+	}
+
+	/** One step of rearming {@code v} from the truck: spare rounds (or a missile), paid in ammunition points. */
+	private void rearmFromTruck(VehicleEntity v) {
+		VehicleType t = v.getVehicleType();
+		if (t.ordnance != null && v.getOrdnance() < t.ordnance.count && getCargo() >= 6) {
+			v.addOrdnance(1);
+			setCargo(getCargo() - 6);
+		}
+		if (v.reserveSpace() <= 0) {
 			return;
 		}
-		// Load or unload at a town of a player (any building of it within 40 blocks, or its centre).
-		com.stasdoto.airdefense.nation.Politics p = com.stasdoto.airdefense.nation.Politics.get(level.getServer());
-		com.stasdoto.airdefense.nation.Settlement town = com.stasdoto.airdefense.nation.Supply.townNear(p, blockPosition());
-		if (town == null) {
-			return;
+		int[] step = rearmStep(t);
+		if (getCargo() >= step[1]) {
+			v.addReserve(step[0]);
+			setCargo(getCargo() - step[1]);
 		}
-		int load = loadKind(mode);
-		int kind = load >= 0 ? load : getCargoKind();
-		int[] stock = town.eco.stock;
-		int rate = fuel ? 250 : 25;
-		if (load >= 0) {
-			if (getCargo() > 0 && getCargoKind() != load) {
-				return;
-			}
-			int k = Math.min(rate, Math.min(stock[kind], vtype.cargoCapacity - getCargo()));
-			if (k > 0) {
-				stock[kind] -= k;
-				setCargo(getCargo() + k);
-				setCargoKind(kind);
-				p.setDirty();
-			}
-		} else {
-			int k = Math.min(rate, Math.min(getCargo(), town.eco.capOf(kind) - stock[kind]));
-			if (k > 0) {
-				stock[kind] += k;
-				setCargo(getCargo() - k);
-				p.setDirty();
-			}
+	}
+
+	/** {units given, ammunition points they cost}. */
+	public static int[] rearmStep(VehicleType t) {
+		if (t.isArtillery()) {
+			return new int[]{2, 3};
 		}
+		if (t.isLauncher()) {
+			return new int[]{1, 8};
+		}
+		if (t.weapon != null) {
+			return t.weapon.cannon() ? new int[]{1, 3} : new int[]{10, 2};
+		}
+		if (t.defense != null) {
+			if (t.defense.gunOnly()) {
+				return new int[]{1, 1};
+			}
+			return switch (t) {
+				case PATRIOT, S300, SAMPT, BUK -> new int[]{1, 8};
+				default -> new int[]{1, 4};
+			};
+		}
+		return new int[]{1, 4};
+	}
+
+	/** Lite: empty jerrycans filled from a fuel truck standing within 8 blocks (20 l each). */
+	public static boolean fillCansFromTruck(ServerLevel level, net.minecraft.server.level.ServerPlayer player, net.minecraft.world.item.ItemStack cans) {
+		for (VehicleEntity v : level.getEntitiesOfClass(VehicleEntity.class, player.getBoundingBox().inflate(8),
+				v -> v.isAlive() && v.vtype.isTruck() && v.vtype.cargo == 1)) {
+			int n = Math.min(cans.getCount(), v.getCargo() / 20);
+			if (n <= 0) {
+				continue;
+			}
+			v.setCargo(v.getCargo() - n * 20);
+			cans.shrink(n);
+			net.minecraft.world.item.ItemStack full = new net.minecraft.world.item.ItemStack(com.stasdoto.airdefense.registry.ModItems.JERRYCAN, n);
+			if (!player.getInventory().add(full)) {
+				player.spawnAtLocation(level, full);
+			}
+			level.playSound(null, player.blockPosition(), net.minecraft.sounds.SoundEvents.BUCKET_FILL, net.minecraft.sounds.SoundSource.PLAYERS, 1f, 0.8f);
+			player.sendOverlayMessage(Component.translatable("message.airdefense.lite.cans_filled", n, v.getCargo()));
+			return true;
+		}
+		player.sendOverlayMessage(Component.translatable("message.airdefense.lite.no_fuel_truck"));
+		return false;
 	}
 
 	public void setTruckMode(int mode) {
@@ -3227,20 +3247,14 @@ public class VehicleEntity extends LivingEntity {
 		if (!m.isAlive() || !m.getMissileType().threat || m.getY() <= level().getMinY()) {
 			return false;
 		}
-		// Its own side's missiles fly on (the player's air defence lets his own strikes through, and his towns'
-		// air defence does too).
-		if (m.country() == country || level() instanceof ServerLevel sl && (m.country() == -1 && playersCountry(sl, country)
-				|| country == -1 && playersCountry(sl, m.country()))) {
+		// Its own side's missiles fly on (lite: "ours" and "the enemy", see Sides).
+		if (com.stasdoto.airdefense.map.Sides.same(m.country(), country)) {
 			return false;
 		}
-		// 1.32: an aircraft only when it is the enemy's: the player's air defence fires at the countries' aircraft, a
-		// country's at those of its enemies at war (the player's own included while they fight).
-		if (m.getMissileType().track() && level() instanceof ServerLevel sl2) {
+		// 1.32: an aircraft only when it is the other side's.
+		if (m.getMissileType().track()) {
 			VehicleEntity a = m.carrier();
-			if (a == null || a == this) {
-				return false;
-			}
-			if (country < 0 ? a.country < 0 || playersCountry(sl2, a.country) : !com.stasdoto.airdefense.nation.War.hostile(sl2, country, a)) {
+			if (a == null || a == this || com.stasdoto.airdefense.map.Sides.same(a.country, country)) {
 				return false;
 			}
 		}
@@ -3276,27 +3290,14 @@ public class VehicleEntity extends LivingEntity {
 		if (at.distanceToSqr(position()) < 120 * 120) {
 			return true;
 		}
-		com.stasdoto.airdefense.nation.Settlement s = com.stasdoto.airdefense.nation.Politics.get(level.getServer()).settlements.get(home);
-		if (s == null) {
-			return true;
-		}
-		double r = s.radius + 80;
-		return Vec3.atCenterOf(s.center).subtract(at).horizontalDistanceSqr() < r * r;
-	}
-
-	private static boolean playersCountry(ServerLevel level, int id) {
-		if (id < 0) {
-			return false;
-		}
-		com.stasdoto.airdefense.nation.Country c = com.stasdoto.airdefense.nation.Politics.get(level.getServer()).country(id);
-		return c != null && c.owner != null;
+		return false;
 	}
 
 	/** Iron Dome: missiles judged to fall in empty country and let go (for the tests). */
 	public static final java.util.Set<Integer> IGNORED_HARMLESS = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
 
 	/**
-	 * Iron Dome's battle management: where will it come down? Only what falls on a town, near people or vehicles,
+	 * Iron Dome's battle management: where will it come down? Only what falls near people or vehicles,
 	 * or near the battery itself is worth an interceptor.
 	 */
 	private boolean threatensSomething(ServerLevel level, MissileEntity m) {
@@ -3306,13 +3307,6 @@ public class VehicleEntity extends LivingEntity {
 		}
 		Vec3 at = m.getTarget();
 		BlockPos p = BlockPos.containing(at);
-		com.stasdoto.airdefense.nation.Politics pol = com.stasdoto.airdefense.nation.Politics.get(level.getServer());
-		for (com.stasdoto.airdefense.nation.Settlement s : pol.settlements.values()) {
-			double r = s.radius + 24;
-			if (s.center.distSqr(p) < r * r) {
-				return true;
-			}
-		}
 		if (at.distanceToSqr(position()) < 40 * 40) {
 			return true;
 		}
@@ -4061,10 +4055,6 @@ public class VehicleEntity extends LivingEntity {
 		if (level() instanceof ServerLevel server) {
 			RadarNetwork.remove(server, getId());
 			com.stasdoto.airdefense.radar.CounterBattery.remove(server, getId());
-			com.stasdoto.airdefense.nation.Arsenals.destroyed(server, this);
-			if (cargoDelivery != 0) {
-				com.stasdoto.airdefense.nation.Arsenals.lorryLost(server, this);
-			}
 			if (airborne()) {
 				// 1.32: shot down - the crew bail out under parachutes; it falls burning and blows up where it hits.
 				for (Entity e : getPassengers()) {
@@ -4213,7 +4203,7 @@ public class VehicleEntity extends LivingEntity {
 		VehicleEntity best = null;
 		double bestD = reach * reach;
 		for (VehicleEntity v : level.getEntitiesOfClass(VehicleEntity.class, getBoundingBox().inflate(reach, 80, reach),
-				v -> v != this && v.isAlive() && v.getVehicleType().boat && com.stasdoto.airdefense.nation.War.hostile(level, country, v))) {
+				v -> v != this && v.isAlive() && v.getVehicleType().boat && hostileTo(v))) {
 			double d = v.distanceToSqr(this);
 			if (d < bestD && d > 48 * 48) {
 				bestD = d;
@@ -4243,19 +4233,17 @@ public class VehicleEntity extends LivingEntity {
 		}
 		Vec3 mount = toWorld(fit.ciwsX(), fit.ciwsY(), fit.ciwsZ());
 		double reach = fit.ciwsRange();
-		com.stasdoto.airdefense.nation.Politics pol = com.stasdoto.airdefense.nation.Politics.get(level.getServer());
 		MissileEntity best = null;
 		double bestD = reach * reach;
 		for (MissileEntity m : MissileEntity.find(level, new AABB(mount, mount).inflate(reach), m -> m.isAlive() && m.getMissileType().threat
 				&& !m.getMissileType().artillery())) {
 			double d = m.distanceToSqr(mount);
-			if (d >= bestD || com.stasdoto.airdefense.radar.CounterBattery.sameSide(pol, m.country(), country)) {
+			if (d >= bestD || com.stasdoto.airdefense.radar.CounterBattery.sameSide(m.country(), country)) {
 				continue;
 			}
 			if (m.getMissileType().track()) {
 				VehicleEntity a = m.carrier();
-				if (a == null || com.stasdoto.airdefense.radar.CounterBattery.sameSide(pol, a.country, country)
-						|| country >= 0 && !com.stasdoto.airdefense.nation.War.hostile(level, country, a)) {
+				if (a == null || com.stasdoto.airdefense.radar.CounterBattery.sameSide(a.country, country)) {
 					continue;
 				}
 			} else {
@@ -4611,8 +4599,7 @@ public class VehicleEntity extends LivingEntity {
 		Entity best = null;
 		double bestD = Double.MAX_VALUE;
 		for (Entity e : level.getEntities(this, box, e -> e.isAlive() && !e.isSpectator()
-				&& (e instanceof VehicleEntity || e instanceof Player || e instanceof com.stasdoto.airdefense.nation.SoldierEntity)
-				&& com.stasdoto.airdefense.nation.War.hostile(level, country, e))) {
+				&& hostileTo(e))) {
 			double d = e.distanceToSqr(this);
 			if (d < bestD) {
 				bestD = d;
@@ -4836,7 +4823,7 @@ public class VehicleEntity extends LivingEntity {
 		entityData.set(DATA_FUEL, input.getFloatOr("vehicle_fuel", -1f));
 		entityData.set(DATA_ORDNANCE, input.getIntOr("vehicle_ordnance", vtype.ordnance != null ? vtype.ordnance.count : 0));
 		entityData.set(DATA_CARGO, input.getIntOr("vehicle_cargo", 0));
-		country = input.getIntOr("vehicle_country", -1);
+		country = com.stasdoto.airdefense.map.Sides.of(input.getIntOr("vehicle_country", -1));
 		home = input.getIntOr("vehicle_home", -1);
 		garrison = input.getBooleanOr("vehicle_garrison", false);
 		troops = input.getIntOr("vehicle_troops", 0);

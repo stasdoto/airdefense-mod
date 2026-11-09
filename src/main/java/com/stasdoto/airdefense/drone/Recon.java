@@ -10,8 +10,6 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
@@ -20,9 +18,6 @@ import net.minecraft.world.phys.Vec3;
 
 import com.stasdoto.airdefense.missile.MissileEntity;
 import com.stasdoto.airdefense.missile.MissileType;
-import com.stasdoto.airdefense.nation.Country;
-import com.stasdoto.airdefense.nation.Politics;
-import com.stasdoto.airdefense.nation.SoldierEntity;
 import com.stasdoto.airdefense.radar.CounterBattery;
 import com.stasdoto.airdefense.vehicle.VehicleEntity;
 
@@ -90,9 +85,9 @@ public final class Recon {
 		});
 	}
 
-	/** One side for all of the player's own things (his vehicles and his country's). */
-	private static int sideKey(Politics p, int side) {
-		return CounterBattery.playerSide(p, side) ? -1 : side;
+	/** One key for each of the two sides. */
+	private static int sideKey(int side) {
+		return com.stasdoto.airdefense.map.Sides.of(side);
 	}
 
 	/** A drone looks round under it (every second while it is over the field). */
@@ -103,16 +98,14 @@ public final class Recon {
 		double r = t.sightRange();
 		Vec3 at = drone.position();
 		EYES.computeIfAbsent(level.dimension(), k -> new LinkedHashMap<>()).put(drone.getId(), new Eye(drone.getId(), at, side, r, t.ordinal(), now));
-		Politics p = Politics.get(level.getServer());
 		Map<Long, Seen> map = SEEN.computeIfAbsent(level.dimension(), k -> new LinkedHashMap<>());
-		boolean player = CounterBattery.playerSide(p, side);
-		long key0 = (long) sideKey(p, side) << 32;
+		long key0 = (long) sideKey(side) << 32;
 		AABB box = new AABB(at.x - r, at.y - 180, at.z - r, at.x + r, at.y + 30, at.z + r);
 		for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, box,
-				e -> e.isAlive() && (e instanceof VehicleEntity || e instanceof SoldierEntity))) {
+				e -> e.isAlive() && e instanceof VehicleEntity)) {
 			double dx = e.getX() - at.x;
 			double dz = e.getZ() - at.z;
-			if (dx * dx + dz * dz > r * r || !enemy(p, side, e)) {
+			if (dx * dx + dz * dz > r * r || !enemy(side, e)) {
 				continue;
 			}
 			long key = key0 | (e.getId() & 0xFFFFFFFFL);
@@ -128,55 +121,16 @@ public final class Recon {
 			}
 			s.pos = e.position();
 			s.last = now;
-			if (player) {
-				// (Vehicles take no potion effects: they are marked by hand.)
-				if (e instanceof VehicleEntity v) {
-					v.markSeen(now + 50);
-				} else {
-					e.addEffect(new MobEffectInstance(MobEffects.GLOWING, 50, 0, false, false));
-				}
+			// (Vehicles take no potion effects: they are marked by hand.)
+			if (e instanceof VehicleEntity v) {
+				v.markSeen(now + 50);
 			}
 		}
 	}
 
-	/**
-	 * Is {@code e} on the other side for a drone of {@code side}: the player's drones go for anything that is not his; a
-	 * country's for the vehicles and soldiers of the countries it is at war with (the player's when it is at war with
-	 * him).
-	 */
-	public static boolean enemy(Politics p, int side, Entity e) {
-		int other;
-		if (e instanceof VehicleEntity v) {
-			other = v.country;
-		} else if (e instanceof SoldierEntity s) {
-			other = s.country();
-		} else {
-			return false;
-		}
-		if (CounterBattery.sameSide(p, side, other)) {
-			return false;
-		}
-		if (CounterBattery.playerSide(p, side)) {
-			return true;
-		}
-		Country c = p.country(side);
-		if (c == null) {
-			return true;
-		}
-		if (CounterBattery.playerSide(p, other)) {
-			return atWarWithPlayer(p, c);
-		}
-		return other >= 0 && c.atWarWith(other);
-	}
-
-	/** Is this country at war with a player's country. */
-	public static boolean atWarWithPlayer(Politics p, Country c) {
-		for (int w : c.wars) {
-			if (CounterBattery.playerSide(p, w)) {
-				return true;
-			}
-		}
-		return false;
+	/** Is {@code e} a vehicle of the other side for a drone of {@code side}. */
+	public static boolean enemy(int side, Entity e) {
+		return e instanceof VehicleEntity v && com.stasdoto.airdefense.map.Sides.hostile(side, v.country);
 	}
 
 	/** Is a drone of this side over {@code at} right now (within its sight). */
@@ -185,10 +139,9 @@ public final class Recon {
 		if (eyes == null || eyes.isEmpty()) {
 			return false;
 		}
-		Politics p = Politics.get(level.getServer());
 		long now = level.getGameTime();
 		for (Eye e : eyes.values()) {
-			if (now - e.seen > EYE_STALE || !CounterBattery.sameSide(p, e.side, side)) {
+			if (now - e.seen > EYE_STALE || !CounterBattery.sameSide(e.side, side)) {
 				continue;
 			}
 			double dx = e.pos.x - at.x;
@@ -206,11 +159,10 @@ public final class Recon {
 		if (map == null || map.isEmpty()) {
 			return List.of();
 		}
-		Politics p = Politics.get(level.getServer());
 		long now = level.getGameTime();
 		List<Seen> out = new ArrayList<>();
 		for (Seen s : map.values()) {
-			if (now - s.last <= KEEP && CounterBattery.sameSide(p, s.side, side)) {
+			if (now - s.last <= KEEP && CounterBattery.sameSide(s.side, side)) {
 				out.add(s);
 			}
 		}
@@ -223,11 +175,10 @@ public final class Recon {
 		if (map == null || map.isEmpty()) {
 			return List.of();
 		}
-		Politics p = Politics.get(level.getServer());
 		long now = level.getGameTime();
 		List<Eye> out = new ArrayList<>();
 		for (Eye e : map.values()) {
-			if (now - e.seen <= EYE_STALE && CounterBattery.sameSide(p, e.side, side)) {
+			if (now - e.seen <= EYE_STALE && CounterBattery.sameSide(e.side, side)) {
 				out.add(e);
 			}
 		}

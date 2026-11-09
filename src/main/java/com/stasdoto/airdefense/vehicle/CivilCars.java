@@ -7,13 +7,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import com.stasdoto.airdefense.street.Weathered;
 
-/**
- * 2.0: the town's own cars, made drivable. A car parked in a bay (drawn by each client for itself, see the client's
- * TownTraffic) can be taken: the player's client asks, the server checks the bay and puts a real car there - the same
- * model and paint - with the player at the wheel.
- */
+/** 2.0: the civilian car (its models and paints). */
 public final class CivilCars {
 	/** The models (and paints) of the town's cars; the same list as the client's traffic uses. */
 	public static final String[] MODELS = {"car_saloon_white", "car_saloon_red", "car_saloon_blue", "car_saloon_green", "car_saloon_beige",
@@ -48,37 +43,5 @@ public final class CivilCars {
 
 	public static String model(int variant) {
 		return MODELS[Math.floorMod(variant, MODELS.length)];
-	}
-
-	/** For the tests: cars taken from their bays. */
-	public static int taken;
-
-	/**
-	 * Server: the player takes the car parked in the bay at {@code bay} (the bay's marked block). The car stands where
-	 * the client drew it ({@code x, y, z, yaw}), which must be on that bay and near the player.
-	 */
-	public static boolean take(ServerPlayer player, BlockPos bay, String model, double x, double y, double z, float yaw) {
-		if (!(player.level() instanceof ServerLevel level) || player.isPassenger() || player.isSpectator()) {
-			return false;
-		}
-		Block b = level.getBlockState(bay).getBlock();
-		if (b != Weathered.PARKING_X && b != Weathered.PARKING_Z) {
-			return false;
-		}
-		Vec3 at = new Vec3(x, y, z);
-		if (at.distanceToSqr(Vec3.atCenterOf(bay)) > 9 || player.position().distanceToSqr(at) > 64) {
-			return false;
-		}
-		if (!level.getEntitiesOfClass(VehicleEntity.class, new AABB(at, at).inflate(2.0, 2, 2.0)).isEmpty()) {
-			return false;
-		}
-		VehicleEntity car = VehicleEntity.spawn(level, VehicleType.CIVIL_CAR, at, yaw);
-		car.setVariant(index(model));
-		car.setUnlimited(false);
-		// Somebody's car: a part of a tank of petrol in it.
-		car.setFuel(VehicleType.CIVIL_CAR.fuelCapacity() * (0.25f + level.getRandom().nextFloat() * 0.6f));
-		player.startRiding(car);
-		taken++;
-		return true;
 	}
 }

@@ -18,8 +18,6 @@ import net.minecraft.server.level.ServerPlayer;
 
 import com.stasdoto.airdefense.AirDefense;
 import com.stasdoto.airdefense.item.DesignatorItem;
-import com.stasdoto.airdefense.nation.Politics;
-import com.stasdoto.airdefense.nation.Settlement;
 
 /** The tablet's air raid warning page: what the client is shown, and what it can switch. */
 public final class SirenNet {
@@ -147,7 +145,6 @@ public final class SirenNet {
 	public static void send(ServerPlayer player) {
 		ServerLevel level = player.level();
 		Sirens s = Sirens.get(level.getServer());
-		Politics p = Politics.get(level.getServer());
 		long now = level.getGameTime();
 		BlockPos at = player.blockPosition();
 		// Sirens that are gone (their chunk is loaded and the block is not a siren any more) are forgotten.
@@ -160,31 +157,22 @@ public final class SirenNet {
 		}
 		gone.forEach(l -> s.forget(BlockPos.of(l)));
 		List<Siren> sirens = new ArrayList<>();
-		java.util.Map<Integer, Integer> counts = new java.util.HashMap<>();
 		for (long l : s.known) {
 			BlockPos pos = BlockPos.of(l);
-			Settlement t = p.settlementAt(pos);
-			if (t != null) {
-				counts.merge(t.id, 1, Integer::sum);
-			}
 			int mode = Sirens.MODE_AUTO;
-			int signal = s.signalFor(now, t == null ? -1 : t.id, Sirens.MODE_AUTO);
+			int signal = s.signalFor(now, Sirens.ZONE, Sirens.MODE_AUTO);
 			if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof SirenBlockEntity be) {
 				mode = be.mode();
 				signal = SirenBlock.Signal.valueOf(level.getBlockState(pos).getValue(SirenBlock.SIGNAL).name()).ordinal();
 			}
-			sirens.add(new Siren(l, t == null ? "" : t.name, mode, signal, (int) Math.sqrt(pos.distSqr(at))));
+			sirens.add(new Siren(l, "", mode, signal, (int) Math.sqrt(pos.distSqr(at))));
 		}
 		sirens.sort(Comparator.comparingInt(Siren::distance));
 		if (sirens.size() > 60) {
 			sirens = new ArrayList<>(sirens.subList(0, 60));
 		}
+		// Lite: no towns to list (the sirens are one zone, switched with "everywhere").
 		List<Town> towns = new ArrayList<>();
-		for (Settlement t : p.settlements.values()) {
-			towns.add(new Town(t.id, t.name, s.townSignal(now, t.id), counts.getOrDefault(t.id, 0), (int) Math.sqrt(t.center.distSqr(at)),
-					t.capitalCity));
-		}
-		towns.sort(Comparator.comparingInt(Town::distance));
 		if (ServerPlayNetworking.canSend(player, State.TYPE)) {
 			ServerPlayNetworking.send(player, new State(s.everywhere, towns, sirens));
 		}

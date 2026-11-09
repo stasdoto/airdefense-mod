@@ -21,8 +21,6 @@ import net.minecraft.world.phys.Vec3;
 
 import com.stasdoto.airdefense.AirDefense;
 import com.stasdoto.airdefense.missile.MissileEntity;
-import com.stasdoto.airdefense.nation.Country;
-import com.stasdoto.airdefense.nation.Politics;
 import com.stasdoto.airdefense.vehicle.VehicleEntity;
 
 /**
@@ -30,7 +28,7 @@ import com.stasdoto.airdefense.vehicle.VehicleEntity;
  * and rockets of the other side; after following one for a moment on the rising part of its arc it works out where it
  * was fired from. The firing position is marked on the tablet's map for its side, its owner hears of it, and that
  * side's artillery set to "counter-battery" answers by itself - so a battery that keeps firing from one spot gets hit
- * back ("shoot and scoot"). The towns of a country with a counter-battery radar answer the player's guns the same way.
+ * back ("shoot and scoot").
  */
 public final class CounterBattery {
 	/** A radar working right now: where its antenna is, which way it looks, whose it is. */
@@ -71,7 +69,6 @@ public final class CounterBattery {
 	/** For the tests: firing positions found, answers fired back, and the towns that answered the player. */
 	public static int found;
 	public static int answered;
-	public static int townsAnswered;
 
 	private CounterBattery() {
 	}
@@ -118,10 +115,9 @@ public final class CounterBattery {
 		if (list == null || list.isEmpty()) {
 			return List.of();
 		}
-		Politics p = Politics.get(level.getServer());
 		List<Fire> out = new ArrayList<>();
 		for (Fire f : list) {
-			if (sameSide(p, f.side, side)) {
+			if (sameSide(f.side, side)) {
 				out.add(f);
 			}
 		}
@@ -131,17 +127,13 @@ public final class CounterBattery {
 	// ------------------------------------------------------------------------------------------------
 	// Sides
 
-	/** The player's side: his own vehicles (-1) and the country he runs. */
-	public static boolean playerSide(Politics p, int country) {
-		if (country == -1) {
-			return true;
-		}
-		Country c = p.country(country);
-		return c != null && c.owner != null;
+	/** Lite: "ours" (see {@link com.stasdoto.airdefense.map.Sides}). */
+	public static boolean playerSide(int country) {
+		return com.stasdoto.airdefense.map.Sides.of(country) == com.stasdoto.airdefense.map.Sides.OURS;
 	}
 
-	public static boolean sameSide(Politics p, int a, int b) {
-		return a == b || playerSide(p, a) && playerSide(p, b);
+	public static boolean sameSide(int a, int b) {
+		return com.stasdoto.airdefense.map.Sides.same(a, b);
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -172,12 +164,11 @@ public final class CounterBattery {
 		if (stations.isEmpty()) {
 			return;
 		}
-		Politics p = Politics.get(level.getServer());
 		for (Station s : stations) {
 			double r = s.type.range;
 			AABB box = new AABB(s.pos.x - r, s.pos.y - 64, s.pos.z - r, s.pos.x + r, s.pos.y + 700, s.pos.z + r);
 			for (MissileEntity m : MissileEntity.find(level, box, m -> m.isAlive() && m.getMissileType().artillery())) {
-				if (m.arcProgress() > 0.55 || sameSide(p, m.country(), s.country) || !sees(s, m.position())) {
+				if (m.arcProgress() > 0.55 || sameSide(m.country(), s.country) || !sees(s, m.position())) {
 					continue;
 				}
 				Long since = WATCHING.putIfAbsent(m.getId(), now);
@@ -186,13 +177,13 @@ public final class CounterBattery {
 				}
 				// Worked out: the track goes back to the gun.
 				WATCHING.put(m.getId(), -1L);
-				located(level, p, s, m.origin(), m.country());
+				located(level, s, m.origin(), m.country());
 			}
 		}
 	}
 
 	/** A battery found at {@code at}: on the map, told to the radar's side, answered by its guns. */
-	private static void located(ServerLevel level, Politics p, Station s, Vec3 at, int shooter) {
+	private static void located(ServerLevel level, Station s, Vec3 at, int shooter) {
 		long now = level.getGameTime();
 		List<Fire> fires = FIRES.computeIfAbsent(level.dimension(), k -> new ArrayList<>());
 		for (Fire f : fires) {
@@ -202,7 +193,7 @@ public final class CounterBattery {
 				f.rounds++;
 				// Still firing from the same spot a while later: answered again.
 				if (!f.answered || now - before > 400) {
-					answer(level, p, s.country, f);
+					answer(level, s.country, f);
 				}
 				return;
 			}
@@ -215,29 +206,23 @@ public final class CounterBattery {
 		int bearing = (int) Mth.positiveModulo((float) (Mth.atan2(at.x - s.pos.x, -(at.z - s.pos.z)) * Mth.RAD_TO_DEG), 360f);
 		Component msg = Component.translatable("message.airdefense.cb.found", dist, bearing, (int) at.x, (int) at.z).withStyle(ChatFormatting.GOLD);
 		for (ServerPlayer pl : level.players()) {
-			if (sameSide(p, s.country, ownSide(p, pl)) && pl.distanceToSqr(s.pos) < 3000 * 3000) {
+			if (sameSide(s.country, com.stasdoto.airdefense.map.Sides.playing(pl)) && pl.distanceToSqr(s.pos) < 3000 * 3000) {
 				pl.sendSystemMessage(msg);
 			}
 		}
-		answer(level, p, s.country, f);
-	}
-
-	/** The side a player is on: the country he runs, or -1 (his own vehicles). */
-	static int ownSide(Politics p, ServerPlayer pl) {
-		Country c = p.countryOwnedBy(pl.getUUID());
-		return c == null ? -1 : c.id;
+		answer(level, s.country, f);
 	}
 
 	/**
 	 * The side's artillery in reach answers: the player's guns set to counter-battery fire, a country's guns always.
 	 * Two guns at most for one battery found.
 	 */
-	private static void answer(ServerLevel level, Politics p, int side, Fire f) {
+	private static void answer(ServerLevel level, int side, Fire f) {
 		f.answered = true;
 		double reach = 1500;
 		AABB box = new AABB(f.pos.x - reach, f.pos.y - 200, f.pos.z - reach, f.pos.x + reach, f.pos.y + 200, f.pos.z + reach);
 		List<VehicleEntity> guns = level.getEntities(EntityTypeTest.forClass(VehicleEntity.class), box,
-				v -> v.isAlive() && v.getVehicleType().isArtillery() && sameSide(p, v.country, side));
+				v -> v.isAlive() && v.getVehicleType().isArtillery() && sameSide(v.country, side));
 		guns.sort(java.util.Comparator.comparingDouble(v -> v.distanceToSqr(f.pos)));
 		int fired = 0;
 		// At the ground under the muzzle the radar tracked the shells back to.
@@ -247,7 +232,7 @@ public final class CounterBattery {
 			if (fired >= 2) {
 				break;
 			}
-			boolean auto = playerSide(p, v.country) ? v.getMode() == VehicleEntity.MODE_AUTO : true;
+			boolean auto = v.getMode() == VehicleEntity.MODE_AUTO;
 			if (!auto || v.striking() || v.loadedRounds() == 0) {
 				continue;
 			}
@@ -260,32 +245,6 @@ public final class CounterBattery {
 				answered++;
 				AirDefense.LOGGER.info("[airdefense] {} answers the guns at {} {}", v.getVehicleType().id, aim.getX(), aim.getZ());
 			}
-		}
-	}
-
-	// ------------------------------------------------------------------------------------------------
-	// The towns answer
-
-	/**
-	 * A shell or rocket of the player's came down: if it fell on a town of a country that has a counter-battery radar
-	 * and artillery, that town's guns answer at where it came from (after a while: the radar works it out, the guns
-	 * turn round).
-	 */
-	public static void impact(ServerLevel level, MissileEntity m, Vec3 at) {
-		Politics p = Politics.get(level.getServer());
-		if (!playerSide(p, m.country())) {
-			return;
-		}
-		Vec3 origin = m.origin();
-		if (origin.lengthSqr() < 1) {
-			return;
-		}
-		com.stasdoto.airdefense.nation.Settlement s = p.settlementAt(BlockPos.containing(at));
-		if (s == null || s.country < 0 || playerSide(p, s.country)) {
-			return;
-		}
-		if (com.stasdoto.airdefense.nation.Arsenals.answerGuns(level, p, s, origin)) {
-			townsAnswered++;
 		}
 	}
 
