@@ -2767,9 +2767,11 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 	}
 
 	private int spawnSide(TestServerContext server, VehicleType type, int x, int z, float yaw, int side) {
-		int id = spawnVehicle(server, type, x, z, yaw);
-		server.runOnServer(s -> forVehicles(s.overworld(), List.of(id), v -> v.country = side));
-		return id;
+		return server.computeOnServer(s -> {
+			VehicleEntity v = VehicleEntity.spawn(s.overworld(), type, new Vec3(x + 0.5, ground, z + 0.5), yaw);
+			v.country = side;
+			return v.getId();
+		});
 	}
 
 	private static com.stasdoto.airdefense.client.map.TacticalMapScreen mapScreen(net.minecraft.client.Minecraft mc) {
@@ -2810,7 +2812,7 @@ public class AirDefenseClientGameTest implements FabricClientGameTest {
 			return n;
 		});
 		AirDefense.LOGGER.info("[airdefense-test] RESULT lite_registry: people/town entity types {}, town blocks {}", people, cityBlocks);
-		camera(server, x, g + 30, 0, 180, 30);
+		camera(server, x, g + 30, 160, 180, 30);
 		ctx.waitTicks(60);
 		int ours = com.stasdoto.airdefense.map.Sides.OURS;
 		int enemy = com.stasdoto.airdefense.map.Sides.ENEMY;

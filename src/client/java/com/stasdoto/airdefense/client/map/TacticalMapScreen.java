@@ -129,9 +129,9 @@ public class TacticalMapScreen extends Screen {
 				.bounds(mx0, 2, 62, 13).build());
 		plannerButton = addRenderableWidget(UiButton.create(Component.translatable("screen.airdefense.map.plan.open_short"),
 				b -> setTab(tab == 1 ? 0 : 1)).bounds(mx0, 2, 70, 13).build());
-		sideButton = addRenderableWidget(UiButton.create(Component.translatable(sideKey()), b -> toggleSide()).bounds(mx0, 2, 90, 13).build());
-		layoutHeader(new UiButton[]{sideButton, radarButton, massButton, sirenButton, pauseButton, plannerButton},
-				new String[][]{{"screen.airdefense.map.side.ours", "screen.airdefense.map.side.enemy"}, {"screen.airdefense.map.to_radar"},
+		sideButton = addRenderableWidget(UiButton.create(Component.translatable(sideKey()), b -> toggleSide()).bounds(px0 + 4, my0 + 1, pw, 13).build());
+		layoutHeader(new UiButton[]{radarButton, massButton, sirenButton, pauseButton, plannerButton},
+				new String[][]{{"screen.airdefense.map.to_radar"},
 						{"screen.airdefense.map.mass_strike"}, {"screen.airdefense.map.sirens"},
 						{"screen.airdefense.map.plan.pause", "screen.airdefense.map.plan.pause_on", "screen.airdefense.map.plan.pause_mp"},
 						{"screen.airdefense.map.plan.open_short", "screen.airdefense.map.plan.back"}});
@@ -1099,7 +1099,7 @@ public class TacticalMapScreen extends Screen {
 		int x1 = px0 + PANEL_W;
 		com.stasdoto.airdefense.client.ui.Ui.panel(g, x0, my0 - 2, x1, my1 + 2);
 		if (tab == 1) {
-			drawPlanPanel(g, my0 + 3);
+			drawPlanPanel(g, my0 + 18);
 			return;
 		}
 		List<MapStatusPayload.Entry> list = entries();
